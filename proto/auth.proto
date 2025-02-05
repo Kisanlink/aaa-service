@@ -1,0 +1,71 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "github.com/Kisanlink/aaa-service/pb";
+
+// User-related messages
+message User {
+    string id = 1;
+    string username = 2;
+    bool is_validated = 3;
+}
+
+message RegisterRequest {
+    string username = 1;
+    string password = 2;
+}
+
+message RegisterResponse {
+    string message = 1;
+    User user = 2;
+}
+
+message LoginRequest {
+    string username = 1;
+    string password = 2;
+}
+
+message LoginResponse {
+    string token = 1;
+    User user = 2;
+}
+
+// Role and Permission-related messages
+message Role {
+    string id = 1;
+    string name = 2;
+    string description = 3;
+}
+
+message Permission {
+    string id = 1;
+    string name = 2;
+    string description = 3;
+}
+
+message AssignRoleRequest {
+    string user_id = 1;
+    string role_id = 2;
+}
+
+message AssignRoleResponse {
+    string message = 1;
+}
+
+message CheckPermissionRequest {
+    string user_id = 1;
+    string permission_name = 2;
+}
+
+message CheckPermissionResponse {
+    bool has_permission = 1;
+}
+
+// Auth Service Definition
+service AuthService {
+    rpc Register(RegisterRequest) returns (RegisterResponse);
+    rpc Login(LoginRequest) returns (LoginResponse);
+    rpc AssignRole(AssignRoleRequest) returns (AssignRoleResponse);
+    rpc CheckPermission(CheckPermissionRequest) returns (CheckPermissionResponse);
+}
