@@ -32,6 +32,7 @@ func ConnectDB() {
 		&model.User{},
 		&model.Role{},
 		&model.Permission{},
+		&model.UserRole{},
 	)
 	if migrationErr != nil {
 		panic(fmt.Sprintf("Error migrating database: %v", migrationErr))

@@ -57,7 +57,7 @@ func (s *RoleServer) CreateRole(ctx context.Context, req *pb.CreateRoleRequest) 
 
 	// Convert the created role to a protobuf-compatible structure
 	pbRole := &pb.Role{
-		Id:          newRole.ID.String(), // Assuming ID is a UUID or similar
+		Id:          newRole.ID, // Assuming ID is a UUID or similar
 		Name:        newRole.Name,
 		Description: newRole.Description,
 	}

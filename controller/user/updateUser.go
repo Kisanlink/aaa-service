@@ -37,7 +37,7 @@ func (s *Server) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest) (*pb
 	}
 
 	pbUser := &pb.User{
-		Id:          existingUser.ID.String(),
+		Id:          existingUser.ID,
 		CreatedAt:   existingUser.CreatedAt.Format(time.RFC3339Nano),
 		UpdatedAt:   existingUser.UpdatedAt.Format(time.RFC3339Nano),
 		Username:    existingUser.Username,

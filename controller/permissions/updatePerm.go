@@ -52,7 +52,7 @@ func (s *PermissionServer) UpdatePermission(ctx context.Context, req *pb.UpdateP
 	}
 
 	pbPermission := &pb.Permission{
-		Id:          existingPermission.ID.String(),
+		Id:          existingPermission.ID,
 		Name:        updatedPermission.Name,
 		Description: updatedPermission.Description,
 	}

@@ -18,7 +18,7 @@ func (s *Server) GetUsers(ctx context.Context, req *pb.GetUserRequest) (*pb.GetU
 	pbUsers := []*pb.User{}
 	for _, user := range users {
 		pbUser := &pb.User{
-			Id:          user.ID.String(),
+			Id:          user.ID,
 			CreatedAt:   user.CreatedAt.Format(time.RFC3339Nano),
 			UpdatedAt:   user.UpdatedAt.Format(time.RFC3339Nano),
 			Username:    user.Username,

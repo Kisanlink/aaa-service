@@ -23,7 +23,7 @@ func (s *RoleServer) GetAllRoles(ctx context.Context, req *pb.GetAllRolesRequest
 	var pbRoles []*pb.Role
 	for _, role := range roles {
 		pbRoles = append(pbRoles, &pb.Role{
-			Id:          role.ID.String(),
+			Id:          role.ID,
 			Name:        role.Name,
 			Description: role.Description,
 		})

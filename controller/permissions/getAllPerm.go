@@ -22,7 +22,7 @@ func (s *PermissionServer) GetAllPermissions(ctx context.Context, req *pb.GetAll
 	var pbPermissions []*pb.Permission
 	for _, permission := range permissions {
 		pbPermissions = append(pbPermissions, &pb.Permission{
-			Id:          permission.ID.String(),
+			Id:          permission.ID,
 			Name:        permission.Name,
 			Description: permission.Description,
 		})

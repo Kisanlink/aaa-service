@@ -53,7 +53,7 @@ func (s *RoleServer) UpdateRole(ctx context.Context, req *pb.UpdateRoleRequest) 
 	}
 
 	pbRole := &pb.Role{
-		Id:          existingRole.ID.String(),
+		Id:          existingRole.ID,
 		Name:        updatedRole.Name,
 		Description: updatedRole.Description,
 	}

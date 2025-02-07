@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v5.29.1
-// source: proto/role_permission.proto
+// source: role_permission.proto
 
 package pb
 
@@ -273,7 +273,7 @@ var RoleService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "proto/role_permission.proto",
+	Metadata: "role_permission.proto",
 }
 
 const (
@@ -527,5 +527,5 @@ var PermissionService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "proto/role_permission.proto",
+	Metadata: "role_permission.proto",
 }

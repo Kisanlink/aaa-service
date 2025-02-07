@@ -35,7 +35,7 @@ func (s *RoleServer) GetRoleById(ctx context.Context, req *pb.GetRoleByIdRequest
 	}
 
 	pbRole := &pb.Role{
-		Id:          role.ID.String(),
+		Id:          role.ID,
 		Name:        role.Name,
 		Description: role.Description,
 	}

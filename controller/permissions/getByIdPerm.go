@@ -37,7 +37,7 @@ func (s *PermissionServer) GetPermissionById(ctx context.Context, req *pb.GetPer
 
 	// Populate the response object with the fetched permission data
 	pbPermission := &pb.Permission{
-		Id:          permission.ID.String(), // Ensure ID is converted to a string
+		Id:          permission.ID, // Ensure ID is converted to a string
 		Name:        permission.Name,
 		Description: permission.Description,
 	}

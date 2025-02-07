@@ -11,12 +11,21 @@ message User {
     bool is_validated = 3;
     string created_at = 4;
     string updated_at = 5;
+    repeated RoleConn roles = 6; // Add a semicolon here
 }
 
+message RoleConn {
+    string id = 1;
+    string name = 2;
+    string description = 3;
+    repeated PermissionConn permissions = 4; // Nested permissions
+}
 
-
-
-
+message PermissionConn {
+    string id = 1;
+    string name = 2;
+    string description = 3;
+}
 message LoginRequest {
     string username = 1;
     string password = 2;
@@ -32,10 +41,11 @@ message LoginResponse {
 
 
 
-// User Service Messages
 message CreateUserRequest {
     string username = 1;
     string password = 2;
+    repeated string role_ids = 3;        // Array of Role IDs
+    repeated string permission_ids = 4; // Array of Permission IDs
 }
 
 message CreateUserResponse {

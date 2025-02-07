@@ -17,9 +17,9 @@ type Role struct {
 
 type Permission struct {
 	Base
-	Name        string     `gorm:"size:100;not null;unique"`
-	Description string     `gorm:"type:text"`
-	UserRoles   []UserRole `gorm:"foreignKey:PermissionID"`
+	Name           string     `gorm:"size:100;not null;unique"`
+	Description    string     `gorm:"type:text"`
+	UserPermission []UserRole `gorm:"foreignKey:PermissionID"`
 }
 
 type UserRole struct {

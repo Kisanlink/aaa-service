@@ -56,7 +56,7 @@ func (s *PermissionServer) CreatePermission(ctx context.Context, req *pb.CreateP
 	}
 
 	pbPermission := &pb.Permission{
-		Id:          newPermission.ID.String(),
+		Id:          newPermission.ID,
 		Name:        newPermission.Name,
 		Description: newPermission.Description,
 	}
