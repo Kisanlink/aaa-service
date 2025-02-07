@@ -2,9 +2,16 @@ package grpc_server
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"net"
 
+	"github.com/Kisanlink/aaa-service/controller/permissions"
+	"github.com/Kisanlink/aaa-service/controller/roles"
+	"github.com/Kisanlink/aaa-service/controller/user"
 	pb "github.com/Kisanlink/aaa-service/pb"
+	"google.golang.org/grpc"
+	"gorm.io/gorm"
 )
 
 type GreeterServer struct {
@@ -16,19 +23,30 @@ func (s *GreeterServer) SayHello(ctx context.Context, req *pb.HelloRequest) (*pb
 	return &pb.HelloResponse{Message: "Hello " + req.Name}, nil
 }
 
-// func StartGRPCServer() {
-// 	lis, err := net.Listen("tcp", ":50051")
-// 	if err != nil {
-// 		log.Fatalf("failed to listen: %v", err)
-// 	}
+func StartGRPCServer(db *gorm.DB) (*grpc.Server, error) {
+	lis, err := net.Listen("tcp", ":50051")
+	if err != nil {
+		return nil, fmt.Errorf("failed to listen: %v", err)
+	}
+	s := grpc.NewServer()
+	pb.RegisterGreeterServer(s, &GreeterServer{})
+	userServer := &user.Server{DB: db}
+	pb.RegisterUserServiceServer(s, userServer)
+	roleServer := roles.NewRoleServer(db)
+	pb.RegisterRoleServiceServer(s, roleServer)
+	permissionServer := permissions.NewPermissionServer(db)
+	pb.RegisterPermissionServiceServer(s, permissionServer)
+	conn, err := grpc.Dial("localhost:50051", grpc.WithInsecure())
+	if err != nil {
+		log.Fatalf("Failed to connect to gRPC server: %v", err)
+	}
+	defer conn.Close()
 
-// 	s := grpc.NewServer()
+	go func() {
+		if err := s.Serve(lis); err != nil {
+			log.Fatalf("failed to serve: %v", err)
+		}
+	}()
 
-// 	pb.RegisterGreeterServer(s, &Server{})
-
-// 	log.Println("gRPC server is running on port 50051")
-
-// 	if err := s.Serve(lis); err != nil {
-// 		log.Fatalf("failed to serve: %v", err)
-// 	}
-// }
+	return s, nil
+}

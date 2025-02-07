@@ -9,17 +9,13 @@ message User {
     string id = 1;
     string username = 2;
     bool is_validated = 3;
+    string created_at = 4;
+    string updated_at = 5;
 }
 
-message RegisterRequest {
-    string username = 1;
-    string password = 2;
-}
 
-message RegisterResponse {
-    string message = 1;
-    User user = 2;
-}
+
+
 
 message LoginRequest {
     string username = 1;
@@ -27,45 +23,66 @@ message LoginRequest {
 }
 
 message LoginResponse {
-    string token = 1;
-    User user = 2;
+    int32 status_code = 1;       // HTTP status code equivalent
+    string message = 2;          // Response message
+    string token = 3;            // JWT token
+    string refresh_token = 4;    // Refresh token (optional)
+    User user = 5;               // User details
 }
 
-// Role and Permission-related messages
-message Role {
+
+
+// User Service Messages
+message CreateUserRequest {
+    string username = 1;
+    string password = 2;
+}
+
+message CreateUserResponse {
+    User user = 1;
+}
+
+message GetUserRequest {}
+
+message GetUserResponse {
+    repeated User users = 1; // A list of users
+}
+
+message UpdateUserRequest {
     string id = 1;
-    string name = 2;
-    string description = 3;
+    string username = 2;
 }
 
-message Permission {
+message UpdateUserResponse {
+    User user = 1;
+}
+
+message DeleteUserRequest {
     string id = 1;
-    string name = 2;
-    string description = 3;
 }
 
-message AssignRoleRequest {
-    string user_id = 1;
-    string role_id = 2;
-}
-
-message AssignRoleResponse {
+message DeleteUserResponse {
     string message = 1;
 }
-
-message CheckPermissionRequest {
-    string user_id = 1;
-    string permission_name = 2;
+message GetUserByIdRequest {
+    string id = 1; // Unique ID of the user
 }
 
-message CheckPermissionResponse {
-    bool has_permission = 1;
+message GetUserByIdResponse {
+    User user = 1; // User details (excluding sensitive fields like Password)
 }
 
-// Auth Service Definition
-service AuthService {
-    rpc Register(RegisterRequest) returns (RegisterResponse);
-    rpc Login(LoginRequest) returns (LoginResponse);
-    rpc AssignRole(AssignRoleRequest) returns (AssignRoleResponse);
-    rpc CheckPermission(CheckPermissionRequest) returns (CheckPermissionResponse);
+
+// User Service Definition
+service UserService {
+    rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
+        rpc Login(LoginRequest) returns (LoginResponse);
+    rpc GetUser(GetUserRequest) returns (GetUserResponse);
+    rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse);
+    rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
+        rpc GetUserById(GetUserByIdRequest) returns (GetUserByIdResponse); // Add this line
+
 }
+
+
+

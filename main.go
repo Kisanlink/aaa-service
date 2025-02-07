@@ -1,42 +1,44 @@
 package main
 
 import (
+	"context"
 	"log"
-	"net"
-	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 
+	"github.com/Kisanlink/aaa-service/database"
 	"github.com/Kisanlink/aaa-service/grpc_server"
-	pb "github.com/Kisanlink/aaa-service/pb"
-	"github.com/gin-gonic/gin"
-	"google.golang.org/grpc"
+	"github.com/joho/godotenv"
 )
 
-func main() {
-	// Start gRPC server
-	go func() {
-		lis, err := net.Listen("tcp", ":50051")
-		if err != nil {
-			log.Fatalf("failed to listen: %v", err)
-		}
-		s := grpc.NewServer()
-		pb.RegisterGreeterServer(s, &grpc_server.GreeterServer{})
-		log.Println("gRPC server listening on :50051")
-		if err := s.Serve(lis); err != nil {
-			log.Fatalf("failed to serve: %v", err)
-		}
-	}()
-
-	// Start Gin HTTP server
-	r := gin.Default()
-
-	r.GET("/", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"message": "Welcome to the Gin server!",
-		})
-	})
-
-	log.Println("Gin server listening on :8080")
-	if err := r.Run(":8080"); err != nil {
-		log.Fatalf("failed to run Gin server: %v", err)
+func init() {
+	if err := godotenv.Load(); err != nil {
+		log.Println("Error loading .env file, skipping...")
 	}
+}
+
+func main() {
+	database.ConnectDB()
+	if err := database.SpiceDB(); err != nil {
+		log.Fatalf("Failed to initialize SpiceDB: %v", err)
+	}
+
+	// Start the gRPC server
+	grpcServer, err := grpc_server.StartGRPCServer(database.DB)
+	if err != nil {
+		log.Fatalf("Failed to start gRPC server: %v", err)
+	}
+
+	log.Println("Application started successfully")
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	<-ctx.Done()
+
+	log.Println("Shutting down gRPC server...")
+	grpcServer.GracefulStop()
+	log.Println("gRPC server stopped. Exiting application.")
+
 }
