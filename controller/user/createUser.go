@@ -36,39 +36,6 @@ func HashPassword(password string) (string, error) {
 	return string(hashedPassword), nil
 }
 
-// func (s *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest) (*pb.CreateUserResponse, error) {
-// 	existingUser := model.User{}
-// 	if err := s.DB.Table("users").Where("username = ?", req.Username).First(&existingUser).Error; err == nil {
-// 		return nil, status.Error(codes.AlreadyExists, "User Already Exists")
-// 	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-// 		return nil, status.Error(codes.Internal, "Database Error")
-// 	}
-
-// 	hashedPassword, err := HashPassword(req.Password)
-// 	if err != nil {
-// 		return nil, status.Error(codes.InvalidArgument, "Failed to hash password")
-// 	}
-// 	newUser := model.User{
-// 		Username:    req.Username,
-// 		Password:    hashedPassword,
-// 		IsValidated: false,
-// 	}
-// 	newUser.Password = hashedPassword
-// 	if err := s.DB.Table("users").Create(&newUser).Error; err != nil {
-// 		return nil, status.Error(codes.Internal, "Failed to create user")
-// 	}
-
-// 	return &pb.CreateUserResponse{
-// 		User: &pb.User{
-// 			Id:          newUser.ID.String(),
-// 			CreatedAt:   newUser.CreatedAt.Format(time.RFC3339Nano),
-// 			UpdatedAt:   newUser.UpdatedAt.Format(time.RFC3339Nano),
-// 			Username:    newUser.Username,
-// 			IsValidated: newUser.IsValidated,
-// 		},
-// 	}, nil
-// }
-
 func (s *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest) (*pb.CreateUserResponse, error) {
 	existingUser := model.User{}
 	if err := s.DB.Table("users").Where("username = ?", req.Username).First(&existingUser).Error; err == nil {
@@ -81,79 +48,72 @@ func (s *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest) (*pb
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, "Failed to hash password")
 	}
-
 	newUser := model.User{
 		Username:    req.Username,
 		Password:    hashedPassword,
 		IsValidated: false,
 	}
+	newUser.Password = hashedPassword
 	if err := s.DB.Table("users").Create(&newUser).Error; err != nil {
 		return nil, status.Error(codes.Internal, "Failed to create user")
 	}
-
-	tx := s.DB.Begin()
-	defer func() {
-		if r := recover(); r != nil {
-			tx.Rollback()
-		}
-	}()
-
-	for _, roleID := range req.RoleIds {
-		for _, permissionID := range req.PermissionIds {
-			userRole := model.UserRole{
-				UserID:       newUser.ID,
-				RoleID:       roleID,
-				PermissionID: permissionID,
-			}
-			if err := tx.Table("user_roles").Create(&userRole).Error; err != nil {
-				tx.Rollback()
-				return nil, status.Error(codes.Internal, "Failed to create user-role-permission connection")
-			}
-		}
+	if err := s.createUserRoles(newUser.ID, req.UserRoleIds); err != nil {
+		return nil, err
+	}
+	var userRoles []model.UserRole
+	if err := s.DB.Table("user_roles").Where("user_id = ?", newUser.ID).Find(&userRoles).Error; err != nil {
+		return nil, status.Error(codes.Internal, "Failed to fetch user roles")
 	}
 
-	if err := tx.Commit().Error; err != nil {
-		return nil, status.Error(codes.Internal, "Transaction commit failed")
-	}
+	newUser.Roles = userRoles
 
-	var createdUser model.User
-	if err := s.DB.Table("users").
-		Preload("Roles.Role").
-		Preload("Roles.Permission").
-		First(&createdUser, "id = ?", newUser.ID).
-		Error; err != nil {
-		return nil, status.Error(codes.Internal, "Failed to fetch user details")
-	}
+	pbUserRoles := ConvertToPBUserRoles(userRoles)
 
-	response := &pb.CreateUserResponse{
-		User: MapUserToProto(createdUser),
-	}
-	return response, nil
+	return &pb.CreateUserResponse{
+		StatusCode: int32(codes.OK),
+		Message:    "User created successfully",
+		User: &pb.User{
+			Id:          newUser.ID,
+			CreatedAt:   newUser.CreatedAt.Format(time.RFC3339Nano),
+			UpdatedAt:   newUser.UpdatedAt.Format(time.RFC3339Nano),
+			Username:    newUser.Username,
+			IsValidated: newUser.IsValidated,
+			UserRoles:   pbUserRoles,
+		},
+	}, nil
 }
 
-func MapUserToProto(user model.User) *pb.User {
-	roles := make([]*pb.RoleConn, len(user.Roles))
-	for i, userRole := range user.Roles {
-		roles[i] = &pb.RoleConn{
-			Id:          userRole.Role.ID, // Convert UUID to string
-			Name:        userRole.Role.Name,
-			Description: userRole.Role.Description,
-			Permissions: []*pb.PermissionConn{
-				{
-					Id:          userRole.Permission.ID, // Convert UUID to string
-					Name:        userRole.Permission.Name,
-					Description: userRole.Permission.Description,
-				},
-			},
-		}
+func (s *Server) createUserRoles(userID string, rolePermissionIDs []string) error {
+	if len(rolePermissionIDs) == 0 {
+		return nil
 	}
 
-	return &pb.User{
-		Id:          user.ID, // Convert UUID to string
-		Username:    user.Username,
-		IsValidated: user.IsValidated,
-		CreatedAt:   user.CreatedAt.Format(time.RFC3339Nano),
-		UpdatedAt:   user.UpdatedAt.Format(time.RFC3339Nano),
-		Roles:       roles,
+	var userRoles []model.UserRole
+	for _, rolePermissionID := range rolePermissionIDs {
+		userRole := model.UserRole{
+			UserID:           userID,
+			RolePermissionID: rolePermissionID,
+		}
+		userRoles = append(userRoles, userRole)
 	}
+	if err := s.DB.Table("user_roles").Create(&userRoles).Error; err != nil {
+		return status.Error(codes.Internal, "Failed to create UserRole entries")
+	}
+
+	return nil
+}
+
+func ConvertToPBUserRoles(userRoles []model.UserRole) []*pb.UserRole {
+	var pbUserRoles []*pb.UserRole
+	for _, userRole := range userRoles {
+		pbUserRole := &pb.UserRole{
+			Id:               userRole.ID,
+			UserId:           userRole.UserID,
+			RolePermissionId: userRole.RolePermissionID,
+			CreatedAt:        userRole.CreatedAt.Format(time.RFC3339Nano),
+			UpdatedAt:        userRole.UpdatedAt.Format(time.RFC3339Nano),
+		}
+		pbUserRoles = append(pbUserRoles, pbUserRole)
+	}
+	return pbUserRoles
 }

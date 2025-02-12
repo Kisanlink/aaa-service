@@ -4,28 +4,29 @@ package pb;
 
 option go_package = "github.com/Kisanlink/aaa-service/pb";
 
-// User-related messages
+
+
+
+// UserRole represents the join table between User and RolePermission
+message UserRole {
+    string id = 1;
+    string user_id = 2;           // Foreign key to User
+    string role_permission_id = 3;
+    string created_at = 4;
+    string updated_at = 5;
+}
+
+// User represents the User model
 message User {
     string id = 1;
     string username = 2;
     bool is_validated = 3;
     string created_at = 4;
     string updated_at = 5;
-    repeated RoleConn roles = 6; // Add a semicolon here
+    repeated UserRole user_roles = 6; // Array of associated UserRole entries
 }
 
-message RoleConn {
-    string id = 1;
-    string name = 2;
-    string description = 3;
-    repeated PermissionConn permissions = 4; // Nested permissions
-}
 
-message PermissionConn {
-    string id = 1;
-    string name = 2;
-    string description = 3;
-}
 message LoginRequest {
     string username = 1;
     string password = 2;
@@ -41,30 +42,38 @@ message LoginResponse {
 
 
 
+// CreateUserRequest represents the request to create a new user
 message CreateUserRequest {
-    string username = 1;
-    string password = 2;
-    repeated string role_ids = 3;        // Array of Role IDs
-    repeated string permission_ids = 4; // Array of Permission IDs
+    string username = 1;               // Username of the user
+    string password = 2;               // Password of the user
+    repeated string user_role_ids = 3; // Array of UserRole IDs to associate with the user
 }
 
 message CreateUserResponse {
-    User user = 1;
+     int32 status_code = 1;
+    string message = 2;
+    User user = 3;
 }
 
 message GetUserRequest {}
 
 message GetUserResponse {
-    repeated User users = 1; // A list of users
+     int32 status_code = 1;
+    string message = 2;
+    repeated User users = 3; // A list of users
 }
 
 message UpdateUserRequest {
-    string id = 1;
-    string username = 2;
+    string id=1;
+ string username = 2;
+    bool is_validated = 3;
+    repeated string user_role_ids = 4; // Array of UserRole IDs to associate with the user
 }
 
 message UpdateUserResponse {
-    User user = 1;
+     int32 status_code = 1;
+    string message = 2;
+      User user = 3;
 }
 
 message DeleteUserRequest {
@@ -72,14 +81,17 @@ message DeleteUserRequest {
 }
 
 message DeleteUserResponse {
-    string message = 1;
-}
+ int32 status_code = 1;
+    string message = 2;
+    }
 message GetUserByIdRequest {
     string id = 1; // Unique ID of the user
 }
 
 message GetUserByIdResponse {
-    User user = 1; // User details (excluding sensitive fields like Password)
+     int32 status_code = 1;
+    string message = 2;
+    User user = 3; // User details (excluding sensitive fields like Password)
 }
 
 

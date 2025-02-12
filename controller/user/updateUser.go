@@ -16,7 +16,6 @@ func (s *Server) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest) (*pb
 	if id == "" {
 		return nil, status.Error(codes.InvalidArgument, "ID is required")
 	}
-
 	var existingUser model.User
 	err := s.DB.Table("users").Where("id = ?", id).First(&existingUser).Error
 	if err != nil {
@@ -28,23 +27,59 @@ func (s *Server) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest) (*pb
 	if req.Username != "" {
 		existingUser.Username = req.Username
 	}
-	// if req.IsValidated != nil {
-	// 	existingUser.IsValidated = req.GetIsValidated()
-	// }
-
+	if req.IsValidated != existingUser.IsValidated {
+		existingUser.IsValidated = req.IsValidated
+	}
 	if err := s.DB.Table("users").Save(&existingUser).Error; err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to update user: %v", err))
 	}
 
+	rolePermissionIDs := req.UserRoleIds
+	if err := s.updateUserRoles(id, rolePermissionIDs); err != nil {
+		return nil, err
+	}
+
+	var userRoles []model.UserRole
+	if err := s.DB.Table("user_roles").Where("user_id = ?", id).Find(&userRoles).Error; err != nil {
+		return nil, status.Error(codes.Internal, "Failed to fetch updated roles")
+	}
+
+	pbRoles := ConvertToPBUserRoles(userRoles)
 	pbUser := &pb.User{
 		Id:          existingUser.ID,
 		CreatedAt:   existingUser.CreatedAt.Format(time.RFC3339Nano),
 		UpdatedAt:   existingUser.UpdatedAt.Format(time.RFC3339Nano),
 		Username:    existingUser.Username,
 		IsValidated: existingUser.IsValidated,
+		UserRoles:   pbRoles,
 	}
 
 	return &pb.UpdateUserResponse{
-		User: pbUser,
+		StatusCode: int32(codes.OK),
+		Message:    "User updated successfully",
+		User:       pbUser,
 	}, nil
+}
+
+func (s *Server) updateUserRoles(userID string, rolePermissionIDs []string) error {
+	if err := s.DB.Table("user_roles").Where("user_id = ?", userID).Delete(&model.UserRole{}).Error; err != nil {
+		return status.Error(codes.Internal, "Failed to delete existing UserRole entries")
+	}
+	if len(rolePermissionIDs) == 0 {
+		return nil
+	}
+	var userRoles []model.UserRole
+	for _, rolePermissionID := range rolePermissionIDs {
+		userRole := model.UserRole{
+			UserID:           userID,
+			RolePermissionID: rolePermissionID,
+		}
+		userRoles = append(userRoles, userRole)
+	}
+
+	if err := s.DB.Table("user_roles").Create(&userRoles).Error; err != nil {
+		return status.Error(codes.Internal, "Failed to create new UserRole entries")
+	}
+
+	return nil
 }

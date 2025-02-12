@@ -123,7 +123,7 @@ message DeletePermissionResponse {
     string message = 2;     // Response message
 }
 
-// Service definitions
+
 service RoleService {
     rpc CreateRole(CreateRoleRequest) returns (CreateRoleResponse);
     rpc GetAllRoles(GetAllRolesRequest) returns (GetAllRolesResponse);

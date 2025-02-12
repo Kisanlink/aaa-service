@@ -1,61 +1,68 @@
 package user
 
-// import (
-// 	"context"
-// 	"log"
+import (
+	"context"
+	"errors"
+	"time"
 
-// 	"golang.org/x/crypto/bcrypt"
-// 	"google.golang.org/grpc/codes"
-// 	"google.golang.org/grpc/status"
+	"github.com/Kisanlink/aaa-service/helper"
+	"github.com/Kisanlink/aaa-service/model"
+	"github.com/Kisanlink/aaa-service/pb"
+	"golang.org/x/crypto/bcrypt"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"gorm.io/gorm"
+)
 
-// 	"github.com/Kisanlink/aaa-service/database"
-// 	"github.com/Kisanlink/aaa-service/helper"
-// 	"github.com/Kisanlink/aaa-service/model"
-// 	"github.com/Kisanlink/aaa-service/pb"
-// )
+func (s *Server) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResponse, error) {
+	existingUser := model.User{}
+	err := s.DB.Table("users").Where("username = ?", req.Username).First(&existingUser).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, status.Error(codes.NotFound, "User not found")
+		}
+		return nil, status.Error(codes.Internal, "Database error: "+err.Error())
+	}
+	err = bcrypt.CompareHashAndPassword([]byte(existingUser.Password), []byte(req.Password))
+	if err != nil {
+		return nil, status.Error(codes.Unauthenticated, "Invalid password")
+	}
+	accessToken, err := helper.GenerateAccessToken(existingUser.ID, existingUser.Roles, existingUser.Username, existingUser.IsValidated)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "Failed to generate access token")
+	}
+	refreshToken, err := helper.GenerateRefreshToken(existingUser.ID, existingUser.Roles, existingUser.Username, existingUser.IsValidated)
+	if err != nil {
 
-// type AuthServer struct {
-//     pb.UnimplementedAuthServiceServer
-// }
+		return nil, status.Error(codes.Internal, "Failed to generate refresh token")
+	}
+	var userRoles []model.UserRole
+	if err := s.DB.Table("user_roles").Where("user_id = ?", existingUser.ID).Find(&userRoles).Error; err != nil {
+		return nil, status.Error(codes.Internal, "Failed to fetch updated roles")
+	}
 
-// func (s *AuthServer) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResponse, error) {
-//     // Validate input
-//     if req.Username == "" || req.Password == "" {
-//         return nil, status.Error(codes.InvalidArgument, "Username and password are required")
-//     }
-
-//     // Fetch user from the database
-//     var user model.User
-//     if err := database.DB.Where("username = ?", req.Username).First(&user).Error; err != nil {
-//         log.Printf("User not found: %v", err)
-//         return nil, status.Error(codes.NotFound, "Account doesn't exist")
-//     }
-
-//     // Compare password hash
-//     err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password))
-//     if err != nil {
-//         log.Printf("Invalid password: %v", err)
-//         return nil, status.Error(codes.InvalidArgument, "Invalid username or password")
-//     }
-
-//     // Generate token
-//     token, err := helper.GenerateToken(user.ID.String(), user.Username, string(user.Role))
-//     if err != nil {
-//         log.Printf("Failed to generate token: %v", err)
-//         return nil, status.Error(codes.Internal, "Could not generate token")
-//     }
-
-//     // Prepare response
-//     response := &pb.LoginResponse{
-//         StatusCode:   200,
-//         Message:      "Login successful",
-//         Token:        token,
-//         RefreshToken: "", // Add refresh token logic if needed
-//         User: &pb.User{
-//             Id:       user.ID.String(),
-//             Username: user.Username,
-//         },
-//     }
-
-//     return response, nil
-// }
+	pbUserRoles := make([]*pb.UserRole, len(userRoles))
+	for i, role := range userRoles {
+		pbUserRoles[i] = &pb.UserRole{
+			Id:               role.ID,
+			UserId:           role.UserID,
+			RolePermissionId: role.RolePermissionID,
+			CreatedAt:        role.CreatedAt.Format(time.RFC3339Nano),
+			UpdatedAt:        role.UpdatedAt.Format(time.RFC3339Nano),
+		}
+	}
+	return &pb.LoginResponse{
+		StatusCode:   200,
+		Message:      "Login successful",
+		Token:        accessToken,
+		RefreshToken: refreshToken,
+		User: &pb.User{
+			Id:          existingUser.ID,
+			CreatedAt:   existingUser.CreatedAt.Format(time.RFC3339Nano),
+			UpdatedAt:   existingUser.UpdatedAt.Format(time.RFC3339Nano),
+			Username:    existingUser.Username,
+			IsValidated: existingUser.IsValidated,
+			UserRoles:   pbUserRoles,
+		},
+	}, nil
+}

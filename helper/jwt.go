@@ -1,23 +1,67 @@
 package helper
 
 import (
-	"os"
 	"time"
 
-	"github.com/golang-jwt/jwt/v5"
+	"github.com/Kisanlink/aaa-service/model"
+	"github.com/dgrijalva/jwt-go"
 )
 
-var jwtSecret = []byte(os.Getenv("SECRET_KEY"))
+var jwtKey = []byte("askdwkdfmlermferflersmflesrmflersmflesrmflkes") // Replace with a secure key in production
 
-func GenerateToken(id, email, role string) (string, error) {
-	claims := jwt.MapClaims{
-		"id":    id,
-		"email": email,
-		"role":  role,
-		"exp":   time.Now().Add(time.Hour * 24).Unix(),
-		"iat":   time.Now().Unix(),
+// GenerateAccessToken generates a short-lived JWT access token
+func GenerateAccessToken(userID string, userRoleId []model.UserRole, username string, isvalidate bool) (string, error) {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"user_id":    userID,
+		"exp":        time.Now().Add(time.Hour * 24).Unix(), // Expires in 24 hours
+		"roleIds":    userRoleId,
+		"username":   username,
+		"isvalidate": isvalidate,
+	})
+
+	tokenString, err := token.SignedString(jwtKey)
+	if err != nil {
+		return "", err
+	}
+	return tokenString, nil
+}
+
+// GenerateRefreshToken generates a long-lived JWT refresh token
+func GenerateRefreshToken(userID string, userRoleId []model.UserRole, username string, isvalidate bool) (string, error) {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"user_id":    userID,
+		"exp":        time.Now().Add(time.Hour * 24 * 7).Unix(), // Expires in 7 days
+		"roleIds":    userRoleId,
+		"username":   username,
+		"isvalidate": isvalidate,
+	})
+
+	tokenString, err := token.SignedString(jwtKey)
+	if err != nil {
+		return "", err
+	}
+	return tokenString, nil
+}
+
+// ValidateToken validates the JWT token and returns the user ID
+func ValidateToken(tokenString string) (string, error) {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		return jwtKey, nil
+	})
+
+	if err != nil || !token.Valid {
+		return "", err
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(jwtSecret)
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return "", err
+	}
+
+	userID, ok := claims["user_id"].(string)
+	if !ok {
+		return "", err
+	}
+
+	return userID, nil
 }

@@ -24,12 +24,16 @@ func (s *Server) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest) (*pb
 		}
 		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to fetch user: %v", err))
 	}
+	if err := s.DB.Table("user_roles").Where("user_id = ?", id).Delete(&model.UserRole{}).Error; err != nil {
+		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to delete user roles: %v", err))
+	}
 
 	if err := s.DB.Table("users").Delete(&model.User{}, "id = ?", id).Error; err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to delete user: %v", err))
 	}
 
 	return &pb.DeleteUserResponse{
-		Message: "User deleted successfully",
+		StatusCode: int32(codes.OK),
+		Message:    "User deleted successfully",
 	}, nil
 }

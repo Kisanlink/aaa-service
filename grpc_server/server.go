@@ -7,6 +7,7 @@ import (
 	"net"
 
 	"github.com/Kisanlink/aaa-service/controller/permissions"
+	rolepermission "github.com/Kisanlink/aaa-service/controller/role_Permission"
 	"github.com/Kisanlink/aaa-service/controller/roles"
 	"github.com/Kisanlink/aaa-service/controller/user"
 	pb "github.com/Kisanlink/aaa-service/pb"
@@ -28,7 +29,9 @@ func StartGRPCServer(db *gorm.DB) (*grpc.Server, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to listen: %v", err)
 	}
+
 	s := grpc.NewServer()
+
 	pb.RegisterGreeterServer(s, &GreeterServer{})
 	userServer := &user.Server{DB: db}
 	pb.RegisterUserServiceServer(s, userServer)
@@ -36,7 +39,12 @@ func StartGRPCServer(db *gorm.DB) (*grpc.Server, error) {
 	pb.RegisterRoleServiceServer(s, roleServer)
 	permissionServer := permissions.NewPermissionServer(db)
 	pb.RegisterPermissionServiceServer(s, permissionServer)
-	conn, err := grpc.Dial("localhost:50051", grpc.WithInsecure())
+	connectRolePermissionServer := rolepermission.NewConnectRolePermissionServer(db)
+	pb.RegisterConnectRolePermissionServiceServer(s, connectRolePermissionServer)
+	conn, err := grpc.Dial("localhost:50051",
+		grpc.WithInsecure(),
+		grpc.WithDefaultCallOptions(),
+	)
 	if err != nil {
 		log.Fatalf("Failed to connect to gRPC server: %v", err)
 	}

@@ -32,6 +32,8 @@ func ConnectDB() {
 		&model.User{},
 		&model.Role{},
 		&model.Permission{},
+		&model.RolePermission{},
+		&model.PermissionOnRole{},
 		&model.UserRole{},
 	)
 	if migrationErr != nil {
