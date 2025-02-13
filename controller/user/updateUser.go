@@ -2,7 +2,6 @@ package user
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/Kisanlink/aaa-service/model"
@@ -16,13 +15,9 @@ func (s *Server) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest) (*pb
 	if id == "" {
 		return nil, status.Error(codes.InvalidArgument, "ID is required")
 	}
-	var existingUser model.User
-	err := s.DB.Table("users").Where("id = ?", id).First(&existingUser).Error
+	existingUser, err := s.UserRepo.FindExistingUserByID(ctx, id)
 	if err != nil {
-		if err.Error() == "record not found" {
-			return nil, status.Error(codes.NotFound, "User not found")
-		}
-		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to fetch user: %v", err))
+		return nil, err
 	}
 	if req.Username != "" {
 		existingUser.Username = req.Username
@@ -30,20 +25,16 @@ func (s *Server) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest) (*pb
 	if req.IsValidated != existingUser.IsValidated {
 		existingUser.IsValidated = req.IsValidated
 	}
-	if err := s.DB.Table("users").Save(&existingUser).Error; err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to update user: %v", err))
-	}
-
-	rolePermissionIDs := req.UserRoleIds
-	if err := s.updateUserRoles(id, rolePermissionIDs); err != nil {
+	if err := s.UserRepo.UpdateUser(ctx, *existingUser); err != nil {
 		return nil, err
 	}
-
-	var userRoles []model.UserRole
-	if err := s.DB.Table("user_roles").Where("user_id = ?", id).Find(&userRoles).Error; err != nil {
-		return nil, status.Error(codes.Internal, "Failed to fetch updated roles")
+	if err := s.updateUserRoles(existingUser.ID, req.UserRoleIds); err != nil {
+		return nil, err
 	}
-
+	userRoles, err := s.UserRepo.FindUserRoles(ctx, existingUser.ID)
+	if err != nil {
+		return nil, err
+	}
 	pbRoles := ConvertToPBUserRoles(userRoles)
 	pbUser := &pb.User{
 		Id:          existingUser.ID,
@@ -53,7 +44,6 @@ func (s *Server) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest) (*pb
 		IsValidated: existingUser.IsValidated,
 		UserRoles:   pbRoles,
 	}
-
 	return &pb.UpdateUserResponse{
 		StatusCode: int32(codes.OK),
 		Message:    "User updated successfully",
@@ -62,8 +52,8 @@ func (s *Server) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest) (*pb
 }
 
 func (s *Server) updateUserRoles(userID string, rolePermissionIDs []string) error {
-	if err := s.DB.Table("user_roles").Where("user_id = ?", userID).Delete(&model.UserRole{}).Error; err != nil {
-		return status.Error(codes.Internal, "Failed to delete existing UserRole entries")
+	if err := s.UserRepo.DeleteUserRoles(context.Background(), userID); err != nil {
+		return err
 	}
 	if len(rolePermissionIDs) == 0 {
 		return nil
@@ -77,9 +67,8 @@ func (s *Server) updateUserRoles(userID string, rolePermissionIDs []string) erro
 		userRoles = append(userRoles, userRole)
 	}
 
-	if err := s.DB.Table("user_roles").Create(&userRoles).Error; err != nil {
-		return status.Error(codes.Internal, "Failed to create new UserRole entries")
+	if err := s.UserRepo.CreateUserRoles(context.Background(), userRoles); err != nil {
+		return err
 	}
-
 	return nil
 }

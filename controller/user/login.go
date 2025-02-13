@@ -2,26 +2,19 @@ package user
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"github.com/Kisanlink/aaa-service/helper"
-	"github.com/Kisanlink/aaa-service/model"
 	"github.com/Kisanlink/aaa-service/pb"
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"gorm.io/gorm"
 )
 
 func (s *Server) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResponse, error) {
-	existingUser := model.User{}
-	err := s.DB.Table("users").Where("username = ?", req.Username).First(&existingUser).Error
+	existingUser, err := s.UserRepo.FindUserByUsername(ctx, req.Username)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, status.Error(codes.NotFound, "User not found")
-		}
-		return nil, status.Error(codes.Internal, "Database error: "+err.Error())
+		return nil, err
 	}
 	err = bcrypt.CompareHashAndPassword([]byte(existingUser.Password), []byte(req.Password))
 	if err != nil {
@@ -33,14 +26,12 @@ func (s *Server) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResp
 	}
 	refreshToken, err := helper.GenerateRefreshToken(existingUser.ID, existingUser.Roles, existingUser.Username, existingUser.IsValidated)
 	if err != nil {
-
 		return nil, status.Error(codes.Internal, "Failed to generate refresh token")
 	}
-	var userRoles []model.UserRole
-	if err := s.DB.Table("user_roles").Where("user_id = ?", existingUser.ID).Find(&userRoles).Error; err != nil {
-		return nil, status.Error(codes.Internal, "Failed to fetch updated roles")
+	userRoles, err := s.UserRepo.FindUserRoles(ctx, existingUser.ID)
+	if err != nil {
+		return nil, err
 	}
-
 	pbUserRoles := make([]*pb.UserRole, len(userRoles))
 	for i, role := range userRoles {
 		pbUserRoles[i] = &pb.UserRole{

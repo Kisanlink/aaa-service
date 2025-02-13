@@ -2,70 +2,54 @@ package roles
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/Kisanlink/aaa-service/model"
 	"github.com/Kisanlink/aaa-service/pb"
-	"gorm.io/gorm"
+	"github.com/Kisanlink/aaa-service/repositories"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type RoleServer struct {
 	pb.UnimplementedRoleServiceServer
-	DB *gorm.DB
+	RoleRepo *repositories.RoleRepository
 }
 
-func NewRoleServer(db *gorm.DB) *RoleServer {
-	return &RoleServer{DB: db}
+func NewRoleServer(roleRepo *repositories.RoleRepository) *RoleServer {
+	return &RoleServer{
+		RoleRepo: roleRepo,
+	}
 }
 
 func (s *RoleServer) CreateRole(ctx context.Context, req *pb.CreateRoleRequest) (*pb.CreateRoleResponse, error) {
+	// Validate input
 	if req.Name == "" {
-		return &pb.CreateRoleResponse{
-			StatusCode: http.StatusBadRequest,
-			Message:    "Role Name is required",
-		}, nil
-	}
-	if s.DB == nil {
-		return &pb.CreateRoleResponse{
-			StatusCode: http.StatusInternalServerError,
-			Message:    "Database connection is not initialized",
-		}, nil
+		return nil, status.Error(codes.InvalidArgument, "Role Name is required")
 	}
 
-	// Check if a role with the same name already exists
-	existingRole := model.Role{}
-	result := s.DB.Table("roles").Where("name = ?", req.Name).First(&existingRole)
-	if result.Error == nil {
-		return &pb.CreateRoleResponse{
-			StatusCode: http.StatusConflict,
-			Message:    fmt.Sprintf("Role with name '%s' already exists", req.Name),
-		}, nil
+	// Check if the role already exists
+	if err := s.RoleRepo.CheckIfRoleExists(ctx, req.Name); err != nil {
+		return nil, err
 	}
 
-	// Create a new role
+	// Create a new role object
 	newRole := model.Role{
 		Name:        req.Name,
 		Description: req.Description,
 	}
-	if err := s.DB.Table("roles").Create(&newRole).Error; err != nil {
-		return &pb.CreateRoleResponse{
-			StatusCode: http.StatusInternalServerError,
-			Message:    fmt.Sprintf("Failed to create role: %v", err),
-		}, nil
-	}
 
-	// Convert the created role to a protobuf-compatible structure
+	if err := s.RoleRepo.CreateRole(ctx, &newRole); err != nil {
+		return nil, err
+	}
 	pbRole := &pb.Role{
-		Id:          newRole.ID, // Assuming ID is a UUID or similar
+		Id:          newRole.ID,
 		Name:        newRole.Name,
 		Description: newRole.Description,
 	}
-
-	// Return the success response with the created role
 	return &pb.CreateRoleResponse{
-		StatusCode: http.StatusCreated,
+		StatusCode: int32(http.StatusCreated),
 		Message:    "Role created successfully",
-		Role:       pbRole, // Assign the protobuf-compatible role here
+		Role:       pbRole,
 	}, nil
 }

@@ -2,43 +2,24 @@ package roles
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/Kisanlink/aaa-service/model"
 	"github.com/Kisanlink/aaa-service/pb"
 	"google.golang.org/grpc/codes"
-	"gorm.io/gorm"
+	"google.golang.org/grpc/status"
 )
 
 func (s *RoleServer) DeleteRole(ctx context.Context, req *pb.DeleteRoleRequest) (*pb.DeleteRoleResponse, error) {
 	id := req.GetId()
 	if id == "" {
-		return &pb.DeleteRoleResponse{
-			StatusCode: int32(codes.InvalidArgument),
-			Message:    "ID is required",
-		}, nil
+		return nil, status.Error(codes.InvalidArgument, "ID is required")
 	}
 
-	var role model.Role
-	result := s.DB.Table("roles").Where("id = ?", id).First(&role)
-	if result.Error != nil {
-		if result.Error == gorm.ErrRecordNotFound {
-			return &pb.DeleteRoleResponse{
-				StatusCode: int32(codes.NotFound),
-				Message:    fmt.Sprintf("Role with ID %s not found", id),
-			}, nil
-		}
-		return &pb.DeleteRoleResponse{
-			StatusCode: int32(codes.Internal),
-			Message:    fmt.Sprintf("Failed to query role: %v", result.Error),
-		}, nil
+	_, err := s.RoleRepo.FindRoleByID(ctx, id)
+	if err != nil {
+		return nil, err
 	}
-
-	if err := s.DB.Table("roles").Delete(&model.Role{}, "id = ?", id).Error; err != nil {
-		return &pb.DeleteRoleResponse{
-			StatusCode: int32(codes.Internal),
-			Message:    fmt.Sprintf("Failed to delete role: %v", err),
-		}, nil
+	if err := s.RoleRepo.DeleteRole(ctx, id); err != nil {
+		return nil, err
 	}
 
 	return &pb.DeleteRoleResponse{

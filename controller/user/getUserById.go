@@ -2,40 +2,26 @@ package user
 
 import (
 	"context"
-	"fmt"
 	"time"
 
-	"github.com/Kisanlink/aaa-service/model"
 	"github.com/Kisanlink/aaa-service/pb"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 func (s *Server) GetUserById(ctx context.Context, req *pb.GetUserByIdRequest) (*pb.GetUserByIdResponse, error) {
-	// Validate input
 	id := req.GetId()
 	if id == "" {
 		return nil, status.Error(codes.InvalidArgument, "ID is required")
 	}
-
-	// Fetch the user from the database
-	var user model.User
-	err := s.DB.Table("users").Where("id = ?", id).First(&user).Error
+	user, err := s.UserRepo.FindExistingUserByID(ctx, id)
 	if err != nil {
-		if err.Error() == "record not found" {
-			return nil, status.Error(codes.NotFound, "User not found")
-		}
-		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to fetch user: %v", err))
+		return nil, err
 	}
-
-	// Fetch associated roles for the user
-	var userRoles []model.UserRole
-	err = s.DB.Table("user_roles").Where("user_id = ?", user.ID).Find(&userRoles).Error
+	userRoles, err := s.UserRepo.FindUserRoles(ctx, user.ID)
 	if err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to fetch roles for user %s: %v", user.ID, err))
+		return nil, err
 	}
-
-	// Convert UserRole models to protobuf UserRole messages
 	var pbUserRoles []*pb.UserRole
 	for _, role := range userRoles {
 		pbUserRoles = append(pbUserRoles, &pb.UserRole{
@@ -46,18 +32,14 @@ func (s *Server) GetUserById(ctx context.Context, req *pb.GetUserByIdRequest) (*
 			UpdatedAt:        role.UpdatedAt.Format(time.RFC3339Nano),
 		})
 	}
-
-	// Prepare the protobuf User message
 	pbUser := &pb.User{
 		Id:          user.ID,
 		CreatedAt:   user.CreatedAt.Format(time.RFC3339Nano),
 		UpdatedAt:   user.UpdatedAt.Format(time.RFC3339Nano),
 		Username:    user.Username,
 		IsValidated: user.IsValidated,
-		UserRoles:   pbUserRoles, // Include associated roles
+		UserRoles:   pbUserRoles,
 	}
-
-	// Return the response
 	return &pb.GetUserByIdResponse{
 		StatusCode: int32(codes.OK),
 		Message:    "User fetched successfully",

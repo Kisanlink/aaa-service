@@ -2,48 +2,30 @@ package user
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"github.com/Kisanlink/aaa-service/model"
 	"github.com/Kisanlink/aaa-service/pb"
+	"github.com/Kisanlink/aaa-service/repositories"
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"gorm.io/gorm"
 )
 
 type Server struct {
 	pb.UnimplementedUserServiceServer
-	DB *gorm.DB
+	UserRepo *repositories.UserRepository
 }
 
-var GlobalUserHandler *UserHandler
-
-type UserHandler struct {
-	client pb.UserServiceClient
-}
-
-func NewUserHandler(client pb.UserServiceClient) *UserHandler {
-	GlobalUserHandler = &UserHandler{client: client}
-	return GlobalUserHandler
-}
-func HashPassword(password string) (string, error) {
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		return "", err
+func NewUserServer(userRepo *repositories.UserRepository) *Server {
+	return &Server{
+		UserRepo: userRepo,
 	}
-	return string(hashedPassword), nil
 }
-
 func (s *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest) (*pb.CreateUserResponse, error) {
-	existingUser := model.User{}
-	if err := s.DB.Table("users").Where("username = ?", req.Username).First(&existingUser).Error; err == nil {
-		return nil, status.Error(codes.AlreadyExists, "User Already Exists")
-	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, status.Error(codes.Internal, "Database Error")
+	if err := s.UserRepo.CheckIfUserExists(ctx, req.Username); err != nil {
+		return nil, err
 	}
-
 	hashedPassword, err := HashPassword(req.Password)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, "Failed to hash password")
@@ -53,22 +35,18 @@ func (s *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest) (*pb
 		Password:    hashedPassword,
 		IsValidated: false,
 	}
-	newUser.Password = hashedPassword
-	if err := s.DB.Table("users").Create(&newUser).Error; err != nil {
-		return nil, status.Error(codes.Internal, "Failed to create user")
+	if err := s.UserRepo.CreateUser(ctx, newUser); err != nil {
+		return nil, err
 	}
 	if err := s.createUserRoles(newUser.ID, req.UserRoleIds); err != nil {
 		return nil, err
 	}
-	var userRoles []model.UserRole
-	if err := s.DB.Table("user_roles").Where("user_id = ?", newUser.ID).Find(&userRoles).Error; err != nil {
-		return nil, status.Error(codes.Internal, "Failed to fetch user roles")
+	userRoles, err := s.UserRepo.FindUserRoles(ctx, newUser.ID)
+	if err != nil {
+		return nil, err
 	}
-
 	newUser.Roles = userRoles
-
 	pbUserRoles := ConvertToPBUserRoles(userRoles)
-
 	return &pb.CreateUserResponse{
 		StatusCode: int32(codes.OK),
 		Message:    "User created successfully",
@@ -87,7 +65,6 @@ func (s *Server) createUserRoles(userID string, rolePermissionIDs []string) erro
 	if len(rolePermissionIDs) == 0 {
 		return nil
 	}
-
 	var userRoles []model.UserRole
 	for _, rolePermissionID := range rolePermissionIDs {
 		userRole := model.UserRole{
@@ -96,11 +73,18 @@ func (s *Server) createUserRoles(userID string, rolePermissionIDs []string) erro
 		}
 		userRoles = append(userRoles, userRole)
 	}
-	if err := s.DB.Table("user_roles").Create(&userRoles).Error; err != nil {
-		return status.Error(codes.Internal, "Failed to create UserRole entries")
+	if err := s.UserRepo.CreateUserRoles(context.Background(), userRoles); err != nil {
+		return err
 	}
-
 	return nil
+}
+
+func HashPassword(password string) (string, error) {
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return "", err
+	}
+	return string(hashedPassword), nil
 }
 
 func ConvertToPBUserRoles(userRoles []model.UserRole) []*pb.UserRole {

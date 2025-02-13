@@ -2,40 +2,21 @@ package rolepermission
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
-	"github.com/Kisanlink/aaa-service/model"
 	"github.com/Kisanlink/aaa-service/pb"
 	"google.golang.org/grpc/codes"
-	"gorm.io/gorm"
+	"google.golang.org/grpc/status"
 )
 
 func (s *ConnectRolePermissionServer) GetRolePermissionById(ctx context.Context, req *pb.GetConnRolePermissionByIdRequest) (*pb.GetConnRolePermissionByIdResponse, error) {
-	var rolePermission model.RolePermission
-	if err := s.DB.Table("role_permissions").
-		Preload("PermissionOnRoles", func(db *gorm.DB) *gorm.DB {
-			return db.Table("permission_on_roles")
-		}).
-		Preload("PermissionOnRoles.Permission", func(db *gorm.DB) *gorm.DB {
-			return db.Table("permissions")
-		}).
-		Preload("Role", func(db *gorm.DB) *gorm.DB {
-			return db.Table("roles")
-		}).
-		Where("id = ?", req.Id).First(&rolePermission).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return &pb.GetConnRolePermissionByIdResponse{
-				StatusCode: int32(codes.NotFound),
-				Message:    fmt.Sprintf("RolePermission with ID %s not found", req.Id),
-			}, nil
-		}
-		return &pb.GetConnRolePermissionByIdResponse{
-			StatusCode: int32(codes.Internal),
-			Message:    fmt.Sprintf("Failed to fetch RolePermission: %v", err),
-		}, nil
+	if req.Id == "" {
+		return nil, status.Error(codes.InvalidArgument, "ID is required")
 	}
-
+	rolePermission, err := s.RolePermissionRepo.FindRolePermissionByID(ctx, req.Id)
+	if err != nil {
+		return nil, err
+	}
 	var permissionOnRoles []*pb.ConnPermissionOnRole
 	for _, por := range rolePermission.PermissionOnRoles {
 		pbPermissionOnRole := &pb.ConnPermissionOnRole{
@@ -65,9 +46,8 @@ func (s *ConnectRolePermissionServer) GetRolePermissionById(ctx context.Context,
 		Role:              pbRole,
 		PermissionOnRoles: permissionOnRoles,
 	}
-
 	return &pb.GetConnRolePermissionByIdResponse{
-		StatusCode:         http.StatusOK,
+		StatusCode:         int32(http.StatusOK),
 		Message:            "RolePermission fetched successfully",
 		ConnRolePermission: pbRolePermission,
 	}, nil

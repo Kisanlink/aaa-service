@@ -2,65 +2,49 @@ package permissions
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/Kisanlink/aaa-service/model"
 	"github.com/Kisanlink/aaa-service/pb"
+	"github.com/Kisanlink/aaa-service/repositories"
 	"google.golang.org/grpc/codes"
-	"gorm.io/gorm"
+	"google.golang.org/grpc/status"
 )
 
 type PermissionServer struct {
 	pb.UnimplementedPermissionServiceServer
-	DB *gorm.DB
+	PermissionRepo *repositories.PermissionRepository
 }
 
-func NewPermissionServer(db *gorm.DB) *PermissionServer {
-	return &PermissionServer{DB: db}
+func NewPermissionServer(permissionRepo *repositories.PermissionRepository) *PermissionServer {
+	return &PermissionServer{
+		PermissionRepo: permissionRepo,
+	}
 }
 
 func (s *PermissionServer) CreatePermission(ctx context.Context, req *pb.CreatePermissionRequest) (*pb.CreatePermissionResponse, error) {
-	permission := req
-	if permission == nil {
-		return &pb.CreatePermissionResponse{
-			StatusCode: int32(codes.InvalidArgument),
-			Message:    "Permission cannot be nil",
-		}, nil
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "Permission cannot be nil")
 	}
-	if permission.Name == "" {
-		return &pb.CreatePermissionResponse{
-			StatusCode: int32(codes.InvalidArgument),
-			Message:    "Permission Name are required",
-		}, nil
+	if req.Name == "" {
+		return nil, status.Error(codes.InvalidArgument, "Permission Name is required")
 	}
-
-	existingPermission := model.Permission{}
-	result := s.DB.Table("permissions").Where("name = ?", permission.Name).First(&existingPermission)
-	if result.Error == nil {
-		return &pb.CreatePermissionResponse{
-			StatusCode: int32(codes.AlreadyExists),
-			Message:    fmt.Sprintf("Permission with name %s already exists", permission.Name),
-		}, nil
+	if err := s.PermissionRepo.CheckIfPermissionExists(ctx, req.Name); err != nil {
+		return nil, err
 	}
 
 	newPermission := model.Permission{
-		Name:        permission.Name,
-		Description: permission.Description,
+		Name:        req.Name,
+		Description: req.Description,
 	}
-	if err := s.DB.Table("permissions").Create(&newPermission).Error; err != nil {
-		return &pb.CreatePermissionResponse{
-			StatusCode: int32(codes.Internal),
-			Message:    fmt.Sprintf("Failed to create permission: %v", err),
-		}, nil
+	if err := s.PermissionRepo.CreatePermission(ctx, &newPermission); err != nil {
+		return nil, err
 	}
-
 	pbPermission := &pb.Permission{
 		Id:          newPermission.ID,
 		Name:        newPermission.Name,
 		Description: newPermission.Description,
 	}
-
 	return &pb.CreatePermissionResponse{
 		StatusCode: http.StatusCreated,
 		Message:    "Permission created successfully",

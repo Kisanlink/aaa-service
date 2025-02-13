@@ -2,47 +2,26 @@ package permissions
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/Kisanlink/aaa-service/model"
 	"github.com/Kisanlink/aaa-service/pb"
 	"google.golang.org/grpc/codes"
-	"gorm.io/gorm"
+	"google.golang.org/grpc/status"
 )
 
 func (s *PermissionServer) GetPermissionById(ctx context.Context, req *pb.GetPermissionByIdRequest) (*pb.GetPermissionByIdResponse, error) {
 	id := req.GetId()
 	if id == "" {
-		return &pb.GetPermissionByIdResponse{
-			StatusCode: int32(codes.InvalidArgument),
-			Message:    "ID is required",
-		}, nil
+		return nil, status.Error(codes.InvalidArgument, "ID is required")
 	}
-
-	// Fetch the permission from the database
-	permission := model.Permission{}
-	result := s.DB.Table("permissions").Where("id = ?", id).First(&permission)
-	if result.Error != nil {
-		if result.Error == gorm.ErrRecordNotFound {
-			return &pb.GetPermissionByIdResponse{
-				StatusCode: int32(codes.NotFound),
-				Message:    fmt.Sprintf("Permission with ID %s not found", id),
-			}, nil
-		}
-		return &pb.GetPermissionByIdResponse{
-			StatusCode: int32(codes.Internal),
-			Message:    fmt.Sprintf("Failed to query permission: %v", result.Error),
-		}, nil
+	permission, err := s.PermissionRepo.FindPermissionByID(ctx, id)
+	if err != nil {
+		return nil, err
 	}
-
-	// Populate the response object with the fetched permission data
 	pbPermission := &pb.Permission{
-		Id:          permission.ID, // Ensure ID is converted to a string
+		Id:          permission.ID,
 		Name:        permission.Name,
 		Description: permission.Description,
 	}
-
-	// Return the response with the fully populated permission data
 	return &pb.GetPermissionByIdResponse{
 		StatusCode: int32(codes.OK),
 		Message:    "Permission retrieved successfully",
