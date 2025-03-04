@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/Kisanlink/aaa-service/client"
 	"github.com/Kisanlink/aaa-service/database"
 	"github.com/Kisanlink/aaa-service/grpc_server"
 	"github.com/joho/godotenv"
@@ -20,10 +21,39 @@ func init() {
 
 func main() {
 	database.ConnectDB()
-	if err := database.SpiceDB(); err != nil {
-		log.Fatalf("Failed to initialize SpiceDB: %v", err)
+	roles := []string{"admin", "editor", "user"}
+	permissions := []string{
+        "create_user",
+        "edit_user",
+        "delete_user",
+        "view_reports",
+        "publish_content",
+        "edit_content",
+    }
+    // updated, err := client.UpdateSchema(roles,permissions)
+	// if err != nil {
+	// 	log.Fatalf("Error reading schema: %v", err)
+	// }
+	// log.Printf("Updated Response: %+v", updated)
+    // updated, err := client.CreateUserRoleRelationship("Alfiya",roles,permissions)
+	// if err != nil {
+	// 	log.Fatalf("Error reading schema: %v", err)
+	// }
+	// log.Printf("Updated Response: %+v", updated)
+    // updated, err := client.ReadRelationshipsByUserID("Alfiya")
+	// if err != nil {
+	// 	log.Fatalf("Error reading schema: %v", err)
+	// }
+	// log.Printf("Updated Response: %+v", updated)
+	results, err := client.CheckUserPermissions("Alfiya", roles, permissions)
+	if err != nil {
+		log.Fatalf("Failed to check permissions: %v", err)
 	}
-
+	
+	for permission, hasPermission := range results {
+		log.Printf("User has permission %s: %v", permission, hasPermission)
+	}
+	
 	// Start the gRPC server
 	grpcServer, err := grpc_server.StartGRPCServer(database.DB)
 	if err != nil {
