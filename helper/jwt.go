@@ -3,18 +3,16 @@ package helper
 import (
 	"time"
 
-	"github.com/Kisanlink/aaa-service/model"
 	"github.com/dgrijalva/jwt-go"
 )
 
 var jwtKey = []byte("askdwkdfmlermferflersmflesrmflersmflesrmflkes") // Replace with a secure key in production
 
 // GenerateAccessToken generates a short-lived JWT access token
-func GenerateAccessToken(userID string, userRoleId []model.UserRole, username string, isvalidate bool) (string, error) {
+func GenerateAccessToken(userID string, username string, isvalidate bool) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"user_id":    userID,
 		"exp":        time.Now().Add(time.Hour * 24).Unix(), // Expires in 24 hours
-		"roleIds":    userRoleId,
 		"username":   username,
 		"isvalidate": isvalidate,
 	})
@@ -27,11 +25,10 @@ func GenerateAccessToken(userID string, userRoleId []model.UserRole, username st
 }
 
 // GenerateRefreshToken generates a long-lived JWT refresh token
-func GenerateRefreshToken(userID string, userRoleId []model.UserRole, username string, isvalidate bool) (string, error) {
+func GenerateRefreshToken(userID string, username string, isvalidate bool) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"user_id":    userID,
 		"exp":        time.Now().Add(time.Hour * 24 * 7).Unix(), // Expires in 7 days
-		"roleIds":    userRoleId,
 		"username":   username,
 		"isvalidate": isvalidate,
 	})

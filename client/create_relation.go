@@ -8,8 +8,6 @@ import (
 	pb "github.com/authzed/authzed-go/proto/authzed/api/v1"
 )
 
-
-
 func CreateUserRoleRelationship(userID string, roles []string, permissions []string) (*pb.WriteRelationshipsResponse, error) {
 	// Connect to SpiceDB
 	spicedb, err := database.SpiceDB()
@@ -24,8 +22,6 @@ if err != nil {
 }
 log.Printf("User roles and permission deleted successfully: %s", response)
 
-
-
 	//  Prepare relationship updates
 	var updates []*pb.RelationshipUpdate
 
@@ -36,7 +32,7 @@ log.Printf("User roles and permission deleted successfully: %s", response)
 				ObjectType: "role",
 				ObjectId:   role,
 			},
-			Relation: role, 
+			Relation: role,
 			Subject: &pb.SubjectReference{
 				Object: &pb.ObjectReference{
 					ObjectType: "user",
@@ -85,7 +81,7 @@ log.Printf("User roles and permission deleted successfully: %s", response)
 		log.Printf("Failed to create user-role and role-permission relationships: %s", err)
 		return nil, err
 	}
-
-	log.Printf("User-role and role-permission relationships created successfully: %s", res)
 	return res, nil
 }
+
+

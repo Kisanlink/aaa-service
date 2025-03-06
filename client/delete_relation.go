@@ -8,6 +8,8 @@ import (
 	pb "github.com/authzed/authzed-go/proto/authzed/api/v1"
 )
 
+
+
 func DeleteUserRoleRelationship(userID string, roles []string, permissions []string) (*pb.WriteRelationshipsResponse, error) {
 	spicedb, err := database.SpiceDB()
 	if err != nil {
@@ -70,6 +72,7 @@ func DeleteUserRoleRelationship(userID string, roles []string, permissions []str
 		return nil, err
 	}
 
-	log.Printf("User-role and role-permission relationships deleted successfully: %s", res)
+	// log.Printf("User-role and role-permission relationships deleted successfully: %s", res)
 	return res, nil
 }
+

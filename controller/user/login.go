@@ -20,11 +20,11 @@ func (s *Server) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResp
 	if err != nil {
 		return nil, status.Error(codes.Unauthenticated, "Invalid password")
 	}
-	accessToken, err := helper.GenerateAccessToken(existingUser.ID, existingUser.Roles, existingUser.Username, existingUser.IsValidated)
+	accessToken, err := helper.GenerateAccessToken(existingUser.ID, existingUser.Username, existingUser.IsValidated)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "Failed to generate access token")
 	}
-	refreshToken, err := helper.GenerateRefreshToken(existingUser.ID, existingUser.Roles, existingUser.Username, existingUser.IsValidated)
+	refreshToken, err := helper.GenerateRefreshToken(existingUser.ID, existingUser.Username, existingUser.IsValidated)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "Failed to generate refresh token")
 	}

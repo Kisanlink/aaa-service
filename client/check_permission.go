@@ -80,3 +80,5 @@ func CheckUserPermissions(userID string, roles []string, permissions []string) (
 	log.Printf("Permission check results for user %s: %v", userID, permissionResults)
 	return permissionResults, nil
 }
+
+

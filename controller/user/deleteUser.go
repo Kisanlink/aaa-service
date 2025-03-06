@@ -41,7 +41,10 @@ package user
 
 import (
 	"context"
+	"log"
+	"strings"
 
+	"github.com/Kisanlink/aaa-service/client"
 	"github.com/Kisanlink/aaa-service/pb"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -52,7 +55,7 @@ func (s *Server) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest) (*pb
 	if id == "" {
 		return nil, status.Error(codes.InvalidArgument, "ID is required")
 	}
-	_, err := s.UserRepo.FindExistingUserByID(ctx, id)
+	existingUser, err := s.UserRepo.FindExistingUserByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -62,6 +65,19 @@ func (s *Server) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest) (*pb
 	if err := s.UserRepo.DeleteUser(ctx, id); err != nil {
 		return nil, err
 	}
+	roles, permissions, err := s.UserRepo.FindUserRolesAndPermissions(ctx, existingUser.ID)
+    if err != nil {
+        log.Fatalf("Failed to fetch user roles and permissions: %v", err)
+    }
+	updated, err := client.DeleteUserRoleRelationship(
+		strings.ToLower(existingUser.Username), 
+		LowerCaseSlice(roles), 
+		LowerCaseSlice(permissions),
+	)
+		if err != nil {
+		log.Fatalf("Error reading schema: %v", err)
+	}
+	log.Printf("delete Relation  Response: %+v", updated)
 	return &pb.DeleteUserResponse{
 		StatusCode: int32(codes.OK),
 		Message:    "User deleted successfully",

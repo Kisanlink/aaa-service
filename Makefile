@@ -1,3 +1,4 @@
+TEST_DIR = ./test
 
 .PHONY: proto migrate migrate-reset run test
 
@@ -30,5 +31,9 @@ air:
 run:
 	go run main.go
 
+
 test:
-	go test ./...
+	@echo "Running Go tests..."
+	go test -v $(TEST_DIR)/...
+
+.PHONY: test

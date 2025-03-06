@@ -2,8 +2,11 @@ package user
 
 import (
 	"context"
+	"log"
+	"strings"
 	"time"
 
+	"github.com/Kisanlink/aaa-service/client"
 	"github.com/Kisanlink/aaa-service/model"
 	"github.com/Kisanlink/aaa-service/pb"
 	"google.golang.org/grpc/codes"
@@ -11,6 +14,11 @@ import (
 )
 
 func (s *Server) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest) (*pb.UpdateUserResponse, error) {
+	userID, ok := ctx.Value("user_id").(string)
+	if !ok {
+		return nil, status.Error(codes.Unauthenticated, "user ID not found in context")
+	}
+	log.Printf("User %s is updating user with ID %s", userID, req.GetId())
 	id := req.GetId()
 	if id == "" {
 		return nil, status.Error(codes.InvalidArgument, "ID is required")
@@ -35,6 +43,19 @@ func (s *Server) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest) (*pb
 	if err != nil {
 		return nil, err
 	}
+	roles, permissions, err := s.UserRepo.FindUserRolesAndPermissions(ctx, existingUser.ID)
+    if err != nil {
+        log.Fatalf("Failed to fetch user roles and permissions: %v", err)
+    }
+	updated, err := client.CreateUserRoleRelationship(
+		strings.ToLower(existingUser.Username), 
+		LowerCaseSlice(roles), 
+		LowerCaseSlice(permissions),
+	)
+		if err != nil {
+		log.Fatalf("Error reading schema: %v", err)
+	}
+	log.Printf("create Relation  Response: %+v", updated)
 	pbRoles := ConvertToPBUserRoles(userRoles)
 	pbUser := &pb.User{
 		Id:          existingUser.ID,
