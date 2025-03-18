@@ -38,7 +38,16 @@ func (repo *RoleRepository) CreateRole(ctx context.Context, newRole *model.Role)
 	}
 	return nil
 }
-
+func (repo *RoleRepository) GetRoleByName(ctx context.Context, name string) (*model.Role, error) {
+	var role model.Role
+	err := repo.DB.Table("roles").Where("name ILIKE ?", name).First(&role).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, status.Error(codes.NotFound, fmt.Sprintf("Role with name %s not found", name))
+	} else if err != nil {
+		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to query role: %v", err))
+	}
+	return &role, nil
+}
 func (repo *RoleRepository) FindRoleByID(ctx context.Context, id string) (*model.Role, error) {
 	var role model.Role
 	err := repo.DB.Table("roles").Where("id = ?", id).First(&role).Error
@@ -49,6 +58,7 @@ func (repo *RoleRepository) FindRoleByID(ctx context.Context, id string) (*model
 	}
 	return &role, nil
 }
+
 
 func (repo *RoleRepository) FindAllRoles(ctx context.Context) ([]model.Role, error) {
 	var roles []model.Role

@@ -7,11 +7,9 @@ import (
 	"net"
 
 	"github.com/Kisanlink/aaa-service/controller/permissions"
-	rolepermission "github.com/Kisanlink/aaa-service/controller/role_Permission"
+	rolepermission "github.com/Kisanlink/aaa-service/controller/rolePermission"
 	"github.com/Kisanlink/aaa-service/controller/roles"
 	"github.com/Kisanlink/aaa-service/controller/user"
-
-	// "github.com/Kisanlink/aaa-service/middleware"
 	pb "github.com/Kisanlink/aaa-service/pb"
 	"github.com/Kisanlink/aaa-service/repositories"
 	"google.golang.org/grpc"
@@ -33,14 +31,15 @@ func StartGRPCServer(db *gorm.DB) (*grpc.Server, error) {
 		return nil, fmt.Errorf("failed to listen: %v", err)
 	}
 
-	s :=  grpc.NewServer()
-	// grpc.UnaryInterceptor(middleware.AuthInterceptor(db))
+	s :=  grpc.NewServer(
+		// grpc.UnaryInterceptor(middleware.AuthInterceptor()),
+	)
 	userRepo := repositories.NewUserRepository(db)
 	roleRepo := repositories.NewRoleRepository(db)
 	permissionRepo := repositories.NewPermissionRepository(db)
 	connectRolePermissionRepo := repositories.NewRolePermissionRepository(db)
 	pb.RegisterGreeterServer(s, &GreeterServer{})
-	userServer := user.NewUserServer(userRepo)
+	userServer := user.NewUserServer(userRepo,roleRepo,permissionRepo,connectRolePermissionRepo)
 	pb.RegisterUserServiceServer(s, userServer)
 	roleServer := roles.NewRoleServer(roleRepo,permissionRepo)
 	pb.RegisterRoleServiceServer(s, roleServer)
@@ -48,14 +47,6 @@ func StartGRPCServer(db *gorm.DB) (*grpc.Server, error) {
 	pb.RegisterPermissionServiceServer(s, permissionServer)
 	connectRolePermissionServer := rolepermission.NewConnectRolePermissionServer(connectRolePermissionRepo, roleRepo, permissionRepo)
 	pb.RegisterConnectRolePermissionServiceServer(s, connectRolePermissionServer)
-	conn, err := grpc.Dial("localhost:50051",
-		grpc.WithInsecure(),
-		grpc.WithDefaultCallOptions(),
-	)
-	if err != nil {
-		log.Fatalf("Failed to connect to gRPC server: %v", err)
-	}
-	defer conn.Close()
 
 	go func() {
 		if err := s.Serve(lis); err != nil {

@@ -2,7 +2,8 @@ package roles
 
 import (
 	"context"
-	"fmt"
+	"strings"
+
 	"log"
 	"net/http"
 
@@ -30,65 +31,77 @@ func NewRoleServer(roleRepo *repositories.RoleRepository,permissionRepo *reposit
 }
 
 func (s *RoleServer) CreateRole(ctx context.Context, req *pb.CreateRoleRequest) (*pb.CreateRoleResponse, error) {
-	// Validate input
 	if req.Name == "" {
 		return nil, status.Error(codes.InvalidArgument, "Role Name is required")
 	}
-
-	// Check if the role already exists
 	if err := s.RoleRepo.CheckIfRoleExists(ctx, req.Name); err != nil {
 		return nil, err
 	}
 
-	// Create a new role object
 	newRole := model.Role{
 		Name:        req.Name,
 		Description: req.Description,
+		Source: req.Source,
 	}
 
 	if err := s.RoleRepo.CreateRole(ctx, &newRole); err != nil {
 		return nil, err
 	}
 	
-
 	roles, err := s.RoleRepo.FindAllRoles(ctx)
 	if err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to retrieve roles: %v", err))
+		log.Printf("Failed to fetch roles: %v", err)
+		return nil, status.Error(codes.Internal, "Failed to retrieve roles")
 	}
-
 	var roleNames []string
 	for _, role := range roles {
 		roleNames = append(roleNames, role.Name)
 	}
 	permissions, err := s.PermissionRepo.FindAllPermissions(ctx)
 	if err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to retrieve permissions: %v", err))
+		log.Printf("Failed to fetch permissions: %v", err)
+		return nil, status.Error(codes.Internal, "Failed to retrieve permissions")
 	}
-
 	var permissionNames []string
+	var allActions []string
+	actionSet := make(map[string]struct{})
+
 	for _, permission := range permissions {
 		permissionNames = append(permissionNames, permission.Name)
+		for _, action := range permission.Action {
+			actionSet[action] = struct{}{}
+		}
+	}
+	for action := range actionSet {
+		allActions = append(allActions, action)
+	}
+	for i, action := range allActions {
+		allActions[i] = strings.ToLower(action)
 	}
 	defaultRoles := []string{"test role"}
 	defaultPermissions := []string{"test permission"}
-	
+	defaultActions := []string{"test action"}
+
 	if len(roleNames) == 0 {
 		roleNames = defaultRoles
 	}
-	
 	if len(permissionNames) == 0 {
 		permissionNames = defaultPermissions
 	}
-
-	updated, err := client.UpdateSchema(roleNames,permissionNames)
-	if err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("Error reading schema: %v", err))
+	if len(allActions) == 0 {
+		allActions = defaultActions
 	}
-	log.Printf("Updated Response: %+v", updated)
+	updated, err := client.UpdateSchema(roleNames, permissionNames, allActions)
+	if err != nil {
+		log.Printf("Failed to update schema: %v", err)
+		return nil, status.Error(codes.Internal, "Failed to update schema")
+	}
+	log.Printf("Schema updated successfully: %+v", updated)
 	pbRole := &pb.Role{
 		Id:          newRole.ID,
 		Name:        newRole.Name,
 		Description: newRole.Description,
+		Source: newRole.Source,
 	}
 	return &pb.CreateRoleResponse{
 		StatusCode: int32(http.StatusCreated),

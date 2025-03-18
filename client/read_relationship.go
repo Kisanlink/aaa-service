@@ -9,21 +9,46 @@ import (
 	pb "github.com/authzed/authzed-go/proto/authzed/api/v1"
 )
 
-func ReadRelationshipsByUserID(userID string) ([]*pb.Relationship, error) {
-	//  Connect to SpiceDB
+func ReadUserPermissionsActionsAndRoles(userID string) (map[string][]string, error) {
+	// Connect to SpiceDB
 	spicedb, err := database.SpiceDB()
 	if err != nil {
 		log.Printf("Unable to connect to SpiceDB: %s", err)
 		return nil, err
 	}
 
-	//  Define the subject filter (user)
-	subjectFilter := &pb.SubjectFilter{
-		SubjectType: "user",
-		OptionalSubjectId: userID,
+	// Prepare to collect all relationships
+	userData := map[string][]string{
+		"roles":      {},
+		"permissions": {},
+		"actions":     {},
 	}
 
-	//  Prepare the request to read relationships
+	// Read User -> Roles
+	if err := readRelationships(spicedb, "user", userID, userData, "roles"); err != nil {
+		return nil, err
+	}
+
+	// Read Role -> Permissions
+	for _, role := range userData["roles"] {
+		if err := readRelationships(spicedb, "role", role, userData, "permissions"); err != nil {
+			return nil, err
+		}
+	}
+
+	// Read Permission -> Actions
+	for _, permission := range userData["permissions"] {
+		if err := readRelationships(spicedb, "assign_permission", permission, userData, "actions"); err != nil {
+			return nil, err
+		}
+	}
+
+	log.Printf("User %s has Roles: %v, Permissions: %v, Actions: %v", userID, userData["roles"], userData["permissions"], userData["actions"])
+	return userData, nil
+}
+
+// Helper function to read relationships
+func readRelationships(spicedb pb.PermissionsServiceClient, objectType, objectID string, userData map[string][]string, dataType string) error {
 	request := &pb.ReadRelationshipsRequest{
 		Consistency: &pb.Consistency{
 			Requirement: &pb.Consistency_FullyConsistent{
@@ -31,34 +56,29 @@ func ReadRelationshipsByUserID(userID string) ([]*pb.Relationship, error) {
 			},
 		},
 		RelationshipFilter: &pb.RelationshipFilter{
-			OptionalSubjectFilter: subjectFilter,
+			ResourceType: objectType,
+			OptionalResourceId: objectID,
 		},
 	}
 
-	//  Call the ReadRelationships API
 	stream, err := spicedb.ReadRelationships(context.Background(), request)
 	if err != nil {
-		log.Printf("Failed to read relationships for user %s: %s", userID, err)
-		return nil, err
+		log.Printf("Failed to read %s relationships for %s %s: %s", dataType, objectType, objectID, err)
+		return err
 	}
 
-	//  Collect all relationships
-	var relationships []*pb.Relationship
 	for {
 		resp, err := stream.Recv()
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
-			log.Printf("Error while reading relationships: %s", err)
-			return nil, err
+			log.Printf("Error while reading %s relationships: %s", dataType, err)
+			return err
 		}
-
-		// Append the relationship to the list
-		relationships = append(relationships, resp.Relationship)
+        log.Printf("Result %s",resp)
+		userData[dataType] = append(userData[dataType], resp.Relationship.Resource.ObjectId)
 	}
 
-	log.Printf("Found %d relationships for user %s", len(relationships), userID)
-	return relationships, nil
+	return nil
 }
-

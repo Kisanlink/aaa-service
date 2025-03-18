@@ -28,17 +28,39 @@ func ConnectDB() {
 	}
 	fmt.Println("Connected to DB")
 
-	migrationErr := DB.AutoMigrate(
-		&model.User{},
-		&model.Role{},
-		&model.Permission{},
-		&model.RolePermission{},
-		&model.PermissionOnRole{},
-		&model.UserRole{},
-	)
-	if migrationErr != nil {
-		panic(fmt.Sprintf("Error migrating database: %v", migrationErr))
-	}
+	// if err := DB.AutoMigrate(
+	// 	&model.Address{},
+	// 	&model.Role{},
+	// 	&model.Permission{},
+	// 	&model.RolePermission{},
+	// 	&model.User{}, 
+	// 	&model.UserRole{},
+	// ); err != nil {
+	// 	panic("Error migrating database: " + err.Error())
+	// }
+	if err := DB.AutoMigrate(&model.Address{}); err != nil {
+        panic("Error migrating Address table: " + err.Error())
+    }
+    
+    if err := DB.AutoMigrate(&model.Role{}); err != nil {
+        panic("Error migrating Role table: " + err.Error())
+    }
+    
+    if err := DB.AutoMigrate(&model.Permission{}); err != nil {
+        panic("Error migrating Permission table: " + err.Error())
+    }
+    
+    if err := DB.AutoMigrate(&model.RolePermission{}); err != nil {
+        panic("Error migrating RolePermission table: " + err.Error())
+    }
+    
+    if err := DB.AutoMigrate(&model.User{}); err != nil {
+        panic("Error migrating User table: " + err.Error())
+    }
+    
+    if err := DB.AutoMigrate(&model.UserRole{}); err != nil {
+        panic("Error migrating UserRole table: " + err.Error())
+    }
 
 	sqlDB, err := DB.DB()
 	if err != nil {

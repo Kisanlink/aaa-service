@@ -10,7 +10,6 @@ import (
 	pb "github.com/authzed/authzed-go/proto/authzed/api/v1"
 )
 
-
 func WriteSchema() (*pb.WriteSchemaResponse, error) {
     spicedb, err := database.SpiceDB()
     if err != nil {
@@ -28,7 +27,9 @@ definition role {
 
 definition assign_permission {
     relation assigned_role: role
+    relation allows_action: action
 }
+definition action {}
 `
     request := &pb.WriteSchemaRequest{Schema: schema}
     res, err := spicedb.WriteSchema(context.Background(), request)
@@ -61,7 +62,7 @@ func ReadSchema() (*pb.ReadSchemaResponse, error) {
 	return res, nil
 }
 
-func UpdateSchema(roles []string, permissions []string) (*pb.WriteSchemaResponse, error) {
+func UpdateSchema(roles []string, permissions []string, actions []string) (*pb.WriteSchemaResponse, error) {
     // Attempt to read the existing schema
     schemaResponse, err := ReadSchema()
     if err != nil {
@@ -92,6 +93,7 @@ func UpdateSchema(roles []string, permissions []string) (*pb.WriteSchemaResponse
     // Dynamically construct updated role and permission definitions
     updatedRole := constructRoleDefinition(roles)
     updatedPermission := constructPermissionDefinition(permissions)
+    updatedAction := constructActionDefinition(actions)
 
     // Replace the existing role and permission definitions with the updated ones
     if strings.Contains(existingSchema, "definition role {") {
@@ -104,6 +106,11 @@ func UpdateSchema(roles []string, permissions []string) (*pb.WriteSchemaResponse
         existingSchema = replaceDefinition(existingSchema, "assign_permission", updatedPermission)
     } else if len(permissions) > 0 {
         existingSchema += "\n" + updatedPermission
+    }
+    if strings.Contains(existingSchema, "definition action {") {
+        existingSchema = replaceDefinition(existingSchema, "action", updatedAction)
+    } else if len(actions) > 0 {
+        existingSchema += "\n" + updatedAction
     }
     // Connect to SpiceDB
     spicedb, err := database.SpiceDB()
@@ -152,8 +159,23 @@ func constructPermissionDefinition(permissions []string) string {
         permission = strings.ToLower(strings.ReplaceAll(permission, " ", "_"))
         permissionDefinition += fmt.Sprintf("    relation %s: role\n", permission)
     }
+    permissionDefinition += "        relation allows_action:role | action\n"
     permissionDefinition += "}"
     return permissionDefinition
+}
+func constructActionDefinition(actions []string) string {
+    if len(actions) == 0 {
+        return ""
+    }
+
+    actionDefinition := "definition action {\n"
+    for _, action := range actions {
+        action = strings.ToLower(strings.ReplaceAll(action, " ", "_"))
+        actionDefinition += fmt.Sprintf("    relation %s: assign_permission\n", action)
+    }
+    actionDefinition += "}"
+
+    return actionDefinition
 }
 // Helper function to replace a definition in the schema
 func replaceDefinition(schema, definitionName, newDefinition string) string {

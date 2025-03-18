@@ -7,10 +7,8 @@ import (
 	"github.com/Kisanlink/aaa-service/database"
 	pb "github.com/authzed/authzed-go/proto/authzed/api/v1"
 )
-
-
-func CheckUserPermissions(userID string, roles []string, permissions []string) (map[string]bool, error) {
-	//  Connect to SpiceDB
+func CheckUserPermissions(userID string, roles []string, permissions []string, actions []string) (map[string]map[string]bool, error) {
+	// Connect to SpiceDB
 	spicedb, err := database.SpiceDB()
 	if err != nil {
 		log.Printf("Unable to connect to SpiceDB: %s", err)
@@ -18,36 +16,14 @@ func CheckUserPermissions(userID string, roles []string, permissions []string) (
 	}
 
 	// Prepare the result map
-	permissionResults := make(map[string]bool)
-
-	//  Check permissions for the user through roles
-	for _, permission := range permissions {
-		// Assume the permission is tied to the "assign_permission" resource type
-		request := &pb.CheckPermissionRequest{
-			Resource: &pb.ObjectReference{
-				ObjectType: "assign_permission",
-				ObjectId:   permission,
-			},
-			Permission: permission,
-			Subject: &pb.SubjectReference{
-				Object: &pb.ObjectReference{
-					ObjectType: "user",
-					ObjectId:   userID,
-				},
-			},
-		}
-
-		response, err := spicedb.CheckPermission(context.Background(), request)
-		if err != nil {
-			log.Printf("Failed to check permission %s for user %s: %s", permission, userID, err)
-			return nil, err
-		}
-
-		// Store the result
-		permissionResults[permission] = response.Permissionship == pb.CheckPermissionResponse_PERMISSIONSHIP_HAS_PERMISSION
+	result := map[string]map[string]bool{
+		"user_actions": {},
+		"role_permissions": {},
 	}
 
-	//  Check permissions for the user through roles
+	ctx := context.Background()
+
+	// Check role-based permissions
 	for _, role := range roles {
 		for _, permission := range permissions {
 			request := &pb.CheckPermissionRequest{
@@ -55,7 +31,7 @@ func CheckUserPermissions(userID string, roles []string, permissions []string) (
 					ObjectType: "assign_permission",
 					ObjectId:   permission,
 				},
-				Permission: permission,
+				Permission: "allows_action", // Fixed permission check relation
 				Subject: &pb.SubjectReference{
 					Object: &pb.ObjectReference{
 						ObjectType: "role",
@@ -64,21 +40,43 @@ func CheckUserPermissions(userID string, roles []string, permissions []string) (
 				},
 			}
 
-			response, err := spicedb.CheckPermission(context.Background(), request)
+			response, err := spicedb.CheckPermission(ctx, request)
 			if err != nil {
 				log.Printf("Failed to check permission %s for role %s: %s", permission, role, err)
 				return nil, err
 			}
 
-			// If the role has the permission, the user inherits it
-			if response.Permissionship == pb.CheckPermissionResponse_PERMISSIONSHIP_HAS_PERMISSION {
-				permissionResults[permission] = true
-			}
+			result["role_permissions"][permission] = response.Permissionship == pb.CheckPermissionResponse_PERMISSIONSHIP_HAS_PERMISSION
 		}
 	}
 
-	log.Printf("Permission check results for user %s: %v", userID, permissionResults)
-	return permissionResults, nil
+	// Check permission-based actions
+	for _, permission := range permissions {
+		for _, action := range actions {
+			request := &pb.CheckPermissionRequest{
+				Resource: &pb.ObjectReference{
+					ObjectType: "action",
+					ObjectId:   action,
+				},
+				Permission: action,
+				Subject: &pb.SubjectReference{
+					Object: &pb.ObjectReference{
+						ObjectType: "assign_permission",
+						ObjectId:   permission,
+					},
+				},
+			}
+
+			response, err := spicedb.CheckPermission(ctx, request)
+			if err != nil {
+				log.Printf("Failed to check action %s for permission %s: %s", action, permission, err)
+				return nil, err
+			}
+
+			result["user_actions"][action] = response.Permissionship == pb.CheckPermissionResponse_PERMISSIONSHIP_HAS_PERMISSION
+		}
+	}
+
+	// log.Printf("Permission and action check results for user %s: %v", userID, result)
+	return result, nil
 }
-
-

@@ -24,6 +24,7 @@ const (
 	ConnectRolePermissionService_GetRolePermissionById_FullMethodName       = "/pb.ConnectRolePermissionService/GetRolePermissionById"
 	ConnectRolePermissionService_UpdateRolePermission_FullMethodName        = "/pb.ConnectRolePermissionService/UpdateRolePermission"
 	ConnectRolePermissionService_DeleteRolePermission_FullMethodName        = "/pb.ConnectRolePermissionService/DeleteRolePermission"
+	ConnectRolePermissionService_GetRolePermissionByRoleName_FullMethodName = "/pb.ConnectRolePermissionService/GetRolePermissionByRoleName"
 )
 
 // ConnectRolePermissionServiceClient is the client API for ConnectRolePermissionService service.
@@ -35,6 +36,7 @@ type ConnectRolePermissionServiceClient interface {
 	GetRolePermissionById(ctx context.Context, in *GetConnRolePermissionByIdRequest, opts ...grpc.CallOption) (*GetConnRolePermissionByIdResponse, error)
 	UpdateRolePermission(ctx context.Context, in *UpdateConnRolePermissionRequest, opts ...grpc.CallOption) (*UpdateConnRolePermissionResponse, error)
 	DeleteRolePermission(ctx context.Context, in *DeleteConnRolePermissionRequest, opts ...grpc.CallOption) (*DeleteConnRolePermissionResponse, error)
+	GetRolePermissionByRoleName(ctx context.Context, in *GetRolePermissionByRoleNameRequest, opts ...grpc.CallOption) (*GetRolePermissionByRoleNameResponse, error)
 }
 
 type connectRolePermissionServiceClient struct {
@@ -95,6 +97,16 @@ func (c *connectRolePermissionServiceClient) DeleteRolePermission(ctx context.Co
 	return out, nil
 }
 
+func (c *connectRolePermissionServiceClient) GetRolePermissionByRoleName(ctx context.Context, in *GetRolePermissionByRoleNameRequest, opts ...grpc.CallOption) (*GetRolePermissionByRoleNameResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetRolePermissionByRoleNameResponse)
+	err := c.cc.Invoke(ctx, ConnectRolePermissionService_GetRolePermissionByRoleName_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ConnectRolePermissionServiceServer is the server API for ConnectRolePermissionService service.
 // All implementations must embed UnimplementedConnectRolePermissionServiceServer
 // for forward compatibility.
@@ -104,6 +116,7 @@ type ConnectRolePermissionServiceServer interface {
 	GetRolePermissionById(context.Context, *GetConnRolePermissionByIdRequest) (*GetConnRolePermissionByIdResponse, error)
 	UpdateRolePermission(context.Context, *UpdateConnRolePermissionRequest) (*UpdateConnRolePermissionResponse, error)
 	DeleteRolePermission(context.Context, *DeleteConnRolePermissionRequest) (*DeleteConnRolePermissionResponse, error)
+	GetRolePermissionByRoleName(context.Context, *GetRolePermissionByRoleNameRequest) (*GetRolePermissionByRoleNameResponse, error)
 	mustEmbedUnimplementedConnectRolePermissionServiceServer()
 }
 
@@ -128,6 +141,9 @@ func (UnimplementedConnectRolePermissionServiceServer) UpdateRolePermission(cont
 }
 func (UnimplementedConnectRolePermissionServiceServer) DeleteRolePermission(context.Context, *DeleteConnRolePermissionRequest) (*DeleteConnRolePermissionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteRolePermission not implemented")
+}
+func (UnimplementedConnectRolePermissionServiceServer) GetRolePermissionByRoleName(context.Context, *GetRolePermissionByRoleNameRequest) (*GetRolePermissionByRoleNameResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetRolePermissionByRoleName not implemented")
 }
 func (UnimplementedConnectRolePermissionServiceServer) mustEmbedUnimplementedConnectRolePermissionServiceServer() {
 }
@@ -241,6 +257,24 @@ func _ConnectRolePermissionService_DeleteRolePermission_Handler(srv interface{},
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ConnectRolePermissionService_GetRolePermissionByRoleName_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRolePermissionByRoleNameRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ConnectRolePermissionServiceServer).GetRolePermissionByRoleName(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ConnectRolePermissionService_GetRolePermissionByRoleName_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ConnectRolePermissionServiceServer).GetRolePermissionByRoleName(ctx, req.(*GetRolePermissionByRoleNameRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ConnectRolePermissionService_ServiceDesc is the grpc.ServiceDesc for ConnectRolePermissionService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -267,6 +301,10 @@ var ConnectRolePermissionService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteRolePermission",
 			Handler:    _ConnectRolePermissionService_DeleteRolePermission_Handler,
+		},
+		{
+			MethodName: "GetRolePermissionByRoleName",
+			Handler:    _ConnectRolePermissionService_GetRolePermissionByRoleName_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

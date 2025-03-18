@@ -1,40 +1,74 @@
 package model
 
+import (
+	"time"
+
+	"github.com/lib/pq"
+)
 type User struct {
 	Base
-	Username    string     `json:"username" gorm:"unique" validate:"required,email"`
-	Password    string     `json:"password" validate:"required,min=8,max=128"`
-	IsValidated bool       `json:"isValidate" validate:"default:false"`
-	Roles       []UserRole `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"` // Relation to UserRole
+	Username      string  `json:"username" gorm:"unique" validate:"required,username"`
+	Password      string  `json:"password" validate:"required,min=8,max=128"`
+	IsValidated   bool    `json:"isValidate" validate:"default:false"`
+	AadhaarNumber *string `json:"aadhaar_number" gorm:"type:string"`
+	Status        *string `json:"status" gorm:"type:string"`
+	Name          *string `json:"name" gorm:"type:string"`
+	CareOf        *string `json:"care_of" gorm:"type:string"`
+	DateOfBirth   *string `json:"date_of_birth" gorm:"type:string"`
+	Photo         *string `json:"photo" gorm:"type:string"`
+	EmailHash     *string `json:"email_hash" gorm:"type:string"`
+	ShareCode     *string  `json:"share_code" gorm:"type:string"`
+	YearOfBirth   *string  `json:"year_of_birth" gorm:"type:string"`
+	MobileNumber  *string  `json:"mobile_number" gorm:"type:string"`
+	Message       *string `json:"message" gorm:"type:string"`
+	AddressID     *string `json:"address_id"`
+    Address       Address `gorm:"foreignKey:ID;references:AddressID"`
+	Roles         []UserRole `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+
+
 }
 
+type Address struct {
+	Base
+	Plot        *string `json:"plot" gorm:"type:string"`
+	Street      *string `json:"street" gorm:"type:string"`
+	Landmark    *string `json:"landmark" gorm:"type:string"`
+	PostOffice  *string `json:"post_office" gorm:"type:string"`
+	Subdistrict *string `json:"subdistrict" gorm:"type:string"`
+	District    *string `json:"district" gorm:"type:string"`
+	VTC         *string `json:"vtc" gorm:"type:string"`
+	State       *string `json:"state" gorm:"type:string"`
+	Country     *string `json:"country" gorm:"type:string"`
+	Pincode     *string `json:"pincode" gorm:"type:string"`
+	FullAddress *string `json:"full_address" gorm:"type:string"`
+	// Remove the User field as it is not needed
+}
 type Role struct {
 	Base
 	Name            string           `json:"name" gorm:"size:50;not null;uniqueIndex"`
 	Description     string           `json:"description" gorm:"type:text;default:null"`
+	Source          string           `json:"source" gorm:"type:text;default:null"`
 	RolePermissions []RolePermission `gorm:"foreignKey:RoleID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }
 
 type Permission struct {
-	Base
-	Name              string             `gorm:"size:100;not null;unique"`
-	Description       string             `gorm:"type:text"`
-	PermissionOnRoles []PermissionOnRole `gorm:"foreignKey:PermissionID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+    Base
+    Name              string             `gorm:"size:100;not null;unique"`
+    Description       string             `gorm:"type:text"`
+    Action            pq.StringArray     `json:"action" gorm:"type:text[];default:null"`
+    ValidStartTime    time.Time          `json:"valid_start_time" gorm:"column:valid_start_time"`
+    ValidEndTime      time.Time          `json:"valid_end_time" gorm:"column:valid_end_time"`
+	RolePermissions []RolePermission `gorm:"foreignKey:PermissionID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }
-
 type RolePermission struct {
 	Base
 	RoleID            string             `gorm:"type:uuid"`
-	Role              *Role              `gorm:"foreignKey:RoleID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
-	PermissionOnRoles []PermissionOnRole `gorm:"foreignKey:UserRoleID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	Role              Role              `gorm:"foreignKey:RoleID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+    PermissionID      string             `gorm:"type:uuid"`
+	Permission        Permission        `gorm:"foreignKey:PermissionID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	UserRoles         []UserRole         `gorm:"foreignKey:RolePermissionID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
-}
-type PermissionOnRole struct {
-	Base
-	PermissionID string          `gorm:"type:uuid"`
-	Permission   *Permission     `gorm:"foreignKey:PermissionID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
-	UserRoleID   string          `gorm:"type:uuid"`
-	User         *RolePermission `gorm:"foreignKey:UserRoleID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	IsActive           bool               `json:"is_active" validate:"default:true"`
+
 }
 type UserRole struct {
 	Base
@@ -42,4 +76,6 @@ type UserRole struct {
 	User             User            `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	RolePermissionID string          `gorm:"type:uuid"`
 	RolePermID       *RolePermission `gorm:"foreignKey:RolePermissionID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	IsActive         bool            `json:"is_active" validate:"default:true"`
+
 }

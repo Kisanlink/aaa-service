@@ -4,28 +4,58 @@ package pb;
 
 option go_package = "github.com/Kisanlink/aaa-service/pb";
 
-
-
-
-// UserRole represents the join table between User and RolePermission
 message UserRole {
     string id = 1;
-    string user_id = 2;           // Foreign key to User
+    string user_id = 2;
     string role_permission_id = 3;
     string created_at = 4;
     string updated_at = 5;
 }
-
-// User represents the User model
+message UserRoleResponse {
+    repeated string roles = 1;
+    repeated string permissions = 2;
+    repeated string actions = 3;
+}
 message User {
     string id = 1;
     string username = 2;
-    bool is_validated = 3;
-    string created_at = 4;
-    string updated_at = 5;
-    repeated UserRole user_roles = 6; // Array of associated UserRole entries
+    string password = 3;
+    bool is_validated = 4;
+    string created_at = 5;
+    string updated_at = 6;
+    repeated UserRole user_roles = 7;
+    string aadhaar_number = 8;
+    string status = 9;
+    string name = 10;
+    string care_of = 11;
+    string date_of_birth = 12;
+    string photo = 13;
+    string email_hash = 14;
+    string share_code = 15;
+    string year_of_birth = 16;
+    string message = 17;
+    string mobile_number = 18;
+    Address address = 19;
+    UserRoleResponse usage_right = 20; // Updated to use UserRoleResponse
+
 }
 
+message Address {
+    string id = 1;
+    string plot = 2;
+    string street = 3;
+    string landmark = 4;
+    string post_office = 5;
+    string subdistrict = 6;
+    string district = 7;
+    string vtc = 8;
+    string state = 9;
+    string country = 10;
+    string pincode = 11;
+    string full_address = 12;
+    string created_at = 13;
+    string updated_at = 14;
+}
 
 message LoginRequest {
     string username = 1;
@@ -33,24 +63,27 @@ message LoginRequest {
 }
 
 message LoginResponse {
-    int32 status_code = 1;       // HTTP status code equivalent
-    string message = 2;          // Response message
-    string token = 3;            // JWT token
-    string refresh_token = 4;    // Refresh token (optional)
-    User user = 5;               // User details
+    int32 status_code = 1;
+    string message = 2;
+    string token = 3;
+    string refresh_token = 4;
+    User user = 5;
 }
 
-
-
-// CreateUserRequest represents the request to create a new user
 message CreateUserRequest {
-    string username = 1;               // Username of the user
-    string password = 2;               // Password of the user
-    repeated string user_role_ids = 3; // Array of UserRole IDs to associate with the user
+    string username = 1;
+    string password = 2;
+    string aadhaar_number = 3;
+    string name = 5;
+    string care_of = 6;
+    string full_address = 7;
+    string date_of_birth = 8;
+    string year_of_birth = 12;
+    string mobile_number = 13;
 }
 
 message CreateUserResponse {
-     int32 status_code = 1;
+    int32 status_code = 1;
     string message = 2;
     User user = 3;
 }
@@ -58,22 +91,34 @@ message CreateUserResponse {
 message GetUserRequest {}
 
 message GetUserResponse {
-     int32 status_code = 1;
+    int32 status_code = 1;
     string message = 2;
-    repeated User users = 3; // A list of users
+    repeated User users = 3;
 }
 
+
+
 message UpdateUserRequest {
-    string id=1;
- string username = 2;
-    bool is_validated = 3;
-    repeated string user_role_ids = 4; // Array of UserRole IDs to associate with the user
+    string id = 1;
+    string username = 2;
+    string aadhaar_number = 3;
+    string status = 4;
+    string name = 5;
+    string care_of = 6;
+    string date_of_birth = 7;
+    string photo = 8;
+    string email_hash = 9;
+    string share_code = 10;
+    string year_of_birth = 11;
+    string message = 12;
+    string mobile_number = 13;
+    Address address = 14;
 }
 
 message UpdateUserResponse {
-     int32 status_code = 1;
+    int32 status_code = 1;
     string message = 2;
-      User user = 3;
+    User user = 3;
 }
 
 message DeleteUserRequest {
@@ -81,30 +126,75 @@ message DeleteUserRequest {
 }
 
 message DeleteUserResponse {
- int32 status_code = 1;
+    int32 status_code = 1;
     string message = 2;
-    }
+}
+
 message GetUserByIdRequest {
-    string id = 1; // Unique ID of the user
+    string id = 1;
 }
 
 message GetUserByIdResponse {
-     int32 status_code = 1;
+    int32 status_code = 1;
     string message = 2;
-    User user = 3; // User details (excluding sensitive fields like Password)
+    User user = 3;
 }
 
+message ValidateUserRequest {
+    bool is_validated = 1;
+    string aadhaar_number = 2;
+    string status = 3;
+    string name = 4;
+    string care_of = 5;
+    string full_address = 6;
+    string date_of_birth = 7;
+    string photo = 8;
+    string email_hash = 9;
+    string share_code = 10;
+    string year_of_birth = 11;
+    string message = 12;
+    string mobile_number = 13;
+    Address address = 14;
+}
 
-// User Service Definition
+message ValidateUserResponse {
+    int32 status_code = 1;
+    string message = 2;
+    User user = 3;
+}
+
+message CheckPermissionRequest {
+    string principal = 1;
+    string source = 2;
+    repeated string actions = 3;
+}
+
+message CheckPermissionResponse {
+    int32 statusCode = 1;
+    string message = 2;
+    map<string, bool> roles = 3;
+    map<string, bool> permissions = 4;
+    map<string, bool> actions = 5;
+}
+message AssignRoleToUserRequest {
+    string userId = 1;
+    repeated string roles = 2;
+}
+
+message AssignRoleToUserResponse {
+    int32 statusCode = 1;
+    string message = 2;
+    User user = 3;
+}
+
 service UserService {
     rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
-        rpc Login(LoginRequest) returns (LoginResponse);
+    rpc Login(LoginRequest) returns (LoginResponse);
     rpc GetUser(GetUserRequest) returns (GetUserResponse);
     rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse);
     rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
-        rpc GetUserById(GetUserByIdRequest) returns (GetUserByIdResponse); // Add this line
-
+    rpc GetUserById(GetUserByIdRequest) returns (GetUserByIdResponse);
+    rpc CheckUserPermission(CheckPermissionRequest) returns (CheckPermissionResponse);
+    rpc ValidateUser(ValidateUserRequest) returns (ValidateUserResponse);
+    rpc AssignRoleToUser(AssignRoleToUserRequest) returns (AssignRoleToUserResponse);
 }
-
-
-

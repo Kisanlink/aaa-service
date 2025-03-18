@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/Kisanlink/aaa-service/model"
@@ -25,10 +24,15 @@ func NewUserRepository(db *gorm.DB) *UserRepository {
 
 func (repo *UserRepository) CreateUser(ctx context.Context, user *model.User) (*model.User, error) {
     if err := repo.DB.Table("users").Create(user).Error; err != nil {
-        log.Printf("Failed to create user: %v", err)
         return nil, status.Error(codes.Internal, "Failed to create user")
     }
     return user, nil 
+}
+func (repo *UserRepository) CreateAddress(ctx context.Context, address *model.Address) (*model.Address, error) {
+    if err := repo.DB.Table("addresses").Create(address).Error; err != nil {
+        return nil, status.Error(codes.Internal, "Failed to create adress")
+    }
+    return address, nil 
 }
 
 func (repo *UserRepository) CheckIfUserExists(ctx context.Context, username string) error {
@@ -53,6 +57,17 @@ func (repo *UserRepository) GetUserByID(ctx context.Context, userID string) (*mo
 	}
 	return &user, nil
 }
+func (repo *UserRepository) GetAddressByID(ctx context.Context, addressId string) (*model.Address, error) {
+	var address model.Address
+	err := repo.DB.Table("addresses").Where("id = ?", addressId).First(&address).Error
+	if err != nil {
+		if err.Error() == "record not found" {
+			return nil, status.Error(codes.NotFound, "Address not found")
+		}
+		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to fetch address: %v", err))
+	}
+	return &address, nil
+}
 
 func (repo *UserRepository) GetUsers(ctx context.Context) ([]model.User, error) {
 	var users []model.User
@@ -71,80 +86,74 @@ func (repo *UserRepository) FindUserRoles(ctx context.Context, userID string) ([
 	}
 	return userRoles, nil
 }
-func (repo *UserRepository) FindUserRolesAndPermissions(ctx context.Context, userID string) ([]string, []string, error) {
+func (repo *UserRepository) FindUserRolesAndPermissions(ctx context.Context, userID string) ([]string, []string, []string, error) {
     var userRoles []model.UserRole
     err := repo.DB.Table("user_roles").Where("user_id = ?", userID).Find(&userRoles).Error
     if err != nil {
-        return nil, nil, status.Error(codes.Internal, "Failed to fetch user roles")
+        return nil, nil, nil, status.Error(codes.Internal, "Failed to fetch user roles")
     }
 
     var roles []string
     var permissions []string
-
-    // Use a map to avoid duplicate permissions
+    var actions []string
     permissionSet := make(map[string]struct{})
+    actionSet := make(map[string]struct{})
 
     for _, userRole := range userRoles {
-        // Fetch the RolePermission associated with the UserRole
         var rolePermission model.RolePermission
         err := repo.DB.Table("role_permissions").
             Where("id = ?", userRole.RolePermissionID).
             Preload("Role").
-            Preload("PermissionOnRoles.Permission").
+            Preload("Permission").
             First(&rolePermission).Error
         if err != nil {
-            return nil, nil, status.Error(codes.Internal, "Failed to fetch role permissions")
+            return nil, nil, nil, status.Error(codes.Internal, "Failed to fetch role permissions")
         }
 
-        // Extract Role Name
-        if rolePermission.Role != nil {
+        if rolePermission.Role.ID != "" { 
             roles = append(roles, rolePermission.Role.Name)
         }
 
-        // Extract Permissions
-        for _, permissionOnRole := range rolePermission.PermissionOnRoles {
-            if permissionOnRole.Permission != nil {
-                // Add permission to the set to avoid duplicates
-                permissionSet[permissionOnRole.Permission.Name] = struct{}{}
+        if rolePermission.Permission.ID != "" {
+            permissionSet[rolePermission.Permission.Name] = struct{}{}
+            for _, action := range rolePermission.Permission.Action {
+                actionSet[action] = struct{}{}
             }
         }
     }
-
-    // Convert the permission set to a slice
     for permission := range permissionSet {
         permissions = append(permissions, permission)
     }
-	for i, role := range roles {
-		roles[i] = strings.ToLower(role)
-	}
-	for i, permission := range permissions {
-		permissions[i] = strings.ToLower(permission)
-	}
-    return roles, permissions, nil
+    for action := range actionSet {
+        actions = append(actions, action)
+    }
+    for i, role := range roles {
+        roles[i] = strings.ToLower(role)
+    }
+    for i, permission := range permissions {
+        permissions[i] = strings.ToLower(permission)
+    }
+    for i, action := range actions {
+        actions[i] = strings.ToLower(action)
+    }
+
+    return roles, permissions, actions, nil
 }
 func (repo *UserRepository) CreateUserRoles(ctx context.Context, userRoles []model.UserRole) error {
-    if err := repo.DB.Table("user_roles").Create(&userRoles).Error; err != nil {
-        log.Printf("Failed to create UserRole entries: %v", err) // Log the actual error
-        return status.Error(codes.Internal, "Failed to create UserRole entries")
+    for _, ur := range userRoles {
+        if err := repo.DB.Table("user_roles").Create(&ur).Error; err != nil {
+            return status.Error(codes.Internal, "Failed to create UserRole entries")
+        }
     }
     return nil
 }
-func (repo *UserRepository) ValidateUserAndRolePermission(ctx context.Context, userID string, rolePermissionID string) error {
-    // Check if the user exists
-    var user model.User
-    if err := repo.DB.Table("users").Where("id = ?", userID).First(&user).Error; err != nil {
-        return fmt.Errorf("user with ID %s does not exist", userID)
-    }
-
-    // Check if the role permission exists
-    var rolePermission model.RolePermission
-    if err := repo.DB.Table("role_permissions").Where("id = ?", rolePermissionID).First(&rolePermission).Error; err != nil {
-        return fmt.Errorf("role permission with ID %s does not exist", rolePermissionID)
-    }
-
-    return nil
+func (repo *UserRepository) GetUserRoleByID(ctx context.Context, userID string) (*model.User, error) {
+	var user model.User
+	if err := repo.DB.Preload("UserRoles").Where("id = ?", userID).First(&user).Error; err != nil {
+		return nil, err
+	}
+	return &user, nil
 }
-
 func (repo *UserRepository) DeleteUserRoles(ctx context.Context, id string) error {
 	if err := repo.DB.Table("user_roles").Where("user_id = ?", id).Delete(&model.UserRole{}).Error; err != nil {
 		return status.Error(codes.Internal, fmt.Sprintf("Failed to delete user roles: %v", err))

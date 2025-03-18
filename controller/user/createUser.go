@@ -2,14 +2,9 @@ package user
 
 import (
 	"context"
-	"log"
 	"strings"
-
-	// "fmt"
-	// "log"
 	"time"
 
-	"github.com/Kisanlink/aaa-service/client"
 	"github.com/Kisanlink/aaa-service/model"
 	"github.com/Kisanlink/aaa-service/pb"
 	"github.com/Kisanlink/aaa-service/repositories"
@@ -21,11 +16,17 @@ import (
 type Server struct {
 	pb.UnimplementedUserServiceServer
 	UserRepo *repositories.UserRepository
+	RoleRepo *repositories.RoleRepository
+	PermRepo *repositories.PermissionRepository
+	RolePermRepo *repositories.RolePermissionRepository
 }
 
-func NewUserServer(userRepo *repositories.UserRepository) *Server {
+func NewUserServer(userRepo *repositories.UserRepository,roleRepo *repositories.RoleRepository,permRepo *repositories.PermissionRepository,rolePermRepo *repositories.RolePermissionRepository) *Server {
 	return &Server{
 		UserRepo: userRepo,
+		RoleRepo: roleRepo,
+		PermRepo: permRepo,
+		RolePermRepo: rolePermRepo,
 	}
 }
 func (s *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest) (*pb.CreateUserResponse, error) {
@@ -42,64 +43,31 @@ func (s *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest) (*pb
         IsValidated: false,
     }
 
-    createdUser, err := s.UserRepo.CreateUser(ctx, newUser)
-    if err != nil {
-        return nil, err
-    }
-
-    if err := s.createUserRoles(createdUser.ID, req.UserRoleIds); err != nil {
-        return nil, err
-    }
-    userRoles, err := s.UserRepo.FindUserRoles(ctx, createdUser.ID)
-    if err != nil {
-        return nil, err
-    }
-    newUser.Roles = userRoles
-    pbUserRoles := ConvertToPBUserRoles(userRoles)
-    roles, permissions, err := s.UserRepo.FindUserRolesAndPermissions(ctx, createdUser.ID)
-    if err != nil {
-        log.Fatalf("Failed to fetch user roles and permissions: %v", err)
-    }
-	updated, err := client.CreateUserRoleRelationship(
-		strings.ToLower(createdUser.Username), 
-		LowerCaseSlice(roles), 
-		LowerCaseSlice(permissions),
-	)
-		if err != nil {
-		log.Fatalf("Error reading schema: %v", err)
+	createdUser, err := s.UserRepo.CreateUser(ctx, newUser)
+	if err != nil {
+		return nil, err
 	}
-	log.Printf("create Relation  Response: %+v", updated)
-    // Return the response
+	roles, permissions, actions, err := s.UserRepo.FindUserRolesAndPermissions(ctx, createdUser.ID)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to fetch user roles and permissions: %v", err)
+	}
+	userRole := &pb.UserRoleResponse{
+		Roles:       roles,
+		Permissions: permissions,
+		Actions:     actions,
+	}
     return &pb.CreateUserResponse{
         StatusCode: int32(codes.OK),
         Message:    "User created successfully",
         User: &pb.User{
-            Id:          newUser.ID,
-            CreatedAt:   newUser.CreatedAt.Format(time.RFC3339Nano),
-            UpdatedAt:   newUser.UpdatedAt.Format(time.RFC3339Nano),
-            Username:    newUser.Username,
-            IsValidated: newUser.IsValidated,
-            UserRoles:   pbUserRoles,
+            Id:          createdUser.ID,
+            CreatedAt:   createdUser.CreatedAt.Format(time.RFC3339Nano),
+            UpdatedAt:   createdUser.UpdatedAt.Format(time.RFC3339Nano),
+            Username:    createdUser.Username,
+            IsValidated: createdUser.IsValidated,
+            UsageRight:   userRole,
         },
     }, nil
-}
-
-func (s *Server) createUserRoles(userID string, rolePermissionIDs []string) error {
-	if len(rolePermissionIDs) == 0 {
-		return nil
-	}
-	var userRoles []model.UserRole
-	for _, rolePermissionID := range rolePermissionIDs {
-		userRole := model.UserRole{
-			UserID:           userID,
-			RolePermissionID: rolePermissionID,
-		}
-		userRoles = append(userRoles, userRole)
-	}
-	if err := s.UserRepo.CreateUserRoles(context.Background(), userRoles); err != nil {
-		return err
-	}
-	return nil
 }
 
 func HashPassword(password string) (string, error) {

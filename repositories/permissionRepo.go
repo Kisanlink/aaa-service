@@ -49,6 +49,16 @@ func (repo *PermissionRepository) FindPermissionByID(ctx context.Context, id str
 	}
 	return &permission, nil
 }
+func (repo *PermissionRepository) FindPermissionByName(ctx context.Context, name string) (*model.Permission, error) {
+	var permission model.Permission
+	err := repo.DB.Table("permissions").Where("name = ?", name).First(&permission).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, status.Error(codes.NotFound, fmt.Sprintf("Permission with ID %s not found", name))
+	} else if err != nil {
+		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to query permission: %v", err))
+	}
+	return &permission, nil
+}
 
 func (repo *PermissionRepository) DeletePermission(ctx context.Context, id string) error {
 	result := repo.DB.Table("permissions").Where("id = ?", id).Delete(&model.Permission{})

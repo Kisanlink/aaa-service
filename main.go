@@ -5,10 +5,8 @@ import (
 	"log"
 	"os"
 	"os/signal"
-
 	"syscall"
 
-	// "github.com/Kisanlink/aaa-service/client"
 	"github.com/Kisanlink/aaa-service/database"
 	"github.com/Kisanlink/aaa-service/grpc_server"
 	"github.com/joho/godotenv"
@@ -23,18 +21,6 @@ func init() {
 func main() {
 	database.ConnectDB()
 
-	// roles := []string{"ceo","director"}
-	// permissions := []string{"view","edit"}
-
-	// results, err := client.CheckUserPermissions("Alfiya", roles, permissions)
-	// if err != nil {
-	// 	log.Fatalf("Failed to check permissions: %v", err)
-	// }
-	
-	// for permission, hasPermission := range results {
-	// 	log.Printf("User has permission %s: %v", permission, hasPermission)
-	// }
-	
 	// Start the gRPC server
 	grpcServer, err := grpc_server.StartGRPCServer(database.DB)
 	if err != nil {
