@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/Kisanlink/aaa-service/model"
-	"github.com/Kisanlink/aaa-service/pb"
 	"github.com/Kisanlink/aaa-service/repositories"
+	"github.com/kisanlink/protobuf/pb-aaa"
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

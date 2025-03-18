@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/Kisanlink/aaa-service/helper"
-	"github.com/Kisanlink/aaa-service/pb"
+	"github.com/kisanlink/protobuf/pb-aaa"
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

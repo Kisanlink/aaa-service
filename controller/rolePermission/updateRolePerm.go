@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/Kisanlink/aaa-service/model"
-	"github.com/Kisanlink/aaa-service/pb"
+	"github.com/kisanlink/protobuf/pb-aaa"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

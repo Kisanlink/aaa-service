@@ -9,8 +9,8 @@ import (
 
 	"github.com/Kisanlink/aaa-service/client"
 	"github.com/Kisanlink/aaa-service/model"
-	"github.com/Kisanlink/aaa-service/pb"
 	"github.com/Kisanlink/aaa-service/repositories"
+	"github.com/kisanlink/protobuf/pb-aaa"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

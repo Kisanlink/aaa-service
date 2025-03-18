@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/Kisanlink/aaa-service/pb"
+	"github.com/kisanlink/protobuf/pb-aaa"
 	"google.golang.org/grpc/codes"
 )
 
