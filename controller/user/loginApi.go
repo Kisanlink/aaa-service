@@ -43,7 +43,10 @@ func (s *Server) LoginRestApi(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}
-
+	if req.Password == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Password is required"})
+		return
+	}
 	existingUser, err := s.UserRepo.FindUserByUsername(c.Request.Context(), req.Username)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})

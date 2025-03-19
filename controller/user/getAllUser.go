@@ -25,7 +25,6 @@ func (s *Server) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.GetUs
 			Actions:     actions,
 		}
 
-		// Fetch address details for the user
 		address, err := s.UserRepo.GetAddressByID(ctx, *user.AddressID)
 		if err != nil {
 			return nil, err
@@ -66,11 +65,9 @@ func (s *Server) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.GetUs
 			},
 		}
 
-		// Append the user to the response
 		pbUsers = append(pbUsers, pbUser)
 	}
 
-	// Return the response
 	return &pb.GetUserResponse{
 		StatusCode: int32(codes.OK),
 		Message:    "Users fetched successfully",

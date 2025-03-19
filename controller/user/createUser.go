@@ -33,6 +33,9 @@ func (s *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest) (*pb
     if err := s.UserRepo.CheckIfUserExists(ctx, req.Username); err != nil {
         return nil, err
     }
+	if req.Password == "" {
+		return nil, status.Error(codes.NotFound,"Password is required")
+	}
     hashedPassword, err := HashPassword(req.Password)
     if err != nil {
         return nil, status.Error(codes.InvalidArgument, "Failed to hash password")

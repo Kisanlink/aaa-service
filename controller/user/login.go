@@ -16,6 +16,9 @@ func (s *Server) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResp
 	if err != nil {
 		return nil, err
 	}
+	if req.Password == "" {
+		return nil, status.Error(codes.NotFound,"Password is required")
+	}
 	err = bcrypt.CompareHashAndPassword([]byte(existingUser.Password), []byte(req.Password))
 	if err != nil {
 		return nil, status.Error(codes.Unauthenticated, "Invalid password")
