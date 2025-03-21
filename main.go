@@ -38,7 +38,7 @@ func main() {
 	s := user.Server{UserRepo: userRepo} 
 	router.POST("/api/v1/user/login", s.LoginRestApi)
 	go func() {
-		if err := router.Run(":8080"); err != nil && err != http.ErrServerClosed {
+		if err := router.Run(":3000"); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("Failed to start Gin server: %v", err)
 		}
 	}()

@@ -140,11 +140,10 @@ func (repo *UserRepository) FindUserRolesAndPermissions(ctx context.Context, use
     return roles, permissions, actions, nil
 }
 func (repo *UserRepository) CreateUserRoles(ctx context.Context, userRoles []model.UserRole) error {
-    for _, ur := range userRoles {
-        if err := repo.DB.Table("user_roles").Create(&ur).Error; err != nil {
+        if err := repo.DB.Table("user_roles").Create(&userRoles).Error; err != nil {
             return status.Error(codes.Internal, "Failed to create UserRole entries")
         }
-    }
+    
     return nil
 }
 func (repo *UserRepository) GetUserRoleByID(ctx context.Context, userID string) (*model.User, error) {

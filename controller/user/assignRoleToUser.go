@@ -26,7 +26,6 @@ func (s *Server) AssignRoleToUser(ctx context.Context, req *pb.AssignRoleToUserR
 		}
 		roleIDs = append(roleIDs, role.ID)
 	}
-
 	rolePermissions, err := s.RolePermRepo.GetRolePermissionsByRoleIDs(ctx, roleIDs)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "Failed to fetch role-permission connections: %v", err)
@@ -54,6 +53,15 @@ func (s *Server) AssignRoleToUser(ctx context.Context, req *pb.AssignRoleToUserR
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to fetch user roles and permissions")
 	}
+	response, err := client.DeleteUserRoleRelationship(updatedUser.Username,
+		LowerCaseSlice(roles),
+		LowerCaseSlice(permissions),
+		LowerCaseSlice(action),)
+	if err != nil {
+		log.Printf("Failed to delete relationships: %v", err)
+		// Do not return an error; continue to create new relationships
+	}
+	log.Printf("User roles and permission deleted successfully: %s", response)
 	results, err := client.CreateUserRoleRelationship(
 		updatedUser.Username,
 		LowerCaseSlice(roles),
@@ -65,6 +73,7 @@ func (s *Server) AssignRoleToUser(ctx context.Context, req *pb.AssignRoleToUserR
 	}
 	log.Printf("relationship created successfully: %v", results)
 
+	// Safely handle nil pointers
 	connUser := &pb.User{
 		Id:            updatedUser.ID,
 		Username:      updatedUser.Username,
@@ -80,10 +89,9 @@ func (s *Server) AssignRoleToUser(ctx context.Context, req *pb.AssignRoleToUserR
 		Photo:         safeDereferenceString(updatedUser.Photo),
 		EmailHash:     safeDereferenceString(updatedUser.EmailHash),
 		Message:       safeDereferenceString(updatedUser.Message),
-		ShareCode:     *updatedUser.ShareCode,
-		YearOfBirth:   *updatedUser.YearOfBirth,
-		MobileNumber:  *updatedUser.MobileNumber,
-
+		ShareCode:     safeDereferenceString(updatedUser.ShareCode),
+		YearOfBirth:   safeDereferenceString(updatedUser.YearOfBirth),
+		MobileNumber:  safeDereferenceString(updatedUser.MobileNumber),
 	}
 
 	for _, ur := range updatedUser.Roles {
@@ -102,6 +110,8 @@ func (s *Server) AssignRoleToUser(ctx context.Context, req *pb.AssignRoleToUserR
 		User:       connUser,
 	}, nil
 }
+
+// Helper function to safely dereference string pointers
 func safeDereferenceString(s *string) string {
 	if s == nil {
 		return ""
