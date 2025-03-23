@@ -2,6 +2,7 @@ package database
 
 import (
 	"log"
+	"os"
 
 	"github.com/authzed/authzed-go/v1"
 	"github.com/authzed/grpcutil"
@@ -11,9 +12,9 @@ import (
 
 func SpiceDB() (*authzed.Client,error) {
 	client, err := authzed.NewClient(
-		"localhost:50051",
+		os.Getenv("SPICE_DB_ENDPOINT"),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpcutil.WithInsecureBearerToken("tc_alfiya96960_tutorial_default_token"),
+		grpcutil.WithInsecureBearerToken(os.Getenv("SPICE_DB_TOKEN")),
 	)
 	if err != nil {
 		log.Fatalf("Failed to connect to SpiceDB: %v", err)
