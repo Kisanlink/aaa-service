@@ -59,7 +59,6 @@ func (s *Server) AssignRoleToUser(ctx context.Context, req *pb.AssignRoleToUserR
 		LowerCaseSlice(action),)
 	if err != nil {
 		log.Printf("Failed to delete relationships: %v", err)
-		// Do not return an error; continue to create new relationships
 	}
 	log.Printf("User roles and permission deleted successfully: %s", response)
 	results, err := client.CreateUserRoleRelationship(
@@ -73,7 +72,6 @@ func (s *Server) AssignRoleToUser(ctx context.Context, req *pb.AssignRoleToUserR
 	}
 	log.Printf("relationship created successfully: %v", results)
 
-	// Safely handle nil pointers
 	connUser := &pb.User{
 		Id:            updatedUser.ID,
 		Username:      updatedUser.Username,

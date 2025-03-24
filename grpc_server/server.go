@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"os"
 
 	"github.com/Kisanlink/aaa-service/controller/permissions"
 	rolepermission "github.com/Kisanlink/aaa-service/controller/rolePermission"
@@ -26,6 +27,10 @@ func (s *GreeterServer) SayHello(ctx context.Context, req *pb.HelloRequest) (*pb
 }
 
 func StartGRPCServer(db *gorm.DB) (*grpc.Server, error) {
+	port := os.Getenv("GRPC_PORT")
+	if port == "" {
+		port = "50053"
+	}
 	lis, err := net.Listen("tcp", ":50052")
 	if err != nil {
 		return nil, fmt.Errorf("failed to listen: %v", err)
@@ -53,6 +58,7 @@ func StartGRPCServer(db *gorm.DB) (*grpc.Server, error) {
 			log.Fatalf("failed to serve: %v", err)
 		}
 	}()
+	log.Printf("GRPC Server is running on port %s", port)
 
 	return s, nil
 }
