@@ -24,26 +24,37 @@ func init() {
 
 func main() {
 	database.ConnectDB()
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "3000" 
+	}
 
-	// Start the gRPC server
 	grpcServer, err := grpc_server.StartGRPCServer(database.DB)
 	if err != nil {
 		log.Fatalf("Failed to start gRPC server: %v", err)
 	}
 
 	log.Println("Application started successfully")
-	// start gin server
+
 	router := gin.Default()
+
+	router.GET("/", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"message": "welcome to gin server",
+		})
+	})
+
 	userRepo := repositories.NewUserRepository(database.DB)
-	s := user.Server{UserRepo: userRepo} 
+	s := user.Server{UserRepo: userRepo}
 	router.POST("/api/v1/user/login", s.LoginRestApi)
+
 	go func() {
-		if err := router.Run(":3000"); err != nil && err != http.ErrServerClosed {
+		if err := router.Run(":" + port); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("Failed to start Gin server: %v", err)
 		}
 	}()
 
-	log.Println("Gin server running on port 8080")
+	log.Printf("Gin server running on port %s", port)
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
@@ -52,7 +63,4 @@ func main() {
 	log.Println("Shutting down gRPC server...")
 	grpcServer.GracefulStop()
 	log.Println("gRPC server stopped. Exiting application.")
-
 }
-
-
