@@ -19,7 +19,8 @@ type User struct {
 	EmailHash     *string `json:"email_hash" gorm:"type:string"`
 	ShareCode     *string  `json:"share_code" gorm:"type:string"`
 	YearOfBirth   *string  `json:"year_of_birth" gorm:"type:string"`
-	MobileNumber  *string  `json:"mobile_number" gorm:"type:string"`
+	MobileNumber  uint64 `json:"mobile_number" gorm:"type:bigint"`
+	CountryCode   *string `json:"country_code" gorm:"type:varchar(10);default:'+91'"`
 	Message       *string `json:"message" gorm:"type:string"`
 	AddressID     *string `json:"address_id"`
     Address       Address `gorm:"foreignKey:ID;references:AddressID"`

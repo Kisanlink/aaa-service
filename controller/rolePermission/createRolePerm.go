@@ -30,18 +30,20 @@ func NewConnectRolePermissionServer(
 	}
 }
 
-func (s *ConnectRolePermissionServer) CreateConnectRolePermission(ctx context.Context, req *pb.CreateConnRolePermissionRequest) (*pb.CreateConnRolePermissionResponse, error) {
-	if len(req.GetRoles()) == 0 || len(req.GetPermissions()) == 0 {
-		return nil, status.Error(codes.InvalidArgument, "Both role_names and permission_names are required")
+func (s *ConnectRolePermissionServer) AssignPermission(ctx context.Context, req *pb.CreateConnRolePermissionRequest) (*pb.CreateConnRolePermissionResponse, error) {
+	// Changed to check for single role instead of array
+	if req.Roles == "" || len(req.GetPermissions()) == 0 {
+		return nil, status.Error(codes.InvalidArgument, "Both role_name and permission_names are required")
 	}
-	roleIDs := make([]string, 0)
-	for _, roleName := range req.GetRoles() {
-		role, err := s.RoleRepo.GetRoleByName(ctx, roleName)
-		if err != nil {
-			return nil, status.Errorf(codes.NotFound, "Role with name %s not found", roleName)
-		}
-		roleIDs = append(roleIDs, role.ID)
+
+	// Get single role
+	role, err := s.RoleRepo.GetRoleByName(ctx, req.Roles)
+	if err != nil {
+		return nil, status.Errorf(codes.NotFound, "Role with name %s not found", req.Roles)
 	}
+	roleID := role.ID
+
+	// Permissions remain as array
 	permissionIDs := make([]string, 0)
 	for _, permissionName := range req.GetPermissions() {
 		permission, err := s.PermissionRepo.FindPermissionByName(ctx, permissionName)
@@ -50,20 +52,22 @@ func (s *ConnectRolePermissionServer) CreateConnectRolePermission(ctx context.Co
 		}
 		permissionIDs = append(permissionIDs, permission.ID)
 	}
+
 	var rolePermissions []*model.RolePermission
-	for _, roleID := range roleIDs {
-		for _, permissionID := range permissionIDs {
-			rolePermission := &model.RolePermission{
-				RoleID:       roleID,
-				PermissionID: permissionID,
-				IsActive:     true,
-			}
-			rolePermissions = append(rolePermissions, rolePermission)
+	// Use single role ID instead of looping through multiple roles
+	for _, permissionID := range permissionIDs {
+		rolePermission := &model.RolePermission{
+			RoleID:       roleID,
+			PermissionID: permissionID,
+			IsActive:     true,
 		}
+		rolePermissions = append(rolePermissions, rolePermission)
 	}
+
 	if err := s.RolePermissionRepo.CreateRolePermissions(ctx, rolePermissions); err != nil {
 		return nil, status.Errorf(codes.Internal, "Failed to create role-permission connections: %v", err)
 	}
+
 	var connRolePermissions []*pb.ConnRolePermission
 	for _, rp := range rolePermissions {
 		connRolePermission := &pb.ConnRolePermission{

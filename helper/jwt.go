@@ -1,9 +1,14 @@
 package helper
 
 import (
+	"context"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 )
 
 var jwtKey = []byte("askdwkdfmlermferflersmflesrmflersmflesrmflkes") // Replace with a secure key in production
@@ -61,4 +66,29 @@ func ValidateToken(tokenString string) (string, error) {
 	}
 
 	return userID, nil
+}
+
+func SetAuthHeadersWithTokens(ctx context.Context, userID, username string, isValidated bool) error {
+	// Generate tokens
+	accessToken, err := GenerateAccessToken(userID, username, isValidated)
+	if err != nil {
+		return status.Error(codes.Internal, "Failed to generate access token")
+	}
+
+	refreshToken, err := GenerateRefreshToken(userID, username, isValidated)
+	if err != nil {
+		return status.Error(codes.Internal, "Failed to generate refresh token")
+	}
+
+	// Set headers
+	header := metadata.Pairs(
+		"token", accessToken,
+		"refreshtoken", refreshToken,
+		"userid", userID,
+	)
+	
+	if err := grpc.SendHeader(ctx, header); err != nil {
+		return status.Errorf(codes.Internal, "unable to send headers: %v", err)
+	}
+	return nil
 }

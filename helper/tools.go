@@ -15,3 +15,4 @@ func PrettyJSON(body interface{}) {
 
 	fmt.Printf("%s\n", string(marshaled))
 }
+

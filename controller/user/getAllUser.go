@@ -48,7 +48,7 @@ func (s *Server) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.GetUs
 			ShareCode:    *user.ShareCode,
 			YearOfBirth:  *user.YearOfBirth,
 			Message:      *user.Message,
-			MobileNumber: *user.MobileNumber,
+			MobileNumber: user.MobileNumber,
 			Address: &pb.Address{
 				Id:          address.ID,
 				Plot:        *address.Plot,

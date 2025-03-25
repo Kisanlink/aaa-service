@@ -51,7 +51,7 @@ func (s *Server) GetUserById(ctx context.Context, req *pb.GetUserByIdRequest) (*
 		ShareCode:    *user.ShareCode,
 		YearOfBirth:  *user.YearOfBirth,
 		Message:      *user.Message,
-		MobileNumber: *user.MobileNumber,
+		MobileNumber: user.MobileNumber,
 		Address: &pb.Address{
 			Id:          address.ID,
 			Plot:        *address.Plot,

@@ -14,27 +14,29 @@ type LoginRequest struct {
 	Password string `json:"password" binding:"required"`
 }
 
+type UserRole struct {
+	ID               string `json:"id"`
+	UserID           string `json:"user_id"`
+	RolePermissionID string `json:"role_permission_id"`
+	CreatedAt        string `json:"created_at"`
+	UpdatedAt        string `json:"updated_at"`
+}
+
+type UserResponse struct {
+	ID           string     `json:"id"`
+	Username     string     `json:"username"`
+	MobileNumber uint64     `json:"mobile_number"`
+	CountryCode  string     `json:"country_code"`
+	IsValidated  bool       `json:"is_validated"`
+	CreatedAt    string     `json:"created_at"`
+	UpdatedAt    string     `json:"updated_at"`
+	UserRoles    []UserRole `json:"user_roles"`
+}
+
 type LoginResponse struct {
-	StatusCode   int       `json:"statusCode"`
-	Message      string    `json:"message"`
-	Token        string    `json:"token"`
-	RefreshToken string    `json:"refreshToken"`
-	User         User       `json:"user"`
-}
-
-type User struct {
-	ID          string     `json:"id"`
-	Username    string     `json:"username"`
-	IsValidated bool       `json:"isValidated"`
-	CreatedAt   string     `json:"createdAt"`
-	UpdatedAt   string     `json:"updatedAt"`
-	UserRoles   []UserRoleResponse  `json:"userRoles"`
-}
-
-type UserRoleResponse struct {
-	Roles       []string       `json:"roles"`
-	Permissions []string `json:"permissions"`
-	Actions     []string     `json:"actions"`
+	StatusCode int         `json:"status_code"`
+	Message    string      `json:"message"`
+	User       UserResponse `json:"user"`
 }
 
 func (s *Server) LoginRestApi(c *gin.Context) {
@@ -43,56 +45,70 @@ func (s *Server) LoginRestApi(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}
+
+	if req.Username == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Username is required"})
+		return
+	}
+
 	if req.Password == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Password is required"})
 		return
 	}
+
 	existingUser, err := s.UserRepo.FindUserByUsername(c.Request.Context(), req.Username)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(existingUser.Password), []byte(req.Password))
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid password"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
 
-	accessToken, err := helper.GenerateAccessToken(existingUser.ID, existingUser.Username, existingUser.IsValidated)
+	userRoles, err := s.UserRepo.FindUserRoles(c.Request.Context(), existingUser.ID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate access token"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch user roles"})
 		return
 	}
 
-	refreshToken, err := helper.GenerateRefreshToken(existingUser.ID, existingUser.Username, existingUser.IsValidated)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate refresh token"})
-		return
+	// Convert model.UserRole to API UserRole
+	apiUserRoles := make([]UserRole, len(userRoles))
+	for i, role := range userRoles {
+		apiUserRoles[i] = UserRole{
+			ID:               role.ID,
+			UserID:           role.UserID,
+			RolePermissionID: role.RolePermissionID,
+			CreatedAt:        role.CreatedAt.Format(time.RFC3339Nano),
+			UpdatedAt:        role.UpdatedAt.Format(time.RFC3339Nano),
+		}
 	}
-	roles, permissions, actions, err := s.UserRepo.FindUserRolesAndPermissions(c.Request.Context(), existingUser.ID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch user roles and permissions"})
+
+	// Set auth headers with tokens
+	if err := helper.SetAuthHeadersWithTokens(
+		c.Request.Context(),
+		existingUser.ID,
+		existingUser.Username,
+		existingUser.IsValidated,
+	); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to set auth headers"})
 		return
 	}
 
-	userRole := &UserRoleResponse{
-		Roles:       roles,
-		Permissions: permissions,
-		Actions:     actions,
-	}
 	response := LoginResponse{
-		StatusCode:   200,
-		Message:      "Login successful",
-		Token:        accessToken,
-		RefreshToken: refreshToken,
-		User: User{
-			ID:          existingUser.ID,
-			Username:    existingUser.Username,
-			IsValidated: existingUser.IsValidated,
-			CreatedAt:   existingUser.CreatedAt.Format(time.RFC3339Nano),
-			UpdatedAt:   existingUser.UpdatedAt.Format(time.RFC3339Nano),
-			UserRoles:   []UserRoleResponse{*userRole},
+		StatusCode: http.StatusOK,
+		Message:    "Login successful",
+		User: UserResponse{
+			ID:           existingUser.ID,
+			Username:     existingUser.Username,
+			MobileNumber: existingUser.MobileNumber,
+			CountryCode:  *existingUser.CountryCode,
+			IsValidated:  existingUser.IsValidated,
+			CreatedAt:    existingUser.CreatedAt.Format(time.RFC3339Nano),
+			UpdatedAt:    existingUser.UpdatedAt.Format(time.RFC3339Nano),
+			UserRoles:    apiUserRoles,
 		},
 	}
 

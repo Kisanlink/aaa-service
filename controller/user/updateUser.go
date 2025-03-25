@@ -52,9 +52,9 @@ func (s *Server) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest) (*pb
 	if req.Message != "" {
 		existingUser.Message = &req.Message
 	}
-	if req.MobileNumber != "" {
-		existingUser.MobileNumber = &req.MobileNumber
-	}
+	// if req.MobileNumber != "" {
+	// 	existingUser.MobileNumber = &req.MobileNumber
+	// }
 
 	if err := s.UserRepo.UpdateUser(ctx, *existingUser); err != nil {
 		return nil, err
@@ -77,7 +77,7 @@ func (s *Server) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest) (*pb
 		ShareCode:    *existingUser.ShareCode,
 		YearOfBirth:  *existingUser.YearOfBirth,
 		Message:      *existingUser.Message,
-		MobileNumber: *existingUser.MobileNumber,
+		MobileNumber: existingUser.MobileNumber,
 	}
 
 	return &pb.UpdateUserResponse{
