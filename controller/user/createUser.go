@@ -113,7 +113,8 @@ func (s *Server) RegisterUser(ctx context.Context, req *pb.CreateUserRequest) (*
 		}
         // Return the full OTP response details along with success message
         return &pb.CreateUserResponse{
-            StatusCode: int32(codes.OK),
+			StatusCode:http.StatusCreated,
+			Success: true,
             Message:    "OTP sent successfully for Aadhaar verification",
 			User: &pb.MinimalUser{
 				Id:          createdUser.ID,
@@ -202,7 +203,8 @@ func (s *Server) RegisterUser(ctx context.Context, req *pb.CreateUserRequest) (*
     }
 
     return &pb.CreateUserResponse{
-        StatusCode: int32(codes.OK),
+		StatusCode:http.StatusCreated,
+		Success: true,
         Message:    "User created successfully",
         User:       minimalUser,
         Response:   nil,

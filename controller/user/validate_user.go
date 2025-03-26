@@ -3,6 +3,7 @@ package user
 import (
 	"context"
 	"log"
+	"net/http"
 
 	"github.com/Kisanlink/aaa-service/middleware"
 	"github.com/Kisanlink/aaa-service/model"
@@ -93,7 +94,8 @@ func (s *Server) ValidateUser(ctx context.Context, req *pb.ValidateUserRequest) 
 		}
 
 		return &pb.ValidateUserResponse{
-			StatusCode: int32(codes.OK),
+			StatusCode: http.StatusOK,
+			Success: true,
 			Message:    "User updated successfully",
 			User:       pbUser,
 		}, nil

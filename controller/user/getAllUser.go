@@ -2,10 +2,10 @@ package user
 
 import (
 	"context"
+	"net/http"
 	"time"
 
 	"github.com/kisanlink/protobuf/pb-aaa"
-	"google.golang.org/grpc/codes"
 )
 
 func (s *Server) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.GetUserResponse, error) {
@@ -69,7 +69,8 @@ func (s *Server) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.GetUs
 	}
 
 	return &pb.GetUserResponse{
-		StatusCode: int32(codes.OK),
+		StatusCode: http.StatusOK,
+		Success: true,
 		Message:    "Users fetched successfully",
 		Users:      pbUsers,
 	}, nil

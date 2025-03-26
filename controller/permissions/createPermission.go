@@ -44,6 +44,8 @@ func (s *PermissionServer) CreatePermission(ctx context.Context, req *pb.CreateP
 		Name:           req.Name,
 		Description:    req.Description,
 		Action:         req.Action,
+		Source: req.Source,
+		Resource: req.Resource,
 		ValidStartTime: time.Now(),
 		ValidEndTime:   time.Now(),
 	}
@@ -65,19 +67,20 @@ func (s *PermissionServer) CreatePermission(ctx context.Context, req *pb.CreateP
 		log.Printf("Failed to fetch permissions: %v", err)
 		return nil, status.Error(codes.Internal, "Failed to retrieve permissions")
 	}
+	
 	var permissionNames []string
 	var allActions []string
 	actionSet := make(map[string]struct{})
-
+	
 	for _, permission := range permissions {
 		permissionNames = append(permissionNames, permission.Name)
-		for _, action := range permission.Action {
-			actionSet[action] = struct{}{}
-		}
+		actionSet[permission.Action] = struct{}{}
 	}
+	
 	for action := range actionSet {
 		allActions = append(allActions, action)
 	}
+	
 	for i, action := range allActions {
 		allActions[i] = strings.ToLower(action)
 	}
@@ -111,6 +114,7 @@ func (s *PermissionServer) CreatePermission(ctx context.Context, req *pb.CreateP
 
 	return &pb.CreatePermissionResponse{
 		StatusCode: http.StatusCreated,
+		Success: true,
 		Message:    "Permission created successfully",
 		Permission: pbPermission,
 	}, nil

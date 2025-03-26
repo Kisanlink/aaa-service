@@ -65,16 +65,16 @@ func (s *RoleServer) CreateRole(ctx context.Context, req *pb.CreateRoleRequest) 
 	var permissionNames []string
 	var allActions []string
 	actionSet := make(map[string]struct{})
-
+	
 	for _, permission := range permissions {
 		permissionNames = append(permissionNames, permission.Name)
-		for _, action := range permission.Action {
-			actionSet[action] = struct{}{}
-		}
+		actionSet[permission.Action] = struct{}{}
 	}
+	
 	for action := range actionSet {
 		allActions = append(allActions, action)
 	}
+	
 	for i, action := range allActions {
 		allActions[i] = strings.ToLower(action)
 	}
@@ -104,7 +104,8 @@ func (s *RoleServer) CreateRole(ctx context.Context, req *pb.CreateRoleRequest) 
 		Source: newRole.Source,
 	}
 	return &pb.CreateRoleResponse{
-		StatusCode: int32(http.StatusCreated),
+		StatusCode: http.StatusCreated,
+		Success: true,
 		Message:    "Role created successfully",
 		Role:       pbRole,
 	}, nil

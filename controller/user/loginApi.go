@@ -34,7 +34,8 @@ type UserResponse struct {
 }
 
 type LoginResponse struct {
-	StatusCode int         `json:"status_code"`
+	StatusCode int               `json:"status_code"`
+	Success bool               `json:"success"`
 	Message    string      `json:"message"`
 	User       UserResponse `json:"user"`
 }
@@ -99,6 +100,7 @@ func (s *Server) LoginRestApi(c *gin.Context) {
 
 	response := LoginResponse{
 		StatusCode: http.StatusOK,
+		Success: true,
 		Message:    "Login successful",
 		User: UserResponse{
 			ID:           existingUser.ID,

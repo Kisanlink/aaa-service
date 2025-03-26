@@ -103,6 +103,14 @@ github.com/kisanlink/protobuf v0.0.0-20250325145952-97925904c17d h1:73XtrReCfh3D
 github.com/kisanlink/protobuf v0.0.0-20250325145952-97925904c17d/go.mod h1:NhJW/UrG2O/+T8ikQ7qWAAlCQtYNRW0E5O8pGQzH/uI=
 github.com/kisanlink/protobuf v0.0.0-20250325151541-5efa7d6a0764 h1:kU3LgTgxnoRAUVyZzZDAjubD4KMD0Lb1LQ6pfHpD/G4=
 github.com/kisanlink/protobuf v0.0.0-20250325151541-5efa7d6a0764/go.mod h1:NhJW/UrG2O/+T8ikQ7qWAAlCQtYNRW0E5O8pGQzH/uI=
+github.com/kisanlink/protobuf v0.0.0-20250326054236-5e04619abeb0 h1:cZ+5ZOvW9wFuxTbMPNhOZFdmCRMHyX7lGuUdWS33aH4=
+github.com/kisanlink/protobuf v0.0.0-20250326054236-5e04619abeb0/go.mod h1:NhJW/UrG2O/+T8ikQ7qWAAlCQtYNRW0E5O8pGQzH/uI=
+github.com/kisanlink/protobuf v0.0.0-20250326055150-c86353fdd5d1 h1:j9lpsBF+u1WJ9JeVzuMF3hPoMst2FlhMeYMB75UdC68=
+github.com/kisanlink/protobuf v0.0.0-20250326055150-c86353fdd5d1/go.mod h1:NhJW/UrG2O/+T8ikQ7qWAAlCQtYNRW0E5O8pGQzH/uI=
+github.com/kisanlink/protobuf v0.0.0-20250326083757-4d758c0afed4 h1:b3UFo9fYpGKOFacfEobKXBh9lpi/sQyv9qAMWIQ7nr0=
+github.com/kisanlink/protobuf v0.0.0-20250326083757-4d758c0afed4/go.mod h1:NhJW/UrG2O/+T8ikQ7qWAAlCQtYNRW0E5O8pGQzH/uI=
+github.com/kisanlink/protobuf v0.0.0-20250326084923-d59b5d68d857 h1:jtE9vGSz8UgbbUliwSWs1jWQ3HlPzpLqDfhOa8Krnlk=
+github.com/kisanlink/protobuf v0.0.0-20250326084923-d59b5d68d857/go.mod h1:NhJW/UrG2O/+T8ikQ7qWAAlCQtYNRW0E5O8pGQzH/uI=
 github.com/kisielk/errcheck v1.5.0/go.mod h1:pFxgyoBC7bSaBwPgfKdkLd5X25qrDl4LWUI2bnpBCr8=
 github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+oQHNcck=
 github.com/klauspost/cpuid/v2 v2.0.9/go.mod h1:FInQzS24/EEf25PyTYn52gqo7WaD8xa0213Md/qVLRg=

@@ -2,6 +2,7 @@ package roles
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/kisanlink/protobuf/pb-aaa"
 	"google.golang.org/grpc/codes"
@@ -36,7 +37,8 @@ func (s *RoleServer) UpdateRole(ctx context.Context, req *pb.UpdateRoleRequest) 
 		Description: updatedRoleModel.Description,
 	}
 	return &pb.UpdateRoleResponse{
-		StatusCode: int32(codes.OK),
+		StatusCode:http.StatusOK,
+		Success: true,
 		Message:    "Role updated successfully",
 		Role:       pbRole,
 	}, nil

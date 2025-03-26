@@ -2,6 +2,7 @@ package permissions
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/kisanlink/protobuf/pb-aaa"
 	"google.golang.org/grpc/codes"
@@ -23,7 +24,8 @@ func (s *PermissionServer) GetPermissionById(ctx context.Context, req *pb.GetPer
 		Description: permission.Description,
 	}
 	return &pb.GetPermissionByIdResponse{
-		StatusCode: int32(codes.OK),
+		StatusCode:http.StatusOK,
+		Success: true,
 		Message:    "Permission retrieved successfully",
 		Permission: pbPermission,
 	}, nil

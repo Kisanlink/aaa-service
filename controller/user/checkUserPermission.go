@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/Kisanlink/aaa-service/client"
 	"github.com/kisanlink/protobuf/pb-aaa"
@@ -45,7 +46,8 @@ func (s *Server) CheckUserPermission(ctx context.Context, req *pb.CheckPermissio
 	}
 
 	response := &pb.CheckPermissionResponse{
-		StatusCode:  200,
+		StatusCode:http.StatusOK,
+		Success: true,
 		Message:     "Permissions checked successfully",
 		// Roles:       roleMap,
 		Permissions: permissionMap,

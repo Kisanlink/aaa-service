@@ -3,6 +3,7 @@ package user
 import (
 	"context"
 	"log"
+	"net/http"
 	"strings"
 
 	"github.com/Kisanlink/aaa-service/client"
@@ -43,7 +44,8 @@ func (s *Server) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest) (*pb
 	}
 	log.Printf("delete Relation  Response: %+v", updated)
 	return &pb.DeleteUserResponse{
-		StatusCode: int32(codes.OK),
+		StatusCode: http.StatusOK,
+		Success: true,
 		Message:    "User deleted successfully",
 	}, nil
 }

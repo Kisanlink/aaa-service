@@ -65,7 +65,8 @@ func (s *ConnectRolePermissionServer) UpdateRolePermission(ctx context.Context, 
 	}
 	return &pb.UpdateConnRolePermissionResponse{
 		StatusCode: http.StatusOK,
-		Message:    "Role-Permission connections updated successfully",
+		Success: true,
+		Message:    "Role Permission updated successfully",
 		Data:       connRolePermissions,
 	}, nil
 }

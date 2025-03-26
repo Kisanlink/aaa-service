@@ -2,6 +2,7 @@ package permissions
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/kisanlink/protobuf/pb-aaa"
 	"google.golang.org/grpc/codes"
@@ -36,7 +37,8 @@ func (s *PermissionServer) UpdatePermission(ctx context.Context, req *pb.UpdateP
 		Description: updatedPermissionModel.Description,
 	}
 	return &pb.UpdatePermissionResponse{
-		StatusCode: int32(codes.OK),
+		StatusCode:http.StatusOK,
+		Success: true,
 		Message:    "Permission updated successfully",
 		Permission: pbPermission,
 	}, nil

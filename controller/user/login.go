@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"net/http"
 	"time"
 
 	"github.com/Kisanlink/aaa-service/helper"
@@ -49,7 +50,8 @@ func (s *Server) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResp
 		return nil, err
 	}
 	return &pb.LoginResponse{
-		StatusCode:   200,
+		StatusCode: http.StatusOK,
+		Success: true,
 		Message:      "Login successful",
 		User: &pb.User{
 			Id:          existingUser.ID,

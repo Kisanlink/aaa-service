@@ -21,6 +21,7 @@ func (s *ConnectRolePermissionServer) DeleteRolePermission(ctx context.Context, 
 	}
 	return &pb.DeleteConnRolePermissionResponse{
 		StatusCode: http.StatusOK,
-		Message:    "Role-Permission connections deleted successfully",
+		Success: true,
+		Message:    "Role with Permissions deleted successfully",
 	}, nil
 }

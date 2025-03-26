@@ -2,9 +2,9 @@ package roles
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/kisanlink/protobuf/pb-aaa"
-	"google.golang.org/grpc/codes"
 )
 
 func (s *RoleServer) GetAllRoles(ctx context.Context, req *pb.GetAllRolesRequest) (*pb.GetAllRolesResponse, error) {
@@ -21,7 +21,8 @@ func (s *RoleServer) GetAllRoles(ctx context.Context, req *pb.GetAllRolesRequest
 		})
 	}
 	return &pb.GetAllRolesResponse{
-		StatusCode: int32(codes.OK),
+		StatusCode:http.StatusOK,
+		Success: true,
 		Message:    "Roles retrieved successfully",
 		Roles:      pbRoles,
 	}, nil

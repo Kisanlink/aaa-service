@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"net/http"
 	"time"
 
 	"github.com/kisanlink/protobuf/pb-aaa"
@@ -68,7 +69,8 @@ func (s *Server) GetUserById(ctx context.Context, req *pb.GetUserByIdRequest) (*
 		},
 	}
 	return &pb.GetUserByIdResponse{
-		StatusCode: int32(codes.OK),
+		StatusCode: http.StatusOK,
+		Success: true,
 		Message:    "User fetched successfully",
 		User:       pbUser,
 	}, nil

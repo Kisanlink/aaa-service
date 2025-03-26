@@ -22,6 +22,8 @@ func (s *ConnectRolePermissionServer) GetRolePermissionById(ctx context.Context,
 			Name:           rolePermission.Permission.Name,
 			Description:    rolePermission.Permission.Description,
 			Action:         rolePermission.Permission.Action,
+			Resource:         rolePermission.Permission.Resource,
+			Source:         rolePermission.Permission.Source,
 			ValidStartTime: rolePermission.Permission.ValidStartTime.String(),
 			ValidEndTime:   rolePermission.Permission.ValidEndTime.String(),
 			CreatedAt:      rolePermission.Permission.CreatedAt.String(),
@@ -49,7 +51,8 @@ func (s *ConnectRolePermissionServer) GetRolePermissionById(ctx context.Context,
 	}
 	return &pb.GetConnRolePermissionByIdResponse{
 		StatusCode: http.StatusOK,
-		Message:    "Role-Permission connection fetched successfully",
+		Success: true,
+		Message:    "Role with Permissions fetched successfully",
 		Data:       connRolePermission,
 	}, nil
 }

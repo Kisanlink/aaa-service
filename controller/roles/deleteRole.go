@@ -2,6 +2,7 @@ package roles
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/kisanlink/protobuf/pb-aaa"
 	"google.golang.org/grpc/codes"
@@ -23,7 +24,8 @@ func (s *RoleServer) DeleteRole(ctx context.Context, req *pb.DeleteRoleRequest) 
 	}
 
 	return &pb.DeleteRoleResponse{
-		StatusCode: int32(codes.OK),
+		StatusCode:http.StatusOK,
+		Success: true,
 		Message:    "Role deleted successfully",
 	}, nil
 }

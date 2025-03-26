@@ -116,9 +116,7 @@ func (repo *UserRepository) FindUserRolesAndPermissions(ctx context.Context, use
 
         if rolePermission.Permission.ID != "" {
             permissionSet[rolePermission.Permission.Name] = struct{}{}
-            for _, action := range rolePermission.Permission.Action {
-                actionSet[action] = struct{}{}
-            }
+            actionSet[rolePermission.Permission.Action] = struct{}{}
         }
     }
     for permission := range permissionSet {

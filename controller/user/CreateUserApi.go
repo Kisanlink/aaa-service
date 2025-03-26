@@ -47,6 +47,7 @@ type MinimalUser struct {
 
 type CreateUserResponse struct {
 	StatusCode int               `json:"status_code"`
+	Success bool               `json:"success"`
 	Message    string            `json:"message"`
 	User       *MinimalUser      `json:"user,omitempty"`
 	Response   *AadhaarOTPResponse `json:"response,omitempty"`
@@ -151,7 +152,8 @@ func (s *Server) CreateUserRestApi(c *gin.Context) {
 
 		// Return the full OTP response details along with success message
 		response := CreateUserResponse{
-			StatusCode: http.StatusOK,
+			StatusCode:http.StatusCreated,
+			Success: true,
 			Message:    "OTP sent successfully for Aadhaar verification",
 			User: &MinimalUser{
 				ID:           createdUser.ID,
@@ -229,7 +231,7 @@ func (s *Server) CreateUserRestApi(c *gin.Context) {
 	}
 
 	response := CreateUserResponse{
-		StatusCode: http.StatusOK,
+		StatusCode:http.StatusCreated,
 		Message:    "User created successfully",
 		User: &MinimalUser{
 			ID:           createdUser.ID,

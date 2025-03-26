@@ -2,6 +2,7 @@ package roles
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/kisanlink/protobuf/pb-aaa"
 	"google.golang.org/grpc/codes"
@@ -23,7 +24,8 @@ func (s *RoleServer) GetRoleById(ctx context.Context, req *pb.GetRoleByIdRequest
 		Description: role.Description,
 	}
 	return &pb.GetRoleByIdResponse{
-		StatusCode: int32(codes.OK),
+		StatusCode:http.StatusOK,
+		Success: true,
 		Message:    "Role retrieved successfully",
 		Role:       pbRole,
 	}, nil

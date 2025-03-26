@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"net/http"
 	"time"
 
 	"github.com/kisanlink/protobuf/pb-aaa"
@@ -81,7 +82,8 @@ func (s *Server) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest) (*pb
 	}
 
 	return &pb.UpdateUserResponse{
-		StatusCode: int32(codes.OK),
+		StatusCode: http.StatusOK,
+		Success: true,
 		Message:    "User updated successfully",
 		User:       pbUser,
 	}, nil

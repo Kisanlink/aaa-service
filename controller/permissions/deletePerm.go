@@ -3,6 +3,7 @@ package permissions
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/kisanlink/protobuf/pb-aaa"
 	"google.golang.org/grpc/codes"
@@ -22,7 +23,8 @@ func (s *PermissionServer) DeletePermission(ctx context.Context, req *pb.DeleteP
 		return nil, err
 	}
 	return &pb.DeletePermissionResponse{
-		StatusCode: int32(codes.OK),
+		StatusCode:http.StatusOK,
+		Success: true,
 		Message:    fmt.Sprintf("Permission with ID %s deleted successfully", id),
 	}, nil
 }
