@@ -49,6 +49,7 @@ func (s *Server) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.GetUs
 			YearOfBirth:  *user.YearOfBirth,
 			Message:      *user.Message,
 			MobileNumber: user.MobileNumber,
+			CountryCode: *user.CountryCode,
 			Address: &pb.Address{
 				Id:          address.ID,
 				Plot:        *address.Plot,

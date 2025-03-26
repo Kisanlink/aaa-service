@@ -53,9 +53,9 @@ func (s *Server) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest) (*pb
 	if req.Message != "" {
 		existingUser.Message = &req.Message
 	}
-	// if req.MobileNumber != "" {
-	// 	existingUser.MobileNumber = &req.MobileNumber
-	// }
+	if req.MobileNumber == 0 { 
+		existingUser.MobileNumber = req.MobileNumber
+}
 
 	if err := s.UserRepo.UpdateUser(ctx, *existingUser); err != nil {
 		return nil, err

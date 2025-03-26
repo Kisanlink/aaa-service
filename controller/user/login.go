@@ -27,19 +27,15 @@ func (s *Server) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResp
 	if err != nil {
 		return nil, status.Error(codes.Unauthenticated, "Invalid password")
 	}
-	userRoles, err := s.UserRepo.FindUserRoles(ctx, existingUser.ID)
+
+	roles, permissions, actions, err := s.UserRepo.FindUserRolesAndPermissions(ctx, existingUser.ID)
 	if err != nil {
-		return nil, err
+		return nil, status.Errorf(codes.Internal, "failed to fetch user roles and permissions: %v", err)
 	}
-	pbUserRoles := make([]*pb.UserRole, len(userRoles))
-	for i, role := range userRoles {
-		pbUserRoles[i] = &pb.UserRole{
-			Id:               role.ID,
-			UserId:           role.UserID,
-			RolePermissionId: role.RolePermissionID,
-			CreatedAt:        role.CreatedAt.Format(time.RFC3339Nano),
-			UpdatedAt:        role.UpdatedAt.Format(time.RFC3339Nano),
-		}
+	userRole := &pb.UserRoleResponse{
+		Roles:       roles,
+		Permissions: permissions,
+		Actions:     actions,
 	}
 	if err := helper.SetAuthHeadersWithTokens(
 		ctx,
@@ -61,7 +57,7 @@ func (s *Server) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResp
 			MobileNumber: existingUser.MobileNumber,
 			CountryCode: *existingUser.CountryCode,
 			IsValidated: existingUser.IsValidated,
-			UserRoles:   pbUserRoles,
+			UsageRight:   userRole,
 		},
 	}, nil
 }

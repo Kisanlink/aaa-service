@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/Kisanlink/aaa-service/middleware"
 	"github.com/Kisanlink/aaa-service/model"
@@ -59,24 +60,31 @@ func (s *Server) ValidateUser(ctx context.Context, req *pb.ValidateUserRequest) 
 		existingUser.YearOfBirth = &req.(*pb.ValidateUserRequest).YearOfBirth
 		existingUser.Message = &req.(*pb.ValidateUserRequest).Message
 		existingUser.AddressID = &address.ID
+		existingUser.CountryCode=&req.(*pb.ValidateUserRequest).CountryCode
+		existingUser.MobileNumber= req.(*pb.ValidateUserRequest).MobileNumber
 
 		if err := s.UserRepo.UpdateUser(ctx, *existingUser); err != nil {
 			return nil, err
 		}
-
-		userRoles, err := s.UserRepo.FindUserRoles(ctx, existingUser.ID)
-		if err != nil {
-			return nil, err
-		}
-
-		pbRoles := ConvertToPBUserRoles(userRoles)
 		pbUser := &pb.User{
-			Id:           existingUser.ID,
-			IsValidated:  existingUser.IsValidated,
-			UserRoles:    pbRoles,
+			Id:            existingUser.ID,
+			Username:      existingUser.Username,
+			Password:      existingUser.Password,
+			IsValidated:   existingUser.IsValidated,
 			AadhaarNumber: *existingUser.AadhaarNumber,
-			Status:       *existingUser.Status,
-			Name:         *existingUser.Name,
+			Status:        *existingUser.Status,
+			Name:          *existingUser.Name,
+			CareOf:        *existingUser.CareOf,
+			DateOfBirth:   *existingUser.DateOfBirth,
+			Photo:         *existingUser.Photo,
+			EmailHash:     *existingUser.EmailHash,
+			ShareCode:     *existingUser.ShareCode,
+			YearOfBirth:   *existingUser.YearOfBirth,
+			Message:       *existingUser.Message,
+			MobileNumber:  existingUser.MobileNumber,
+			CountryCode:   *existingUser.CountryCode,
+			CreatedAt: existingUser.CreatedAt.Format(time.RFC3339Nano),
+			UpdatedAt: existingUser.UpdatedAt.Format(time.RFC3339Nano),		
 			Address: &pb.Address{
 				Id:          address.ID,
 				Plot:        *address.Plot,
@@ -90,9 +98,11 @@ func (s *Server) ValidateUser(ctx context.Context, req *pb.ValidateUserRequest) 
 				Country:     *address.Country,
 				Pincode:     *address.Pincode,
 				FullAddress: *address.FullAddress,
+				CreatedAt: existingUser.CreatedAt.Format(time.RFC3339Nano),
+				UpdatedAt: existingUser.UpdatedAt.Format(time.RFC3339Nano),
 			},
 		}
-
+		
 		return &pb.ValidateUserResponse{
 			StatusCode: http.StatusOK,
 			Success: true,

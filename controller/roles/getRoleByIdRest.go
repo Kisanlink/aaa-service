@@ -47,6 +47,7 @@ func (s *RoleServer) GetRoleByIdRestApi(c *gin.Context) {
 			ID:          role.ID,
 			Name:        role.Name,
 			Description: role.Description,
+			Source: role.Source,
 		},
 	}
 

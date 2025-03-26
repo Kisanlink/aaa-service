@@ -70,7 +70,15 @@ func (s *Server) AssignRole(ctx context.Context, req *pb.AssignRoleToUserRequest
 		return nil, status.Errorf(codes.Internal, "failed to create relation")
 	}
 	log.Printf("relationship created successfully: %v", results)
-
+	roles, permissions, actions, err := s.UserRepo.FindUserRolesAndPermissions(ctx, updatedUser.ID)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to fetch user roles and permissions: %v", err)
+	}
+	userRole := &pb.UserRoleResponse{
+		Roles:       roles,
+		Permissions: permissions,
+		Actions:     actions,
+	}
 	connUser := &pb.User{
 		Id:            updatedUser.ID,
 		Username:      updatedUser.Username,
@@ -89,17 +97,19 @@ func (s *Server) AssignRole(ctx context.Context, req *pb.AssignRoleToUserRequest
 		ShareCode:     safeDereferenceString(updatedUser.ShareCode),
 		YearOfBirth:   safeDereferenceString(updatedUser.YearOfBirth),
 		MobileNumber:  (updatedUser.MobileNumber),
+		CountryCode: *updatedUser.CountryCode,
+		UsageRight: userRole,
 	}
 
-	for _, ur := range updatedUser.Roles {
-		connUser.UserRoles = append(connUser.UserRoles, &pb.UserRole{
-			Id:               ur.ID,
-			UserId:           ur.UserID,
-			RolePermissionId: ur.RolePermissionID,
-			CreatedAt:        ur.CreatedAt.String(),
-			UpdatedAt:        ur.UpdatedAt.String(),
-		})
-	}
+	// for _, ur := range updatedUser.Roles {
+	// 	connUser.UserRoles = append(connUser.UserRoles, &pb.UserRole{
+	// 		Id:               ur.ID,
+	// 		UserId:           ur.UserID,
+	// 		RolePermissionId: ur.RolePermissionID,
+	// 		CreatedAt:        ur.CreatedAt.String(),
+	// 		UpdatedAt:        ur.UpdatedAt.String(),
+	// 	})
+	// }
 
 	return &pb.AssignRoleToUserResponse{
 		StatusCode: http.StatusOK,

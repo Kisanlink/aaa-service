@@ -29,6 +29,7 @@ func (s *RoleServer) GetAllRolesRestApi(c *gin.Context) {
 			ID:          role.ID,
 			Name:        role.Name,
 			Description: role.Description,
+			Source: role.Source,
 		})
 	}
 

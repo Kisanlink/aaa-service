@@ -10,24 +10,24 @@ import (
 )
 
 func (s *RoleServer) UpdateRole(ctx context.Context, req *pb.UpdateRoleRequest) (*pb.UpdateRoleResponse, error) {
-	role := req.GetRole()
-	if role == nil {
-		return nil, status.Error(codes.InvalidArgument, "Role cannot be nil")
-	}
-	if role.Id == "" {
+
+	if req.Id == "" {
 		return nil, status.Error(codes.InvalidArgument, "Role ID is required")
 	}
 	updatedRole := make(map[string]interface{})
-	if role.Name != "" {
-		updatedRole["name"] = role.Name
+	if req.Name != "" {
+		updatedRole["name"] = req.Name
 	}
-	if role.Description != "" {
-		updatedRole["description"] = role.Description
+	if req.Description != "" {
+		updatedRole["description"] = req.Description
 	}
-	if err := s.RoleRepo.UpdateRole(ctx, role.Id, updatedRole); err != nil {
+	if req.Source != "" {
+		updatedRole["source"] = req.Source
+	}
+	if err := s.RoleRepo.UpdateRole(ctx, req.Id, updatedRole); err != nil {
 		return nil, err
 	}
-	updatedRoleModel, err := s.RoleRepo.FindRoleByID(ctx, role.Id)
+	updatedRoleModel, err := s.RoleRepo.FindRoleByID(ctx, req.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -35,6 +35,7 @@ func (s *RoleServer) UpdateRole(ctx context.Context, req *pb.UpdateRoleRequest) 
 		Id:          updatedRoleModel.ID,
 		Name:        updatedRoleModel.Name,
 		Description: updatedRoleModel.Description,
+		Source: updatedRoleModel.Source,
 	}
 	return &pb.UpdateRoleResponse{
 		StatusCode:http.StatusOK,

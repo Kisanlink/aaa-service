@@ -18,6 +18,7 @@ func (s *RoleServer) GetAllRoles(ctx context.Context, req *pb.GetAllRolesRequest
 			Id:          role.ID,
 			Name:        role.Name,
 			Description: role.Description,
+			Source: role.Source,
 		})
 	}
 	return &pb.GetAllRolesResponse{

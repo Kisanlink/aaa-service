@@ -22,6 +22,7 @@ func (s *RoleServer) GetRoleById(ctx context.Context, req *pb.GetRoleByIdRequest
 		Id:          role.ID,
 		Name:        role.Name,
 		Description: role.Description,
+		Source: role.Source,
 	}
 	return &pb.GetRoleByIdResponse{
 		StatusCode:http.StatusOK,

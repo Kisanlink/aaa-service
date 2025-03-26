@@ -53,6 +53,7 @@ func (s *Server) GetUserById(ctx context.Context, req *pb.GetUserByIdRequest) (*
 		YearOfBirth:  *user.YearOfBirth,
 		Message:      *user.Message,
 		MobileNumber: user.MobileNumber,
+		CountryCode: *user.CountryCode,
 		Address: &pb.Address{
 			Id:          address.ID,
 			Plot:        *address.Plot,

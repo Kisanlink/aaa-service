@@ -10,24 +10,21 @@ import (
 )
 
 func (s *PermissionServer) UpdatePermission(ctx context.Context, req *pb.UpdatePermissionRequest) (*pb.UpdatePermissionResponse, error) {
-	permission := req.GetPermission()
-	if permission == nil {
-		return nil, status.Error(codes.InvalidArgument, "Permission cannot be nil")
-	}
-	if permission.Id == "" {
+
+	if req.Id == "" {
 		return nil, status.Error(codes.InvalidArgument, "Permission ID is required")
 	}
 	updatedPermission := make(map[string]interface{})
-	if permission.Name != "" {
-		updatedPermission["name"] = permission.Name
+	if req.Name != "" {
+		updatedPermission["name"] = req.Name
 	}
-	if permission.Description != "" {
-		updatedPermission["description"] = permission.Description
+	if req.Description != "" {
+		updatedPermission["description"] = req.Description
 	}
-	if err := s.PermissionRepo.UpdatePermission(ctx, permission.Id, updatedPermission); err != nil {
+	if err := s.PermissionRepo.UpdatePermission(ctx, req.Id, updatedPermission); err != nil {
 		return nil, err
 	}
-	updatedPermissionModel, err := s.PermissionRepo.FindPermissionByID(ctx, permission.Id)
+	updatedPermissionModel, err := s.PermissionRepo.FindPermissionByID(ctx, req.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -35,11 +32,11 @@ func (s *PermissionServer) UpdatePermission(ctx context.Context, req *pb.UpdateP
 		Id:          updatedPermissionModel.ID,
 		Name:        updatedPermissionModel.Name,
 		Description: updatedPermissionModel.Description,
-		Source: permission.Source,
-		Action: permission.Action,
-		Resource: permission.Resource,
-		ValidStartTime: permission.ValidStartTime,
-		ValiedEndTime: permission.ValiedEndTime,
+		Source: req.Source,
+		Action: req.Action,
+		Resource: req.Resource,
+		// ValidStartTime: permission.ValidStartTime,
+		// ValiedEndTime: permission.ValiedEndTime,
 	}
 	return &pb.UpdatePermissionResponse{
 		StatusCode:http.StatusOK,
