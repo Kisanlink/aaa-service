@@ -88,8 +88,8 @@ func (s *Server) LoginRestApi(c *gin.Context) {
 	}
 
 	// Set auth headers with tokens
-	if err := helper.SetAuthHeadersWithTokens(
-		c.Request.Context(),
+	if err := helper.SetAuthHeadersWithTokensRest(
+		c,
 		existingUser.ID,
 		existingUser.Username,
 		existingUser.IsValidated,

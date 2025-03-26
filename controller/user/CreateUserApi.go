@@ -140,8 +140,8 @@ func (s *Server) CreateUserRestApi(c *gin.Context) {
 		}
 
 		// Set auth headers with tokens
-		if err := helper.SetAuthHeadersWithTokens(
-			c.Request.Context(),
+		if err := helper.SetAuthHeadersWithTokensRest(
+			c,
 			createdUser.ID,
 			createdUser.Username,
 			createdUser.IsValidated,
@@ -220,8 +220,8 @@ func (s *Server) CreateUserRestApi(c *gin.Context) {
 	}
 
 	// Set auth headers with tokens
-	if err := helper.SetAuthHeadersWithTokens(
-		c.Request.Context(),
+	if err := helper.SetAuthHeadersWithTokensRest(
+		c,
 		createdUser.ID,
 		createdUser.Username,
 		createdUser.IsValidated,

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -90,5 +91,23 @@ func SetAuthHeadersWithTokens(ctx context.Context, userID, username string, isVa
 	if err := grpc.SendHeader(ctx, header); err != nil {
 		return status.Errorf(codes.Internal, "unable to send headers: %v", err)
 	}
+	return nil
+}
+
+
+func SetAuthHeadersWithTokensRest(c *gin.Context, userID, username string, isValidated bool) error {
+	accessToken, err := GenerateAccessToken(userID, username, isValidated)
+	if err != nil {
+		return err
+	}
+
+	refreshToken, err := GenerateRefreshToken(userID, username, isValidated)
+	if err != nil {
+		return err
+	}
+	c.Header("token", accessToken)
+	c.Header("refreshtoken", refreshToken)
+	c.Header("userid", userID)
+	
 	return nil
 }
