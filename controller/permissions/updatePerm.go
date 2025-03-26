@@ -35,6 +35,11 @@ func (s *PermissionServer) UpdatePermission(ctx context.Context, req *pb.UpdateP
 		Id:          updatedPermissionModel.ID,
 		Name:        updatedPermissionModel.Name,
 		Description: updatedPermissionModel.Description,
+		Source: permission.Source,
+		Action: permission.Action,
+		Resource: permission.Resource,
+		ValidStartTime: permission.ValidStartTime,
+		ValiedEndTime: permission.ValiedEndTime,
 	}
 	return &pb.UpdatePermissionResponse{
 		StatusCode:http.StatusOK,

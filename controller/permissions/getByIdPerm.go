@@ -3,6 +3,7 @@ package permissions
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"github.com/kisanlink/protobuf/pb-aaa"
 	"google.golang.org/grpc/codes"
@@ -22,6 +23,11 @@ func (s *PermissionServer) GetPermissionById(ctx context.Context, req *pb.GetPer
 		Id:          permission.ID,
 		Name:        permission.Name,
 		Description: permission.Description,
+		Source: permission.Source,
+		Action: permission.Action,
+		Resource: permission.Resource,
+		ValidStartTime: permission.ValidStartTime.Format(time.RFC3339Nano),
+		ValiedEndTime: permission.ValidEndTime.Format(time.RFC3339Nano),
 	}
 	return &pb.GetPermissionByIdResponse{
 		StatusCode:http.StatusOK,

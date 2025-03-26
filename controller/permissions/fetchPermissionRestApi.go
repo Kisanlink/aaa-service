@@ -2,6 +2,7 @@ package permissions
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -12,6 +13,11 @@ type Permission struct {
 	ID          string `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
+	Source string `json:"source"`
+	Action string `json:"action"`
+	Resource string `json:"resource"`
+	ValidStartTime string `json:"valid_start_time"`
+	ValidEndTime string `json:"valid_end_time"`
 }
 
 type GetAllPermissionsResponse struct {
@@ -36,6 +42,11 @@ func (s *PermissionServer) GetAllPermissionsRestApi(c *gin.Context) {
 			ID:          permission.ID,
 			Name:        permission.Name,
 			Description: permission.Description,
+			Source: permission.Source,
+			Action: permission.Action,
+			Resource: permission.Resource,
+			ValidStartTime: permission.ValidStartTime.Format(time.RFC3339Nano),
+			ValidEndTime: permission.ValidEndTime.Format(time.RFC3339Nano),
 		})
 	}
 

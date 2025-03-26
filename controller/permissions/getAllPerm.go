@@ -3,6 +3,7 @@ package permissions
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"github.com/kisanlink/protobuf/pb-aaa"
 )
@@ -19,6 +20,11 @@ func (s *PermissionServer) GetAllPermissions(ctx context.Context, req *pb.GetAll
 			Id:          permission.ID,
 			Name:        permission.Name,
 			Description: permission.Description,
+			Source: permission.Source,
+			Action: permission.Action,
+			Resource: permission.Resource,
+			ValidStartTime: permission.ValidStartTime.Format(time.RFC3339Nano),
+			ValiedEndTime: permission.ValidEndTime.Format(time.RFC3339Nano),
 		})
 	}
 
