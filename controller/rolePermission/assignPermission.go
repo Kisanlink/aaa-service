@@ -2,8 +2,11 @@ package rolepermission
 
 import (
 	"context"
+	"log"
 	"net/http"
 
+	"github.com/Kisanlink/aaa-service/client"
+	"github.com/Kisanlink/aaa-service/helper"
 	"github.com/Kisanlink/aaa-service/model"
 	"github.com/Kisanlink/aaa-service/repositories"
 	"github.com/kisanlink/protobuf/pb-aaa"
@@ -16,16 +19,19 @@ type ConnectRolePermissionServer struct {
 	RolePermissionRepo *repositories.RolePermissionRepository
 	RoleRepo           *repositories.RoleRepository
 	PermissionRepo     *repositories.PermissionRepository
+	userRepo *repositories.UserRepository
 }
 
 func NewConnectRolePermissionServer(
 	rolePermissionRepo *repositories.RolePermissionRepository,
 	roleRepo *repositories.RoleRepository,
 	permissionRepo *repositories.PermissionRepository,
+	userRepo *repositories.UserRepository,
 ) *ConnectRolePermissionServer {
 	return &ConnectRolePermissionServer{
 		RolePermissionRepo: rolePermissionRepo,
 		RoleRepo:           roleRepo,
+		userRepo:           userRepo,
 		PermissionRepo:     permissionRepo,
 	}
 }
@@ -74,7 +80,36 @@ func (s *ConnectRolePermissionServer) AssignPermission(ctx context.Context, req 
 		}
 		connRolePermissions = append(connRolePermissions, connRolePermission)
 	}
-
+	roles, permissions, actions, usernames, err := s.userRepo.FindRoleUsersAndPermissionsByRoleId(ctx, roleID)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to fetch user roles and permissions: %v", err)
+	}
+	log.Println(roles,permissions,actions,usernames)
+	// Process each user one by one
+	for _, username := range usernames {
+		deleteResponse, err := client.DeleteUserRoleRelationship(
+			username,
+			 (roles),
+			helper.LowerCaseSlice(permissions),
+			helper.LowerCaseSlice(actions),
+		)
+		if err != nil {
+			log.Printf("Failed to delete relationships for user %s: %v", username, err)
+			continue 
+		}
+		log.Printf("User roles and permissions deleted successfully for %s: %s", username, deleteResponse)
+			createResponse, err := client.CreateUserRoleRelationship(
+			username,
+			helper.LowerCaseSlice(roles),
+			helper.LowerCaseSlice(permissions),
+			helper.LowerCaseSlice(actions),
+		)
+		if err != nil {
+			log.Printf("Failed to create relationships for user %s: %v", username, err)
+			continue
+		}
+		log.Printf("Relationships created successfully for %s: %v", username, createResponse)
+	}
 	return &pb.CreateConnRolePermissionResponse{
 		StatusCode: http.StatusCreated,
 		Success: true,

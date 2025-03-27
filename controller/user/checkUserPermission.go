@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/Kisanlink/aaa-service/client"
+	"github.com/Kisanlink/aaa-service/helper"
 	"github.com/kisanlink/protobuf/pb-aaa"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -23,9 +24,9 @@ func (s *Server) CheckUserPermission(ctx context.Context, req *pb.CheckPermissio
 
 	results, err := client.CheckUserPermissions(
 		createdUser.Username,
-		LowerCaseSlice(roles),
-		LowerCaseSlice(permissions),
-		LowerCaseSlice(req.Actions),
+		helper.LowerCaseSlice(roles),
+		helper.LowerCaseSlice(permissions),
+		helper.LowerCaseSlice(req.Actions),
 	)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to check permissions")

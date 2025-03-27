@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/Kisanlink/aaa-service/helper"
@@ -170,17 +169,6 @@ func (s *Server) RegisterUser(ctx context.Context, req *pb.CreateUserRequest) (*
     if err != nil {
         return nil, err
     }    
-    // roles, permissions, actions, err := s.UserRepo.FindUserRolesAndPermissions(ctx, createdUser.ID)
-    // if err != nil {
-    //     return nil, status.Errorf(codes.Internal, "failed to fetch user roles and permissions: %v", err)
-    // }
-    
-    // userRole := &pb.UserRoleResponse{
-    //     Roles:       roles,
-    //     Permissions: permissions,
-    //     Actions:     actions,
-    // }
-    
     // Create response with headers (note: gRPC uses metadata for headers)
 	if err := helper.SetAuthHeadersWithTokens(
 		ctx,
@@ -221,23 +209,4 @@ func HashPassword(password string) (string, error) {
 	return string(hashedPassword), nil
 }
 
-func ConvertToPBUserRoles(userRoles []model.UserRole) []*pb.UserRole {
-	var pbUserRoles []*pb.UserRole
-	for _, userRole := range userRoles {
-		pbUserRole := &pb.UserRole{
-			Id:               userRole.ID,
-			UserId:           userRole.UserID,
-			RolePermissionId: userRole.RolePermissionID,
-			CreatedAt:        userRole.CreatedAt.Format(time.RFC3339Nano),
-			UpdatedAt:        userRole.UpdatedAt.Format(time.RFC3339Nano),
-		}
-		pbUserRoles = append(pbUserRoles, pbUserRole)
-	}
-	return pbUserRoles
-}
-func LowerCaseSlice(input []string) []string {
-    for i, val := range input {
-        input[i] = strings.ToLower(val)
-    }
-    return input
-}
+

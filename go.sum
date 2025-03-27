@@ -125,6 +125,8 @@ github.com/kisanlink/protobuf v0.0.0-20250326172458-e1f38c7b8c3a h1:i+1mmqEiIBFZ
 github.com/kisanlink/protobuf v0.0.0-20250326172458-e1f38c7b8c3a/go.mod h1:NhJW/UrG2O/+T8ikQ7qWAAlCQtYNRW0E5O8pGQzH/uI=
 github.com/kisanlink/protobuf v0.0.0-20250326173226-165f293fc1b3 h1:aCKAZyhfgUDlKGXLiewU0Cxm8Vqs932WCFw34wTSurM=
 github.com/kisanlink/protobuf v0.0.0-20250326173226-165f293fc1b3/go.mod h1:NhJW/UrG2O/+T8ikQ7qWAAlCQtYNRW0E5O8pGQzH/uI=
+github.com/kisanlink/protobuf v0.0.0-20250327062214-d1f82ff27d11 h1:6dzFRbszSjTdXV7VItRocCEDfnKcpyNiQmYCyiGn+U8=
+github.com/kisanlink/protobuf v0.0.0-20250327062214-d1f82ff27d11/go.mod h1:NhJW/UrG2O/+T8ikQ7qWAAlCQtYNRW0E5O8pGQzH/uI=
 github.com/kisielk/errcheck v1.5.0/go.mod h1:pFxgyoBC7bSaBwPgfKdkLd5X25qrDl4LWUI2bnpBCr8=
 github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+oQHNcck=
 github.com/klauspost/cpuid/v2 v2.0.9/go.mod h1:FInQzS24/EEf25PyTYn52gqo7WaD8xa0213Md/qVLRg=

@@ -50,7 +50,7 @@ func StartGRPCServer(db *gorm.DB) (*grpc.Server, error) {
 	pb.RegisterRoleServiceServer(s, roleServer)
 	permissionServer := permissions.NewPermissionServer(permissionRepo,roleRepo)
 	pb.RegisterPermissionServiceServer(s, permissionServer)
-	connectRolePermissionServer := rolepermission.NewConnectRolePermissionServer(connectRolePermissionRepo, roleRepo, permissionRepo)
+	connectRolePermissionServer := rolepermission.NewConnectRolePermissionServer(connectRolePermissionRepo, roleRepo, permissionRepo,userRepo)
 	pb.RegisterConnectRolePermissionServiceServer(s, connectRolePermissionServer)
 
 	go func() {

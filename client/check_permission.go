@@ -8,14 +8,12 @@ import (
 	pb "github.com/authzed/authzed-go/proto/authzed/api/v1"
 )
 func CheckUserPermissions(userID string, roles []string, permissions []string, actions []string) (map[string]map[string]bool, error) {
-	// Connect to SpiceDB
 	spicedb, err := database.SpiceDB()
 	if err != nil {
 		log.Printf("Unable to connect to SpiceDB: %s", err)
 		return nil, err
 	}
 
-	// Prepare the result map
 	result := map[string]map[string]bool{
 		"user_actions": {},
 		"role_permissions": {},

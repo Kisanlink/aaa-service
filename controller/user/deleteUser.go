@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/Kisanlink/aaa-service/client"
+	"github.com/Kisanlink/aaa-service/helper"
 	"github.com/kisanlink/protobuf/pb-aaa"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -34,9 +35,9 @@ func (s *Server) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest) (*pb
     }
 	updated, err := client.DeleteUserRoleRelationship(
 		strings.ToLower(existingUser.Username), 
-		LowerCaseSlice(roles), 
-		LowerCaseSlice(permissions),
-		LowerCaseSlice(actions),
+		helper.LowerCaseSlice(roles), 
+		helper.LowerCaseSlice(permissions),
+		helper.LowerCaseSlice(actions),
 	)
 		if err != nil {
 		return nil, status.Errorf(codes.Internal, "Failed to delete user relationship")

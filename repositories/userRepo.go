@@ -87,6 +87,7 @@ func (repo *UserRepository) FindUserRoles(ctx context.Context, userID string) ([
 	return userRoles, nil
 }
 func (repo *UserRepository) FindUserRolesAndPermissions(ctx context.Context, userID string) ([]string, []string, []string, error) {
+    // Fetch all user roles for the given userID
     var userRoles []model.UserRole
     err := repo.DB.Table("user_roles").Where("user_id = ?", userID).Find(&userRoles).Error
     if err != nil {
@@ -100,31 +101,38 @@ func (repo *UserRepository) FindUserRolesAndPermissions(ctx context.Context, use
     actionSet := make(map[string]struct{})
 
     for _, userRole := range userRoles {
-        var rolePermission model.RolePermission
-        err := repo.DB.Table("role_permissions").
-            Where("id = ?", userRole.RolePermissionID).
-            Preload("Role").
-            Preload("Permission").
-            First(&rolePermission).Error
+        var role model.Role
+        err := repo.DB.Table("roles").
+            Where("id = ?", userRole.RoleID).
+            Preload("RolePermissions").
+            Preload("RolePermissions.Permission").
+            First(&role).Error
         if err != nil {
-            return nil, nil, nil, status.Error(codes.Internal, "Failed to fetch role permissions")
+            return nil, nil, nil, status.Error(codes.Internal, "Failed to fetch role details")
         }
 
-        if rolePermission.Role.ID != "" { 
-            roles = append(roles, rolePermission.Role.Name)
+        if role.ID != "" {
+            roles = append(roles, role.Name)
         }
 
-        if rolePermission.Permission.ID != "" {
-            permissionSet[rolePermission.Permission.Name] = struct{}{}
-            actionSet[rolePermission.Permission.Action] = struct{}{}
+        // Iterate through all role permissions of this role
+        for _, rolePermission := range role.RolePermissions {
+            if rolePermission.Permission.ID != "" {
+                permissionSet[rolePermission.Permission.Name] = struct{}{}
+                actionSet[rolePermission.Permission.Action] = struct{}{}
+            }
         }
     }
+
+    // Convert sets to slices
     for permission := range permissionSet {
         permissions = append(permissions, permission)
     }
     for action := range actionSet {
         actions = append(actions, action)
     }
+
+    // Convert all strings to lowercase
     for i, role := range roles {
         roles[i] = strings.ToLower(role)
     }
@@ -137,7 +145,87 @@ func (repo *UserRepository) FindUserRolesAndPermissions(ctx context.Context, use
 
     return roles, permissions, actions, nil
 }
-func (repo *UserRepository) CreateUserRoles(ctx context.Context, userRoles []model.UserRole) error {
+
+
+func (repo *UserRepository) FindRoleUsersAndPermissionsByRoleId(ctx context.Context, roleID string) ([]string, []string, []string, []string, error) {
+    // First verify the role exists
+    var role model.Role
+    err := repo.DB.Table("roles").
+        Where("id = ?", roleID).
+        Preload("RolePermissions").
+        Preload("RolePermissions.Permission").
+        First(&role).Error
+    if err != nil {
+        return nil, nil, nil, nil, status.Error(codes.NotFound, "Role not found")
+    }
+
+    // Initialize data structures
+    var roles []string
+    var permissions []string
+    var actions []string
+    var connectedUsernames []string
+    permissionSet := make(map[string]struct{})
+    actionSet := make(map[string]struct{})
+    usernameSet := make(map[string]struct{})
+
+    // Add the main role name
+    if role.ID != "" {
+        roles = append(roles, role.Name)
+    }
+
+    // Get all users connected to this role with proper preloading
+    var roleUsers []model.UserRole
+    err = repo.DB.Table("user_roles").
+        Where("role_id = ?", roleID).
+        Preload("User"). // Preload the User relationship
+        Find(&roleUsers).Error
+    if err != nil {
+        return nil, nil, nil, nil, status.Error(codes.Internal, "Failed to fetch connected users")
+    }
+
+    // Collect all usernames
+    for _, ru := range roleUsers {
+        if ru.User.Username != "" {  // Directly access the User's Username field
+            usernameSet[ru.User.Username] = struct{}{}
+        }
+    }
+
+    // Get all permissions and actions from this role
+    for _, rolePermission := range role.RolePermissions {
+        if rolePermission.Permission.ID != "" {
+            permissionSet[rolePermission.Permission.Name] = struct{}{}
+            actionSet[rolePermission.Permission.Action] = struct{}{}
+        }
+    }
+
+    // Convert sets to slices
+    for permission := range permissionSet {
+        permissions = append(permissions, permission)
+    }
+    for action := range actionSet {
+        actions = append(actions, action)
+    }
+    for username := range usernameSet {
+        connectedUsernames = append(connectedUsernames, username)
+    }
+
+    // Convert all strings to lowercase
+    for i := range roles {
+        roles[i] = strings.ToLower(roles[i])
+    }
+    for i := range permissions {
+        permissions[i] = strings.ToLower(permissions[i])
+    }
+    for i := range actions {
+        actions[i] = strings.ToLower(actions[i])
+    }
+    for i := range connectedUsernames {
+        connectedUsernames[i] = strings.ToLower(connectedUsernames[i])
+    }
+
+    return roles, permissions, actions, connectedUsernames, nil
+}
+func (repo *UserRepository) CreateUserRoles(ctx context.Context, userRoles model.UserRole) error {
         if err := repo.DB.Table("user_roles").Create(&userRoles).Error; err != nil {
             return status.Error(codes.Internal, "Failed to create UserRole entries")
         }

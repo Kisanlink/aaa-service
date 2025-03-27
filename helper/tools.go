@@ -3,6 +3,7 @@ package helper
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 )
 
 func PrettyJSON(body interface{}) {
@@ -16,3 +17,9 @@ func PrettyJSON(body interface{}) {
 	fmt.Printf("%s\n", string(marshaled))
 }
 
+func LowerCaseSlice(input []string) []string {
+    for i, val := range input {
+        input[i] = strings.ToLower(val)
+    }
+    return input
+}

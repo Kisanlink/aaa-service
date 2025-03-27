@@ -69,24 +69,6 @@ func (s *Server) LoginRestApi(c *gin.Context) {
 		return
 	}
 
-	userRoles, err := s.UserRepo.FindUserRoles(c.Request.Context(), existingUser.ID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch user roles"})
-		return
-	}
-
-	// Convert model.UserRole to API UserRole
-	apiUserRoles := make([]UserRole, len(userRoles))
-	for i, role := range userRoles {
-		apiUserRoles[i] = UserRole{
-			ID:               role.ID,
-			UserID:           role.UserID,
-			RolePermissionID: role.RolePermissionID,
-			CreatedAt:        role.CreatedAt.Format(time.RFC3339Nano),
-			UpdatedAt:        role.UpdatedAt.Format(time.RFC3339Nano),
-		}
-	}
-
 	// Set auth headers with tokens
 	if err := helper.SetAuthHeadersWithTokensRest(
 		c,
@@ -110,7 +92,7 @@ func (s *Server) LoginRestApi(c *gin.Context) {
 			IsValidated:  existingUser.IsValidated,
 			CreatedAt:    existingUser.CreatedAt.Format(time.RFC3339Nano),
 			UpdatedAt:    existingUser.UpdatedAt.Format(time.RFC3339Nano),
-			UserRoles:    apiUserRoles,
+			// UserRoles:    apiUserRoles,
 		},
 	}
 
