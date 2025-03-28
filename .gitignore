@@ -2,4 +2,4 @@
 *.env
 
 # Ignore temporary files and directories
-*tmp/
+tmp/
