@@ -33,6 +33,8 @@ func (s *PermissionServer) GetPermissionById(ctx context.Context, req *pb.GetPer
 		StatusCode:http.StatusOK,
 		Success: true,
 		Message:    "Permission retrieved successfully",
-		Permission: pbPermission,
+		Data: pbPermission,
+		DataTimeStamp: time.Now().Format(time.RFC3339), // Current time in RFC3339 string format
+
 	}, nil
 }

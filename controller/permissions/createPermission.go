@@ -108,6 +108,8 @@ func (s *PermissionServer) CreatePermission(ctx context.Context, req *pb.CreateP
 		Name:          newPermission.Name,
 		Description:   newPermission.Description,
 		Action:        newPermission.Action,
+		Source: newPermission.Source,
+		Resource: newPermission.Resource,
 		ValidStartTime: newPermission.ValidStartTime.Format(time.RFC3339Nano),
 		ValiedEndTime:  newPermission.ValidEndTime.Format(time.RFC3339Nano),
 	}
@@ -116,6 +118,7 @@ func (s *PermissionServer) CreatePermission(ctx context.Context, req *pb.CreateP
 		StatusCode: http.StatusCreated,
 		Success: true,
 		Message:    "Permission created successfully",
-		Permission: pbPermission,
-	}, nil
+		Data: pbPermission,
+		DataTimeStamp: time.Now().Format(time.RFC3339), // Current time in RFC3339 string format
+		}, nil
 }

@@ -3,6 +3,7 @@ package roles
 import (
 	"context"
 	"strings"
+	"time"
 
 	"log"
 	"net/http"
@@ -107,6 +108,8 @@ func (s *RoleServer) CreateRole(ctx context.Context, req *pb.CreateRoleRequest) 
 		StatusCode: http.StatusCreated,
 		Success: true,
 		Message:    "Role created successfully",
-		Role:       pbRole,
+		Data:       pbRole,
+		DataTimeStamp: time.Now().Format(time.RFC3339), // Current time in RFC3339 string format
+
 	}, nil
 }

@@ -282,3 +282,82 @@ func (repo *UserRepository) FindUserByUsername(ctx context.Context, username str
 	}
 	return &existingUser, nil
 }
+
+
+func (repo *UserRepository) FindUserByMobile(ctx context.Context, mobileNumber uint64) (*model.User, error) {
+    var existingUser model.User
+    
+    query := repo.DB.Table("users").Where("mobile_number = ?", mobileNumber)
+    err := query.First(&existingUser).Error
+    
+    if errors.Is(err, gorm.ErrRecordNotFound) {
+        return nil, nil
+    }
+    if err != nil {
+        return nil, status.Error(codes.Internal, "database error: "+err.Error())
+    } 
+    return &existingUser, nil
+}
+
+func (repo *UserRepository) FindUserByAadhaar(ctx context.Context,aadhaarNumber string) (*model.User, error) {
+    var existingUser model.User
+    
+    query := repo.DB.Table("users").Where("aadhaar_number = ?", aadhaarNumber)
+    err := query.First(&existingUser).Error
+    
+    if errors.Is(err, gorm.ErrRecordNotFound) {
+        return nil, nil
+    }
+    if err != nil {
+        return nil, status.Error(codes.Internal, "database error: "+err.Error())
+    } 
+    return &existingUser, nil
+}
+
+
+func (repo *UserRepository) FindUsageRights(ctx context.Context, userID string) ([]string, []model.Permission, error) {
+	// Fetch user roles
+	var userRoles []model.UserRole
+	if err := repo.DB.WithContext(ctx).
+		Where("user_id = ?", userID).
+		Find(&userRoles).Error; err != nil {
+		return nil, nil, status.Error(codes.Internal, "failed to fetch user roles")
+	}
+
+	// Use a map to track unique roles
+	uniqueRoles := make(map[string]bool)
+	roles := make([]string, 0)
+	permissionMap := make(map[string]model.Permission) // Deduplicate by permission ID
+
+	// Process each user role
+	for _, userRole := range userRoles {
+		var role model.Role
+		if err := repo.DB.WithContext(ctx).
+			Where("id = ?", userRole.RoleID).
+			Preload("RolePermissions.Permission").
+			First(&role).Error; err != nil {
+			return nil, nil, status.Error(codes.Internal, "failed to fetch role details")
+		}
+
+		// Add role name if not already present
+		if role.Name != "" && !uniqueRoles[role.Name] {
+			uniqueRoles[role.Name] = true
+			roles = append(roles, role.Name)
+		}
+
+		// Collect permissions
+		for _, rp := range role.RolePermissions {
+			if rp.Permission.ID != "" {
+				permissionMap[rp.Permission.ID] = rp.Permission
+			}
+		}
+	}
+
+	// Convert map to slice
+	permissions := make([]model.Permission, 0, len(permissionMap))
+	for _, perm := range permissionMap {
+		permissions = append(permissions, perm)
+	}
+
+	return roles, permissions, nil
+}

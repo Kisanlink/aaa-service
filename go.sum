@@ -127,6 +127,16 @@ github.com/kisanlink/protobuf v0.0.0-20250326173226-165f293fc1b3 h1:aCKAZyhfgUDl
 github.com/kisanlink/protobuf v0.0.0-20250326173226-165f293fc1b3/go.mod h1:NhJW/UrG2O/+T8ikQ7qWAAlCQtYNRW0E5O8pGQzH/uI=
 github.com/kisanlink/protobuf v0.0.0-20250327062214-d1f82ff27d11 h1:6dzFRbszSjTdXV7VItRocCEDfnKcpyNiQmYCyiGn+U8=
 github.com/kisanlink/protobuf v0.0.0-20250327062214-d1f82ff27d11/go.mod h1:NhJW/UrG2O/+T8ikQ7qWAAlCQtYNRW0E5O8pGQzH/uI=
+github.com/kisanlink/protobuf v0.0.0-20250328054742-873940cebfea h1:2VYVr6r5f54FuxieK4EL3fxk542BlzdIPKV0nYA59qU=
+github.com/kisanlink/protobuf v0.0.0-20250328054742-873940cebfea/go.mod h1:NhJW/UrG2O/+T8ikQ7qWAAlCQtYNRW0E5O8pGQzH/uI=
+github.com/kisanlink/protobuf v0.0.0-20250328061430-418f74385594 h1:/52TDQqrLEOu8VoB3EwDCZtNqXrssLz302ciwWlPjN4=
+github.com/kisanlink/protobuf v0.0.0-20250328061430-418f74385594/go.mod h1:NhJW/UrG2O/+T8ikQ7qWAAlCQtYNRW0E5O8pGQzH/uI=
+github.com/kisanlink/protobuf v0.0.0-20250328090939-683c958505df h1:BcfK091W056HGSEScjtfxcjBWbLfwrRpZIO+ZcMqUdY=
+github.com/kisanlink/protobuf v0.0.0-20250328090939-683c958505df/go.mod h1:NhJW/UrG2O/+T8ikQ7qWAAlCQtYNRW0E5O8pGQzH/uI=
+github.com/kisanlink/protobuf v0.0.0-20250328095612-d3aec1ccaf64 h1:0uq7mlfClROZDSPuDWW+1GrGte7w+IloxdUAvfgC7HA=
+github.com/kisanlink/protobuf v0.0.0-20250328095612-d3aec1ccaf64/go.mod h1:NhJW/UrG2O/+T8ikQ7qWAAlCQtYNRW0E5O8pGQzH/uI=
+github.com/kisanlink/protobuf v0.0.0-20250328103756-b449cb98ca5c h1:3pqR8SXCnPyRLvQGpBT9J2bds/U0H1JHpgT+8c14bY4=
+github.com/kisanlink/protobuf v0.0.0-20250328103756-b449cb98ca5c/go.mod h1:NhJW/UrG2O/+T8ikQ7qWAAlCQtYNRW0E5O8pGQzH/uI=
 github.com/kisielk/errcheck v1.5.0/go.mod h1:pFxgyoBC7bSaBwPgfKdkLd5X25qrDl4LWUI2bnpBCr8=
 github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+oQHNcck=
 github.com/klauspost/cpuid/v2 v2.0.9/go.mod h1:FInQzS24/EEf25PyTYn52gqo7WaD8xa0213Md/qVLRg=

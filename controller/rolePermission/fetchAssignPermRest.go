@@ -14,8 +14,8 @@ type ConnRole struct {
 	Name        string    `json:"name"`
 	Description string    `json:"description"`
 	Source      string    `json:"source"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	CreatedAt      string `json:"created_at"`
+	UpdatedAt      string `json:"updated_at"`
 }
 
 type ConnPermission struct {
@@ -25,10 +25,10 @@ type ConnPermission struct {
 	Action        string  `json:"action"`
 	Resource      string    `json:"resource"`
 	Source        string    `json:"source"`
-	ValidStartTime time.Time `json:"valid_start_time"`
-	ValidEndTime   time.Time `json:"valid_end_time"`
-	CreatedAt     time.Time `json:"created_at"`
-	UpdatedAt     time.Time `json:"updated_at"`
+	ValidStartTime string `json:"valid_start_time"`
+	ValidEndTime   string `json:"valid_end_time"`
+	CreatedAt      string `json:"created_at"`
+	UpdatedAt      string `json:"updated_at"`
 }
 
 type RolePermissionResponse struct {
@@ -44,6 +44,7 @@ type GetAllRolePermissionsResponse struct {
 	StatusCode int                     `json:"status_code"`
 	Success    bool                    `json:"success"`
 	Message    string                  `json:"message"`
+	DataTimeStamp string             `json:"data_time_stamp"`
 	Data       []RolePermissionResponse `json:"data"`
 }
 
@@ -72,8 +73,8 @@ func (s *ConnectRolePermissionServer) GetAllRolePermissionsRestApi(c *gin.Contex
 				Name:        rp.Role.Name,
 				Description: rp.Role.Description,
 				Source:      rp.Role.Source,
-				CreatedAt:   rp.Role.CreatedAt,
-				UpdatedAt:   rp.Role.UpdatedAt,
+				CreatedAt:   rp.Role.CreatedAt.Format(time.RFC3339Nano),
+				UpdatedAt:   rp.Role.UpdatedAt.Format(time.RFC3339Nano),
 			},
 			Permissions: []*ConnPermission{{
 				ID:            rp.Permission.ID,
@@ -82,10 +83,10 @@ func (s *ConnectRolePermissionServer) GetAllRolePermissionsRestApi(c *gin.Contex
 				Action:        rp.Permission.Action,
 				Resource:      rp.Permission.Resource,
 				Source:        rp.Permission.Source,
-				ValidStartTime: rp.Permission.ValidStartTime,
-				ValidEndTime:   rp.Permission.ValidEndTime,
-				CreatedAt:     rp.Permission.CreatedAt,
-				UpdatedAt:     rp.Permission.UpdatedAt,
+				ValidStartTime: rp.Permission.ValidStartTime.Format(time.RFC3339Nano),
+				ValidEndTime:   rp.Permission.ValidEndTime.Format(time.RFC3339Nano),
+				CreatedAt:     rp.Permission.CreatedAt.Format(time.RFC3339Nano),
+				UpdatedAt:     rp.Permission.UpdatedAt.Format(time.RFC3339Nano),
 			}},
 			IsActive: rp.IsActive,
 		})
@@ -95,6 +96,7 @@ func (s *ConnectRolePermissionServer) GetAllRolePermissionsRestApi(c *gin.Contex
 		StatusCode: http.StatusOK,
 		Success:    true,
 		Message:    "Role with Permissions fetched successfully",
+		DataTimeStamp: time.Now().Format(time.RFC3339Nano),
 		Data:       responseData,
 	}
 

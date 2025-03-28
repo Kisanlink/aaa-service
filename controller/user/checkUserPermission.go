@@ -31,8 +31,6 @@ func (s *Server) CheckUserPermission(ctx context.Context, req *pb.CheckPermissio
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to check permissions")
 	}
-
-	// roleMap := make(map[string]bool)
 	permissionMap := make(map[string]bool)
 	actionMap := make(map[string]bool)
 
@@ -50,7 +48,6 @@ func (s *Server) CheckUserPermission(ctx context.Context, req *pb.CheckPermissio
 		StatusCode:http.StatusOK,
 		Success: true,
 		Message:     "Permissions checked successfully",
-		// Roles:       roleMap,
 		Permissions: permissionMap,
 		Actions:     actionMap,
 	}

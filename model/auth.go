@@ -8,16 +8,16 @@ type User struct {
 	Username      string  `json:"username" gorm:"unique" validate:"required,username"`
 	Password      string  `json:"password" validate:"required,min=8,max=128"`
 	IsValidated   bool    `json:"isValidate" validate:"default:false"`
-	AadhaarNumber *string `json:"aadhaar_number" gorm:"type:string"`
+	AadhaarNumber *string `json:"aadhaar_number" gorm:"type:varchar(12);uniqueIndex"`
 	Status        *string `json:"status" gorm:"type:string"`
 	Name          *string `json:"name" gorm:"type:string"`
 	CareOf        *string `json:"care_of" gorm:"type:string"`
 	DateOfBirth   *string `json:"date_of_birth" gorm:"type:string"`
 	Photo         *string `json:"photo" gorm:"type:string"`
 	EmailHash     *string `json:"email_hash" gorm:"type:string"`
-	ShareCode     *string  `json:"share_code" gorm:"type:string"`
-	YearOfBirth   *string  `json:"year_of_birth" gorm:"type:string"`
-	MobileNumber  uint64 `json:"mobile_number" gorm:"type:bigint"`
+	ShareCode     *string `json:"share_code" gorm:"type:string"`
+	YearOfBirth   *string `json:"year_of_birth" gorm:"type:string"`
+	MobileNumber uint64   `json:"mobile_number" gorm:"type:bigint;uniqueIndex"`
 	CountryCode   *string `json:"country_code" gorm:"type:varchar(10);default:'+91'"`
 	Message       *string `json:"message" gorm:"type:string"`
 	AddressID     *string `json:"address_id"`
@@ -29,7 +29,7 @@ type User struct {
 
 type Address struct {
 	Base
-	Plot        *string `json:"plot" gorm:"type:string"`
+	House        *string `json:"house" gorm:"type:string"`
 	Street      *string `json:"street" gorm:"type:string"`
 	Landmark    *string `json:"landmark" gorm:"type:string"`
 	PostOffice  *string `json:"post_office" gorm:"type:string"`

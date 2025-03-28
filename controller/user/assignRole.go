@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/Kisanlink/aaa-service/client"
 	"github.com/Kisanlink/aaa-service/helper"
@@ -36,12 +37,11 @@ func (s *Server) AssignRole(ctx context.Context, req *pb.AssignRoleToUserRequest
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "Failed to fetch user details: %v", err)
 	}
-
 	roles, permissions, actions, err := s.UserRepo.FindUserRolesAndPermissions(ctx, updatedUser.ID)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to fetch user roles and permissions: %v", err)
 	}
-	response, err := client.DeleteUserRoleRelationship(
+	_, err = client.DeleteUserRoleRelationship(
 		updatedUser.Username,
 		helper.LowerCaseSlice(roles),
 		helper.LowerCaseSlice(permissions),
@@ -50,9 +50,7 @@ func (s *Server) AssignRole(ctx context.Context, req *pb.AssignRoleToUserRequest
 	if err != nil {
 		log.Printf("Failed to delete relationships: %v", err)
 	}
-	log.Printf("User roles and permission deleted successfully: %s", response)
-
-	results, err := client.CreateUserRoleRelationship(
+	_, err = client.CreateUserRoleRelationship(
 		updatedUser.Username,
 		helper.LowerCaseSlice(roles),
 		helper.LowerCaseSlice(permissions),
@@ -61,44 +59,48 @@ func (s *Server) AssignRole(ctx context.Context, req *pb.AssignRoleToUserRequest
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to create relation: %v", err)
 	}
-	log.Printf("relationship created successfully: %v", results)
+	roles, permissionsList, err := s.UserRepo.FindUsageRights(ctx, updatedUser.ID)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to fetch user roles and permissions: %v", err)
+	}
+	pbPermissions := make([]*pb.PermissionResponse, len(permissionsList))
+	for i, perm := range permissionsList {
+		pbPermissions[i] = &pb.PermissionResponse{
+			Name:        perm.Name,
+			Description: perm.Description,
+			Action:      perm.Action,
+			Source:      perm.Source,
+			Resource:    perm.Resource,
+		}
+	}
 	userRoleResponse := &pb.UserRoleResponse{
 		Roles:       roles,
-		Permissions: permissions,
-		Actions:     actions,
+		Permissions: pbPermissions,
 	}
-	connUser := &pb.User{
-		Id:            updatedUser.ID,
-		Username:      updatedUser.Username,
-		Password:      updatedUser.Password,
-		IsValidated:   updatedUser.IsValidated,
-		CreatedAt:     updatedUser.CreatedAt.String(),
-		UpdatedAt:     updatedUser.UpdatedAt.String(),
-		AadhaarNumber: safeDereferenceString(updatedUser.AadhaarNumber),
-		Status:        safeDereferenceString(updatedUser.Status),
-		Name:          safeDereferenceString(updatedUser.Name),
-		CareOf:        safeDereferenceString(updatedUser.CareOf),
-		DateOfBirth:   safeDereferenceString(updatedUser.DateOfBirth),
-		Photo:         safeDereferenceString(updatedUser.Photo),
-		EmailHash:     safeDereferenceString(updatedUser.EmailHash),
-		Message:       safeDereferenceString(updatedUser.Message),
-		ShareCode:     safeDereferenceString(updatedUser.ShareCode),
-		YearOfBirth:   safeDereferenceString(updatedUser.YearOfBirth),
-		MobileNumber:  updatedUser.MobileNumber,
-		CountryCode:   *updatedUser.CountryCode,
-		UsageRight:    userRoleResponse,
+	createdAt := ""
+	if !updatedUser.CreatedAt.IsZero() {
+		createdAt = updatedUser.CreatedAt.Format(time.RFC3339)
 	}
 
-	return &pb.AssignRoleToUserResponse{
-		StatusCode: http.StatusOK,
-		Success:    true,
-		Message:    "Role assigned to user successfully",
-		User:       connUser,
-	}, nil
-}
-func safeDereferenceString(s *string) string {
-	if s == nil {
-		return ""
+	updatedAt := ""
+	if !updatedUser.UpdatedAt.IsZero() {
+		updatedAt = updatedUser.UpdatedAt.Format(time.RFC3339)
 	}
-	return *s
+
+	connUser := &pb.AssignRolePermission{
+		Id:          updatedUser.ID,
+		Username:    updatedUser.Username,
+		Password:    "",
+		IsValidated: updatedUser.IsValidated,
+		CreatedAt:   createdAt,
+		UpdatedAt:   updatedAt,
+		UsageRight:  userRoleResponse,
+	}
+	return &pb.AssignRoleToUserResponse{
+		StatusCode:    http.StatusOK,
+		Success:      true,
+		Message:      "Role assigned to user successfully",
+		Data:         connUser,
+		DataTimeStamp: time.Now().Format(time.RFC3339),
+	}, nil
 }

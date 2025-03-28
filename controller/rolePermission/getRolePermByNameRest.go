@@ -2,6 +2,7 @@ package rolepermission
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -11,6 +12,7 @@ type GetRolePermissionByRoleNameResponse struct {
 	StatusCode int                  `json:"status_code"`
 	Success    bool                 `json:"success"`
 	Message    string               `json:"message"`
+	DataTimeStamp string             `json:"data_time_stamp"`
 	Data       *RolePermissionResponse `json:"data"`
 }
 
@@ -58,8 +60,8 @@ func (s *ConnectRolePermissionServer) GetRolePermissionByRoleNameRestApi(c *gin.
 			Name:        role.Name,
 			Description: role.Description,
 			Source:      role.Source,
-			CreatedAt:   role.CreatedAt,
-			UpdatedAt:   role.UpdatedAt,
+			CreatedAt:   role.CreatedAt.Format(time.RFC3339Nano),
+			UpdatedAt:   role.UpdatedAt.Format(time.RFC3339Nano),
 		},
 		Permissions: make([]*ConnPermission, 0),
 		IsActive:   rolePermissions[0].IsActive,
@@ -75,10 +77,10 @@ func (s *ConnectRolePermissionServer) GetRolePermissionByRoleNameRestApi(c *gin.
 				Action:        rp.Permission.Action,
 				Resource:      rp.Permission.Resource,
 				Source:        rp.Permission.Source,
-				ValidStartTime: rp.Permission.ValidStartTime,
-				ValidEndTime:   rp.Permission.ValidEndTime,
-				CreatedAt:     rp.Permission.CreatedAt,
-				UpdatedAt:     rp.Permission.UpdatedAt,
+				ValidStartTime: rp.Permission.ValidStartTime.Format(time.RFC3339Nano),
+				ValidEndTime:   rp.Permission.ValidEndTime.Format(time.RFC3339Nano),
+				CreatedAt:     rp.Permission.CreatedAt.Format(time.RFC3339Nano),
+				UpdatedAt:     rp.Permission.UpdatedAt.Format(time.RFC3339Nano),
 			})
 		}
 	}
@@ -87,6 +89,7 @@ func (s *ConnectRolePermissionServer) GetRolePermissionByRoleNameRestApi(c *gin.
 		StatusCode: http.StatusOK,
 		Success:    true,
 		Message:    "Role with Permissions fetched successfully for role: " + roleName,
+		DataTimeStamp: time.Now().Format(time.RFC3339Nano),
 		Data:       response,
 	})
 }

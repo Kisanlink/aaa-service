@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/Kisanlink/aaa-service/client"
 	"github.com/Kisanlink/aaa-service/model"
@@ -27,6 +28,7 @@ type CreateRoleResponse struct {
 	StatusCode int               `json:"status_code"`
 	Success bool               `json:"success"`
 	Message    string       `json:"message"`
+	DataTimeStamp string             `json:"data_time_stamp"`
 	Role       *RoleResponse `json:"role"`
 }
 
@@ -57,8 +59,6 @@ func (s *RoleServer) CreateRoleRestApi(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create role"})
 		return
 	}
-
-	// Fetch all roles and permissions to update schema
 	roles, err := s.RoleRepo.FindAllRoles(c.Request.Context())
 	if err != nil {
 		log.Printf("Failed to fetch roles: %v", err)
@@ -122,6 +122,7 @@ func (s *RoleServer) CreateRoleRestApi(c *gin.Context) {
 		StatusCode: http.StatusCreated,
 		Success: true,
 		Message:    "Role created successfully",
+		DataTimeStamp: time.Now().Format(time.RFC3339), // Current time in RFC3339 string format
 		Role: &RoleResponse{
 			ID:          newRole.ID,
 			Name:        newRole.Name,

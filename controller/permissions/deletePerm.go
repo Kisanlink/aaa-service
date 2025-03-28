@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/kisanlink/protobuf/pb-aaa"
 	"google.golang.org/grpc/codes"
@@ -25,6 +26,7 @@ func (s *PermissionServer) DeletePermission(ctx context.Context, req *pb.DeleteP
 	return &pb.DeletePermissionResponse{
 		StatusCode:http.StatusOK,
 		Success: true,
+		DataTimeStamp: time.Now().Format(time.RFC3339), // Current time in RFC3339 string format
 		Message:    fmt.Sprintf("Permission with ID %s deleted successfully", id),
 	}, nil
 }

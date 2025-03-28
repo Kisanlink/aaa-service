@@ -55,13 +55,19 @@ type CreateUserResponse struct {
 
 
 
+
 func (s *Server) CreateUserRestApi(c *gin.Context) {
 	var req CreateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}
-
+	if !helper.IsValidUsername(req.Username) {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Username '" + req.Username + "' contains invalid characters. Only a-z, A-Z, 0-9, /, _, |, -, =, + are allowed, and spaces are prohibited.",
+		})
+		return
+	}
 	// Aadhaar verification flow
 	if req.AadhaarNumber != "" {
 		client := &http.Client{}

@@ -32,6 +32,8 @@ func (s *PermissionServer) GetAllPermissions(ctx context.Context, req *pb.GetAll
 		StatusCode:http.StatusOK,
 		Success: true,
 		Message:     "Permissions retrieved successfully",
-		Permissions: pbPermissions,
+		Data: pbPermissions,
+		DataTimeStamp: time.Now().Format(time.RFC3339), // Current time in RFC3339 string format
+
 	}, nil
 }

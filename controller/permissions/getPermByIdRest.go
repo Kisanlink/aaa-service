@@ -12,6 +12,7 @@ type GetPermissionByIdResponse struct {
 	StatusCode  int               `json:"status_code"`
 	Success     bool              `json:"success"`
 	Message     string            `json:"message"`
+	DataTimeStamp string             `json:"data_time_stamp"`
 	Permission  PermissionResponse `json:"permission"`
 }
 
@@ -39,6 +40,7 @@ func (s *PermissionServer) GetPermissionByIdRestApi(c *gin.Context) {
 		StatusCode: http.StatusOK,
 		Success:    true,
 		Message:    "Permission retrieved successfully",
+		DataTimeStamp: time.Now().Format(time.RFC3339), // Current time in RFC3339 string format
 		Permission: PermissionResponse{
 			ID:          permission.ID,
 			Name:        permission.Name,

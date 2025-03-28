@@ -3,6 +3,7 @@ package permissions
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"github.com/kisanlink/protobuf/pb-aaa"
 	"google.golang.org/grpc/codes"
@@ -42,6 +43,8 @@ func (s *PermissionServer) UpdatePermission(ctx context.Context, req *pb.UpdateP
 		StatusCode:http.StatusOK,
 		Success: true,
 		Message:    "Permission updated successfully",
-		Permission: pbPermission,
+		Data: pbPermission,
+		DataTimeStamp: time.Now().Format(time.RFC3339), // Current time in RFC3339 string format
+
 	}, nil
 }

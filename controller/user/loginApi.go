@@ -46,11 +46,17 @@ func (s *Server) LoginRestApi(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}
-
 	if req.Username == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Username is required"})
 		return
 	}
+	if !helper.IsValidUsername(req.Username) {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Username '" + req.Username + "' contains invalid characters. Only a-z, A-Z, 0-9, /, _, |, -, =, + are allowed, and spaces are prohibited.",
+		})
+		return
+	}
+
 
 	if req.Password == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Password is required"})

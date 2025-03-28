@@ -39,137 +39,113 @@ func NewUserServer(userRepo *repositories.UserRepository,roleRepo *repositories.
 }
 
 func (s *Server) RegisterUser(ctx context.Context, req *pb.CreateUserRequest) (*pb.CreateUserResponse, error) {
-	   if req.AadhaarNumber != "" {
+	if !helper.IsValidUsername(req.Username) {
+        return nil, status.Errorf(
+            codes.InvalidArgument,
+            "username '%s' contains invalid characters. Only alphanumeric (a-z, A-Z, 0-9), /, _, |, -, =, + are allowed, and spaces are prohibited",
+            req.Username,
+        )
+    }
+	if err := s.UserRepo.CheckIfUserExists(ctx, req.Username); err != nil {
+		return nil, err
+	}
+	
+	existingUser, _ := s.UserRepo.FindUserByMobile(ctx, req.MobileNumber)
+	if existingUser != nil && existingUser.MobileNumber == req.MobileNumber {
+		return nil, status.Error(codes.AlreadyExists, "Mobile number already in use")
+	}
+	
+	if req.Password == "" {
+		return nil, status.Error(codes.NotFound, "Password is required")
+	}
+	
+	if req.Username == "" {
+		return nil, status.Error(codes.NotFound, "username is required")
+	}
+	if req.MobileNumber == 0 {
+		return nil, status.Error(codes.NotFound, "mobile number is required")
+	}
+	
+	hashedPassword, err := HashPassword(req.Password)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "Failed to hash password")
+	}
+	
+	newUser := &model.User{
+		Username:     req.Username,
+		Password:     hashedPassword,
+		IsValidated:  false,
+		MobileNumber: req.MobileNumber,
+		CountryCode:  &req.CountryCode,
+	}
+	
+	var otpResponse *pb.AadhaarOTPResponse
+	if req.AadhaarNumber != "" {
+		existingUser, _ := s.UserRepo.FindUserByAadhaar(ctx, req.AadhaarNumber)
+		if existingUser != nil && existingUser.AadhaarNumber != nil && *existingUser.AadhaarNumber == req.AadhaarNumber {
+			return nil, status.Error(codes.AlreadyExists, "Aadhaar number already exists")
+		}
+		newUser.AadhaarNumber = &req.AadhaarNumber
+		
+		
 		client := &http.Client{}
-        otpReq := struct {
-            AadhaarNumber string `json:"aadhaar_number"`
-        }{
-            AadhaarNumber: req.AadhaarNumber,
-        }
-        
-        jsonData, err := json.Marshal(otpReq)
-        if err != nil {
-            return nil, status.Error(codes.Internal, "Failed to marshal Aadhaar OTP request")
-        }
-		url := fmt.Sprintf("%s/api/v1/aadhaar/otp", os.Getenv("AADHAAR_VERIFICATION_ENDPOINT"))
-        resp, err := client.Post(url, "application/json", bytes.NewBuffer(jsonData))
-        if err != nil {
-            return nil, status.Error(codes.Internal, "Failed to send Aadhaar OTP request")
-        }
-        defer resp.Body.Close()
-        body, err := io.ReadAll(resp.Body)
-        if err != nil {
-            return nil, status.Error(codes.Internal, "Failed to read OTP response")
-        }
-		fmt.Printf("Original Aadhaar OTP Response: %s\n", string(body))
-		var otpResponse struct {
-			Message  string `json:"message"`
-			Response struct {
-				Timestamp     int64  `json:"timestamp"`
-				TransactionID string `json:"transaction_id"`
-				Data         struct {
-					Entity      string `json:"@entity"`
-					Message    string `json:"message"`
-					ReferenceID int64  `json:"reference_id"`
-				} `json:"data"`
-				Code int `json:"code"`
-			} `json:"response"`
+		otpReq := struct {
+			AadhaarNumber string `json:"aadhaar_number"`
+		}{
+			AadhaarNumber: req.AadhaarNumber,
 		}
-        
-        if err := json.Unmarshal(body, &otpResponse); err != nil {
-            return nil, status.Error(codes.Internal, "Failed to parse OTP response")
-        }
-        
-        if resp.StatusCode != http.StatusOK {
-            return nil, status.Error(codes.Internal, "Failed to generate Aadhaar OTP")
-        }
-			
-			hashedPassword, err := HashPassword(req.Password)
+
+		jsonData, err := json.Marshal(otpReq)
+		if err != nil {
+			log.Printf("Failed to marshal Aadhaar OTP request: %v", err)
+		} else {
+			url := fmt.Sprintf("%s/api/v1/aadhaar/otp", os.Getenv("AADHAAR_VERIFICATION_ENDPOINT"))
+			resp, err := client.Post(url, "application/json", bytes.NewBuffer(jsonData))
 			if err != nil {
-				return nil, status.Error(codes.InvalidArgument, "Failed to hash password")				
+				log.Printf("Failed to send Aadhaar OTP request: %v", err)
+			} else {
+				defer resp.Body.Close()
+				body, err := io.ReadAll(resp.Body)
+				if err != nil {
+					log.Printf("Failed to read OTP response: %v", err)
+				} else {
+					// fmt.Printf("Original Aadhaar OTP Response: %s\n", string(body))
+					var aadhaarResp struct {
+						Message  string `json:"message"`
+						Response struct {
+							Timestamp     int64  `json:"timestamp"`
+							TransactionID string `json:"transaction_id"`
+							Data         struct {
+								Entity      string `json:"@entity"`
+								Message    string `json:"message"`
+								ReferenceID int64  `json:"reference_id"`
+							} `json:"data"`
+							Code int `json:"code"`
+						} `json:"response"`
+					}
+
+					if err := json.Unmarshal(body, &aadhaarResp); err != nil {
+						log.Printf("Failed to parse OTP response: %v", err)
+					} else {
+						otpResponse = &pb.AadhaarOTPResponse{
+							Timestamp:     aadhaarResp.Response.Timestamp,
+							TransactionId: aadhaarResp.Response.TransactionID,
+							Entity:       aadhaarResp.Response.Data.Entity,
+							OtpMessage:    aadhaarResp.Response.Data.Message,
+							ReferenceId:   strconv.FormatInt(aadhaarResp.Response.Data.ReferenceID, 10),
+							StatusCode:    int32(aadhaarResp.Response.Code),
+						}
+					}
+				}
 			}
-			
-			newUser := &model.User{
-				Username:     req.Username,
-				Password:     hashedPassword,
-				IsValidated:  false,
-				MobileNumber: req.MobileNumber,
-				CountryCode:  &req.CountryCode,
-				AadhaarNumber: &req.AadhaarNumber,
-			}
-			
-			createdUser, err := s.UserRepo.CreateUser(ctx, newUser)
-			if err != nil {
-				log.Printf("Failed to create user in background: %v", err)
-			}
-		if err := helper.SetAuthHeadersWithTokens(
-			ctx,
-			createdUser.ID,
-			createdUser.Username,
-			createdUser.IsValidated,
-		); err != nil {
-			return nil, err
 		}
-        // Return the full OTP response details along with success message
-        return &pb.CreateUserResponse{
-			StatusCode:http.StatusCreated,
-			Success: true,
-            Message:    "OTP sent successfully for Aadhaar verification",
-			User: &pb.MinimalUser{
-				Id:          createdUser.ID,
-				Username:    createdUser.Username,
-				Password:    "", // Empty for security
-				MobileNumber:createdUser.MobileNumber,
-				CountryCode:*createdUser.CountryCode,
-				IsValidated: createdUser.IsValidated,
-				CreatedAt:   createdUser.CreatedAt.Format(time.RFC3339Nano),
-				UpdatedAt:   createdUser.UpdatedAt.Format(time.RFC3339Nano),
-			},
-            Response: &pb.AadhaarOTPResponse{
-                Timestamp:     otpResponse.Response.Timestamp,
-                TransactionId: otpResponse.Response.TransactionID,
-                Entity:       otpResponse.Response.Data.Entity,
-                OtpMessage:    otpResponse.Response.Data.Message,
-				ReferenceId:   strconv.FormatInt(otpResponse.Response.Data.ReferenceID, 10), // Convert to string
-                StatusCode:    int32(otpResponse.Response.Code),
-            },
-        }, nil
-    }
+	}
 
-    // Normal user creation flow
-    if err := s.UserRepo.CheckIfUserExists(ctx, req.Username); err != nil {
-        return nil, err
-    }
-    
-    if req.Password == "" {
-        return nil, status.Error(codes.NotFound, "Password is required")
-    }
-    
-    if req.Username == "" {
-        return nil, status.Error(codes.NotFound, "username is required")
-    }
-	if req.MobileNumber == 0 { 
-		return nil, status.Error(codes.NotFound, "mobile number is required") 
-	}	
-    
-    hashedPassword, err := HashPassword(req.Password)
-    if err != nil {
-        return nil, status.Error(codes.InvalidArgument, "Failed to hash password")
-    }
-    
-    newUser := &model.User{
-        Username:     req.Username,
-        Password:     hashedPassword,
-        IsValidated:  false,
-        MobileNumber: req.MobileNumber, // uint64 field
-        CountryCode:  &req.CountryCode,
-    }
+	createdUser, err := s.UserRepo.CreateUser(ctx, newUser)
+	if err != nil {
+		return nil, err
+	}
 
-    createdUser, err := s.UserRepo.CreateUser(ctx, newUser)
-    if err != nil {
-        return nil, err
-    }    
-    // Create response with headers (note: gRPC uses metadata for headers)
 	if err := helper.SetAuthHeadersWithTokens(
 		ctx,
 		createdUser.ID,
@@ -178,27 +154,32 @@ func (s *Server) RegisterUser(ctx context.Context, req *pb.CreateUserRequest) (*
 	); err != nil {
 		return nil, err
 	}
-    
-	   minimalUser := &pb.MinimalUser{
-        Id:         createdUser.ID,
-        Username:   createdUser.Username,
-        Password:   "", // Empty for security
-		MobileNumber:createdUser.MobileNumber,
-		CountryCode:*createdUser.CountryCode,
-        IsValidated: createdUser.IsValidated,
-        CreatedAt:  createdUser.CreatedAt.Format(time.RFC3339Nano),
-        UpdatedAt:  createdUser.UpdatedAt.Format(time.RFC3339Nano),
-    }
 
-    return &pb.CreateUserResponse{
-		StatusCode:http.StatusCreated,
-		Success: true,
-        Message:    "User created successfully",
-        User:       minimalUser,
-        Response:   nil,
-    }, nil
+	minimalUser := &pb.MinimalUser{
+		Id:           createdUser.ID,
+		Username:     createdUser.Username,
+		Password:     "",
+		MobileNumber: createdUser.MobileNumber,
+		CountryCode:  *createdUser.CountryCode,
+		IsValidated:  createdUser.IsValidated,
+		CreatedAt:    createdUser.CreatedAt.Format(time.RFC3339Nano),
+		UpdatedAt:    createdUser.UpdatedAt.Format(time.RFC3339Nano),
+		OtpResponse:  otpResponse,
+	}
+
+	response := &pb.CreateUserResponse{
+		StatusCode:    http.StatusCreated,
+		Success:       true,
+		Message:       "User created successfully",
+		Data:          minimalUser,
+		DataTimeStamp: time.Now().Format(time.RFC3339),
+	}
+	if otpResponse != nil {
+		response.Message = "User created and OTP sent successfully for Aadhaar verification"
+	}
+
+	return response, nil
 }
-
 
 
 func HashPassword(password string) (string, error) {

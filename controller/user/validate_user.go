@@ -30,7 +30,7 @@ func (s *Server) ValidateUser(ctx context.Context, req *pb.ValidateUserRequest) 
 		}
 
 		newAddress := &model.Address{
-			Plot:        &req.(*pb.ValidateUserRequest).Address.Plot,
+			House:        &req.(*pb.ValidateUserRequest).Address.House,
 			Street:      &req.(*pb.ValidateUserRequest).Address.Street,
 			Landmark:    &req.(*pb.ValidateUserRequest).Address.Landmark,
 			PostOffice:  &req.(*pb.ValidateUserRequest).Address.PostOffice,
@@ -87,7 +87,7 @@ func (s *Server) ValidateUser(ctx context.Context, req *pb.ValidateUserRequest) 
 			UpdatedAt: existingUser.UpdatedAt.Format(time.RFC3339Nano),		
 			Address: &pb.Address{
 				Id:          address.ID,
-				Plot:        *address.Plot,
+				House:        *address.House,
 				Street:      *address.Street,
 				Landmark:    *address.Landmark,
 				PostOffice:  *address.PostOffice,
@@ -107,7 +107,7 @@ func (s *Server) ValidateUser(ctx context.Context, req *pb.ValidateUserRequest) 
 			StatusCode: http.StatusOK,
 			Success: true,
 			Message:    "User updated successfully",
-			User:       pbUser,
+			Data:       pbUser,
 		}, nil
 	}
 

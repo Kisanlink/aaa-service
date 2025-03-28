@@ -3,7 +3,8 @@ package model
 import (
 	"time"
 
-	"github.com/lucsky/cuid"
+	"github.com/google/uuid"
+	// "github.com/lucsky/cuid"
 	"gorm.io/gorm"
 )
 
@@ -12,11 +13,15 @@ type Base struct {
     CreatedAt time.Time `json:"createdAt" gorm:"column:created_at"`
     UpdatedAt time.Time `json:"updatedAt" gorm:"column:updated_at"`
 }
-
-// BeforeCreate hook to generate a unique ID
+// func (b *Base) BeforeCreate(tx *gorm.DB) (err error) {
+//     if b.ID == "" { 
+//         b.ID = cuid.New()
+//     }
+//     return
+// }
 func (b *Base) BeforeCreate(tx *gorm.DB) (err error) {
-    if b.ID == "" { // Check if ID is empty
-        b.ID = cuid.New() // Generate a unique ID using cuid
+    if b.ID == "" { 
+        b.ID = uuid.New().String()
     }
     return
 }

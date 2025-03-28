@@ -3,6 +3,7 @@ package rolepermission
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"github.com/kisanlink/protobuf/pb-aaa"
 	"google.golang.org/grpc/codes"
@@ -23,5 +24,7 @@ func (s *ConnectRolePermissionServer) DeleteRolePermission(ctx context.Context, 
 		StatusCode: http.StatusOK,
 		Success: true,
 		Message:    "Role with Permissions deleted successfully",
+		DataTimeStamp: time.Now().Format(time.RFC3339Nano),
+
 	}, nil
 }

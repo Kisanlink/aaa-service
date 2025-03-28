@@ -12,29 +12,30 @@ import (
 )
 
 type CreatePermissionRequest struct {
-	Name        string   `json:"name" binding:"required"`
-	Description string   `json:"description"`
+	Name        string `json:"name" binding:"required"`
+	Description string `json:"description"`
 	Action      string `json:"action"`
 	Source      string `json:"source"`
-	Resource      string `json:"resource"`
+	Resource    string `json:"resource"`
 }
 
 type PermissionResponse struct {
-	ID            string   `json:"id"`
-	Name          string   `json:"name"`
-	Description   string   `json:"description"`
-	Action        string  `json:"action"`
-	Source        string  `json:"source"`
-	Resource      string  `json:"resource"`
-	ValidStartTime string  `json:"valid_start_time"`
-	ValidEndTime   string  `json:"valid_end_time"`
+	ID             string `json:"id"`
+	Name           string `json:"name"`
+	Description    string `json:"description"`
+	Action         string `json:"action"`
+	Source         string `json:"source"`
+	Resource       string `json:"resource"`
+	ValidStartTime string `json:"valid_start_time"`
+	ValidEndTime   string `json:"valid_end_time"`
 }
 
 type CreatePermissionResponse struct {
-	StatusCode int               `json:"status_code"`
-	Success bool               `json:"success"`
-	Message    string            `json:"message"`
-	Permission *PermissionResponse `json:"permission"`
+	StatusCode    int                `json:"status_code"`
+	Success       bool               `json:"success"`
+	Message       string             `json:"message"`
+	Data          *PermissionResponse `json:"data"`
+	DataTimeStamp string             `json:"data_time_stamp"`
 }
 
 func (s *PermissionServer) CreatePermissionRestApi(c *gin.Context) {
@@ -58,10 +59,10 @@ func (s *PermissionServer) CreatePermissionRestApi(c *gin.Context) {
 		Name:           req.Name,
 		Description:    req.Description,
 		Action:         req.Action,
-		Source: req.Source,
-		Resource: req.Resource,
+		Source:         req.Source,
+		Resource:       req.Resource,
 		ValidStartTime: time.Now(),
-		ValidEndTime:   time.Now().AddDate(1, 0, 0), // Default to 1 year validity
+		ValidEndTime:   time.Now(),
 	}
 
 	if err := s.PermissionRepo.CreatePermission(c.Request.Context(), &newPermission); err != nil {
@@ -70,7 +71,6 @@ func (s *PermissionServer) CreatePermissionRestApi(c *gin.Context) {
 		return
 	}
 
-	// Update schema with all roles and permissions
 	roles, err := s.RoleRepo.FindAllRoles(c.Request.Context())
 	if err != nil {
 		log.Printf("Failed to fetch roles: %v", err)
@@ -93,21 +93,20 @@ func (s *PermissionServer) CreatePermissionRestApi(c *gin.Context) {
 	var permissionNames []string
 	var allActions []string
 	actionSet := make(map[string]struct{})
-	
+
 	for _, permission := range permissions {
 		permissionNames = append(permissionNames, permission.Name)
 		actionSet[permission.Action] = struct{}{}
 	}
-	
+
 	for action := range actionSet {
 		allActions = append(allActions, action)
 	}
-	
+
 	for i, action := range allActions {
 		allActions[i] = strings.ToLower(action)
 	}
 
-	// Default values if no roles/permissions/actions exist
 	defaultRoles := []string{"test role"}
 	defaultPermissions := []string{"test permission"}
 	defaultActions := []string{"test action"}
@@ -122,7 +121,6 @@ func (s *PermissionServer) CreatePermissionRestApi(c *gin.Context) {
 		allActions = defaultActions
 	}
 
-	// Update schema
 	updated, err := client.UpdateSchema(roleNames, permissionNames, allActions)
 	if err != nil {
 		log.Printf("Failed to update schema: %v", err)
@@ -133,14 +131,17 @@ func (s *PermissionServer) CreatePermissionRestApi(c *gin.Context) {
 	log.Printf("Schema updated successfully: %+v", updated)
 
 	response := CreatePermissionResponse{
-		StatusCode: http.StatusCreated,
-		Success: true,
-		Message:    "Permission created successfully",
-		Permission: &PermissionResponse{
-			ID:            newPermission.ID,
-			Name:          newPermission.Name,
-			Description:   newPermission.Description,
-			Action:        newPermission.Action,
+		StatusCode:    http.StatusCreated,
+		Success:       true,
+		Message:       "Permission created successfully",
+		DataTimeStamp: time.Now().Format(time.RFC3339),
+		Data: &PermissionResponse{
+			ID:             newPermission.ID,
+			Name:           newPermission.Name,
+			Description:    newPermission.Description,
+			Action:         newPermission.Action,
+			Source:         newPermission.Source,
+			Resource:       newPermission.Resource,
 			ValidStartTime: newPermission.ValidStartTime.Format(time.RFC3339Nano),
 			ValidEndTime:   newPermission.ValidEndTime.Format(time.RFC3339Nano),
 		},

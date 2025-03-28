@@ -60,7 +60,24 @@ func (s *Server) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest) (*pb
 	if err := s.UserRepo.UpdateUser(ctx, *existingUser); err != nil {
 		return nil, err
 	}
-
+	roles, permissions, err := s.UserRepo.FindUsageRights(ctx, existingUser.ID)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to fetch user roles and permissions: %v", err)
+	}
+	pbPermissions := make([]*pb.PermissionResponse, len(permissions))
+	for i, perm := range permissions {
+		pbPermissions[i] = &pb.PermissionResponse{
+			Name:        perm.Name,
+			Description: perm.Description,
+			Action:      perm.Action,
+			Source:      perm.Source,
+			Resource:    perm.Resource,
+		}
+	}
+	userRoleResponse := &pb.UserRoleResponse{
+		Roles:       roles,
+		Permissions: pbPermissions,
+	}
 	pbUser := &pb.User{
 		Id:           existingUser.ID,
 		Username:     existingUser.Username,
@@ -79,12 +96,14 @@ func (s *Server) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest) (*pb
 		YearOfBirth:  *existingUser.YearOfBirth,
 		Message:      *existingUser.Message,
 		MobileNumber: existingUser.MobileNumber,
+		UsageRight: userRoleResponse,
 	}
 
 	return &pb.UpdateUserResponse{
 		StatusCode: http.StatusOK,
 		Success: true,
 		Message:    "User updated successfully",
-		User:       pbUser,
+		Data:       pbUser,
+		DataTimeStamp: time.Now().Format(time.RFC3339), // Current time in RFC3339 string format
 	}, nil
 }

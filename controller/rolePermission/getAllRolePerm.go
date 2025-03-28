@@ -57,5 +57,7 @@ func (s *ConnectRolePermissionServer) GetAllRolePermission(ctx context.Context, 
 		Success:    true,
 		Message:    "Role with Permissions fetched successfully",
 		Data:       responseData,
+		DataTimeStamp: time.Now().Format(time.RFC3339Nano),
+
 	}, nil
 }

@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -113,4 +114,27 @@ func (repo *RolePermissionRepository) UpdateRolePermission(ctx context.Context, 
 		return status.Error(codes.NotFound, fmt.Sprintf("RolePermission with ID %s not found", id))
 	}
 	return nil
+}
+
+
+// Add this method to your RolePermissionRepository
+func (repo *RolePermissionRepository) GetRolePermissionByNames(ctx context.Context, roleName, permissionName string) (*model.RolePermission, error) {
+    var rolePermission model.RolePermission
+    
+    err := repo.DB.WithContext(ctx).
+        Joins("JOIN roles ON roles.id = role_permissions.role_id").
+        Joins("JOIN permissions ON permissions.id = role_permissions.permission_id").
+        Where("roles.name = ? AND permissions.name = ?", roleName, permissionName).
+        Preload("Role").
+        Preload("Permission").
+        First(&rolePermission).Error
+        
+    if err != nil {
+        if errors.Is(err, gorm.ErrRecordNotFound) {
+            return nil, nil // Return nil if not found
+        }
+        return nil, err
+    }
+    
+    return &rolePermission, nil
 }

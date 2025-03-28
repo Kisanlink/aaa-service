@@ -3,6 +3,7 @@ package roles
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"github.com/kisanlink/protobuf/pb-aaa"
 )
@@ -25,6 +26,8 @@ func (s *RoleServer) GetAllRoles(ctx context.Context, req *pb.GetAllRolesRequest
 		StatusCode:http.StatusOK,
 		Success: true,
 		Message:    "Roles retrieved successfully",
-		Roles:      pbRoles,
+		Data:      pbRoles,
+		DataTimeStamp: time.Now().Format(time.RFC3339), // Current time in RFC3339 string format
+
 	}, nil
 }

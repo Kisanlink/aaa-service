@@ -2,6 +2,7 @@ package roles
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -11,6 +12,7 @@ type GetAllRolesResponse struct {
 	StatusCode int               `json:"status_code"`
 	Success bool               `json:"success"`
 	Message    string         `json:"message"`
+	DataTimeStamp string             `json:"data_time_stamp"`
 	Roles      []RoleResponse `json:"roles"`
 }
 
@@ -37,6 +39,7 @@ func (s *RoleServer) GetAllRolesRestApi(c *gin.Context) {
 		StatusCode: http.StatusOK,
 		Success: true,
 		Message:    "Roles retrieved successfully",
+		DataTimeStamp: time.Now().Format(time.RFC3339), // Current time in RFC3339 string format
 		Roles:      responseRoles,
 	}
 

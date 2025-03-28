@@ -3,6 +3,7 @@ package roles
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"github.com/kisanlink/protobuf/pb-aaa"
 	"google.golang.org/grpc/codes"
@@ -41,6 +42,8 @@ func (s *RoleServer) UpdateRole(ctx context.Context, req *pb.UpdateRoleRequest) 
 		StatusCode:http.StatusOK,
 		Success: true,
 		Message:    "Role updated successfully",
-		Role:       pbRole,
+		Data:       pbRole,
+		DataTimeStamp: time.Now().Format(time.RFC3339), // Current time in RFC3339 string format
+
 	}, nil
 }

@@ -3,6 +3,7 @@ package roles
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"github.com/kisanlink/protobuf/pb-aaa"
 	"google.golang.org/grpc/codes"
@@ -26,6 +27,7 @@ func (s *RoleServer) DeleteRole(ctx context.Context, req *pb.DeleteRoleRequest) 
 	return &pb.DeleteRoleResponse{
 		StatusCode:http.StatusOK,
 		Success: true,
+		DataTimeStamp: time.Now().Format(time.RFC3339), // Current time in RFC3339 string format
 		Message:    "Role deleted successfully",
 	}, nil
 }
