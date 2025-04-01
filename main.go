@@ -14,6 +14,7 @@ import (
 	"github.com/Kisanlink/aaa-service/routes"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	"github.com/rs/cors"
 )
 
 func init() {
@@ -36,7 +37,14 @@ func main() {
 	defer grpcServer.GracefulStop()
 
 	r := gin.Default()
-
+	corsMiddleware := cors.New(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:5173", "http://example.com"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"},
+		AllowedHeaders:   []string{"Origin", "Content-Type", "Authorization", "Accept","aaa-auth-token"},
+		AllowCredentials: true,
+		Debug:            false, // Set to true for development
+	})
+	corsMiddleware.Handler(r)
 	r.GET("/", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"status":  "ok",
