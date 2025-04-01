@@ -38,11 +38,11 @@ func main() {
 
 	r := gin.Default()
 	corsMiddleware := cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:5173", "http://example.com"},
+		AllowedOrigins:   []string{"*"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"},
 		AllowedHeaders:   []string{"Origin", "Content-Type", "Authorization", "Accept","aaa-auth-token"},
 		AllowCredentials: true,
-		Debug:            false, // Set to true for development
+		Debug:            true, // Set to true for development
 	})
 	corsMiddleware.Handler(r)
 	r.GET("/", func(c *gin.Context) {
