@@ -81,7 +81,6 @@ func (s *Server) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest) (*pb
 	pbUser := &pb.User{
 		Id:           existingUser.ID,
 		Username:     existingUser.Username,
-		Password:     existingUser.Password,
 		IsValidated:  existingUser.IsValidated,
 		CreatedAt:    existingUser.CreatedAt.Format(time.RFC3339Nano),
 		UpdatedAt:    existingUser.UpdatedAt.Format(time.RFC3339Nano),

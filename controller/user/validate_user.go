@@ -69,7 +69,6 @@ func (s *Server) ValidateUser(ctx context.Context, req *pb.ValidateUserRequest) 
 		pbUser := &pb.User{
 			Id:            existingUser.ID,
 			Username:      existingUser.Username,
-			Password:      existingUser.Password,
 			IsValidated:   existingUser.IsValidated,
 			AadhaarNumber: *existingUser.AadhaarNumber,
 			Status:        *existingUser.Status,
