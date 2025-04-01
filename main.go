@@ -37,7 +37,15 @@ func main() {
 	defer grpcServer.GracefulStop()
 
 	r := gin.Default()
-	r.Use(cors.Default())
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"*"}, // Add your frontend origin(s)
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE","HEAD", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "aaa-auth-token"},
+		ExposeHeaders:    []string{"Content-Length", "aaa-auth-token" },
+		AllowCredentials: true,
+		AllowAllOrigins:true ,
+		// MaxAge:           12 * time.Hour ,
+	}))
 	r.GET("/", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"status":  "ok",
