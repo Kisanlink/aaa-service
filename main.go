@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -37,7 +38,40 @@ func main() {
 	defer grpcServer.GracefulStop()
 
 	r := gin.Default()
-	r.Use(cors.Default())
+allowedOrigins := strings.Split(os.Getenv("CORS_ALLOWED_ORIGINS"), ",")
+if len(allowedOrigins) == 0 {
+	allowedOrigins = []string{"http://localhost:5173"} // Default fallback
+}
+allowMethods := strings.Split(os.Getenv("CORS_ALLOW_METHODS"), ",")
+if len(allowMethods) == 0 {
+	allowMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"}
+}
+
+allowHeaders := strings.Split(os.Getenv("CORS_ALLOW_HEADERS"), ",")
+if len(allowHeaders) == 0 {
+	allowHeaders = []string{
+		"Origin",
+		"Content-Type",
+		"Accept",
+		"Authorization",
+	}
+}
+exposeHeaders := strings.Split(os.Getenv("CORS_EXPOSE_HEADERS"), ",")
+if len(exposeHeaders) == 0 {
+	exposeHeaders = []string{
+		"Content-Length",
+	}
+}
+
+allowCredentials := os.Getenv("CORS_ALLOW_CREDENTIALS") != "false" 
+r.Use(cors.New(cors.Config{
+	AllowOrigins:     allowedOrigins,
+	AllowMethods:     allowMethods,
+	AllowHeaders:     allowHeaders,
+	ExposeHeaders:    exposeHeaders,
+	AllowCredentials: allowCredentials,
+	MaxAge:           12 * time.Hour,
+}))
 	r.GET("/", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"status":  "ok",

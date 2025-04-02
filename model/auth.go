@@ -8,7 +8,7 @@ type User struct {
 	Username      string  `json:"username" gorm:"unique" validate:"required,username"`
 	Password      string  `json:"password" validate:"required,min=8,max=128"`
 	IsValidated   bool    `json:"isValidate" validate:"default:false"`
-	AadhaarNumber *string `json:"aadhaar_number" gorm:"type:varchar(12);uniqueIndex"`
+	AadhaarNumber *string `json:"aadhaar_number" gorm:"type:varchar(12)"`
 	Status        *string `json:"status" gorm:"type:string"`
 	Name          *string `json:"name" gorm:"type:string"`
 	CareOf        *string `json:"care_of" gorm:"type:string"`
@@ -17,7 +17,7 @@ type User struct {
 	EmailHash     *string `json:"email_hash" gorm:"type:string"`
 	ShareCode     *string `json:"share_code" gorm:"type:string"`
 	YearOfBirth   *string `json:"year_of_birth" gorm:"type:string"`
-	MobileNumber uint64   `json:"mobile_number" gorm:"type:bigint;uniqueIndex"`
+	MobileNumber uint64   `json:"mobile_number" gorm:"type:bigint"`
 	CountryCode   *string `json:"country_code" gorm:"type:varchar(10);default:'+91'"`
 	Message       *string `json:"message" gorm:"type:string"`
 	AddressID     *string `json:"address_id"`
