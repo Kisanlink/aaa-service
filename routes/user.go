@@ -9,8 +9,9 @@ import (
 
 func UserRoutes(r *gin.RouterGroup, database *gorm.DB) {
 	userRepo := repositories.NewUserRepository(database)
-	
+
 	s := user.Server{UserRepo: userRepo}
 	r.POST("/login", s.LoginRestApi)
 	r.POST("/register", s.CreateUserRestApi)
+	r.POST("/forgot-password", s.PasswordResetHandler)
 }

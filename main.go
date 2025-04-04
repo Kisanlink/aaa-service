@@ -46,7 +46,7 @@ func main() {
 		})
 	})
 	api := r.Group("/api")
-	routes.Routes(api,database.DB)
+	routes.Routes(api, database.DB)
 	srv := &http.Server{
 		Addr:    ":" + port,
 		Handler: r,

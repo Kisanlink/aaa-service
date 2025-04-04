@@ -17,10 +17,10 @@ import (
 )
 
 type CreateUserRequest struct {
-	Username     string `json:"username" binding:"required"`
-	Password     string `json:"password" binding:"required"`
-	MobileNumber uint64 `json:"mobile_number" binding:"required"`
-	CountryCode  string `json:"country_code" binding:"required"`
+	Username      string `json:"username" binding:"required"`
+	Password      string `json:"password" binding:"required"`
+	MobileNumber  uint64 `json:"mobile_number" binding:"required"`
+	CountryCode   string `json:"country_code" binding:"required"`
 	AadhaarNumber string `json:"aadhaar_number"`
 }
 
@@ -34,22 +34,22 @@ type AadhaarOTPResponse struct {
 }
 
 type MinimalUser struct {
-	ID           string             `json:"id"`
-	Username     string             `json:"username"`
-	MobileNumber uint64             `json:"mobile_number"`
-	CountryCode  string             `json:"country_code"`
-	IsValidated  bool               `json:"is_validated"`
-	CreatedAt    string             `json:"created_at"`
-	UpdatedAt    string             `json:"updated_at"`
+	ID           string              `json:"id"`
+	Username     string              `json:"username"`
+	MobileNumber uint64              `json:"mobile_number"`
+	CountryCode  string              `json:"country_code"`
+	IsValidated  bool                `json:"is_validated"`
+	CreatedAt    string              `json:"created_at"`
+	UpdatedAt    string              `json:"updated_at"`
 	OtpResponse  *AadhaarOTPResponse `json:"otp_response,omitempty"`
 }
 
 type CreateUserResponse struct {
-	StatusCode   int         `json:"status_code"`
-	Success      bool        `json:"success"`
-	Message      string      `json:"message"`
-	Data         *MinimalUser `json:"data"`
-	DataTimeStamp string      `json:"data_time_stamp"`
+	StatusCode    int          `json:"status_code"`
+	Success       bool         `json:"success"`
+	Message       string       `json:"message"`
+	Data          *MinimalUser `json:"data"`
+	DataTimeStamp string       `json:"data_time_stamp"`
 }
 
 func (s *Server) CreateUserRestApi(c *gin.Context) {
@@ -184,9 +184,9 @@ func (s *Server) CreateUserRestApi(c *gin.Context) {
 						Response struct {
 							Timestamp     int64  `json:"timestamp"`
 							TransactionID string `json:"transaction_id"`
-							Data         struct {
+							Data          struct {
 								Entity      string `json:"@entity"`
-								Message    string `json:"message"`
+								Message     string `json:"message"`
 								ReferenceID int64  `json:"reference_id"`
 							} `json:"data"`
 							Code int `json:"code"`
@@ -248,8 +248,8 @@ func (s *Server) CreateUserRestApi(c *gin.Context) {
 	}
 
 	response := &CreateUserResponse{
-		StatusCode:   http.StatusCreated,
-		Success:      true,
+		StatusCode:    http.StatusCreated,
+		Success:       true,
 		Message:       "User created successfully",
 		Data:          minimalUser,
 		DataTimeStamp: time.Now().Format(time.RFC3339),
@@ -260,4 +260,3 @@ func (s *Server) CreateUserRestApi(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, response)
 }
-

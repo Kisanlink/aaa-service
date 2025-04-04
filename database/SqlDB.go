@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/Kisanlink/aaa-service/model"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -32,34 +33,37 @@ func ConnectDB() {
 	// 	&model.Role{},
 	// 	&model.Permission{},
 	// 	&model.RolePermission{},
-	// 	&model.User{}, 
+	// 	&model.User{},
 	// 	&model.UserRole{},
 	// ); err != nil {
 	// 	panic("Error migrating database: " + err.Error())
 	// }
-	// if err := DB.AutoMigrate(&model.Address{}); err != nil {
-    //     panic("Error migrating Address table: " + err.Error())
-    // }
-    
-    // if err := DB.AutoMigrate(&model.Role{}); err != nil {
-    //     panic("Error migrating Role table: " + err.Error())
-    // }
-    
-    // if err := DB.AutoMigrate(&model.Permission{}); err != nil {
-    //     panic("Error migrating Permission table: " + err.Error())
-    // }
-    
-    // if err := DB.AutoMigrate(&model.RolePermission{}); err != nil {
-    //     panic("Error migrating RolePermission table: " + err.Error())
-    // }
-    
-    // if err := DB.AutoMigrate(&model.User{}); err != nil {
-    //     panic("Error migrating User table: " + err.Error())
-    // }
-    
-    // if err := DB.AutoMigrate(&model.UserRole{}); err != nil {
-    //     panic("Error migrating UserRole table: " + err.Error())
-    // }
+
+	// start from here and remove line later
+
+	if err := DB.AutoMigrate(&model.Address{}); err != nil {
+		panic("Error migrating Address table: " + err.Error())
+	}
+
+	if err := DB.AutoMigrate(&model.Role{}); err != nil {
+		panic("Error migrating Role table: " + err.Error())
+	}
+
+	if err := DB.AutoMigrate(&model.Permission{}); err != nil {
+		panic("Error migrating Permission table: " + err.Error())
+	}
+
+	if err := DB.AutoMigrate(&model.RolePermission{}); err != nil {
+		panic("Error migrating RolePermission table: " + err.Error())
+	}
+
+	if err := DB.AutoMigrate(&model.User{}); err != nil {
+		panic("Error migrating User table: " + err.Error())
+	}
+
+	if err := DB.AutoMigrate(&model.UserRole{}); err != nil {
+		panic("Error migrating UserRole table: " + err.Error())
+	}
 
 	sqlDB, err := DB.DB()
 	if err != nil {
