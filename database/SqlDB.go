@@ -32,7 +32,7 @@ func ConnectDB() {
 	// 	&model.Role{},
 	// 	&model.Permission{},
 	// 	&model.RolePermission{},
-	// 	&model.User{}, 
+	// 	&model.User{},
 	// 	&model.UserRole{},
 	// ); err != nil {
 	// 	panic("Error migrating database: " + err.Error())
