@@ -11,8 +11,14 @@ func AssignPermissionRoutes(r *gin.RouterGroup, database *gorm.DB) {
 	rolePermRepo := repositories.NewRolePermissionRepository(database)
 	roleRepo := repositories.NewRoleRepository(database)
 	permRepo := repositories.NewPermissionRepository(database)
+	userRepo := repositories.NewUserRepository(database)
+	s := rolepermission.NewConnectRolePermissionServer(
+		rolePermRepo,
+		roleRepo,
+		permRepo,
+		userRepo,
+	)
 
-	s := rolepermission.ConnectRolePermissionServer{RolePermissionRepo: rolePermRepo,RoleRepo: roleRepo,PermissionRepo:permRepo }
 	r.POST("/assign-permission", s.AssignPermissionRestApi)
 	r.GET("/permissions", s.GetRolePermissionByRoleNameRestApi)
 }

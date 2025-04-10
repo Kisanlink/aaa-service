@@ -9,9 +9,13 @@ import (
 
 func UserRoutes(r *gin.RouterGroup, database *gorm.DB) {
 	userRepo := repositories.NewUserRepository(database)
+	roleRepo := repositories.NewRoleRepository(database)
+	permRepo := repositories.NewPermissionRepository(database)
+	role_permRepo := repositories.NewRolePermissionRepository(database)
 
-	s := user.Server{UserRepo: userRepo}
+	s := user.NewUserServer(userRepo, roleRepo, permRepo, role_permRepo)
 	r.POST("/login", s.LoginRestApi)
 	r.POST("/register", s.CreateUserRestApi)
+	r.POST("/assign-role", s.AssignRoleRestApi)
 	r.POST("/forgot-password", s.PasswordResetHandler)
 }

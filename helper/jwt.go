@@ -2,6 +2,7 @@ package helper
 
 import (
 	"context"
+	"os"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -12,7 +13,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-var jwtKey = []byte("askdwkdfmlermferflersmflesrmflersmflesrmflkes") // Replace with a secure key in production
+var jwtKey = []byte(os.Getenv("SECRET"))
 
 // GenerateAccessToken generates a short-lived JWT access token
 func GenerateAccessToken(userID string, username string, isvalidate bool) (string, error) {
@@ -87,13 +88,12 @@ func SetAuthHeadersWithTokens(ctx context.Context, userID, username string, isVa
 		"refreshtoken", refreshToken,
 		"userid", userID,
 	)
-	
+
 	if err := grpc.SendHeader(ctx, header); err != nil {
 		return status.Errorf(codes.Internal, "unable to send headers: %v", err)
 	}
 	return nil
 }
-
 
 func SetAuthHeadersWithTokensRest(c *gin.Context, userID, username string, isValidated bool) error {
 	accessToken, err := GenerateAccessToken(userID, username, isValidated)
@@ -108,6 +108,6 @@ func SetAuthHeadersWithTokensRest(c *gin.Context, userID, username string, isVal
 	c.Header("token", accessToken)
 	c.Header("refreshtoken", refreshToken)
 	c.Header("userid", userID)
-	
+
 	return nil
 }

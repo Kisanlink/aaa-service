@@ -25,45 +25,67 @@ type RoleResponse struct {
 }
 
 type CreateRoleResponse struct {
-	StatusCode int               `json:"status_code"`
-	Success bool               `json:"success"`
-	Message    string       `json:"message"`
-	DataTimeStamp string             `json:"data_time_stamp"`
-	Role       *RoleResponse `json:"role"`
+	StatusCode    int           `json:"status_code"`
+	Success       bool          `json:"success"`
+	Message       string        `json:"message"`
+	Data          *RoleResponse `json:"data"`
+	DataTimeStamp string        `json:"data_time_stamp"`
 }
 
 func (s *RoleServer) CreateRoleRestApi(c *gin.Context) {
 	var req CreateRoleRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status_code": http.StatusBadRequest,
+			"success":     false,
+			"message":     "Invalid request body",
+			"data":        nil,
+		})
 		return
 	}
 
 	if req.Name == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Role Name is required"})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status_code": http.StatusBadRequest,
+			"success":     false,
+			"message":     "Role Name is required",
+			"data":        nil,
+		})
 		return
 	}
 
-	if err := s.RoleRepo.CheckIfRoleExists(c.Request.Context(), req.Name); err != nil {
-		c.JSON(http.StatusConflict, gin.H{"error": "Role already exists"})
+	ctx := c.Request.Context()
+
+	// Check if role already exists
+	if err := s.RoleRepo.CheckIfRoleExists(ctx, req.Name); err != nil {
+		c.JSON(http.StatusConflict, gin.H{
+			"status_code": http.StatusConflict,
+			"success":     false,
+			"message":     "Role already exists",
+			"data":        nil,
+		})
 		return
 	}
 
+	// Create new role
 	newRole := model.Role{
 		Name:        req.Name,
 		Description: req.Description,
 		Source:      req.Source,
 	}
 
-	if err := s.RoleRepo.CreateRole(c.Request.Context(), &newRole); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create role"})
+	if err := s.RoleRepo.CreateRole(ctx, &newRole); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status_code": http.StatusInternalServerError,
+			"success":     false,
+			"message":     "Failed to create role",
+			"data":        nil,
+		})
 		return
 	}
-	roles, err := s.RoleRepo.FindAllRoles(c.Request.Context())
+	roles, err := s.RoleRepo.FindAllRoles(ctx)
 	if err != nil {
 		log.Printf("Failed to fetch roles: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve roles"})
-		return
 	}
 
 	var roleNames []string
@@ -71,29 +93,30 @@ func (s *RoleServer) CreateRoleRestApi(c *gin.Context) {
 		roleNames = append(roleNames, role.Name)
 	}
 
-	permissions, err := s.PermissionRepo.FindAllPermissions(c.Request.Context())
+	// Get all permissions for schema update
+	permissions, err := s.PermissionRepo.FindAllPermissions(ctx)
 	if err != nil {
 		log.Printf("Failed to fetch permissions: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve permissions"})
-		return
 	}
-
+	log.Println(permissions)
 	var permissionNames []string
 	var allActions []string
 	actionSet := make(map[string]struct{})
-	
+
 	for _, permission := range permissions {
 		permissionNames = append(permissionNames, permission.Name)
 		actionSet[permission.Action] = struct{}{}
 	}
-	
+
 	for action := range actionSet {
 		allActions = append(allActions, action)
 	}
-	
+
 	for i, action := range allActions {
 		allActions[i] = strings.ToLower(action)
 	}
+
+	// Set defaults if no roles/permissions/actions found
 	defaultRoles := []string{"test role"}
 	defaultPermissions := []string{"test permission"}
 	defaultActions := []string{"test action"}
@@ -108,27 +131,28 @@ func (s *RoleServer) CreateRoleRestApi(c *gin.Context) {
 		allActions = defaultActions
 	}
 
-	// Update schema
+	// Update schema in client service
 	updated, err := client.UpdateSchema(roleNames, permissionNames, allActions)
 	if err != nil {
 		log.Printf("Failed to update schema: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update schema"})
-		return
 	}
 
 	log.Printf("Schema updated successfully: %+v", updated)
 
-	response := CreateRoleResponse{
-		StatusCode: http.StatusCreated,
-		Success: true,
-		Message:    "Role created successfully",
-		DataTimeStamp: time.Now().Format(time.RFC3339), // Current time in RFC3339 string format
-		Role: &RoleResponse{
-			ID:          newRole.ID,
-			Name:        newRole.Name,
-			Description: newRole.Description,
-			Source:      newRole.Source,
-		},
+	// Prepare response
+	roleResponse := &RoleResponse{
+		ID:          newRole.ID,
+		Name:        newRole.Name,
+		Description: newRole.Description,
+		Source:      newRole.Source,
+	}
+
+	response := &CreateRoleResponse{
+		StatusCode:    http.StatusCreated,
+		Success:       true,
+		Message:       "Role created successfully",
+		Data:          roleResponse,
+		DataTimeStamp: time.Now().Format(time.RFC3339),
 	}
 
 	c.JSON(http.StatusCreated, response)

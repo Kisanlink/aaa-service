@@ -16,7 +16,6 @@ type AssignPermissionRequest struct {
 	Permissions []string `json:"permissions" binding:"required"`
 }
 
-
 type ConnRolePermissionResponse struct {
 	ID          string            `json:"id"`
 	CreatedAt   string            `json:"created_at"`
@@ -27,11 +26,11 @@ type ConnRolePermissionResponse struct {
 }
 
 type AssignPermissionResponse struct {
-	StatusCode    int                       `json:"status_code"`
-	Success       bool                      `json:"success"`
-	Message       string                    `json:"message"`
+	StatusCode    int                         `json:"status_code"`
+	Success       bool                        `json:"success"`
+	Message       string                      `json:"message"`
 	Data          *ConnRolePermissionResponse `json:"data"`
-	DataTimeStamp string                    `json:"data_time_stamp"`
+	DataTimeStamp string                      `json:"data_time_stamp"`
 }
 
 func (s *ConnectRolePermissionServer) AssignPermissionRestApi(c *gin.Context) {
@@ -95,7 +94,7 @@ func (s *ConnectRolePermissionServer) AssignPermissionRestApi(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch user roles and permissions"})
 		return
 	}
-	log.Println(roles, permissions, actions, usernames)
+	// log.Println(roles, permissions, actions, usernames)
 
 	for _, username := range usernames {
 		deleteResponse, err := client.DeleteUserRoleRelationship(
@@ -152,7 +151,7 @@ func (s *ConnectRolePermissionServer) AssignPermissionRestApi(c *gin.Context) {
 			UpdatedAt:   role.UpdatedAt.Format(time.RFC3339Nano),
 		},
 		Permissions: []*ConnPermission{},
-		IsActive:   rolePermissionPtrs[0].IsActive,
+		IsActive:    rolePermissionPtrs[0].IsActive,
 	}
 
 	for _, rp := range rolePermissionPtrs {

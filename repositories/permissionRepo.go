@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 
 	"github.com/Kisanlink/aaa-service/model"
 	"google.golang.org/grpc/codes"
@@ -16,9 +17,7 @@ type PermissionRepository struct {
 }
 
 func NewPermissionRepository(db *gorm.DB) *PermissionRepository {
-	return &PermissionRepository{
-		DB: db,
-	}
+	return &PermissionRepository{DB: db}
 }
 
 func (repo *PermissionRepository) CheckIfPermissionExists(ctx context.Context, name string) error {
@@ -77,6 +76,8 @@ func (repo *PermissionRepository) FindAllPermissions(ctx context.Context) ([]mod
 	if err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to retrieve permissions: %v", err))
 	}
+	log.Println(permissions)
+
 	return permissions, nil
 }
 

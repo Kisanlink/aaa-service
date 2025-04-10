@@ -9,8 +9,9 @@ import (
 
 func PermissionRoutes(r *gin.RouterGroup, database *gorm.DB) {
 	permRepo := repositories.NewPermissionRepository(database)
-	
-	s := permissions.PermissionServer{PermissionRepo: permRepo}
+	roleRepo := repositories.NewRoleRepository(database)
+
+	s := permissions.NewPermissionServer(permRepo, roleRepo)
 	r.POST("/create-permission", s.CreatePermissionRestApi)
 	r.GET("/fetch-permissions", s.GetAllPermissionsRestApi)
 	r.GET("/permission/:id", s.GetPermissionByIdRestApi)
