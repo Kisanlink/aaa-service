@@ -18,7 +18,7 @@ require (
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/jzelinskie/stringz v0.0.3 // indirect
-	github.com/kisanlink/protobuf v0.0.0-20250328103756-b449cb98ca5c // indirect
+	github.com/kisanlink/protobuf v0.0.0-20250413093600-5549e98792b2 // indirect
 	github.com/lib/pq v1.10.9 // indirect
 	github.com/lucsky/cuid v1.2.1 // indirect
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10 // indirect

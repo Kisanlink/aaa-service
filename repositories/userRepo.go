@@ -321,19 +321,17 @@ func (repo *UserRepository) FindUserByAadhaar(ctx context.Context, aadhaarNumber
 	return &existingUser, nil
 }
 
-func (repo *UserRepository) FindUsageRights(ctx context.Context, userID string) ([]string, []model.Permission, error) {
+func (repo *UserRepository) FindUsageRights(ctx context.Context, userID string) (map[string][]model.Permission, error) {
 	// Fetch user roles
 	var userRoles []model.UserRole
 	if err := repo.DB.WithContext(ctx).
 		Where("user_id = ?", userID).
 		Find(&userRoles).Error; err != nil {
-		return nil, nil, status.Error(codes.Internal, "failed to fetch user roles")
+		return nil, status.Error(codes.Internal, "failed to fetch user roles")
 	}
 
-	// Use a map to track unique roles
-	uniqueRoles := make(map[string]bool)
-	roles := make([]string, 0)
-	permissionMap := make(map[string]model.Permission) // Deduplicate by permission ID
+	// Create a map to store permissions by role
+	rolePermissions := make(map[string][]model.Permission)
 
 	// Process each user role
 	for _, userRole := range userRoles {
@@ -342,28 +340,37 @@ func (repo *UserRepository) FindUsageRights(ctx context.Context, userID string) 
 			Where("id = ?", userRole.RoleID).
 			Preload("RolePermissions.Permission").
 			First(&role).Error; err != nil {
-			return nil, nil, status.Error(codes.Internal, "failed to fetch role details")
+			return nil, status.Error(codes.Internal, "failed to fetch role details")
 		}
 
-		// Add role name if not already present
-		if role.Name != "" && !uniqueRoles[role.Name] {
-			uniqueRoles[role.Name] = true
-			roles = append(roles, role.Name)
+		// Skip if role name is empty
+		if role.Name == "" {
+			continue
 		}
 
-		// Collect permissions
+		// Initialize the slice if this role hasn't been seen before
+		if _, exists := rolePermissions[role.Name]; !exists {
+			rolePermissions[role.Name] = make([]model.Permission, 0)
+		}
+
+		// Collect permissions for this role
 		for _, rp := range role.RolePermissions {
 			if rp.Permission.ID != "" {
-				permissionMap[rp.Permission.ID] = rp.Permission
+				// Copy only needed fields to avoid including RolePermissions
+				perm := model.Permission{
+					Base:           rp.Permission.Base,
+					Name:           rp.Permission.Name,
+					Description:    rp.Permission.Description,
+					Action:         rp.Permission.Action,
+					Resource:       rp.Permission.Resource,
+					Source:         rp.Permission.Source,
+					ValidStartTime: rp.Permission.ValidStartTime,
+					ValidEndTime:   rp.Permission.ValidEndTime,
+				}
+				rolePermissions[role.Name] = append(rolePermissions[role.Name], perm)
 			}
 		}
 	}
 
-	// Convert map to slice
-	permissions := make([]model.Permission, 0, len(permissionMap))
-	for _, perm := range permissionMap {
-		permissions = append(permissions, perm)
-	}
-
-	return roles, permissions, nil
+	return rolePermissions, nil
 }

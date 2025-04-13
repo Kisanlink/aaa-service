@@ -24,19 +24,14 @@ type PermissionResponse struct {
 	Resource    string `json:"resource"`
 }
 
-type UserRoleResponse struct {
-	Roles       []string             `json:"roles"`
-	Permissions []PermissionResponse `json:"permissions"`
-}
-
 type AssignRolePermission struct {
-	ID          string            `json:"id"`
-	Username    string            `json:"username"`
-	Password    string            `json:"password"`
-	IsValidated bool              `json:"is_validated"`
-	CreatedAt   string            `json:"created_at"`
-	UpdatedAt   string            `json:"updated_at"`
-	UsageRight  *UserRoleResponse `json:"usage_right"`
+	ID              string                          `json:"id"`
+	Username        string                          `json:"username"`
+	Password        string                          `json:"password"`
+	IsValidated     bool                            `json:"is_validated"`
+	CreatedAt       string                          `json:"created_at"`
+	UpdatedAt       string                          `json:"updated_at"`
+	RolePermissions map[string][]PermissionResponse `json:"role_permissions"`
 }
 
 type AssignRoleResponse struct {
@@ -58,8 +53,9 @@ func (s *Server) AssignRoleRestApi(c *gin.Context) {
 		})
 		return
 	}
-
 	ctx := c.Request.Context()
+
+	// Validate user exists
 	_, err := s.UserRepo.GetUserByID(ctx, req.UserID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
@@ -70,6 +66,8 @@ func (s *Server) AssignRoleRestApi(c *gin.Context) {
 		})
 		return
 	}
+
+	// Validate role exists
 	role, err := s.RoleRepo.GetRoleByName(ctx, req.Role)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
@@ -80,12 +78,13 @@ func (s *Server) AssignRoleRestApi(c *gin.Context) {
 		})
 		return
 	}
+
+	// Create user-role relationship
 	userRole := model.UserRole{
 		UserID:   req.UserID,
 		RoleID:   role.ID,
 		IsActive: true,
 	}
-
 	if err := s.UserRepo.CreateUserRoles(ctx, userRole); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status_code": http.StatusInternalServerError,
@@ -95,6 +94,8 @@ func (s *Server) AssignRoleRestApi(c *gin.Context) {
 		})
 		return
 	}
+
+	// Get updated user details
 	updatedUser, err := s.UserRepo.GetUserByID(ctx, req.UserID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -105,6 +106,8 @@ func (s *Server) AssignRoleRestApi(c *gin.Context) {
 		})
 		return
 	}
+
+	// Get roles and permissions for relationship updates
 	roles, permissions, actions, err := s.UserRepo.FindUserRolesAndPermissions(ctx, updatedUser.ID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -115,6 +118,8 @@ func (s *Server) AssignRoleRestApi(c *gin.Context) {
 		})
 		return
 	}
+
+	// Update relationships in external service
 	_, err = client.DeleteUserRoleRelationship(
 		updatedUser.Username,
 		helper.LowerCaseSlice(roles),
@@ -124,7 +129,6 @@ func (s *Server) AssignRoleRestApi(c *gin.Context) {
 	if err != nil {
 		log.Printf("Failed to delete relationships: %v", err)
 	}
-
 	_, err = client.CreateUserRoleRelationship(
 		updatedUser.Username,
 		helper.LowerCaseSlice(roles),
@@ -133,10 +137,10 @@ func (s *Server) AssignRoleRestApi(c *gin.Context) {
 	)
 	if err != nil {
 		log.Printf("Failed to create relationships: %v", err)
-
 	}
 
-	roles, permissionsList, err := s.UserRepo.FindUsageRights(ctx, updatedUser.ID)
+	// Get role permissions in the correct format
+	rolePermissions, err := s.UserRepo.FindUsageRights(ctx, updatedUser.ID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status_code": http.StatusInternalServerError,
@@ -147,48 +151,53 @@ func (s *Server) AssignRoleRestApi(c *gin.Context) {
 		return
 	}
 
-	pbPermissions := make([]PermissionResponse, len(permissionsList))
-	for i, perm := range permissionsList {
-		pbPermissions[i] = PermissionResponse{
-			Name:        perm.Name,
-			Description: perm.Description,
-			Action:      perm.Action,
-			Source:      perm.Source,
-			Resource:    perm.Resource,
+	// Convert and deduplicate permissions
+	processedRolePermissions := make(map[string][]PermissionResponse)
+	for role, permissions := range rolePermissions {
+		uniquePerms := make(map[string]PermissionResponse)
+		for _, perm := range permissions {
+			key := perm.Name + ":" + perm.Action + ":" + perm.Resource
+			uniquePerms[key] = PermissionResponse{
+				Name:        perm.Name,
+				Description: perm.Description,
+				Action:      perm.Action,
+				Source:      perm.Source,
+				Resource:    perm.Resource,
+			}
 		}
+		// Convert unique permissions map to slice
+		var permsSlice []PermissionResponse
+		for _, perm := range uniquePerms {
+			permsSlice = append(permsSlice, perm)
+		}
+		processedRolePermissions[role] = permsSlice
 	}
 
-	userRoleResponse := &UserRoleResponse{
-		Roles:       roles,
-		Permissions: pbPermissions,
-	}
-
+	// Format timestamps
 	createdAt := ""
 	if !updatedUser.CreatedAt.IsZero() {
-		createdAt = updatedUser.CreatedAt.Format(time.RFC3339)
+		createdAt = updatedUser.CreatedAt.Format(time.RFC3339Nano)
 	}
-
 	updatedAt := ""
 	if !updatedUser.UpdatedAt.IsZero() {
-		updatedAt = updatedUser.UpdatedAt.Format(time.RFC3339)
+		updatedAt = updatedUser.UpdatedAt.Format(time.RFC3339Nano)
 	}
 
-	connUser := &AssignRolePermission{
-		ID:          updatedUser.ID,
-		Username:    updatedUser.Username,
-		Password:    "",
-		IsValidated: updatedUser.IsValidated,
-		CreatedAt:   createdAt,
-		UpdatedAt:   updatedAt,
-		UsageRight:  userRoleResponse,
-	}
+	// Build response
 	response := &AssignRoleResponse{
 		StatusCode:    http.StatusOK,
 		Success:       true,
 		Message:       "Role assigned to user successfully",
-		Data:          connUser,
 		DataTimeStamp: time.Now().Format(time.RFC3339),
+		Data: &AssignRolePermission{
+			ID:              updatedUser.ID,
+			Username:        updatedUser.Username,
+			Password:        "",
+			IsValidated:     updatedUser.IsValidated,
+			CreatedAt:       createdAt,
+			UpdatedAt:       updatedAt,
+			RolePermissions: processedRolePermissions,
+		},
 	}
-
 	c.JSON(http.StatusOK, response)
 }
