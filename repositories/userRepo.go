@@ -374,3 +374,50 @@ func (repo *UserRepository) FindUsageRights(ctx context.Context, userID string) 
 
 	return rolePermissions, nil
 }
+
+func (repo *UserRepository) GetCreditsByUsername(ctx context.Context, username string) (int, error) {
+	var user model.User
+	err := repo.DB.Table("users").
+		Select("credits").
+		Where("username = ?", username).
+		First(&user).Error
+	if err != nil {
+		if err.Error() == "record not found" || errors.Is(err, gorm.ErrRecordNotFound) {
+			return 0, status.Error(codes.NotFound, "User not found")
+		}
+		return 0, status.Error(codes.Internal, fmt.Sprintf("Failed to fetch credits: %v", err))
+	}
+	return user.Credits, nil
+}
+
+func (repo *UserRepository) CreditUser(ctx context.Context, username string, credits int) (*model.User, error) {
+	user, err := repo.FindUserByUsername(ctx, username)
+	if err != nil {
+		return nil, err
+	}
+
+	user.Credits += credits
+
+	if err := repo.UpdateUser(ctx, *user); err != nil {
+		return nil, err
+	}
+	return user, nil
+}
+
+func (repo *UserRepository) DebitUser(ctx context.Context, username string, credits int) (*model.User, error) {
+	user, err := repo.FindUserByUsername(ctx, username)
+	if err != nil {
+		return nil, err
+	}
+
+	if user.Credits < credits {
+		return nil, errors.New("insufficient credits")
+	}
+
+	user.Credits -= credits
+
+	if err := repo.UpdateUser(ctx, *user); err != nil {
+		return nil, err
+	}
+	return user, nil
+}

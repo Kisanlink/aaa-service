@@ -19,4 +19,6 @@ func UserRoutes(r *gin.RouterGroup, database *gorm.DB) {
 	r.GET("/fetch-users", s.GetUserRestApi)
 	r.POST("/assign-role", s.AssignRoleRestApi)
 	r.POST("/forgot-password", s.PasswordResetHandler)
+
+	r.POST("credit-transaction", s.CreditUsageHandler)
 }

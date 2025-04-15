@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/Kisanlink/aaa-service/model"
+
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -27,16 +29,17 @@ func ConnectDB() {
 	}
 	fmt.Println("Connected to DB")
 
-	// if err := DB.AutoMigrate(
-	// 	&model.Address{},
-	// 	&model.Role{},
-	// 	&model.Permission{},
-	// 	&model.RolePermission{},
-	// 	&model.User{},
-	// 	&model.UserRole{},
-	// ); err != nil {
-	// 	panic("Error migrating database: " + err.Error())
-	// }
+	if err := DB.AutoMigrate(
+		&model.Address{},        // No dependencies
+		&model.User{},           // Must come before UserRole
+		&model.Role{},           // Must come before RolePermission
+		&model.Permission{},     // Must come before RolePermission
+		&model.UserRole{},       // Depends on User, Role
+		&model.RolePermission{}, // Depends on Role, Permission
+	); err != nil {
+		panic("Error migrating database: " + err.Error())
+	}
+
 	sqlDB, err := DB.DB()
 	if err != nil {
 		panic(fmt.Sprintf("Failed to get underlying sql.DB: %v", err))
