@@ -375,49 +375,67 @@ func (repo *UserRepository) FindUsageRights(ctx context.Context, userID string) 
 	return rolePermissions, nil
 }
 
-func (repo *UserRepository) GetCreditsByUsername(ctx context.Context, username string) (int, error) {
+// Get user's current token count
+func (repo *UserRepository) GetTokensByUserID(ctx context.Context, userID string) (int, error) {
 	var user model.User
-	err := repo.DB.Table("users").
-		Select("credits").
-		Where("username = ?", username).
+	err := repo.DB.WithContext(ctx).
+		Where("id = ?", userID).
 		First(&user).Error
+
 	if err != nil {
-		if err.Error() == "record not found" || errors.Is(err, gorm.ErrRecordNotFound) {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return 0, status.Error(codes.NotFound, "User not found")
 		}
-		return 0, status.Error(codes.Internal, fmt.Sprintf("Failed to fetch credits: %v", err))
+		return 0, status.Error(codes.Internal, fmt.Sprintf("Failed to fetch tokens: %v", err))
 	}
-	return user.Credits, nil
+
+	return user.Tokens, nil
 }
 
-func (repo *UserRepository) CreditUser(ctx context.Context, username string, credits int) (*model.User, error) {
-	user, err := repo.FindUserByUsername(ctx, username)
+// Credit tokens to a user
+func (repo *UserRepository) CreditUserByID(ctx context.Context, userID string, tokens int) (*model.User, error) {
+	var user model.User
+	err := repo.DB.WithContext(ctx).
+		Where("id = ?", userID).
+		First(&user).Error
+
 	if err != nil {
-		return nil, err
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, status.Error(codes.NotFound, "User not found")
+		}
+		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to fetch user: %v", err))
 	}
 
-	user.Credits += credits
+	user.Tokens += tokens
 
-	if err := repo.UpdateUser(ctx, *user); err != nil {
+	if err := repo.UpdateUser(ctx, user); err != nil {
 		return nil, err
 	}
-	return user, nil
+	return &user, nil
 }
 
-func (repo *UserRepository) DebitUser(ctx context.Context, username string, credits int) (*model.User, error) {
-	user, err := repo.FindUserByUsername(ctx, username)
+// Debit tokens from a user
+func (repo *UserRepository) DebitUserByID(ctx context.Context, userID string, tokens int) (*model.User, error) {
+	var user model.User
+	err := repo.DB.WithContext(ctx).
+		Where("id = ?", userID).
+		First(&user).Error
+
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, status.Error(codes.NotFound, "User not found")
+		}
+		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to fetch user: %v", err))
+	}
+
+	if user.Tokens < tokens {
+		return nil, errors.New("insufficient tokens")
+	}
+
+	user.Tokens -= tokens
+
+	if err := repo.UpdateUser(ctx, user); err != nil {
 		return nil, err
 	}
-
-	if user.Credits < credits {
-		return nil, errors.New("insufficient credits")
-	}
-
-	user.Credits -= credits
-
-	if err := repo.UpdateUser(ctx, *user); err != nil {
-		return nil, err
-	}
-	return user, nil
+	return &user, nil
 }
