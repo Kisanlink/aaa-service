@@ -27,7 +27,7 @@ type User struct {
 	Roles   []UserRole `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 
 	// for credits
-	Tokens int `json:"tokens" gorm:"default:0"`
+	Tokens int `json:"tokens" gorm:"default:1000"`
 }
 
 type Address struct {
