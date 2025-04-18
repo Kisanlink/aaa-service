@@ -23,14 +23,19 @@ type Permission struct {
 	Resource    string `json:"resource"`
 }
 
+type Role struct {
+	RoleName    string       `json:"role_name"`
+	Permissions []Permission `json:"permissions"`
+}
+
 type UserResponse struct {
-	ID              string                  `json:"id"`
-	Username        string                  `json:"username"`
-	Password        string                  `json:"password"`
-	IsValidated     bool                    `json:"is_validated"`
-	CreatedAt       string                  `json:"created_at"`
-	UpdatedAt       string                  `json:"updated_at"`
-	RolePermissions map[string][]Permission `json:"role_permissions"`
+	ID          string `json:"id"`
+	Username    string `json:"username"`
+	Password    string `json:"password"`
+	IsValidated bool   `json:"is_validated"`
+	CreatedAt   string `json:"created_at"`
+	UpdatedAt   string `json:"updated_at"`
+	Role        []Role `json:"role"`
 }
 
 type LoginResponse struct {
@@ -41,10 +46,10 @@ type LoginResponse struct {
 	DataTimeStamp string       `json:"data_time_stamp"`
 }
 
-func ConvertAndDeduplicateRolePermissions(input map[string][]model.Permission) map[string][]Permission {
-	converted := make(map[string][]Permission)
+func ConvertAndDeduplicateRolePermissions(input map[string][]model.Permission) []Role {
+	var roles []Role
 
-	for role, permissions := range input {
+	for roleName, permissions := range input {
 		uniquePerms := make(map[string]Permission)
 
 		// Deduplicate permissions
@@ -67,10 +72,13 @@ func ConvertAndDeduplicateRolePermissions(input map[string][]model.Permission) m
 			permSlice = append(permSlice, perm)
 		}
 
-		converted[role] = permSlice
+		roles = append(roles, Role{
+			RoleName:    roleName,
+			Permissions: permSlice,
+		})
 	}
 
-	return converted
+	return roles
 }
 
 func (s *Server) LoginRestApi(c *gin.Context) {
@@ -137,13 +145,13 @@ func (s *Server) LoginRestApi(c *gin.Context) {
 		Message:       "Login successful",
 		DataTimeStamp: time.Now().Format(time.RFC3339),
 		Data: UserResponse{
-			ID:              existingUser.ID,
-			Username:        existingUser.Username,
-			Password:        "", // Empty for security
-			IsValidated:     existingUser.IsValidated,
-			CreatedAt:       existingUser.CreatedAt.Format(time.RFC3339Nano),
-			UpdatedAt:       existingUser.UpdatedAt.Format(time.RFC3339Nano),
-			RolePermissions: ConvertAndDeduplicateRolePermissions(rolePermissions),
+			ID:          existingUser.ID,
+			Username:    existingUser.Username,
+			Password:    "", // Empty for security
+			IsValidated: existingUser.IsValidated,
+			CreatedAt:   existingUser.CreatedAt.Format(time.RFC3339Nano),
+			UpdatedAt:   existingUser.UpdatedAt.Format(time.RFC3339Nano),
+			Role:        ConvertAndDeduplicateRolePermissions(rolePermissions),
 		},
 	}
 

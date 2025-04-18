@@ -24,14 +24,19 @@ type PermissionResponse struct {
 	Resource    string `json:"resource"`
 }
 
+type RoleResponse struct {
+	RoleName    string               `json:"role_name"`
+	Permissions []PermissionResponse `json:"permissions"`
+}
+
 type AssignRolePermission struct {
-	ID              string                          `json:"id"`
-	Username        string                          `json:"username"`
-	Password        string                          `json:"password"`
-	IsValidated     bool                            `json:"is_validated"`
-	CreatedAt       string                          `json:"created_at"`
-	UpdatedAt       string                          `json:"updated_at"`
-	RolePermissions map[string][]PermissionResponse `json:"role_permissions"`
+	ID          string         `json:"id"`
+	Username    string         `json:"username"`
+	Password    string         `json:"password"`
+	IsValidated bool           `json:"is_validated"`
+	CreatedAt   string         `json:"created_at"`
+	UpdatedAt   string         `json:"updated_at"`
+	Roles       []RoleResponse `json:"roles"`
 }
 
 type AssignRoleResponse struct {
@@ -151,9 +156,9 @@ func (s *Server) AssignRoleRestApi(c *gin.Context) {
 		return
 	}
 
-	// Convert and deduplicate permissions
-	processedRolePermissions := make(map[string][]PermissionResponse)
-	for role, permissions := range rolePermissions {
+	// Convert role permissions to the new structure
+	var rolesResponse []RoleResponse
+	for roleName, permissions := range rolePermissions {
 		uniquePerms := make(map[string]PermissionResponse)
 		for _, perm := range permissions {
 			key := perm.Name + ":" + perm.Action + ":" + perm.Resource
@@ -165,12 +170,17 @@ func (s *Server) AssignRoleRestApi(c *gin.Context) {
 				Resource:    perm.Resource,
 			}
 		}
+
 		// Convert unique permissions map to slice
 		var permsSlice []PermissionResponse
 		for _, perm := range uniquePerms {
 			permsSlice = append(permsSlice, perm)
 		}
-		processedRolePermissions[role] = permsSlice
+
+		rolesResponse = append(rolesResponse, RoleResponse{
+			RoleName:    roleName,
+			Permissions: permsSlice,
+		})
 	}
 
 	// Format timestamps
@@ -190,13 +200,13 @@ func (s *Server) AssignRoleRestApi(c *gin.Context) {
 		Message:       "Role assigned to user successfully",
 		DataTimeStamp: time.Now().Format(time.RFC3339),
 		Data: &AssignRolePermission{
-			ID:              updatedUser.ID,
-			Username:        updatedUser.Username,
-			Password:        "",
-			IsValidated:     updatedUser.IsValidated,
-			CreatedAt:       createdAt,
-			UpdatedAt:       updatedAt,
-			RolePermissions: processedRolePermissions,
+			ID:          updatedUser.ID,
+			Username:    updatedUser.Username,
+			Password:    "",
+			IsValidated: updatedUser.IsValidated,
+			CreatedAt:   createdAt,
+			UpdatedAt:   updatedAt,
+			Roles:       rolesResponse,
 		},
 	}
 	c.JSON(http.StatusOK, response)

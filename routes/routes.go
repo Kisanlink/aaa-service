@@ -7,9 +7,10 @@ import (
 
 func Routes(router *gin.RouterGroup, db *gorm.DB) {
 	api := router.Group("/v1")
-	UserRoutes(api, db) 
-	RolesRoutes(api, db) 
-	PermissionRoutes(api, db) 
-	AssignPermissionRoutes(api, db) 
-	
+	UserRoutes(api, db)
+	RolesRoutes(api, db)
+	PermissionRoutes(api, db)
+	AssignPermissionRoutes(api, db)
+	MediaRoutes(api, db)
+
 }

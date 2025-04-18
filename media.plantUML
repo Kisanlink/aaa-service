@@ -1,0 +1,48 @@
+@startuml
+skinparam monochrome true
+skinparam defaultFontSize 14
+title Upload Media Process
+
+actor User
+participant "Upload Controller" as Controller
+participant "Upload Service" as Service
+participant "S3 Bucket" as S3
+participant "Permission Middleware" as Middleware
+
+== Upload Single Image ==
+User -> Controller : POST /upload\n{ file, folder, bucket_name }
+Controller -> Service : validate input
+Service -> S3 : Upload single file to folder in bucket
+S3 --> Service : { url }
+Service --> Controller : success response with file url
+Controller --> User : 200 OK + uploaded file url
+
+== Upload Bulk Images ==
+User -> Controller : POST /bulk-upload\n{ files, folder, bucket_name }
+Controller -> Service : validate input
+Service -> S3 : Upload each file to folder in bucket
+S3 --> Service : [url1, url2, ...]
+Service --> Controller : success response with urls
+Controller --> User : 200 OK + uploaded file urls
+
+== Upload Base64 Image ==
+User -> Controller : POST /upload/base64\n{ bucket_name, folder, file_name, image_base64 }
+Controller -> Service : validate input
+Service -> S3 : Decode base64, upload to folder
+S3 --> Service : { url }
+Service --> Controller : success response with file url
+Controller --> User : 200 OK + uploaded file url
+
+== Access URL (Permission Check) ==
+User -> Middleware : GET /get-url-access\n{ url }
+Middleware -> Service : Check user permission
+alt Has Access
+    Service -> S3 : Generate presigned URL (15 mins)
+    S3 --> Service : { signed_url }
+    Service --> Middleware : Return signed_url
+    Middleware --> User : 200 OK + signed_url
+else No Access
+    Middleware --> User : 403 Forbidden
+end
+
+@enduml
