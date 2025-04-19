@@ -74,7 +74,7 @@ func (s *Server) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest) (*pb
 	}
 
 	// Convert role permissions to protobuf format
-	pbRolePermissions := make(map[string]*pb.RolePermissions)
+	var pbRolePermissions []*pb.RolePermissions
 	for role, permissions := range rolePermissions {
 		// Deduplicate permissions
 		uniquePerms := make(map[string]*pb.PermissionResponse)
@@ -97,9 +97,10 @@ func (s *Server) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest) (*pb
 			pbPermissions = append(pbPermissions, perm)
 		}
 
-		pbRolePermissions[role] = &pb.RolePermissions{
+		pbRolePermissions = append(pbRolePermissions, &pb.RolePermissions{
+			RoleName:    role, // Set the role name here
 			Permissions: pbPermissions,
-		}
+		})
 	}
 
 	// Handle address if needed
@@ -137,7 +138,7 @@ func (s *Server) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest) (*pb
 		IsValidated:     existingUser.IsValidated,
 		CreatedAt:       existingUser.CreatedAt.Format(time.RFC3339Nano),
 		UpdatedAt:       existingUser.UpdatedAt.Format(time.RFC3339Nano),
-		RolePermissions: pbRolePermissions,
+		RolePermissions: pbRolePermissions, // Now this is a slice of RolePermissions
 		AadhaarNumber:   safeString(existingUser.AadhaarNumber),
 		Status:          safeString(existingUser.Status),
 		Name:            safeString(existingUser.Name),

@@ -9,6 +9,8 @@ import (
 	"github.com/Kisanlink/aaa-service/helper"
 	"github.com/Kisanlink/aaa-service/model"
 	"github.com/gin-gonic/gin"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type AssignRoleRequest struct {
@@ -30,13 +32,13 @@ type RoleResponse struct {
 }
 
 type AssignRolePermission struct {
-	ID          string         `json:"id"`
-	Username    string         `json:"username"`
-	Password    string         `json:"password"`
-	IsValidated bool           `json:"is_validated"`
-	CreatedAt   string         `json:"created_at"`
-	UpdatedAt   string         `json:"updated_at"`
-	Roles       []RoleResponse `json:"roles"`
+	ID             string         `json:"id"`
+	Username       string         `json:"username"`
+	Password       string         `json:"password"`
+	IsValidated    bool           `json:"is_validated"`
+	CreatedAt      string         `json:"created_at"`
+	UpdatedAt      string         `json:"updated_at"`
+	RolePermission []RoleResponse `json:"role_permissions"`
 }
 
 type AssignRoleResponse struct {
@@ -91,6 +93,29 @@ func (s *Server) AssignRoleRestApi(c *gin.Context) {
 		IsActive: true,
 	}
 	if err := s.UserRepo.CreateUserRoles(ctx, userRole); err != nil {
+		// Handle specific error cases
+		if st, ok := status.FromError(err); ok {
+			switch st.Code() {
+			case codes.AlreadyExists:
+				c.JSON(http.StatusConflict, gin.H{
+					"status_code": http.StatusConflict,
+					"success":     false,
+					"message":     st.Message(),
+					"data":        nil,
+				})
+				return
+			default:
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"status_code": http.StatusInternalServerError,
+					"success":     false,
+					"message":     st.Message(),
+					"data":        nil,
+				})
+				return
+			}
+		}
+
+		// Fallback for non-gRPC errors
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status_code": http.StatusInternalServerError,
 			"success":     false,
@@ -200,13 +225,13 @@ func (s *Server) AssignRoleRestApi(c *gin.Context) {
 		Message:       "Role assigned to user successfully",
 		DataTimeStamp: time.Now().Format(time.RFC3339),
 		Data: &AssignRolePermission{
-			ID:          updatedUser.ID,
-			Username:    updatedUser.Username,
-			Password:    "",
-			IsValidated: updatedUser.IsValidated,
-			CreatedAt:   createdAt,
-			UpdatedAt:   updatedAt,
-			Roles:       rolesResponse,
+			ID:             updatedUser.ID,
+			Username:       updatedUser.Username,
+			Password:       "",
+			IsValidated:    updatedUser.IsValidated,
+			CreatedAt:      createdAt,
+			UpdatedAt:      updatedAt,
+			RolePermission: rolesResponse,
 		},
 	}
 	c.JSON(http.StatusOK, response)

@@ -29,13 +29,13 @@ type Role struct {
 }
 
 type UserResponse struct {
-	ID          string `json:"id"`
-	Username    string `json:"username"`
-	Password    string `json:"password"`
-	IsValidated bool   `json:"is_validated"`
-	CreatedAt   string `json:"created_at"`
-	UpdatedAt   string `json:"updated_at"`
-	Role        []Role `json:"role"`
+	ID             string `json:"id"`
+	Username       string `json:"username"`
+	Password       string `json:"password"`
+	IsValidated    bool   `json:"is_validated"`
+	CreatedAt      string `json:"created_at"`
+	UpdatedAt      string `json:"updated_at"`
+	RolePermission []Role `json:"role_permissions"`
 }
 
 type LoginResponse struct {
@@ -145,13 +145,13 @@ func (s *Server) LoginRestApi(c *gin.Context) {
 		Message:       "Login successful",
 		DataTimeStamp: time.Now().Format(time.RFC3339),
 		Data: UserResponse{
-			ID:          existingUser.ID,
-			Username:    existingUser.Username,
-			Password:    "", // Empty for security
-			IsValidated: existingUser.IsValidated,
-			CreatedAt:   existingUser.CreatedAt.Format(time.RFC3339Nano),
-			UpdatedAt:   existingUser.UpdatedAt.Format(time.RFC3339Nano),
-			Role:        ConvertAndDeduplicateRolePermissions(rolePermissions),
+			ID:             existingUser.ID,
+			Username:       existingUser.Username,
+			Password:       "", // Empty for security
+			IsValidated:    existingUser.IsValidated,
+			CreatedAt:      existingUser.CreatedAt.Format(time.RFC3339Nano),
+			UpdatedAt:      existingUser.UpdatedAt.Format(time.RFC3339Nano),
+			RolePermission: ConvertAndDeduplicateRolePermissions(rolePermissions),
 		},
 	}
 
