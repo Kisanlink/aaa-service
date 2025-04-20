@@ -48,8 +48,8 @@ func (s *Server) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResp
 		return nil, status.Errorf(codes.Internal, "failed to fetch user roles and permissions: %v", err)
 	}
 
-	// Convert role permissions to protobuf format and remove duplicates
-	pbRolePermissions := make(map[string]*pb.RolePermissions)
+	// Convert role permissions to protobuf format
+	var pbRolePermissions []*pb.RolePermissions
 	for role, permissions := range rolePermissions {
 		// Use a map to track unique permissions
 		uniquePerms := make(map[string]*pb.PermissionResponse)
@@ -72,9 +72,10 @@ func (s *Server) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResp
 			pbPermissions = append(pbPermissions, perm)
 		}
 
-		pbRolePermissions[role] = &pb.RolePermissions{
+		pbRolePermissions = append(pbRolePermissions, &pb.RolePermissions{
+			RoleName:    role, // Set the role name here
 			Permissions: pbPermissions,
-		}
+		})
 	}
 
 	// Set auth headers
@@ -100,7 +101,7 @@ func (s *Server) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResp
 			IsValidated:     existingUser.IsValidated,
 			CreatedAt:       existingUser.CreatedAt.Format(time.RFC3339Nano),
 			UpdatedAt:       existingUser.UpdatedAt.Format(time.RFC3339Nano),
-			RolePermissions: pbRolePermissions,
+			RolePermissions: pbRolePermissions, // Now this is a slice of RolePermissions
 		},
 	}
 

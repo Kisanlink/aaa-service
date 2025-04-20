@@ -224,9 +224,32 @@ func (repo *UserRepository) FindRoleUsersAndPermissionsByRoleId(ctx context.Cont
 
 	return roles, permissions, actions, connectedUsernames, nil
 }
-func (repo *UserRepository) CreateUserRoles(ctx context.Context, userRoles model.UserRole) error {
-	if err := repo.DB.Table("user_roles").Create(&userRoles).Error; err != nil {
-		return status.Error(codes.Internal, "Failed to create UserRole entries")
+
+// func (repo *UserRepository) CreateUserRoles(ctx context.Context, userRoles model.UserRole) error {
+// 	if err := repo.DB.Table("user_roles").Create(&userRoles).Error; err != nil {
+// 		return status.Error(codes.Internal, "Failed to create UserRole entries")
+// 	}
+
+//		return nil
+//	}
+func (repo *UserRepository) CreateUserRoles(ctx context.Context, userRole model.UserRole) error {
+	// First check if this user-role assignment already exists
+	var count int64
+	err := repo.DB.Table("user_roles").
+		Where("user_id = ? AND role_id = ?", userRole.UserID, userRole.RoleID).
+		Count(&count).Error
+
+	if err != nil {
+		return status.Errorf(codes.Internal, "failed to check existing role assignment: %v", err)
+	}
+
+	if count > 0 {
+		return status.Errorf(codes.AlreadyExists, "user already has this role assigned")
+	}
+
+	// If we get here, the assignment doesn't exist, so create it
+	if err := repo.DB.Table("user_roles").Create(&userRole).Error; err != nil {
+		return status.Errorf(codes.Internal, "failed to create user role assignment: %v", err)
 	}
 
 	return nil

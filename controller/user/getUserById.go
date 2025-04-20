@@ -32,7 +32,7 @@ func (s *Server) GetUserById(ctx context.Context, req *pb.GetUserByIdRequest) (*
 	}
 
 	// Convert role permissions to protobuf format
-	pbRolePermissions := make(map[string]*pb.RolePermissions)
+	var pbRolePermissions []*pb.RolePermissions
 	for role, permissions := range rolePermissions {
 		// Deduplicate permissions
 		uniquePerms := make(map[string]*pb.PermissionResponse)
@@ -55,9 +55,10 @@ func (s *Server) GetUserById(ctx context.Context, req *pb.GetUserByIdRequest) (*
 			pbPermissions = append(pbPermissions, perm)
 		}
 
-		pbRolePermissions[role] = &pb.RolePermissions{
+		pbRolePermissions = append(pbRolePermissions, &pb.RolePermissions{
+			RoleName:    role,
 			Permissions: pbPermissions,
-		}
+		})
 	}
 
 	var pbAddress *pb.Address
@@ -81,6 +82,8 @@ func (s *Server) GetUserById(ctx context.Context, req *pb.GetUserByIdRequest) (*
 				Country:     safeString(address.Country),
 				Pincode:     safeString(address.Pincode),
 				FullAddress: safeString(address.FullAddress),
+				CreatedAt:   address.CreatedAt.Format(time.RFC3339),
+				UpdatedAt:   address.UpdatedAt.Format(time.RFC3339),
 			}
 		}
 	}

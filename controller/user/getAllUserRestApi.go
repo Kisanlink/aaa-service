@@ -20,29 +20,31 @@ type Address struct {
 	Country     string `json:"country"`
 	Pincode     string `json:"pincode"`
 	FullAddress string `json:"full_address"`
+	CreatedAt   string `json:"created_at"`
+	UpdatedAt   string `json:"updated_at"`
 }
 
 type User struct {
-	ID            string         `json:"id"`
-	Username      string         `json:"username"`
-	Password      string         `json:"password"`
-	IsValidated   bool           `json:"is_validated"`
-	CreatedAt     string         `json:"created_at"`
-	UpdatedAt     string         `json:"updated_at"`
-	Roles         []RoleResponse `json:"roles"`
-	AadhaarNumber string         `json:"aadhaar_number"`
-	Status        string         `json:"status"`
-	Name          string         `json:"name"`
-	CareOf        string         `json:"care_of"`
-	DateOfBirth   string         `json:"date_of_birth"`
-	Photo         string         `json:"photo"`
-	EmailHash     string         `json:"email_hash"`
-	ShareCode     string         `json:"share_code"`
-	YearOfBirth   string         `json:"year_of_birth"`
-	Message       string         `json:"message"`
-	MobileNumber  uint64         `json:"mobile_number"`
-	CountryCode   string         `json:"country_code"`
-	Address       *Address       `json:"address"`
+	ID             string         `json:"id"`
+	Username       string         `json:"username"`
+	Password       string         `json:"password"`
+	IsValidated    bool           `json:"is_validated"`
+	CreatedAt      string         `json:"created_at"`
+	UpdatedAt      string         `json:"updated_at"`
+	RolePermission []RoleResponse `json:"role_permissions"`
+	AadhaarNumber  string         `json:"aadhaar_number"`
+	Status         string         `json:"status"`
+	Name           string         `json:"name"`
+	CareOf         string         `json:"care_of"`
+	DateOfBirth    string         `json:"date_of_birth"`
+	Photo          string         `json:"photo"`
+	EmailHash      string         `json:"email_hash"`
+	ShareCode      string         `json:"share_code"`
+	YearOfBirth    string         `json:"year_of_birth"`
+	Message        string         `json:"message"`
+	MobileNumber   uint64         `json:"mobile_number"`
+	CountryCode    string         `json:"country_code"`
+	Address        *Address       `json:"address"`
 }
 
 type GetUserResponse struct {
@@ -134,30 +136,32 @@ func (s *Server) GetUserRestApi(c *gin.Context) {
 				Country:     safeString(addr.Country),
 				Pincode:     safeString(addr.Pincode),
 				FullAddress: safeString(addr.FullAddress),
+				CreatedAt:   addr.CreatedAt.Format(time.RFC3339),
+				UpdatedAt:   addr.UpdatedAt.Format(time.RFC3339),
 			}
 		}
 
 		responseUser := User{
-			ID:            user.ID,
-			Username:      user.Username,
-			Password:      "", // Don't return password in response
-			IsValidated:   user.IsValidated,
-			CreatedAt:     user.CreatedAt.Format(time.RFC3339),
-			UpdatedAt:     user.UpdatedAt.Format(time.RFC3339),
-			Roles:         rolesResponse,
-			AadhaarNumber: safeString(user.AadhaarNumber),
-			Status:        safeString(user.Status),
-			Name:          safeString(user.Name),
-			CareOf:        safeString(user.CareOf),
-			DateOfBirth:   safeString(user.DateOfBirth),
-			Photo:         safeString(user.Photo),
-			EmailHash:     safeString(user.EmailHash),
-			ShareCode:     safeString(user.ShareCode),
-			YearOfBirth:   safeString(user.YearOfBirth),
-			Message:       safeString(user.Message),
-			MobileNumber:  user.MobileNumber,
-			CountryCode:   safeString(user.CountryCode),
-			Address:       address,
+			ID:             user.ID,
+			Username:       user.Username,
+			Password:       "", // Don't return password in response
+			IsValidated:    user.IsValidated,
+			CreatedAt:      user.CreatedAt.Format(time.RFC3339),
+			UpdatedAt:      user.UpdatedAt.Format(time.RFC3339),
+			RolePermission: rolesResponse,
+			AadhaarNumber:  safeString(user.AadhaarNumber),
+			Status:         safeString(user.Status),
+			Name:           safeString(user.Name),
+			CareOf:         safeString(user.CareOf),
+			DateOfBirth:    safeString(user.DateOfBirth),
+			Photo:          safeString(user.Photo),
+			EmailHash:      safeString(user.EmailHash),
+			ShareCode:      safeString(user.ShareCode),
+			YearOfBirth:    safeString(user.YearOfBirth),
+			Message:        safeString(user.Message),
+			MobileNumber:   user.MobileNumber,
+			CountryCode:    safeString(user.CountryCode),
+			Address:        address,
 		}
 
 		responseUsers = append(responseUsers, responseUser)

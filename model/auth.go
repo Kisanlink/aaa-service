@@ -76,10 +76,8 @@ type RolePermission struct {
 }
 type UserRole struct {
 	Base
-	//	MobileNumber 	uint64 			`gorm:"type:bigint"`
-	UserID string `gorm:"type:uuid"`
-	User   User   `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
-	//	User         	User   			`gorm:"foreignKey:MobileNumber;references:MobileNumber;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	UserID   string `gorm:"type:uuid"`
+	User     User   `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	RoleID   string `gorm:"type:uuid"`
 	Role     *Role  `gorm:"foreignKey:RoleID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	IsActive bool   `json:"is_active" validate:"default:true"`

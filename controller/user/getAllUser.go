@@ -25,7 +25,7 @@ func (s *Server) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.GetUs
 		}
 
 		// Convert role permissions to protobuf format and remove duplicates
-		pbRolePermissions := make(map[string]*pb.RolePermissions)
+		var pbRolePermissions []*pb.RolePermissions
 		for role, permissions := range rolePermissions {
 			// Use a map to track unique permissions
 			uniquePerms := make(map[string]*pb.PermissionResponse)
@@ -48,9 +48,10 @@ func (s *Server) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.GetUs
 				pbPermissions = append(pbPermissions, perm)
 			}
 
-			pbRolePermissions[role] = &pb.RolePermissions{
+			pbRolePermissions = append(pbRolePermissions, &pb.RolePermissions{
+				RoleName:    role,
 				Permissions: pbPermissions,
-			}
+			})
 		}
 
 		var pbAddress *pb.Address

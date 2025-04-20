@@ -33,9 +33,11 @@ func (s *Server) AssignRole(ctx context.Context, req *pb.AssignRoleToUserRequest
 	}
 
 	if err := s.UserRepo.CreateUserRoles(ctx, userRole); err != nil {
-		return nil, status.Errorf(codes.Internal, "Failed to create user-role connection: %v", err)
+		if st, ok := status.FromError(err); ok && st.Code() == codes.AlreadyExists {
+			return nil, status.Errorf(codes.AlreadyExists, "user already has role '%s' assigned", roleName)
+		}
+		return nil, status.Errorf(codes.Internal, "failed to assign role to user: %v", err)
 	}
-
 	// Get updated user details
 	updatedUser, err := s.UserRepo.GetUserByID(ctx, req.UserId)
 	if err != nil {
@@ -76,7 +78,7 @@ func (s *Server) AssignRole(ctx context.Context, req *pb.AssignRoleToUserRequest
 	}
 
 	// Convert role permissions to protobuf format and remove duplicates
-	pbRolePermissions := make(map[string]*pb.RolePermissions)
+	var pbRolePermissions []*pb.RolePermissions
 	for role, permissions := range rolePermissions {
 		// Use a map to track unique permissions
 		uniquePerms := make(map[string]*pb.PermissionResponse)
@@ -99,9 +101,10 @@ func (s *Server) AssignRole(ctx context.Context, req *pb.AssignRoleToUserRequest
 			pbPermissions = append(pbPermissions, perm)
 		}
 
-		pbRolePermissions[role] = &pb.RolePermissions{
+		pbRolePermissions = append(pbRolePermissions, &pb.RolePermissions{
+			RoleName:    role,
 			Permissions: pbPermissions,
-		}
+		})
 	}
 
 	// Format timestamps
