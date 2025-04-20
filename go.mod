@@ -17,6 +17,7 @@ require (
 	github.com/jackc/puddle/v2 v2.2.1 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
+	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/jzelinskie/stringz v0.0.3 // indirect
 	github.com/kisanlink/protobuf v0.0.0-20250413093600-5549e98792b2 // indirect
 	github.com/lib/pq v1.10.9 // indirect
@@ -37,6 +38,7 @@ require (
 	cloud.google.com/go/compute/metadata v0.6.0
 	github.com/authzed/authzed-go v1.3.0
 	github.com/authzed/grpcutil v0.0.0-20240123194739-2ea1e3d2d98b
+	github.com/aws/aws-sdk-go v1.55.6
 	github.com/bytedance/sonic v1.12.8 // indirect
 	github.com/bytedance/sonic/loader v0.2.3 // indirect
 	github.com/cloudwego/base64x v0.1.5 // indirect

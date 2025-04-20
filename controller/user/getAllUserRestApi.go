@@ -23,26 +23,26 @@ type Address struct {
 }
 
 type User struct {
-	ID              string                          `json:"id"`
-	Username        string                          `json:"username"`
-	Password        string                          `json:"password"`
-	IsValidated     bool                            `json:"is_validated"`
-	CreatedAt       string                          `json:"created_at"`
-	UpdatedAt       string                          `json:"updated_at"`
-	RolePermissions map[string][]PermissionResponse `json:"role_permissions"`
-	AadhaarNumber   string                          `json:"aadhaar_number"`
-	Status          string                          `json:"status"`
-	Name            string                          `json:"name"`
-	CareOf          string                          `json:"care_of"`
-	DateOfBirth     string                          `json:"date_of_birth"`
-	Photo           string                          `json:"photo"`
-	EmailHash       string                          `json:"email_hash"`
-	ShareCode       string                          `json:"share_code"`
-	YearOfBirth     string                          `json:"year_of_birth"`
-	Message         string                          `json:"message"`
-	MobileNumber    uint64                          `json:"mobile_number"`
-	CountryCode     string                          `json:"country_code"`
-	Address         *Address                        `json:"address"`
+	ID            string         `json:"id"`
+	Username      string         `json:"username"`
+	Password      string         `json:"password"`
+	IsValidated   bool           `json:"is_validated"`
+	CreatedAt     string         `json:"created_at"`
+	UpdatedAt     string         `json:"updated_at"`
+	Roles         []RoleResponse `json:"roles"`
+	AadhaarNumber string         `json:"aadhaar_number"`
+	Status        string         `json:"status"`
+	Name          string         `json:"name"`
+	CareOf        string         `json:"care_of"`
+	DateOfBirth   string         `json:"date_of_birth"`
+	Photo         string         `json:"photo"`
+	EmailHash     string         `json:"email_hash"`
+	ShareCode     string         `json:"share_code"`
+	YearOfBirth   string         `json:"year_of_birth"`
+	Message       string         `json:"message"`
+	MobileNumber  uint64         `json:"mobile_number"`
+	CountryCode   string         `json:"country_code"`
+	Address       *Address       `json:"address"`
 }
 
 type GetUserResponse struct {
@@ -81,9 +81,9 @@ func (s *Server) GetUserRestApi(c *gin.Context) {
 			return
 		}
 
-		// Process and deduplicate permissions
-		processedRolePermissions := make(map[string][]PermissionResponse)
-		for role, permissions := range rolePermissions {
+		// Convert role permissions to the new structure
+		var rolesResponse []RoleResponse
+		for roleName, permissions := range rolePermissions {
 			uniquePerms := make(map[string]PermissionResponse)
 			for _, perm := range permissions {
 				key := perm.Name + ":" + perm.Action + ":" + perm.Resource
@@ -95,12 +95,17 @@ func (s *Server) GetUserRestApi(c *gin.Context) {
 					Resource:    perm.Resource,
 				}
 			}
+
 			// Convert unique permissions map to slice
 			var permsSlice []PermissionResponse
 			for _, perm := range uniquePerms {
 				permsSlice = append(permsSlice, perm)
 			}
-			processedRolePermissions[role] = permsSlice
+
+			rolesResponse = append(rolesResponse, RoleResponse{
+				RoleName:    roleName,
+				Permissions: permsSlice,
+			})
 		}
 
 		var address *Address
@@ -133,26 +138,26 @@ func (s *Server) GetUserRestApi(c *gin.Context) {
 		}
 
 		responseUser := User{
-			ID:              user.ID,
-			Username:        user.Username,
-			Password:        "", // Don't return password in response
-			IsValidated:     user.IsValidated,
-			CreatedAt:       user.CreatedAt.Format(time.RFC3339),
-			UpdatedAt:       user.UpdatedAt.Format(time.RFC3339),
-			RolePermissions: processedRolePermissions,
-			AadhaarNumber:   safeString(user.AadhaarNumber),
-			Status:          safeString(user.Status),
-			Name:            safeString(user.Name),
-			CareOf:          safeString(user.CareOf),
-			DateOfBirth:     safeString(user.DateOfBirth),
-			Photo:           safeString(user.Photo),
-			EmailHash:       safeString(user.EmailHash),
-			ShareCode:       safeString(user.ShareCode),
-			YearOfBirth:     safeString(user.YearOfBirth),
-			Message:         safeString(user.Message),
-			MobileNumber:    user.MobileNumber,
-			CountryCode:     safeString(user.CountryCode),
-			Address:         address,
+			ID:            user.ID,
+			Username:      user.Username,
+			Password:      "", // Don't return password in response
+			IsValidated:   user.IsValidated,
+			CreatedAt:     user.CreatedAt.Format(time.RFC3339),
+			UpdatedAt:     user.UpdatedAt.Format(time.RFC3339),
+			Roles:         rolesResponse,
+			AadhaarNumber: safeString(user.AadhaarNumber),
+			Status:        safeString(user.Status),
+			Name:          safeString(user.Name),
+			CareOf:        safeString(user.CareOf),
+			DateOfBirth:   safeString(user.DateOfBirth),
+			Photo:         safeString(user.Photo),
+			EmailHash:     safeString(user.EmailHash),
+			ShareCode:     safeString(user.ShareCode),
+			YearOfBirth:   safeString(user.YearOfBirth),
+			Message:       safeString(user.Message),
+			MobileNumber:  user.MobileNumber,
+			CountryCode:   safeString(user.CountryCode),
+			Address:       address,
 		}
 
 		responseUsers = append(responseUsers, responseUser)
