@@ -397,3 +397,68 @@ func (repo *UserRepository) FindUsageRights(ctx context.Context, userID string) 
 
 	return rolePermissions, nil
 }
+
+// Get user's current token count
+func (repo *UserRepository) GetTokensByUserID(ctx context.Context, userID string) (int, error) {
+	var user model.User
+	err := repo.DB.WithContext(ctx).
+		Where("id = ?", userID).
+		First(&user).Error
+
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return 0, status.Error(codes.NotFound, "User not found")
+		}
+		return 0, status.Error(codes.Internal, fmt.Sprintf("Failed to fetch tokens: %v", err))
+	}
+
+	return user.Tokens, nil
+}
+
+// Credit tokens to a user
+func (repo *UserRepository) CreditUserByID(ctx context.Context, userID string, tokens int) (*model.User, error) {
+	var user model.User
+	err := repo.DB.WithContext(ctx).
+		Where("id = ?", userID).
+		First(&user).Error
+
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, status.Error(codes.NotFound, "User not found")
+		}
+		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to fetch user: %v", err))
+	}
+
+	user.Tokens += tokens
+
+	if err := repo.UpdateUser(ctx, user); err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+// Debit tokens from a user
+func (repo *UserRepository) DebitUserByID(ctx context.Context, userID string, tokens int) (*model.User, error) {
+	var user model.User
+	err := repo.DB.WithContext(ctx).
+		Where("id = ?", userID).
+		First(&user).Error
+
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, status.Error(codes.NotFound, "User not found")
+		}
+		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to fetch user: %v", err))
+	}
+
+	if user.Tokens < tokens {
+		return nil, errors.New("insufficient tokens")
+	}
+
+	user.Tokens -= tokens
+
+	if err := repo.UpdateUser(ctx, user); err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
