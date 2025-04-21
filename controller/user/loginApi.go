@@ -31,13 +31,26 @@ type Role struct {
 type UserResponse struct {
 	ID             string `json:"id"`
 	Username       string `json:"username"`
-	Password       string `json:"password"`
 	IsValidated    bool   `json:"is_validated"`
 	CreatedAt      string `json:"created_at"`
 	UpdatedAt      string `json:"updated_at"`
 	RolePermission []Role `json:"role_permissions"`
-}
 
+	// Detailed fields (only included when user_details=true)
+	AadhaarNumber string   `json:"aadhaar_number,omitempty"`
+	Status        string   `json:"status,omitempty"`
+	Name          string   `json:"name,omitempty"`
+	CareOf        string   `json:"care_of,omitempty"`
+	DateOfBirth   string   `json:"date_of_birth,omitempty"`
+	Photo         string   `json:"photo,omitempty"`
+	EmailHash     string   `json:"email_hash,omitempty"`
+	ShareCode     string   `json:"share_code,omitempty"`
+	YearOfBirth   string   `json:"year_of_birth,omitempty"`
+	Message       string   `json:"message,omitempty"`
+	MobileNumber  *uint64  `json:"mobile_number,omitempty"`
+	CountryCode   string   `json:"country_code,omitempty"`
+	Address       *Address `json:"address,omitempty"`
+}
 type LoginResponse struct {
 	StatusCode    int          `json:"status_code"`
 	Success       bool         `json:"success"`
@@ -127,6 +140,66 @@ func (s *Server) LoginRestApi(c *gin.Context) {
 		return
 	}
 
+	// Check if detailed user info is requested
+	includeDetails := c.Query("user_details") == "true"
+
+	// Prepare base user response
+	userResponse := UserResponse{
+		ID:             existingUser.ID,
+		Username:       existingUser.Username,
+		IsValidated:    existingUser.IsValidated,
+		CreatedAt:      existingUser.CreatedAt.Format(time.RFC3339),
+		UpdatedAt:      existingUser.UpdatedAt.Format(time.RFC3339),
+		RolePermission: ConvertAndDeduplicateRolePermissions(rolePermissions),
+	}
+
+	// Only fetch and include additional details if requested
+	if includeDetails {
+		// Get address if exists
+		var address *Address
+		if existingUser.AddressID != nil {
+			addr, err := s.UserRepo.GetAddressByID(c.Request.Context(), *existingUser.AddressID)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch address"})
+				return
+			}
+
+			if addr != nil {
+				address = &Address{
+					ID:          addr.ID,
+					House:       safeString(addr.House),
+					Street:      safeString(addr.Street),
+					Landmark:    safeString(addr.Landmark),
+					PostOffice:  safeString(addr.PostOffice),
+					Subdistrict: safeString(addr.Subdistrict),
+					District:    safeString(addr.District),
+					VTC:         safeString(addr.VTC),
+					State:       safeString(addr.State),
+					Country:     safeString(addr.Country),
+					Pincode:     safeString(addr.Pincode),
+					FullAddress: safeString(addr.FullAddress),
+					CreatedAt:   addr.CreatedAt.Format(time.RFC3339),
+					UpdatedAt:   addr.UpdatedAt.Format(time.RFC3339),
+				}
+			}
+		}
+
+		// Add detailed fields to the response
+		userResponse.AadhaarNumber = safeString(existingUser.AadhaarNumber)
+		userResponse.Status = safeString(existingUser.Status)
+		userResponse.Name = safeString(existingUser.Name)
+		userResponse.CareOf = safeString(existingUser.CareOf)
+		userResponse.DateOfBirth = safeString(existingUser.DateOfBirth)
+		userResponse.Photo = safeString(existingUser.Photo)
+		userResponse.EmailHash = safeString(existingUser.EmailHash)
+		userResponse.ShareCode = safeString(existingUser.ShareCode)
+		userResponse.YearOfBirth = safeString(existingUser.YearOfBirth)
+		userResponse.Message = safeString(existingUser.Message)
+		userResponse.MobileNumber = &existingUser.MobileNumber
+		userResponse.CountryCode = safeString(existingUser.CountryCode)
+		userResponse.Address = address
+	}
+
 	// Set auth headers
 	if err := helper.SetAuthHeadersWithTokensRest(
 		c,
@@ -144,15 +217,7 @@ func (s *Server) LoginRestApi(c *gin.Context) {
 		Success:       true,
 		Message:       "Login successful",
 		DataTimeStamp: time.Now().Format(time.RFC3339),
-		Data: UserResponse{
-			ID:             existingUser.ID,
-			Username:       existingUser.Username,
-			Password:       "", // Empty for security
-			IsValidated:    existingUser.IsValidated,
-			CreatedAt:      existingUser.CreatedAt.Format(time.RFC3339Nano),
-			UpdatedAt:      existingUser.UpdatedAt.Format(time.RFC3339Nano),
-			RolePermission: ConvertAndDeduplicateRolePermissions(rolePermissions),
-		},
+		Data:          userResponse,
 	}
 
 	c.JSON(http.StatusOK, response)
