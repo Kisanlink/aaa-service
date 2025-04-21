@@ -28,11 +28,11 @@ func ConnectDB() {
 	fmt.Println("Connected to DB")
 
 	// if err := DB.AutoMigrate(
+	// 	&model.User{},
 	// 	&model.Address{},
 	// 	&model.Role{},
 	// 	&model.Permission{},
 	// 	&model.RolePermission{},
-	// 	&model.User{},
 	// 	&model.UserRole{},
 	// ); err != nil {
 	// 	panic("Error migrating database: " + err.Error())
