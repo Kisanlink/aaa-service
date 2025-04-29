@@ -124,6 +124,52 @@ func (s *Server) CreateUserRestApi(c *gin.Context) {
 		})
 		return
 	}
+	// Enhanced Mobile Number Validation
+	mobileStr := strconv.FormatUint(req.MobileNumber, 10)
+
+	// 1. Check for exactly 10 digits
+	if len(mobileStr) != 10 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status_code": http.StatusBadRequest,
+			"success":     false,
+			"message":     "Mobile number must be exactly 10 digits",
+			"data":        nil,
+		})
+		return
+	}
+
+	// 2. Check if number starts with 0
+	if mobileStr[0] == '0' {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status_code": http.StatusBadRequest,
+			"success":     false,
+			"message":     "Mobile number cannot start with 0",
+			"data":        nil,
+		})
+		return
+	}
+
+	// 3. Check for repeated digits (like 1111111111)
+	if isRepeatedDigitNumber(mobileStr) {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status_code": http.StatusBadRequest,
+			"success":     false,
+			"message":     "Mobile number cannot be all repeated digits",
+			"data":        nil,
+		})
+		return
+	}
+
+	// 4. Check for sequential numbers (like 1234567890)
+	if isSequentialNumber(mobileStr) {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status_code": http.StatusBadRequest,
+			"success":     false,
+			"message":     "Mobile number cannot be sequential",
+			"data":        nil,
+		})
+		return
+	}
 
 	hashedPassword, err := HashPassword(req.Password)
 	if err != nil {
