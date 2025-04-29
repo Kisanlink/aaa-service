@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Kisanlink/aaa-service/model"
-
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
