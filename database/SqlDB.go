@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/Kisanlink/aaa-service/model"
+
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -37,6 +39,7 @@ func ConnectDB() {
 	// ); err != nil {
 	// 	panic("Error migrating database: " + err.Error())
 	// }
+
 	sqlDB, err := DB.DB()
 	if err != nil {
 		panic(fmt.Sprintf("Failed to get underlying sql.DB: %v", err))
