@@ -210,3 +210,16 @@ type CreateUserRequest struct {
 	AadhaarNumber *string `json:"aadhaar_number,omitempty" validate:"omitempty,numeric,len=12"`
 	CountryCode   *string `json:"country_code,omitempty"`
 }
+
+type UpdateUserRequest struct {
+	Username     string `json:"username"`
+	Status       string `json:"status"`
+	Name         string `json:"name"`
+	CareOf       string `json:"care_of"`
+	DateOfBirth  string `json:"date_of_birth"`
+	Photo        string `json:"photo"`
+	EmailHash    string `json:"email_hash"`
+	YearOfBirth  string `json:"year_of_birth"`
+	Message      string `json:"message"`
+	MobileNumber uint64 `json:"mobile_number"`
+}

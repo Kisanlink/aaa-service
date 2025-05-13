@@ -16,7 +16,7 @@ import (
 // @Accept json
 // @Produce json
 // @Param id path string true "User ID" example("123e4567-e89b-12d3-a456-426614174000")
-// @Param request body model.User true "User update data (partial updates allowed)"
+// @Param request body model.UpdateUserRequest true "User update data (partial updates allowed)"
 // @Success 200 {object} helper.Response{data=model.UserRes} "User updated successfully"
 // @Failure 400 {object} helper.Response "Invalid ID or request body"
 // @Failure 404 {object} helper.Response "User not found"
