@@ -1,97 +1,124 @@
 package repositories
 
 import (
-	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 
+	"github.com/Kisanlink/aaa-service/helper"
 	"github.com/Kisanlink/aaa-service/model"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"gorm.io/gorm"
 )
+
+type UserRepositoryInterface interface {
+	CreateUser(user *model.User) (*model.User, error)
+	CreateAddress(address *model.Address) (*model.Address, error)
+	CheckIfUserExists(username string) error
+	GetUserByID(userID string) (*model.User, error)
+	GetAddressByID(addressId string) (*model.Address, error)
+	GetUsers() ([]model.User, error)
+	FindUserRoles(userID string) ([]model.UserRole, error)
+	FindUserRolesAndPermissions(userID string) ([]string, []string, []string, error)
+	FindRoleUsersAndPermissionsByRoleId(roleID string) ([]string, []string, []string, []string, error)
+	CreateUserRoles(userRole model.UserRole) error
+	GetUserRoleByID(userID string) (*model.User, error)
+	DeleteUserRoles(id string) error
+	DeleteUser(id string) error
+	FindExistingUserByID(id string) (*model.User, error)
+	UpdateUser(existingUser model.User) error
+	UpdatePassword(userID string, newPassword string) error
+	FindUserByUsername(username string) (*model.User, error)
+	FindUserByMobile(mobileNumber uint64) (*model.User, error)
+	FindUserByAadhaar(aadhaarNumber string) (*model.User, error)
+	FindUsageRights(userID string) (map[string][]model.Permission, error)
+	GetTokensByUserID(userID string) (int, error)
+	CreditUserByID(userID string, tokens int) (*model.User, error)
+	DebitUserByID(userID string, tokens int) (*model.User, error)
+}
 
 type UserRepository struct {
 	DB *gorm.DB
 }
 
-func NewUserRepository(db *gorm.DB) *UserRepository {
+func NewUserRepository(db *gorm.DB) UserRepositoryInterface {
 	return &UserRepository{
 		DB: db,
 	}
 }
 
-func (repo *UserRepository) CreateUser(ctx context.Context, user *model.User) (*model.User, error) {
+func (repo *UserRepository) CreateUser(user *model.User) (*model.User, error) {
 	if err := repo.DB.Table("users").Create(user).Error; err != nil {
-		return nil, status.Error(codes.Internal, "Failed to create user")
+		return nil, helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to create user: %w", err))
 	}
 	return user, nil
 }
-func (repo *UserRepository) CreateAddress(ctx context.Context, address *model.Address) (*model.Address, error) {
+
+func (repo *UserRepository) CreateAddress(address *model.Address) (*model.Address, error) {
 	if err := repo.DB.Table("addresses").Create(address).Error; err != nil {
-		return nil, status.Error(codes.Internal, "Failed to create adress")
+		return nil, helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to create address: %w", err))
 	}
 	return address, nil
 }
 
-func (repo *UserRepository) CheckIfUserExists(ctx context.Context, username string) error {
+func (repo *UserRepository) CheckIfUserExists(username string) error {
 	existingUser := model.User{}
 	err := repo.DB.Table("users").Where("username = ?", username).First(&existingUser).Error
 	if err == nil {
-		return status.Error(codes.AlreadyExists, "User Already Exists")
+		return helper.NewAppError(http.StatusConflict, errors.New("user already exists"))
 	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return status.Error(codes.Internal, "Database Error")
+		return helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("database error: %w", err))
 	}
 	return nil
 }
 
-func (repo *UserRepository) GetUserByID(ctx context.Context, userID string) (*model.User, error) {
+func (repo *UserRepository) GetUserByID(userID string) (*model.User, error) {
 	var user model.User
 	err := repo.DB.Table("users").Where("id = ?", userID).First(&user).Error
 	if err != nil {
-		if err.Error() == "record not found" {
-			return nil, status.Error(codes.NotFound, "User not found")
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, helper.NewAppError(http.StatusNotFound, errors.New("user not found"))
 		}
-		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to fetch user: %v", err))
+		return nil, helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to fetch user: %w", err))
 	}
 	return &user, nil
 }
-func (repo *UserRepository) GetAddressByID(ctx context.Context, addressId string) (*model.Address, error) {
+
+func (repo *UserRepository) GetAddressByID(addressId string) (*model.Address, error) {
 	var address model.Address
 	err := repo.DB.Table("addresses").Where("id = ?", addressId).First(&address).Error
 	if err != nil {
-		if err.Error() == "record not found" {
-			return nil, status.Error(codes.NotFound, "Address not found")
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, helper.NewAppError(http.StatusNotFound, errors.New("address not found"))
 		}
-		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to fetch address: %v", err))
+		return nil, helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to fetch address: %w", err))
 	}
 	return &address, nil
 }
 
-func (repo *UserRepository) GetUsers(ctx context.Context) ([]model.User, error) {
+func (repo *UserRepository) GetUsers() ([]model.User, error) {
 	var users []model.User
 	err := repo.DB.Table("users").Find(&users).Error
 	if err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to fetch users: %v", err))
+		return nil, helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to fetch users: %w", err))
 	}
 	return users, nil
 }
 
-func (repo *UserRepository) FindUserRoles(ctx context.Context, userID string) ([]model.UserRole, error) {
+func (repo *UserRepository) FindUserRoles(userID string) ([]model.UserRole, error) {
 	var userRoles []model.UserRole
 	err := repo.DB.Table("user_roles").Where("user_id = ?", userID).Find(&userRoles).Error
 	if err != nil {
-		return nil, status.Error(codes.Internal, "Failed to fetch user roles")
+		return nil, helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to fetch user roles: %w", err))
 	}
 	return userRoles, nil
 }
-func (repo *UserRepository) FindUserRolesAndPermissions(ctx context.Context, userID string) ([]string, []string, []string, error) {
-	// Fetch all user roles for the given userID
+
+func (repo *UserRepository) FindUserRolesAndPermissions(userID string) ([]string, []string, []string, error) {
 	var userRoles []model.UserRole
 	err := repo.DB.Table("user_roles").Where("user_id = ?", userID).Find(&userRoles).Error
 	if err != nil {
-		return nil, nil, nil, status.Error(codes.Internal, "Failed to fetch user roles")
+		return nil, nil, nil, helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to fetch user roles: %w", err))
 	}
 
 	var roles []string
@@ -108,14 +135,13 @@ func (repo *UserRepository) FindUserRolesAndPermissions(ctx context.Context, use
 			Preload("RolePermissions.Permission").
 			First(&role).Error
 		if err != nil {
-			return nil, nil, nil, status.Error(codes.Internal, "Failed to fetch role details")
+			return nil, nil, nil, helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to fetch role details: %w", err))
 		}
 
 		if role.ID != "" {
 			roles = append(roles, role.Name)
 		}
 
-		// Iterate through all role permissions of this role
 		for _, rolePermission := range role.RolePermissions {
 			if rolePermission.Permission.ID != "" {
 				permissionSet[rolePermission.Permission.Name] = struct{}{}
@@ -124,7 +150,6 @@ func (repo *UserRepository) FindUserRolesAndPermissions(ctx context.Context, use
 		}
 	}
 
-	// Convert sets to slices
 	for permission := range permissionSet {
 		permissions = append(permissions, permission)
 	}
@@ -132,7 +157,6 @@ func (repo *UserRepository) FindUserRolesAndPermissions(ctx context.Context, use
 		actions = append(actions, action)
 	}
 
-	// Convert all strings to lowercase
 	for i, role := range roles {
 		roles[i] = strings.ToLower(role)
 	}
@@ -146,8 +170,7 @@ func (repo *UserRepository) FindUserRolesAndPermissions(ctx context.Context, use
 	return roles, permissions, actions, nil
 }
 
-func (repo *UserRepository) FindRoleUsersAndPermissionsByRoleId(ctx context.Context, roleID string) ([]string, []string, []string, []string, error) {
-	// First verify the role exists
+func (repo *UserRepository) FindRoleUsersAndPermissionsByRoleId(roleID string) ([]string, []string, []string, []string, error) {
 	var role model.Role
 	err := repo.DB.Table("roles").
 		Where("id = ?", roleID).
@@ -155,10 +178,12 @@ func (repo *UserRepository) FindRoleUsersAndPermissionsByRoleId(ctx context.Cont
 		Preload("RolePermissions.Permission").
 		First(&role).Error
 	if err != nil {
-		return nil, nil, nil, nil, status.Error(codes.NotFound, "Role not found")
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil, nil, nil, helper.NewAppError(http.StatusNotFound, errors.New("role not found"))
+		}
+		return nil, nil, nil, nil, helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to fetch role: %w", err))
 	}
 
-	// Initialize data structures
 	var roles []string
 	var permissions []string
 	var actions []string
@@ -167,29 +192,25 @@ func (repo *UserRepository) FindRoleUsersAndPermissionsByRoleId(ctx context.Cont
 	actionSet := make(map[string]struct{})
 	usernameSet := make(map[string]struct{})
 
-	// Add the main role name
 	if role.ID != "" {
 		roles = append(roles, role.Name)
 	}
 
-	// Get all users connected to this role with proper preloading
 	var roleUsers []model.UserRole
 	err = repo.DB.Table("user_roles").
 		Where("role_id = ?", roleID).
-		Preload("User"). // Preload the User relationship
+		Preload("User").
 		Find(&roleUsers).Error
 	if err != nil {
-		return nil, nil, nil, nil, status.Error(codes.Internal, "Failed to fetch connected users")
+		return nil, nil, nil, nil, helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to fetch connected users: %w", err))
 	}
 
-	// Collect all usernames
 	for _, ru := range roleUsers {
-		if ru.User.Username != "" { // Directly access the User's Username field
+		if ru.User.Username != "" {
 			usernameSet[ru.User.Username] = struct{}{}
 		}
 	}
 
-	// Get all permissions and actions from this role
 	for _, rolePermission := range role.RolePermissions {
 		if rolePermission.Permission.ID != "" {
 			permissionSet[rolePermission.Permission.Name] = struct{}{}
@@ -197,7 +218,6 @@ func (repo *UserRepository) FindRoleUsersAndPermissionsByRoleId(ctx context.Cont
 		}
 	}
 
-	// Convert sets to slices
 	for permission := range permissionSet {
 		permissions = append(permissions, permission)
 	}
@@ -208,7 +228,6 @@ func (repo *UserRepository) FindRoleUsersAndPermissionsByRoleId(ctx context.Cont
 		connectedUsernames = append(connectedUsernames, username)
 	}
 
-	// Convert all strings to lowercase
 	for i := range roles {
 		roles[i] = strings.ToLower(roles[i])
 	}
@@ -225,161 +244,143 @@ func (repo *UserRepository) FindRoleUsersAndPermissionsByRoleId(ctx context.Cont
 	return roles, permissions, actions, connectedUsernames, nil
 }
 
-// func (repo *UserRepository) CreateUserRoles(ctx context.Context, userRoles model.UserRole) error {
-// 	if err := repo.DB.Table("user_roles").Create(&userRoles).Error; err != nil {
-// 		return status.Error(codes.Internal, "Failed to create UserRole entries")
-// 	}
-
-//		return nil
-//	}
-func (repo *UserRepository) CreateUserRoles(ctx context.Context, userRole model.UserRole) error {
-	// First check if this user-role assignment already exists
+func (repo *UserRepository) CreateUserRoles(userRole model.UserRole) error {
 	var count int64
 	err := repo.DB.Table("user_roles").
 		Where("user_id = ? AND role_id = ?", userRole.UserID, userRole.RoleID).
 		Count(&count).Error
 
 	if err != nil {
-		return status.Errorf(codes.Internal, "failed to check existing role assignment: %v", err)
+		return helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to check existing role assignment: %w", err))
 	}
 
 	if count > 0 {
-		return status.Errorf(codes.AlreadyExists, "user already has this role assigned")
+		return helper.NewAppError(http.StatusConflict, errors.New("user already has this role assigned"))
 	}
 
-	// If we get here, the assignment doesn't exist, so create it
 	if err := repo.DB.Table("user_roles").Create(&userRole).Error; err != nil {
-		return status.Errorf(codes.Internal, "failed to create user role assignment: %v", err)
+		return helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to create user role assignment: %w", err))
 	}
 
 	return nil
 }
-func (repo *UserRepository) GetUserRoleByID(ctx context.Context, userID string) (*model.User, error) {
+
+func (repo *UserRepository) GetUserRoleByID(userID string) (*model.User, error) {
 	var user model.User
 	if err := repo.DB.Preload("UserRoles").Where("id = ?", userID).First(&user).Error; err != nil {
-		return nil, err
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, helper.NewAppError(http.StatusNotFound, errors.New("user not found"))
+		}
+		return nil, helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to fetch user roles: %w", err))
 	}
 	return &user, nil
 }
-func (repo *UserRepository) DeleteUserRoles(ctx context.Context, id string) error {
+
+func (repo *UserRepository) DeleteUserRoles(id string) error {
 	if err := repo.DB.Table("user_roles").Where("user_id = ?", id).Delete(&model.UserRole{}).Error; err != nil {
-		return status.Error(codes.Internal, fmt.Sprintf("Failed to delete user roles: %v", err))
+		return helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to delete user roles: %w", err))
 	}
 	return nil
 }
 
-func (repo *UserRepository) DeleteUser(ctx context.Context, id string) error {
+func (repo *UserRepository) DeleteUser(id string) error {
 	if err := repo.DB.Table("users").Delete(&model.User{}, "id = ?", id).Error; err != nil {
-		return status.Error(codes.Internal, fmt.Sprintf("Failed to delete user: %v", err))
+		return helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to delete user: %w", err))
 	}
 	return nil
 }
 
-func (repo *UserRepository) FindExistingUserByID(ctx context.Context, id string) (*model.User, error) {
+func (repo *UserRepository) FindExistingUserByID(id string) (*model.User, error) {
 	var existingUser model.User
 	err := repo.DB.Table("users").Where("id = ?", id).First(&existingUser).Error
 	if err != nil {
-		if err.Error() == "record not found" {
-			return nil, status.Error(codes.NotFound, "User not found")
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, helper.NewAppError(http.StatusNotFound, errors.New("user not found"))
 		}
-		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to fetch user: %v", err))
+		return nil, helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to fetch user: %w", err))
 	}
 	return &existingUser, nil
 }
 
-func (repo *UserRepository) UpdateUser(ctx context.Context, existingUser model.User) error {
+func (repo *UserRepository) UpdateUser(existingUser model.User) error {
 	if err := repo.DB.Table("users").Save(&existingUser).Error; err != nil {
-		return status.Error(codes.Internal, fmt.Sprintf("Failed to update user: %v", err))
+		return helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to update user: %w", err))
 	}
 	return nil
 }
 
-// added for password reset
-func (repo *UserRepository) UpdatePassword(ctx context.Context, userID string, newPassword string) error {
+func (repo *UserRepository) UpdatePassword(userID string, newPassword string) error {
 	err := repo.DB.Table("users").Where("id = ?", userID).Update("password", newPassword).Error
 	if err != nil {
-		return status.Error(codes.Internal, fmt.Sprintf("Failed to update password: %v", err))
+		return helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to update password: %w", err))
 	}
 	return nil
 }
 
-func (repo *UserRepository) FindUserByUsername(ctx context.Context, username string) (*model.User, error) {
+func (repo *UserRepository) FindUserByUsername(username string) (*model.User, error) {
 	var existingUser model.User
 	err := repo.DB.Table("users").Where("username = ?", username).First(&existingUser).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, status.Error(codes.NotFound, "User not found")
+		return nil, helper.NewAppError(http.StatusNotFound, errors.New("user not found"))
 	} else if err != nil {
-		return nil, status.Error(codes.Internal, "Database error: "+err.Error())
+		return nil, helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("database error: %w", err))
 	}
 	return &existingUser, nil
 }
 
-func (repo *UserRepository) FindUserByMobile(ctx context.Context, mobileNumber uint64) (*model.User, error) {
+func (repo *UserRepository) FindUserByMobile(mobileNumber uint64) (*model.User, error) {
 	var existingUser model.User
-
-	query := repo.DB.Table("users").Where("mobile_number = ?", mobileNumber)
-	err := query.First(&existingUser).Error
-
+	err := repo.DB.Table("users").Where("mobile_number = ?", mobileNumber).First(&existingUser).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, nil
 	}
 	if err != nil {
-		return nil, status.Error(codes.Internal, "database error: "+err.Error())
+		return nil, helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("database error: %w", err))
 	}
 	return &existingUser, nil
 }
 
-func (repo *UserRepository) FindUserByAadhaar(ctx context.Context, aadhaarNumber string) (*model.User, error) {
+func (repo *UserRepository) FindUserByAadhaar(aadhaarNumber string) (*model.User, error) {
 	var existingUser model.User
-
-	query := repo.DB.Table("users").Where("aadhaar_number = ?", aadhaarNumber)
-	err := query.First(&existingUser).Error
-
+	err := repo.DB.Table("users").Where("aadhaar_number = ?", aadhaarNumber).First(&existingUser).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, nil
 	}
 	if err != nil {
-		return nil, status.Error(codes.Internal, "database error: "+err.Error())
+		return nil, helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("database error: %w", err))
 	}
 	return &existingUser, nil
 }
 
-func (repo *UserRepository) FindUsageRights(ctx context.Context, userID string) (map[string][]model.Permission, error) {
-	// Fetch user roles
+func (repo *UserRepository) FindUsageRights(userID string) (map[string][]model.Permission, error) {
 	var userRoles []model.UserRole
-	if err := repo.DB.WithContext(ctx).
+	if err := repo.DB.
 		Where("user_id = ?", userID).
 		Find(&userRoles).Error; err != nil {
-		return nil, status.Error(codes.Internal, "failed to fetch user roles")
+		return nil, helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to fetch user roles: %w", err))
 	}
 
-	// Create a map to store permissions by role
 	rolePermissions := make(map[string][]model.Permission)
 
-	// Process each user role
 	for _, userRole := range userRoles {
 		var role model.Role
-		if err := repo.DB.WithContext(ctx).
+		if err := repo.DB.
 			Where("id = ?", userRole.RoleID).
 			Preload("RolePermissions.Permission").
 			First(&role).Error; err != nil {
-			return nil, status.Error(codes.Internal, "failed to fetch role details")
+			return nil, helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to fetch role details: %w", err))
 		}
 
-		// Skip if role name is empty
 		if role.Name == "" {
 			continue
 		}
 
-		// Initialize the slice if this role hasn't been seen before
 		if _, exists := rolePermissions[role.Name]; !exists {
 			rolePermissions[role.Name] = make([]model.Permission, 0)
 		}
 
-		// Collect permissions for this role
 		for _, rp := range role.RolePermissions {
 			if rp.Permission.ID != "" {
-				// Copy only needed fields to avoid including RolePermissions
 				perm := model.Permission{
 					Base:           rp.Permission.Base,
 					Name:           rp.Permission.Name,
@@ -398,66 +399,63 @@ func (repo *UserRepository) FindUsageRights(ctx context.Context, userID string) 
 	return rolePermissions, nil
 }
 
-// Get user's current token count
-func (repo *UserRepository) GetTokensByUserID(ctx context.Context, userID string) (int, error) {
+func (repo *UserRepository) GetTokensByUserID(userID string) (int, error) {
 	var user model.User
-	err := repo.DB.WithContext(ctx).
+	err := repo.DB.
 		Where("id = ?", userID).
 		First(&user).Error
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return 0, status.Error(codes.NotFound, "User not found")
+			return 0, helper.NewAppError(http.StatusNotFound, errors.New("user not found"))
 		}
-		return 0, status.Error(codes.Internal, fmt.Sprintf("Failed to fetch tokens: %v", err))
+		return 0, helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to fetch tokens: %w", err))
 	}
 
 	return user.Tokens, nil
 }
 
-// Credit tokens to a user
-func (repo *UserRepository) CreditUserByID(ctx context.Context, userID string, tokens int) (*model.User, error) {
+func (repo *UserRepository) CreditUserByID(userID string, tokens int) (*model.User, error) {
 	var user model.User
-	err := repo.DB.WithContext(ctx).
+	err := repo.DB.
 		Where("id = ?", userID).
 		First(&user).Error
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, status.Error(codes.NotFound, "User not found")
+			return nil, helper.NewAppError(http.StatusNotFound, errors.New("user not found"))
 		}
-		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to fetch user: %v", err))
+		return nil, helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to fetch user: %w", err))
 	}
 
 	user.Tokens += tokens
 
-	if err := repo.UpdateUser(ctx, user); err != nil {
+	if err := repo.UpdateUser(user); err != nil {
 		return nil, err
 	}
 	return &user, nil
 }
 
-// Debit tokens from a user
-func (repo *UserRepository) DebitUserByID(ctx context.Context, userID string, tokens int) (*model.User, error) {
+func (repo *UserRepository) DebitUserByID(userID string, tokens int) (*model.User, error) {
 	var user model.User
-	err := repo.DB.WithContext(ctx).
+	err := repo.DB.
 		Where("id = ?", userID).
 		First(&user).Error
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, status.Error(codes.NotFound, "User not found")
+			return nil, helper.NewAppError(http.StatusNotFound, errors.New("user not found"))
 		}
-		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to fetch user: %v", err))
+		return nil, helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to fetch user: %w", err))
 	}
 
 	if user.Tokens < tokens {
-		return nil, errors.New("insufficient tokens")
+		return nil, helper.NewAppError(http.StatusBadRequest, errors.New("insufficient tokens"))
 	}
 
 	user.Tokens -= tokens
 
-	if err := repo.UpdateUser(ctx, user); err != nil {
+	if err := repo.UpdateUser(user); err != nil {
 		return nil, err
 	}
 	return &user, nil

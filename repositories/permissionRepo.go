@@ -1,93 +1,100 @@
 package repositories
 
 import (
-	"context"
 	"errors"
 	"fmt"
-	"log"
+	"net/http"
 
+	"github.com/Kisanlink/aaa-service/helper"
 	"github.com/Kisanlink/aaa-service/model"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"gorm.io/gorm"
 )
+
+type PermissionRepositoryInterface interface {
+	CheckIfPermissionExists(name string) error
+	CreatePermission(newPermission *model.Permission) error
+	FindPermissionByID(id string) (*model.Permission, error)
+	FindPermissionByName(name string) (*model.Permission, error)
+	DeletePermission(id string) error
+	FindAllPermissions() ([]model.Permission, error)
+	UpdatePermission(id string, updatedPermission model.Permission) error
+}
 
 type PermissionRepository struct {
 	DB *gorm.DB
 }
 
-func NewPermissionRepository(db *gorm.DB) *PermissionRepository {
+func NewPermissionRepository(db *gorm.DB) PermissionRepositoryInterface {
 	return &PermissionRepository{DB: db}
 }
 
-func (repo *PermissionRepository) CheckIfPermissionExists(ctx context.Context, name string) error {
+func (repo *PermissionRepository) CheckIfPermissionExists(name string) error {
 	existingPermission := model.Permission{}
 	err := repo.DB.Table("permissions").Where("name = ?", name).First(&existingPermission).Error
 	if err == nil {
-		return status.Error(codes.AlreadyExists, fmt.Sprintf("Permission with name %s already exists", name))
+		return helper.NewAppError(http.StatusConflict, fmt.Errorf("permission with name %s already exists", name))
 	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return status.Error(codes.Internal, "Database error: "+err.Error())
+		return helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("database error: %w", err))
 	}
 	return nil
 }
 
-func (repo *PermissionRepository) CreatePermission(ctx context.Context, newPermission *model.Permission) error {
+func (repo *PermissionRepository) CreatePermission(newPermission *model.Permission) error {
 	if err := repo.DB.Table("permissions").Create(&newPermission).Error; err != nil {
-		return status.Error(codes.Internal, fmt.Sprintf("Failed to create permission: %v", err))
+		return helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to create permission: %w", err))
 	}
 	return nil
 }
 
-func (repo *PermissionRepository) FindPermissionByID(ctx context.Context, id string) (*model.Permission, error) {
+func (repo *PermissionRepository) FindPermissionByID(id string) (*model.Permission, error) {
 	var permission model.Permission
 	err := repo.DB.Table("permissions").Where("id = ?", id).First(&permission).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, status.Error(codes.NotFound, fmt.Sprintf("Permission with ID %s not found", id))
+		return nil, helper.NewAppError(http.StatusNotFound, errors.New("permission not found"))
 	} else if err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to query permission: %v", err))
-	}
-	return &permission, nil
-}
-func (repo *PermissionRepository) FindPermissionByName(ctx context.Context, name string) (*model.Permission, error) {
-	var permission model.Permission
-	err := repo.DB.Table("permissions").Where("name = ?", name).First(&permission).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, status.Error(codes.NotFound, fmt.Sprintf("Permission with ID %s not found", name))
-	} else if err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to query permission: %v", err))
+		return nil, helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to query permission: %w", err))
 	}
 	return &permission, nil
 }
 
-func (repo *PermissionRepository) DeletePermission(ctx context.Context, id string) error {
+func (repo *PermissionRepository) FindPermissionByName(name string) (*model.Permission, error) {
+	var permission model.Permission
+	err := repo.DB.Table("permissions").Where("name = ?", name).First(&permission).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, helper.NewAppError(http.StatusNotFound, errors.New("permission not found"))
+	} else if err != nil {
+		return nil, helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to query permission: %w", err))
+	}
+	return &permission, nil
+}
+
+func (repo *PermissionRepository) DeletePermission(id string) error {
 	result := repo.DB.Table("permissions").Where("id = ?", id).Delete(&model.Permission{})
 	if result.Error != nil {
-		return status.Error(codes.Internal, fmt.Sprintf("Failed to delete permission: %v", result.Error))
+		return helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to delete permission: %w", result.Error))
 	}
 	if result.RowsAffected == 0 {
-		return status.Error(codes.NotFound, fmt.Sprintf("Permission with ID %s not found", id))
+		return helper.NewAppError(http.StatusNotFound, errors.New("permission not found"))
 	}
 	return nil
 }
 
-func (repo *PermissionRepository) FindAllPermissions(ctx context.Context) ([]model.Permission, error) {
+func (repo *PermissionRepository) FindAllPermissions() ([]model.Permission, error) {
 	var permissions []model.Permission
 	err := repo.DB.Table("permissions").Find(&permissions).Error
 	if err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to retrieve permissions: %v", err))
+		return nil, helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to retrieve permissions: %w", err))
 	}
-	log.Println(permissions)
-
 	return permissions, nil
 }
 
-func (repo *PermissionRepository) UpdatePermission(ctx context.Context, id string, updatedPermission map[string]interface{}) error {
+func (repo *PermissionRepository) UpdatePermission(id string, updatedPermission model.Permission) error {
 	result := repo.DB.Table("permissions").Where("id = ?", id).Updates(updatedPermission)
 	if result.Error != nil {
-		return status.Error(codes.Internal, fmt.Sprintf("Failed to update permission: %v", result.Error))
+		return helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to update permission: %w", result.Error))
 	}
 	if result.RowsAffected == 0 {
-		return status.Error(codes.NotFound, fmt.Sprintf("Permission with ID %s not found", id))
+		return helper.NewAppError(http.StatusNotFound, errors.New("permission not found"))
 	}
 	return nil
 }
