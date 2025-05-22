@@ -42,42 +42,6 @@ func (s *Server) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResp
 		return nil, status.Error(codes.Unauthenticated, "Invalid password")
 	}
 
-	// Get role permissions
-	rolePermissions, err := s.userService.FindUsageRights(existingUser.ID)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to fetch user roles and permissions: %v", err)
-	}
-
-	// Convert role permissions to protobuf format
-	var pbRolePermissions []*pb.RolePermissions
-	for role, permissions := range rolePermissions {
-		// Use a map to track unique permissions
-		uniquePerms := make(map[string]*pb.PermissionResponse)
-		for _, perm := range permissions {
-			key := perm.Name + ":" + perm.Action + ":" + perm.Resource
-			if _, exists := uniquePerms[key]; !exists {
-				uniquePerms[key] = &pb.PermissionResponse{
-					Name:        perm.Name,
-					Description: perm.Description,
-					Action:      perm.Action,
-					Source:      perm.Source,
-					Resource:    perm.Resource,
-				}
-			}
-		}
-
-		// Convert unique permissions map to slice
-		var pbPermissions []*pb.PermissionResponse
-		for _, perm := range uniquePerms {
-			pbPermissions = append(pbPermissions, perm)
-		}
-
-		pbRolePermissions = append(pbRolePermissions, &pb.RolePermissions{
-			RoleName:    role, // Set the role name here
-			Permissions: pbPermissions,
-		})
-	}
-
 	// Set auth headers
 	if err := helper.SetAuthHeadersWithTokens(
 		ctx,
@@ -95,13 +59,12 @@ func (s *Server) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResp
 		Success:       true,
 		DataTimeStamp: time.Now().Format(time.RFC3339),
 		Data: &pb.AssignRolePermission{
-			Id:              existingUser.ID,
-			Username:        existingUser.Username,
-			Password:        "", // Explicitly empty for security
-			IsValidated:     existingUser.IsValidated,
-			CreatedAt:       existingUser.CreatedAt.Format(time.RFC3339Nano),
-			UpdatedAt:       existingUser.UpdatedAt.Format(time.RFC3339Nano),
-			RolePermissions: pbRolePermissions, // Now this is a slice of RolePermissions
+			Id:          existingUser.ID,
+			Username:    existingUser.Username,
+			Password:    "", // Explicitly empty for security
+			IsValidated: existingUser.IsValidated,
+			CreatedAt:   existingUser.CreatedAt.Format(time.RFC3339Nano),
+			UpdatedAt:   existingUser.UpdatedAt.Format(time.RFC3339Nano),
 		},
 	}
 

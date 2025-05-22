@@ -3,8 +3,10 @@ package helper
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"reflect"
 	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/Kisanlink/aaa-service/model"
@@ -110,37 +112,169 @@ func IsSequentialNumber(num string) bool {
 	return ascending || descending
 }
 
-func ConvertAndDeduplicateRolePermissions(input map[string][]model.Permission) []model.RoleRes {
-	var roles []model.RoleRes
+func GenerateSpiceDBSchema(roles []model.Role) []model.CreateSchema {
+	// First, let's create a structure to organize the data
+	type ResourceInfo struct {
+		Relations   map[string]struct{}            // Track all relations needed
+		Permissions map[string]map[string]struct{} // action -> roles
+	}
 
-	for roleName, permissions := range input {
-		uniquePerms := make(map[string]model.Permission)
+	resourceMap := make(map[string]*ResourceInfo)
 
-		// Deduplicate permissions
-		for _, perm := range permissions {
-			key := perm.Name + "|" + perm.Action + "|" + perm.Resource
-			if _, exists := uniquePerms[key]; !exists {
-				uniquePerms[key] = model.Permission{
-					Name:        perm.Name,
-					Description: perm.Description,
-					Action:      perm.Action,
-					Source:      perm.Source,
-					Resource:    perm.Resource,
+	// Process all roles and permissions
+	for _, role := range roles {
+		roleName := strings.ToLower(role.Name)
+
+		for _, perm := range role.Permissions {
+			resource := formatSpiceDBResource(perm.Resource)
+			if resource == "" {
+				continue
+			}
+
+			// Initialize resource if not exists
+			if _, exists := resourceMap[resource]; !exists {
+				resourceMap[resource] = &ResourceInfo{
+					Relations:   make(map[string]struct{}),
+					Permissions: make(map[string]map[string]struct{}),
 				}
 			}
+			resInfo := resourceMap[resource]
+
+			// Add relation (role becomes the relation)
+			resInfo.Relations[roleName] = struct{}{}
+
+			// Add permissions for each action
+			for _, action := range perm.Actions {
+				action = strings.ToLower(action)
+
+				if _, exists := resInfo.Permissions[action]; !exists {
+					resInfo.Permissions[action] = make(map[string]struct{})
+				}
+				resInfo.Permissions[action][roleName] = struct{}{}
+			}
+		}
+	}
+
+	// Convert to the output format
+	var schemaDefinitions []model.CreateSchema
+
+	// Sort resources for consistent output
+	resources := make([]string, 0, len(resourceMap))
+	for resource := range resourceMap {
+		resources = append(resources, resource)
+	}
+	sort.Strings(resources)
+
+	for _, resource := range resources {
+		resInfo := resourceMap[resource]
+
+		// Prepare relations slice
+		relations := make([]string, 0, len(resInfo.Relations))
+		for relation := range resInfo.Relations {
+			relations = append(relations, relation)
+		}
+		sort.Strings(relations)
+
+		// Prepare permissions
+		var permissionData []model.Data
+
+		// Sort actions for consistent output
+		actions := make([]string, 0, len(resInfo.Permissions))
+		for action := range resInfo.Permissions {
+			actions = append(actions, action)
+		}
+		sort.Strings(actions)
+
+		for _, action := range actions {
+			// Get roles for this action
+			roles := make([]string, 0, len(resInfo.Permissions[action]))
+			for role := range resInfo.Permissions[action] {
+				roles = append(roles, role)
+			}
+			sort.Strings(roles)
+
+			// Create permission entry
+			permissionData = append(permissionData, model.Data{
+				Action: action,
+				Roles:  roles,
+			})
 		}
 
-		// Convert map to slice
-		var permSlice []model.Permission
-		for _, perm := range uniquePerms {
-			permSlice = append(permSlice, perm)
-		}
-
-		roles = append(roles, model.RoleRes{
-			RoleName:    roleName,
-			Permissions: permSlice,
+		schemaDefinitions = append(schemaDefinitions, model.CreateSchema{
+			Resource:  resource,
+			Relations: relations,
+			Data:      permissionData,
 		})
 	}
 
-	return roles
+	return schemaDefinitions
+}
+func formatSpiceDBResource(resource string) string {
+	// Convert to lowercase and trim spaces
+	resource = strings.ToLower(strings.TrimSpace(resource))
+
+	// Remove all non-alphanumeric characters except underscores
+	reg := regexp.MustCompile(`[^a-z0-9_]`)
+	resource = reg.ReplaceAllString(resource, "")
+
+	// Remove "db" prefix if it exists (we'll add it back properly)
+	resource = strings.TrimPrefix(resource, "db")
+	resource = strings.TrimPrefix(resource, "_")
+
+	// Add single "db_" prefix
+	resource = "db_" + resource
+
+	// Ensure the name follows SpiceDB's pattern:
+	// ^[a-z][a-z0-9_]{1,62}[a-z0-9]$
+
+	// 1. Must end with alphanumeric (not underscore)
+	if len(resource) > 0 && resource[len(resource)-1] == '_' {
+		resource = resource[:len(resource)-1] + "0"
+	}
+
+	// 2. Length must be between 3 and 64 characters
+	if len(resource) > 64 {
+		resource = resource[:64]
+		// Ensure it still ends properly
+		if resource[len(resource)-1] == '_' {
+			resource = resource[:63] + "0"
+		}
+	}
+
+	// Final validation
+	validReg := regexp.MustCompile(`^db_[a-z0-9_]{1,61}[a-z0-9]$`)
+	if !validReg.MatchString(resource) {
+		log.Printf("Invalid resource format after conversion: %s", resource)
+		return ""
+	}
+
+	return resource
+}
+
+func NormalizeResourceType(resourceType string) string {
+	// Replace slashes with underscores
+	normalized := strings.ReplaceAll(resourceType, "/", "_")
+	// Replace spaces with underscores (if any)
+	normalized = strings.ReplaceAll(normalized, " ", "_")
+	return normalized
+}
+
+func ExtractRoleNames(userRoles []model.UserRole) ([]string, error) {
+	if len(userRoles) == 0 {
+		return nil, fmt.Errorf("no user roles provided")
+	}
+
+	roleNames := make([]string, 0, len(userRoles))
+	for _, userRole := range userRoles {
+		// Double-check that Role is loaded and has a Name
+		if userRole.Role != nil && userRole.Role.Name != "" {
+			roleNames = append(roleNames, userRole.Role.Name)
+		}
+	}
+
+	if len(roleNames) == 0 {
+		return nil, fmt.Errorf("no valid roles found in user roles")
+	}
+
+	return roleNames, nil
 }

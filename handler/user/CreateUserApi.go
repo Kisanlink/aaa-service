@@ -172,7 +172,7 @@ func (s *UserHandler) CreateUserRestApi(c *gin.Context) {
 
 	createdUser, err := s.userService.CreateUser(*newUser)
 	if err != nil {
-		helper.SendErrorResponse(c.Writer, http.StatusInternalServerError, []string{"Failed to create user"})
+		helper.SendErrorResponse(c.Writer, http.StatusInternalServerError, []string{err.Error()})
 		return
 	}
 

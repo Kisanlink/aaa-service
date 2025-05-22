@@ -17,8 +17,6 @@ type UserServiceInterface interface {
 	GetAddressByID(addressId string) (*model.Address, error)
 	GetUsers() ([]model.User, error)
 	FindUserRoles(userID string) ([]model.UserRole, error)
-	FindUserRolesAndPermissions(userID string) ([]string, []string, []string, error)
-	FindRoleUsersAndPermissionsByRoleId(roleID string) ([]string, []string, []string, []string, error)
 	CreateUserRoles(userRole model.UserRole) error
 	GetUserRoleByID(userID string) (*model.User, error)
 	DeleteUserRoles(id string) error
@@ -29,19 +27,22 @@ type UserServiceInterface interface {
 	FindUserByUsername(username string) (*model.User, error)
 	FindUserByMobile(mobileNumber uint64) (*model.User, error)
 	FindUserByAadhaar(aadhaarNumber string) (*model.User, error)
-	FindUsageRights(userID string) (map[string][]model.Permission, error)
 	GetTokensByUserID(userID string) (int, error)
 	CreditUserByID(userID string, tokens int) (*model.User, error)
 	DebitUserByID(userID string, tokens int) (*model.User, error)
+	GetUserRolesWithPermissions(userID string) (*model.RoleResponse, error)
 }
 
 type UserService struct {
-	repo repositories.UserRepositoryInterface
+	repo     repositories.UserRepositoryInterface
+	roleRepo repositories.RoleRepositoryInterface
 }
 
-func NewUserService(repo repositories.UserRepositoryInterface) UserServiceInterface {
+func NewUserService(repo repositories.UserRepositoryInterface, roleRepo repositories.RoleRepositoryInterface,
+) UserServiceInterface {
 	return &UserService{
-		repo: repo,
+		repo:     repo,
+		roleRepo: roleRepo,
 	}
 }
 
@@ -109,23 +110,6 @@ func (s *UserService) FindUserRoles(userID string) ([]model.UserRole, error) {
 		return nil, helper.NewAppError(http.StatusNotFound, fmt.Errorf("user roles not found"))
 	}
 	return result, nil
-}
-func (s *UserService) FindUserRolesAndPermissions(userID string) ([]string, []string, []string, error) {
-	role, permission, action, err := s.repo.FindUserRolesAndPermissions(userID)
-	if err != nil {
-		return nil, nil, nil, helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to find user roles and permissions: %w", err))
-	}
-
-	return role, permission, action, nil
-}
-
-func (s *UserService) FindRoleUsersAndPermissionsByRoleId(roleID string) ([]string, []string, []string, []string, error) {
-	role, permission, action, users, err := s.repo.FindRoleUsersAndPermissionsByRoleId(roleID)
-	if err != nil {
-		return nil, nil, nil, nil, helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to find role users and permissions: %w", err))
-	}
-
-	return role, permission, action, users, nil
 }
 
 func (s *UserService) CreateUserRoles(userRole model.UserRole) error {
@@ -222,16 +206,6 @@ func (s *UserService) FindUserByAadhaar(aadhaarNumber string) (*model.User, erro
 	return result, nil
 }
 
-func (s *UserService) FindUsageRights(userID string) (map[string][]model.Permission, error) {
-	result, err := s.repo.FindUsageRights(userID)
-	if err != nil {
-		return nil, helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to find usage rights: %w", err))
-	}
-	if result == nil {
-		return nil, helper.NewAppError(http.StatusNotFound, fmt.Errorf("usage rights not found"))
-	}
-	return result, nil
-}
 func (s *UserService) GetTokensByUserID(userID string) (int, error) {
 	result, err := s.repo.GetTokensByUserID(userID)
 	if err != nil {
@@ -263,4 +237,59 @@ func (s *UserService) DebitUserByID(userID string, tokens int) (*model.User, err
 		return nil, helper.NewAppError(http.StatusNotFound, fmt.Errorf("user not found"))
 	}
 	return result, nil
+}
+
+func (s *UserService) GetUserRolesWithPermissions(userID string) (*model.RoleResponse, error) {
+	// 1. Get user roles
+	userRoles, err := s.repo.FindUserRoles(userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find user roles: %w", err)
+	}
+
+	// 2. Prepare response structure
+	response := &model.RoleResponse{
+		Roles: make([]model.RoleDetail, 0, len(userRoles)),
+	}
+
+	// 3. Process each role
+	for _, userRole := range userRoles {
+		if userRole.Role == nil {
+			continue // Skip if role not loaded
+		}
+
+		// 4. Get the role with its permissions using existing FindRoles method
+		roles, err := s.roleRepo.FindRoles(map[string]interface{}{
+			"id": userRole.Role.ID,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to get role %s: %w", userRole.Role.ID, err)
+		}
+
+		if len(roles) == 0 {
+			continue // Role not found (shouldn't happen if referential integrity is maintained)
+		}
+
+		role := roles[0] // We queried by ID so there should be only one
+
+		// 5. Convert permissions to API format
+		rolePerms := make([]model.RolePermission, 0, len(role.Permissions))
+		for _, perm := range role.Permissions {
+			rolePerms = append(rolePerms, model.RolePermission{
+				Resource: perm.Resource,
+				Actions:  perm.Actions,
+			})
+		}
+
+		// 6. Add to response
+		response.Roles = append(response.Roles, model.RoleDetail{
+			RoleName:    role.Name,
+			Permissions: rolePerms,
+		})
+	}
+
+	if len(response.Roles) == 0 {
+		return nil, fmt.Errorf("no roles with permissions found for user %s", userID)
+	}
+
+	return response, nil
 }

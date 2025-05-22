@@ -3,34 +3,26 @@ package user
 import (
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/Kisanlink/aaa-service/client"
 	"github.com/Kisanlink/aaa-service/helper"
 	"github.com/Kisanlink/aaa-service/model"
 	"github.com/Kisanlink/aaa-service/services"
 	"github.com/gin-gonic/gin"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 type UserHandler struct {
-	userService     services.UserServiceInterface
-	RoleService     services.RoleServiceInterface
-	PermService     services.PermissionServiceInterface
-	RolePermService services.RolePermissionServiceInterface
+	userService services.UserServiceInterface
+	RoleService services.RoleServiceInterface
 }
 
 func NewUserHandler(
 	userService services.UserServiceInterface,
 	RoleService services.RoleServiceInterface,
-	PermService services.PermissionServiceInterface,
-	RolePermService services.RolePermissionServiceInterface) *UserHandler {
+) *UserHandler {
 	return &UserHandler{
-		userService:     userService,
-		RoleService:     RoleService,
-		PermService:     PermService,
-		RolePermService: RolePermService,
+		userService: userService,
+		RoleService: RoleService,
 	}
 }
 
@@ -55,7 +47,7 @@ func (s *UserHandler) AssignRoleRestApi(c *gin.Context) {
 	}
 
 	// Validate user exists
-	_, err := s.userService.GetUserByID(req.UserID)
+	user, err := s.userService.GetUserByID(req.UserID)
 	if err != nil {
 		helper.SendErrorResponse(c.Writer, http.StatusNotFound, []string{"User not found"})
 		return
@@ -75,110 +67,61 @@ func (s *UserHandler) AssignRoleRestApi(c *gin.Context) {
 		IsActive: true,
 	}
 	if err := s.userService.CreateUserRoles(userRole); err != nil {
-		if st, ok := status.FromError(err); ok {
-			switch st.Code() {
-			case codes.AlreadyExists:
-				helper.SendErrorResponse(c.Writer, http.StatusConflict, []string{st.Message()})
-			default:
-				helper.SendErrorResponse(c.Writer, http.StatusInternalServerError, []string{st.Message()})
-			}
-			return
-		}
-		helper.SendErrorResponse(c.Writer, http.StatusInternalServerError, []string{"Failed to assign role to user"})
+
+		helper.SendErrorResponse(c.Writer, http.StatusInternalServerError, []string{err.Error()})
 		return
 	}
 
 	// Get updated user details
 	updatedUser, err := s.userService.GetUserByID(req.UserID)
 	if err != nil {
-		helper.SendErrorResponse(c.Writer, http.StatusInternalServerError, []string{"Failed to fetch user details"})
+		helper.SendErrorResponse(c.Writer, http.StatusInternalServerError, []string{err.Error()})
 		return
 	}
 
-	// Get roles and permissions for relationship updates
-	roles, permissions, actions, err := s.userService.FindUserRolesAndPermissions(updatedUser.ID)
+	userRoles, err := s.userService.FindUserRoles(user.ID)
 	if err != nil {
-		helper.SendErrorResponse(c.Writer, http.StatusInternalServerError, []string{"Failed to fetch user roles and permissions"})
+
+		helper.SendErrorResponse(c.Writer, http.StatusInternalServerError, []string{err.Error()})
+		return
+	}
+	roleNames, err := helper.ExtractRoleNames(userRoles)
+	if err != nil {
+		helper.SendErrorResponse(c.Writer, http.StatusNotFound, []string{err.Error()})
 		return
 	}
 
-	// Update relationships in external service
-	_, err = client.DeleteUserRoleRelationship(
-		updatedUser.Username,
-		helper.LowerCaseSlice(roles),
-		helper.LowerCaseSlice(permissions),
-		helper.LowerCaseSlice(actions),
+	err = client.DeleteRelationships(
+		roleNames,
+		user.Username,
+		user.ID,
 	)
+
 	if err != nil {
-		log.Printf("Failed to delete relationships: %v", err)
-	}
-	_, err = client.CreateUserRoleRelationship(
-		updatedUser.Username,
-		helper.LowerCaseSlice(roles),
-		helper.LowerCaseSlice(permissions),
-		helper.LowerCaseSlice(actions),
-	)
-	if err != nil {
-		log.Printf("Failed to create relationships: %v", err)
+		log.Printf("Error deleting relationships: %v", err)
 	}
 
-	// Get role permissions in the correct format
-	rolePermissions, err := s.userService.FindUsageRights(updatedUser.ID)
+	err = client.CreateRelationships(
+		roleNames,
+		user.Username,
+		user.ID,
+	)
+
 	if err != nil {
-		helper.SendErrorResponse(c.Writer, http.StatusInternalServerError, []string{"Failed to fetch user usage rights"})
+		log.Printf("Error creating relationships: %v", err)
+	}
+
+	rolesResponse, err := s.userService.GetUserRolesWithPermissions(req.UserID)
+	if err != nil {
+		helper.SendErrorResponse(c.Writer, http.StatusInternalServerError, []string{err.Error()})
 		return
 	}
-
-	// Convert role permissions to the new structure
-	var rolesResponse []model.RoleResp
-	for roleName, permissions := range rolePermissions {
-		uniquePerms := make(map[string]model.Permission)
-		for _, perm := range permissions {
-			key := perm.Name + ":" + perm.Action + ":" + perm.Resource
-			uniquePerms[key] = model.Permission{
-				Base: model.Base{
-					ID:        perm.ID,
-					CreatedAt: perm.CreatedAt,
-					UpdatedAt: perm.UpdatedAt,
-				},
-				Name:        perm.Name,
-				Description: perm.Description,
-				Action:      perm.Action,
-				Source:      perm.Source,
-				Resource:    perm.Resource,
-			}
-		}
-
-		// Convert unique permissions map to slice
-		var permsSlice []model.Permission
-		for _, perm := range uniquePerms {
-			permsSlice = append(permsSlice, perm)
-		}
-
-		rolesResponse = append(rolesResponse, model.RoleResp{
-			RoleName:    roleName,
-			Permissions: permsSlice,
-		})
-	}
-
-	// Format timestamps
-	createdAt := ""
-	if !updatedUser.CreatedAt.IsZero() {
-		createdAt = updatedUser.CreatedAt.Format(time.RFC3339Nano)
-	}
-	updatedAt := ""
-	if !updatedUser.UpdatedAt.IsZero() {
-		updatedAt = updatedUser.UpdatedAt.Format(time.RFC3339Nano)
-	}
-
-	// Build response data
+	// // Build response data
 	responseData := &model.AssignRolePermission{
-		ID:             updatedUser.ID,
-		Username:       updatedUser.Username,
-		IsValidated:    updatedUser.IsValidated,
-		CreatedAt:      createdAt,
-		UpdatedAt:      updatedAt,
-		RolePermission: rolesResponse,
+		ID:          updatedUser.ID,
+		Username:    updatedUser.Username,
+		IsValidated: updatedUser.IsValidated,
+		Roles:       rolesResponse.Roles,
 	}
 
 	helper.SendSuccessResponse(c.Writer, http.StatusOK, "Role assigned to user successfully", responseData)

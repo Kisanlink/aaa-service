@@ -7,9 +7,6 @@ import (
 	"net"
 	"os"
 
-	"github.com/Kisanlink/aaa-service/grpc_handler/permissions"
-	rolepermission "github.com/Kisanlink/aaa-service/grpc_handler/rolePermission"
-	"github.com/Kisanlink/aaa-service/grpc_handler/roles"
 	"github.com/Kisanlink/aaa-service/grpc_handler/user"
 	"github.com/Kisanlink/aaa-service/repositories"
 	"github.com/Kisanlink/aaa-service/services"
@@ -42,21 +39,12 @@ func StartGRPCServer(db *gorm.DB) (*grpc.Server, error) {
 	)
 	userRepo := repositories.NewUserRepository(db)
 	roleRepo := repositories.NewRoleRepository(db)
-	permissionRepo := repositories.NewPermissionRepository(db)
-	connectRolePermissionRepo := repositories.NewRolePermissionRepository(db)
-	userService := services.NewUserService(userRepo)
+	userService := services.NewUserService(userRepo, roleRepo)
 	roleService := services.NewRoleService(roleRepo)
-	permissionService := services.NewPermissionService(permissionRepo)
-	connectRolePermissionService := services.NewRolePermissionService(connectRolePermissionRepo)
+
 	// pb.RegisterGreeterServer(s, &GreeterServer{})
-	userServer := user.NewUserServer(userService, roleService, permissionService, connectRolePermissionService)
+	userServer := user.NewUserServer(userService, roleService)
 	pb.RegisterUserServiceServer(s, userServer)
-	roleServer := roles.NewRoleServer(roleService, permissionService)
-	pb.RegisterRoleServiceServer(s, roleServer)
-	permissionServer := permissions.NewPermissionServer(roleService, permissionService)
-	pb.RegisterPermissionServiceServer(s, permissionServer)
-	connectRolePermissionServer := rolepermission.NewConnectRolePermissionServer(userService, roleService, permissionService, connectRolePermissionService)
-	pb.RegisterConnectRolePermissionServiceServer(s, connectRolePermissionServer)
 
 	go func() {
 		if err := s.Serve(lis); err != nil {

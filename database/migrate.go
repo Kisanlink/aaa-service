@@ -9,12 +9,13 @@ import (
 
 // ModelRegistry maps table names to their model structs
 var ModelRegistry = map[string]interface{}{
-	"user":            &model.User{},
-	"role":            &model.Role{},
-	"permission":      &model.Permission{},
-	"address":         &model.Address{},
-	"role_permission": &model.RolePermission{},
-	"user_role":       &model.UserRole{},
+	"user":       &model.User{},
+	"role":       &model.Role{},
+	"permission": &model.Permission{},
+	"address":    &model.Address{},
+	"actions":    &model.Action{},
+	"resource":   &model.Resource{},
+	"user_role":  &model.UserRole{},
 }
 
 // Migrate runs migrations for all or specific tables

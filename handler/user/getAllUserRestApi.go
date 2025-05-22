@@ -27,45 +27,16 @@ func (s *UserHandler) GetUserRestApi(c *gin.Context) {
 
 	var responseUsers []model.UserRes
 	for _, user := range users {
-		// Get role permissions
-		rolePermissions, err := s.userService.FindUsageRights(user.ID)
+		rolesResponse, err := s.userService.GetUserRolesWithPermissions(user.ID)
 		if err != nil {
-			helper.SendErrorResponse(c.Writer, http.StatusInternalServerError, []string{"Failed to fetch user permissions"})
+			helper.SendErrorResponse(c.Writer, http.StatusInternalServerError, []string{err.Error()})
 			return
 		}
-
-		// Convert role permissions to the new structure
-		var rolesResponse []model.RoleResp
-		for roleName, permissions := range rolePermissions {
-			uniquePerms := make(map[string]model.Permission)
-			for _, perm := range permissions {
-				key := perm.Name + ":" + perm.Action + ":" + perm.Resource
-				uniquePerms[key] = model.Permission{
-					Name:        perm.Name,
-					Description: perm.Description,
-					Action:      perm.Action,
-					Source:      perm.Source,
-					Resource:    perm.Resource,
-				}
-			}
-
-			// Convert unique permissions map to slice
-			var permsSlice []model.Permission
-			for _, perm := range uniquePerms {
-				permsSlice = append(permsSlice, perm)
-			}
-
-			rolesResponse = append(rolesResponse, model.RoleResp{
-				RoleName:    roleName,
-				Permissions: permsSlice,
-			})
-		}
-
 		var address *model.AddressRes
 		if user.AddressID != nil {
 			addr, err := s.userService.GetAddressByID(*user.AddressID)
 			if err != nil {
-				helper.SendErrorResponse(c.Writer, http.StatusInternalServerError, []string{"Failed to fetch address"})
+				helper.SendErrorResponse(c.Writer, http.StatusInternalServerError, []string{err.Error()})
 				return
 			}
 
@@ -88,25 +59,25 @@ func (s *UserHandler) GetUserRestApi(c *gin.Context) {
 		}
 
 		responseUser := model.UserRes{
-			ID:             user.ID,
-			Username:       user.Username,
-			IsValidated:    user.IsValidated,
-			CreatedAt:      user.CreatedAt.Format(time.RFC3339),
-			UpdatedAt:      user.UpdatedAt.Format(time.RFC3339),
-			RolePermission: rolesResponse,
-			AadhaarNumber:  helper.SafeString(user.AadhaarNumber),
-			Status:         helper.SafeString(user.Status),
-			Name:           helper.SafeString(user.Name),
-			CareOf:         helper.SafeString(user.CareOf),
-			DateOfBirth:    helper.SafeString(user.DateOfBirth),
-			Photo:          helper.SafeString(user.Photo),
-			EmailHash:      helper.SafeString(user.EmailHash),
-			ShareCode:      helper.SafeString(user.ShareCode),
-			YearOfBirth:    helper.SafeString(user.YearOfBirth),
-			Message:        helper.SafeString(user.Message),
-			MobileNumber:   user.MobileNumber,
-			CountryCode:    helper.SafeString(user.CountryCode),
-			Address:        address,
+			ID:            user.ID,
+			Username:      user.Username,
+			IsValidated:   user.IsValidated,
+			CreatedAt:     user.CreatedAt.Format(time.RFC3339),
+			UpdatedAt:     user.UpdatedAt.Format(time.RFC3339),
+			AadhaarNumber: helper.SafeString(user.AadhaarNumber),
+			Status:        helper.SafeString(user.Status),
+			Name:          helper.SafeString(user.Name),
+			CareOf:        helper.SafeString(user.CareOf),
+			DateOfBirth:   helper.SafeString(user.DateOfBirth),
+			Photo:         helper.SafeString(user.Photo),
+			EmailHash:     helper.SafeString(user.EmailHash),
+			ShareCode:     helper.SafeString(user.ShareCode),
+			YearOfBirth:   helper.SafeString(user.YearOfBirth),
+			Message:       helper.SafeString(user.Message),
+			MobileNumber:  user.MobileNumber,
+			CountryCode:   helper.SafeString(user.CountryCode),
+			Address:       address,
+			Roles:         rolesResponse.Roles,
 		}
 
 		responseUsers = append(responseUsers, responseUser)

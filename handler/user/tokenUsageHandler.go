@@ -29,7 +29,7 @@ func (s *UserHandler) TokenUsageHandler(c *gin.Context) {
 	if req.TransactionType == nil {
 		tokens, err := s.userService.GetTokensByUserID(req.UserID)
 		if err != nil {
-			helper.SendErrorResponse(c.Writer, http.StatusNotFound, []string{"User not found", err.Error()})
+			helper.SendErrorResponse(c.Writer, http.StatusNotFound, []string{err.Error()})
 			return
 		}
 		helper.SendSuccessResponse(c.Writer, http.StatusOK, "Fetched user tokens successfully", map[string]interface{}{
@@ -53,14 +53,14 @@ func (s *UserHandler) TokenUsageHandler(c *gin.Context) {
 			if err.Error() == "insufficient tokens" {
 				helper.SendErrorResponse(c.Writer, http.StatusBadRequest, []string{"Insufficient tokens"})
 			} else {
-				helper.SendErrorResponse(c.Writer, http.StatusNotFound, []string{"User not found", err.Error()})
+				helper.SendErrorResponse(c.Writer, http.StatusNotFound, []string{err.Error()})
 			}
 			return
 		}
 	case "credit":
 		user, err = s.userService.CreditUserByID(req.UserID, *req.Tokens)
 		if err != nil {
-			helper.SendErrorResponse(c.Writer, http.StatusNotFound, []string{"User not found", err.Error()})
+			helper.SendErrorResponse(c.Writer, http.StatusNotFound, []string{err.Error()})
 			return
 		}
 	default:

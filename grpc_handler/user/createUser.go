@@ -22,21 +22,16 @@ import (
 
 type Server struct {
 	pb.UnimplementedUserServiceServer
-	userService       services.UserServiceInterface
-	roleService       services.RoleServiceInterface
-	permissionService services.PermissionServiceInterface
-	rolePermService   services.RolePermissionServiceInterface
+	userService services.UserServiceInterface
+	roleService services.RoleServiceInterface
 }
 
 func NewUserServer(userService services.UserServiceInterface,
 	roleService services.RoleServiceInterface,
-	permissionService services.PermissionServiceInterface,
-	rolePermService services.RolePermissionServiceInterface) *Server {
+) *Server {
 	return &Server{
-		userService:       userService,
-		roleService:       roleService,
-		permissionService: permissionService,
-		rolePermService:   rolePermService,
+		userService: userService,
+		roleService: roleService,
 	}
 }
 

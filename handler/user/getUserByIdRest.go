@@ -15,12 +15,12 @@ import (
 // @Tags Users
 // @Accept json
 // @Produce json
-// @Param id path string true "User ID" example(123e4567-e89b-12d3-a456-426614174000)
+// @Param id path string true "User ID" example("123e4567-e89b-12d3-a456-426614174000")
 // @Success 200 {object} helper.Response{data=model.UserRes} "User fetched successfully"
 // @Failure 400 {object} helper.Response "ID is required"
 // @Failure 404 {object} helper.Response "User not found"
 // @Failure 500 {object} helper.Response "Internal server error when fetching user or related data"
-// @Route /users/{id} [get]
+// @Router /users/{id} [get]
 func (s *UserHandler) GetUserByIdRestApi(c *gin.Context) {
 	id := c.Param("id")
 
@@ -31,7 +31,7 @@ func (s *UserHandler) GetUserByIdRestApi(c *gin.Context) {
 
 	user, err := s.userService.FindExistingUserByID(id)
 	if err != nil {
-		helper.SendErrorResponse(c.Writer, http.StatusInternalServerError, []string{"Failed to fetch user"})
+		helper.SendErrorResponse(c.Writer, http.StatusInternalServerError, []string{err.Error()})
 		return
 	}
 
@@ -40,45 +40,17 @@ func (s *UserHandler) GetUserByIdRestApi(c *gin.Context) {
 		return
 	}
 
-	rolePermissions, err := s.userService.FindUsageRights(user.ID)
+	rolesResponse, err := s.userService.GetUserRolesWithPermissions(user.ID)
 	if err != nil {
-		helper.SendErrorResponse(c.Writer, http.StatusInternalServerError, []string{"Failed to fetch role permissions"})
+		helper.SendErrorResponse(c.Writer, http.StatusInternalServerError, []string{err.Error()})
 		return
-	}
-
-	// Convert role permissions to the new structure
-	var rolesResponse []model.RoleResp
-	for roleName, permissions := range rolePermissions {
-		uniquePerms := make(map[string]model.Permission)
-		for _, perm := range permissions {
-			key := perm.Name + ":" + perm.Action + ":" + perm.Resource
-			if _, exists := uniquePerms[key]; !exists {
-				uniquePerms[key] = model.Permission{
-					Name:        perm.Name,
-					Description: perm.Description,
-					Action:      perm.Action,
-					Source:      perm.Source,
-					Resource:    perm.Resource,
-				}
-			}
-		}
-
-		var permsSlice []model.Permission
-		for _, perm := range uniquePerms {
-			permsSlice = append(permsSlice, perm)
-		}
-
-		rolesResponse = append(rolesResponse, model.RoleResp{
-			RoleName:    roleName,
-			Permissions: permsSlice,
-		})
 	}
 
 	var address *model.AddressRes
 	if user.AddressID != nil {
 		addr, err := s.userService.GetAddressByID(*user.AddressID)
 		if err != nil {
-			helper.SendErrorResponse(c.Writer, http.StatusInternalServerError, []string{"Failed to fetch address"})
+			helper.SendErrorResponse(c.Writer, http.StatusInternalServerError, []string{err.Error()})
 			return
 		}
 
@@ -103,26 +75,26 @@ func (s *UserHandler) GetUserByIdRestApi(c *gin.Context) {
 	}
 
 	responseUser := &model.UserRes{
-		ID:             user.ID,
-		Username:       user.Username,
-		Password:       "",
-		IsValidated:    user.IsValidated,
-		CreatedAt:      user.CreatedAt.Format(time.RFC3339),
-		UpdatedAt:      user.UpdatedAt.Format(time.RFC3339),
-		RolePermission: rolesResponse,
-		AadhaarNumber:  helper.SafeString(user.AadhaarNumber),
-		Status:         helper.SafeString(user.Status),
-		Name:           helper.SafeString(user.Name),
-		CareOf:         helper.SafeString(user.CareOf),
-		DateOfBirth:    helper.SafeString(user.DateOfBirth),
-		Photo:          helper.SafeString(user.Photo),
-		EmailHash:      helper.SafeString(user.EmailHash),
-		ShareCode:      helper.SafeString(user.ShareCode),
-		YearOfBirth:    helper.SafeString(user.YearOfBirth),
-		Message:        helper.SafeString(user.Message),
-		MobileNumber:   user.MobileNumber,
-		CountryCode:    helper.SafeString(user.CountryCode),
-		Address:        address,
+		ID:            user.ID,
+		Username:      user.Username,
+		Password:      "",
+		IsValidated:   user.IsValidated,
+		CreatedAt:     user.CreatedAt.Format(time.RFC3339),
+		UpdatedAt:     user.UpdatedAt.Format(time.RFC3339),
+		AadhaarNumber: helper.SafeString(user.AadhaarNumber),
+		Status:        helper.SafeString(user.Status),
+		Name:          helper.SafeString(user.Name),
+		CareOf:        helper.SafeString(user.CareOf),
+		DateOfBirth:   helper.SafeString(user.DateOfBirth),
+		Photo:         helper.SafeString(user.Photo),
+		EmailHash:     helper.SafeString(user.EmailHash),
+		ShareCode:     helper.SafeString(user.ShareCode),
+		YearOfBirth:   helper.SafeString(user.YearOfBirth),
+		Message:       helper.SafeString(user.Message),
+		MobileNumber:  user.MobileNumber,
+		CountryCode:   helper.SafeString(user.CountryCode),
+		Address:       address,
+		Roles:         rolesResponse.Roles,
 	}
 
 	helper.SendSuccessResponse(c.Writer, http.StatusOK, "User fetched successfully", responseUser)

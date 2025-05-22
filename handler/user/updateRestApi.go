@@ -37,7 +37,7 @@ func (s *UserHandler) UpdateUserRestApi(c *gin.Context) {
 
 	existingUser, err := s.userService.FindExistingUserByID(id)
 	if err != nil {
-		helper.SendErrorResponse(c.Writer, http.StatusInternalServerError, []string{"Failed to fetch user"})
+		helper.SendErrorResponse(c.Writer, http.StatusInternalServerError, []string{err.Error()})
 		return
 	}
 	if existingUser == nil {
@@ -84,48 +84,20 @@ func (s *UserHandler) UpdateUserRestApi(c *gin.Context) {
 	}
 
 	if err := s.userService.UpdateUser(*existingUser); err != nil {
-		helper.SendErrorResponse(c.Writer, http.StatusInternalServerError, []string{"Failed to update user"})
+		helper.SendErrorResponse(c.Writer, http.StatusInternalServerError, []string{err.Error()})
 		return
 	}
-
-	rolePermissions, err := s.userService.FindUsageRights(existingUser.ID)
+	rolesResponse, err := s.userService.GetUserRolesWithPermissions(req.ID)
 	if err != nil {
-		helper.SendErrorResponse(c.Writer, http.StatusInternalServerError, []string{"Failed to fetch role permissions"})
+		helper.SendErrorResponse(c.Writer, http.StatusInternalServerError, []string{err.Error()})
 		return
 	}
-
-	// Format role permissions
-	var rolesResponse []model.RoleResp
-	for roleName, permissions := range rolePermissions {
-		uniquePerms := make(map[string]model.Permission)
-		for _, perm := range permissions {
-			key := perm.Name + ":" + perm.Action + ":" + perm.Resource
-			if _, exists := uniquePerms[key]; !exists {
-				uniquePerms[key] = model.Permission{
-					Name:        perm.Name,
-					Description: perm.Description,
-					Action:      perm.Action,
-					Source:      perm.Source,
-					Resource:    perm.Resource,
-				}
-			}
-		}
-		var permsSlice []model.Permission
-		for _, perm := range uniquePerms {
-			permsSlice = append(permsSlice, perm)
-		}
-		rolesResponse = append(rolesResponse, model.RoleResp{
-			RoleName:    roleName,
-			Permissions: permsSlice,
-		})
-	}
-
 	// Fetch address if exists
 	var address *model.AddressRes
 	if existingUser.AddressID != nil {
 		addr, err := s.userService.GetAddressByID(*existingUser.AddressID)
 		if err != nil {
-			helper.SendErrorResponse(c.Writer, http.StatusInternalServerError, []string{"Failed to fetch address"})
+			helper.SendErrorResponse(c.Writer, http.StatusInternalServerError, []string{err.Error()})
 			return
 		}
 		if addr != nil {
@@ -146,26 +118,26 @@ func (s *UserHandler) UpdateUserRestApi(c *gin.Context) {
 	}
 
 	responseUser := &model.UserRes{
-		ID:             existingUser.ID,
-		Username:       existingUser.Username,
-		Password:       "",
-		IsValidated:    existingUser.IsValidated,
-		CreatedAt:      existingUser.CreatedAt.Format(time.RFC3339Nano),
-		UpdatedAt:      existingUser.UpdatedAt.Format(time.RFC3339Nano),
-		RolePermission: rolesResponse,
-		AadhaarNumber:  helper.SafeString(existingUser.AadhaarNumber),
-		Status:         helper.SafeString(existingUser.Status),
-		Name:           helper.SafeString(existingUser.Name),
-		CareOf:         helper.SafeString(existingUser.CareOf),
-		DateOfBirth:    helper.SafeString(existingUser.DateOfBirth),
-		Photo:          helper.SafeString(existingUser.Photo),
-		EmailHash:      helper.SafeString(existingUser.EmailHash),
-		ShareCode:      helper.SafeString(existingUser.ShareCode),
-		YearOfBirth:    helper.SafeString(existingUser.YearOfBirth),
-		Message:        helper.SafeString(existingUser.Message),
-		MobileNumber:   existingUser.MobileNumber,
-		CountryCode:    helper.SafeString(existingUser.CountryCode),
-		Address:        address,
+		ID:            existingUser.ID,
+		Username:      existingUser.Username,
+		Password:      "",
+		IsValidated:   existingUser.IsValidated,
+		CreatedAt:     existingUser.CreatedAt.Format(time.RFC3339Nano),
+		UpdatedAt:     existingUser.UpdatedAt.Format(time.RFC3339Nano),
+		AadhaarNumber: helper.SafeString(existingUser.AadhaarNumber),
+		Status:        helper.SafeString(existingUser.Status),
+		Name:          helper.SafeString(existingUser.Name),
+		CareOf:        helper.SafeString(existingUser.CareOf),
+		DateOfBirth:   helper.SafeString(existingUser.DateOfBirth),
+		Photo:         helper.SafeString(existingUser.Photo),
+		EmailHash:     helper.SafeString(existingUser.EmailHash),
+		ShareCode:     helper.SafeString(existingUser.ShareCode),
+		YearOfBirth:   helper.SafeString(existingUser.YearOfBirth),
+		Message:       helper.SafeString(existingUser.Message),
+		MobileNumber:  existingUser.MobileNumber,
+		CountryCode:   helper.SafeString(existingUser.CountryCode),
+		Address:       address,
+		Roles:         rolesResponse.Roles,
 	}
 
 	helper.SendSuccessResponse(c.Writer, http.StatusOK, "User updated successfully", responseUser)

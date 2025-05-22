@@ -1,9 +1,9 @@
 package routes
 
 import (
-	"github.com/Kisanlink/aaa-service/handler/permissions"
-	rolepermission "github.com/Kisanlink/aaa-service/handler/rolePermission"
-	"github.com/Kisanlink/aaa-service/handler/roles"
+	"github.com/Kisanlink/aaa-service/handler/action"
+	"github.com/Kisanlink/aaa-service/handler/resource"
+	"github.com/Kisanlink/aaa-service/handler/role"
 	"github.com/Kisanlink/aaa-service/handler/user"
 	"github.com/Kisanlink/aaa-service/repositories"
 	"github.com/Kisanlink/aaa-service/services"
@@ -15,20 +15,19 @@ func ApiRoutes(r *gin.RouterGroup, db *gorm.DB) {
 	v1 := r.Group("/v1")
 	userRepo := repositories.NewUserRepository(db)
 	roleRepo := repositories.NewRoleRepository(db)
-	permissionRepo := repositories.NewPermissionRepository(db)
-	connectRolePermissionRepo := repositories.NewRolePermissionRepository(db)
-	userService := services.NewUserService(userRepo)
+	actionRepo := repositories.NewActionRepository(db)
+	resourceRepo := repositories.NewResourceRepository(db)
+	userService := services.NewUserService(userRepo, roleRepo)
 	roleService := services.NewRoleService(roleRepo)
-	permissionService := services.NewPermissionService(permissionRepo)
-	connectRolePermissionService := services.NewRolePermissionService(connectRolePermissionRepo)
-
-	userHandler := user.NewUserHandler(userService, roleService, permissionService, connectRolePermissionService)
-	RoleHandler := roles.NewRoleHandler(roleService, permissionService)
-	permissionHandler := permissions.NewPermissionHandler(roleService, permissionService)
-	RolePermHandler := rolepermission.NewRolePermHandler(roleService, permissionService, connectRolePermissionService, userService)
+	actionService := services.NewActionService(actionRepo)
+	resourceService := services.NewResourceService(resourceRepo)
+	actionHandler := action.NewActionHandler(actionService)
+	resourceHandler := resource.NewResourceHandler(resourceService)
+	userHandler := user.NewUserHandler(userService, roleService)
+	rolHandler := role.NewRoleHandler(roleService)
+	RolesRoutes(v1, db, *rolHandler)
 	UserRoutes(v1, db, *userHandler)
-	RolesRoutes(v1, db, *RoleHandler)
-	PermissionRoutes(v1, db, *permissionHandler)
-	AssignPermissionRoutes(v1, db, *RolePermHandler)
+	ActionRoutes(v1, db, *actionHandler)
+	ResourceRoutes(v1, db, *resourceHandler)
 
 }

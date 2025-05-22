@@ -6,206 +6,112 @@ import (
 	"log"
 
 	"github.com/Kisanlink/aaa-service/database"
-	pb "github.com/authzed/authzed-go/proto/authzed/api/v1"
+	"github.com/Kisanlink/aaa-service/helper"
+	v1 "github.com/authzed/authzed-go/proto/authzed/api/v1"
 )
 
-// func DeleteUserRoleRelationship(userID string, roles []string, permissions []string, actions []string) (*pb.WriteRelationshipsResponse, error) {
-// 	// Connect to SpiceDB
-// 	spicedb, err := database.SpiceDB()
-// 	if err != nil {
-// 		log.Printf("Unable to connect to SpiceDB: %s", err)
-// 		return nil, err
-// 	}
+func DeleteRelationship(
+	role string, // "viewer", "owner", "farmer"
+	username string, // "alice"
+	resourceType string, // "db/farmers"
+	resourceID string, // "123"
+) error {
+	// Validate parameters
+	if role == "" || username == "" || resourceType == "" || resourceID == "" {
+		return fmt.Errorf("role, username, resourceType and resourceID are required")
+	}
+	normalizedResourceType := helper.NormalizeResourceType(resourceType)
 
-// 	// Prepare relationship deletions
-// 	var updates []*pb.RelationshipUpdate
+	// Connect to SpiceDB
+	spicedb, err := database.SpiceDB()
+	if err != nil {
+		log.Printf("Unable to connect to SpiceDB: %s", err)
+		return err
+	}
 
-// 	// Delete relationships for user-roles
-// 	for _, role := range roles {
-// 		relationship := &pb.Relationship{
-// 			Resource: &pb.ObjectReference{
-// 				ObjectType: "role",
-// 				ObjectId:   role,
-// 			},
-// 			Relation: role, // This should match your role name
-// 			Subject: &pb.SubjectReference{
-// 				Object: &pb.ObjectReference{
-// 					ObjectType: "user",
-// 					ObjectId:   userID,
-// 				},
-// 			},
-// 		}
+	// Delete the relationship
+	_, err = spicedb.WriteRelationships(context.Background(), &v1.WriteRelationshipsRequest{
+		Updates: []*v1.RelationshipUpdate{
+			{
+				Operation: v1.RelationshipUpdate_OPERATION_DELETE,
+				Relationship: &v1.Relationship{
+					Resource: &v1.ObjectReference{
+						ObjectType: normalizedResourceType,
+						ObjectId:   resourceID,
+					},
+					Relation: role,
+					Subject: &v1.SubjectReference{
+						Object: &v1.ObjectReference{
+							ObjectType: "user",
+							ObjectId:   username,
+						},
+					},
+				},
+			},
+		},
+	})
 
-// 		updates = append(updates, &pb.RelationshipUpdate{
-// 			Operation:    pb.RelationshipUpdate_OPERATION_DELETE,
-// 			Relationship: relationship,
-// 		})
-// 	}
+	if err != nil {
+		return fmt.Errorf("failed to delete relationship: %w", err)
+	}
 
-// 	// Delete relationships for role-permissions
-// 	for _, permission := range permissions {
-// 		for _, role := range roles {
-// 			relationship := &pb.Relationship{
-// 				Resource: &pb.ObjectReference{
-// 					ObjectType: "assign_permission",
-// 					ObjectId:   permission,
-// 				},
-// 				Relation: "allows_action", // Matches your schema definition
-// 				Subject: &pb.SubjectReference{
-// 					Object: &pb.ObjectReference{
-// 						ObjectType: "role",
-// 						ObjectId:   role,
-// 					},
-// 				},
-// 			}
+	log.Printf(
+		"Deleted relationship: %s#%s@user:%s",
+		fmt.Sprintf("%s:%s", resourceType, resourceID),
+		role,
+		username,
+	)
 
-// 			updates = append(updates, &pb.RelationshipUpdate{
-// 				Operation:    pb.RelationshipUpdate_OPERATION_DELETE,
-// 				Relationship: relationship,
-// 			})
-// 		}
-// 	}
+	return nil
+}
 
-// 	// Delete relationships for permission-actions
-// 	for _, action := range actions {
-// 		for _, permission := range permissions {
-// 			relationship := &pb.Relationship{
-// 				Resource: &pb.ObjectReference{
-// 					ObjectType: "action",
-// 					ObjectId:   action,
-// 				},
-// 				Relation: action, // Using the action value as the relation (Dynamic)
-// 				Subject: &pb.SubjectReference{
-// 					Object: &pb.ObjectReference{
-// 						ObjectType: "assign_permission",
-// 						ObjectId:   permission,
-// 					},
-// 				},
-// 			}
+func DeleteRelationships(
+	roles []string, // array of roles like ["admin", "farmer"]
+	username string, // "alice"
+	resourceID string, // "123"
+) error {
+	// Validate parameters
+	if len(roles) == 0 || username == "" || resourceID == "" {
+		return fmt.Errorf("roles, username, and resourceID are required")
+	}
 
-// 			updates = append(updates, &pb.RelationshipUpdate{
-// 				Operation:    pb.RelationshipUpdate_OPERATION_DELETE,
-// 				Relationship: relationship,
-// 			})
-// 		}
-// 	}
+	// Connect to SpiceDB
+	client, err := database.SpiceDB()
+	if err != nil {
+		log.Printf("Unable to connect to SpiceDB: %s", err)
+		return err
+	}
 
-// 	// Write relationship deletions to SpiceDB
-// 	request := &pb.WriteRelationshipsRequest{
-// 		Updates: updates,
-// 	}
-// 	res, err := spicedb.WriteRelationships(context.Background(), request)
-// 	if err != nil {
-// 		log.Printf("Failed to delete user-role, role-permission, and permission-action relationships: %s", err)
-// 		return nil, err
-// 	}
-// 	return res, nil
-// }
+	// Read the schema to get all definitions and their relations
+	definitions, err := ReadDefinitionSchema(client)
+	if err != nil {
+		return fmt.Errorf("failed to read schema: %w", err)
+	}
 
-func DeleteUserRoleRelationship(userID string, roles []string, permissions []string, actions []string) (*pb.WriteRelationshipsResponse, error) {
-    // Connect to SpiceDB
-    spicedb, err := database.SpiceDB()
-    if err != nil {
-        log.Printf("Unable to connect to SpiceDB: %s", err)
-        return nil, err
-    }
+	// Create a set of roles for O(1) lookup
+	roleSet := make(map[string]bool)
+	for _, role := range roles {
+		roleSet[role] = true
+	}
 
-    // Prepare relationship deletions
-    var updates []*pb.RelationshipUpdate
+	// Check each definition for the roles
+	for definition, relations := range definitions {
+		// Skip the user definition
+		if definition == "user" {
+			continue
+		}
 
-    // Use a map to track unique relationships
-    seenRelationships := make(map[string]bool)
+		// Check if any of the requested roles exist in this definition
+		for _, relation := range relations {
+			if roleSet[relation] {
+				// Delete relationship for this definition and role
+				err = DeleteRelationship(relation, username, definition, resourceID)
+				if err != nil {
+					return fmt.Errorf("failed to delete relationship for %s: %w", definition, err)
+				}
+			}
+		}
+	}
 
-    // Delete relationships for user-roles
-    for _, role := range roles {
-        relationshipKey := fmt.Sprintf("role:%s#%s@user:%s", role, role, userID)
-        if !seenRelationships[relationshipKey] {
-            relationship := &pb.Relationship{
-                Resource: &pb.ObjectReference{
-                    ObjectType: "role",
-                    ObjectId:   role,
-                },
-                Relation: role, // This should match your role name
-                Subject: &pb.SubjectReference{
-                    Object: &pb.ObjectReference{
-                        ObjectType: "user",
-                        ObjectId:   userID,
-                    },
-                },
-            }
-
-            updates = append(updates, &pb.RelationshipUpdate{
-                Operation:    pb.RelationshipUpdate_OPERATION_DELETE,
-                Relationship: relationship,
-            })
-            seenRelationships[relationshipKey] = true
-        }
-    }
-
-    // Delete relationships for role-permissions
-    for _, permission := range permissions {
-        for _, role := range roles {
-            relationshipKey := fmt.Sprintf("assign_permission:%s#allows_action@role:%s", permission, role)
-            if !seenRelationships[relationshipKey] {
-                relationship := &pb.Relationship{
-                    Resource: &pb.ObjectReference{
-                        ObjectType: "assign_permission",
-                        ObjectId:   permission,
-                    },
-                    Relation: "allows_action", // Matches your schema definition
-                    Subject: &pb.SubjectReference{
-                        Object: &pb.ObjectReference{
-                            ObjectType: "role",
-                            ObjectId:   role,
-                        },
-                    },
-                }
-
-                updates = append(updates, &pb.RelationshipUpdate{
-                    Operation:    pb.RelationshipUpdate_OPERATION_DELETE,
-                    Relationship: relationship,
-                })
-                seenRelationships[relationshipKey] = true
-            }
-        }
-    }
-
-    // Delete relationships for permission-actions
-    for _, action := range actions {
-        for _, permission := range permissions {
-            relationshipKey := fmt.Sprintf("action:%s#%s@assign_permission:%s", action, action, permission)
-            if !seenRelationships[relationshipKey] {
-                relationship := &pb.Relationship{
-                    Resource: &pb.ObjectReference{
-                        ObjectType: "action",
-                        ObjectId:   action,
-                    },
-                    Relation: action, // Using the action value as the relation (Dynamic)
-                    Subject: &pb.SubjectReference{
-                        Object: &pb.ObjectReference{
-                            ObjectType: "assign_permission",
-                            ObjectId:   permission,
-                        },
-                    },
-                }
-
-                updates = append(updates, &pb.RelationshipUpdate{
-                    Operation:    pb.RelationshipUpdate_OPERATION_DELETE,
-                    Relationship: relationship,
-                })
-                seenRelationships[relationshipKey] = true
-            }
-        }
-    }
-
-    // Write relationship deletions to SpiceDB
-    request := &pb.WriteRelationshipsRequest{
-        Updates: updates,
-    }
-    res, err := spicedb.WriteRelationships(context.Background(), request)
-    if err != nil {
-        log.Printf("Failed to delete user-role, role-permission, and permission-action relationships: %s", err)
-        return nil, err
-    }
-    return res, nil
+	return nil
 }

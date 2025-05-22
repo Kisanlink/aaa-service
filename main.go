@@ -33,7 +33,6 @@ func main() {
 	docs.SwaggerInfo.BasePath = "/api/v1"
 	r := routes.SetupRouter(database.DB)
 	r.GET("/doc/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
-
 	r.Use(cors.New(config.GetCorsConfig(corsSetup)))
 	grpcServer, err := grpc.StartGRPCServer(database.DB)
 	if err != nil {

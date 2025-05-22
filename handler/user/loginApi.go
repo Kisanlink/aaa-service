@@ -65,24 +65,22 @@ func (s *UserHandler) LoginRestApi(c *gin.Context) {
 		return
 	}
 
-	// Get role permissions
-	rolePermissions, err := s.userService.FindUsageRights(existingUser.ID)
+	rolesResponse, err := s.userService.GetUserRolesWithPermissions(existingUser.ID)
 	if err != nil {
-		helper.SendErrorResponse(c.Writer, http.StatusInternalServerError, []string{"Failed to fetch user permissions"})
+		helper.SendErrorResponse(c.Writer, http.StatusInternalServerError, []string{err.Error()})
 		return
 	}
-
 	// Check if detailed user info is requested
 	includeDetails := c.Query("user_details") == "true"
 
 	// Prepare base user response
 	userResponse := model.UserResponse{
-		ID:             existingUser.ID,
-		Username:       existingUser.Username,
-		IsValidated:    existingUser.IsValidated,
-		CreatedAt:      existingUser.CreatedAt.Format(time.RFC3339),
-		UpdatedAt:      existingUser.UpdatedAt.Format(time.RFC3339),
-		RolePermission: helper.ConvertAndDeduplicateRolePermissions(rolePermissions),
+		ID:          existingUser.ID,
+		Username:    existingUser.Username,
+		IsValidated: existingUser.IsValidated,
+		CreatedAt:   existingUser.CreatedAt.Format(time.RFC3339),
+		UpdatedAt:   existingUser.UpdatedAt.Format(time.RFC3339),
+		Roles:       rolesResponse.Roles,
 	}
 
 	// At the top of your file (or in a constants file)
@@ -103,7 +101,7 @@ func (s *UserHandler) LoginRestApi(c *gin.Context) {
 		}
 
 		hasPermission := false
-		for _, role := range userResponse.RolePermission {
+		for _, role := range userResponse.Roles {
 			if allowedRoles[role.RoleName] {
 				hasPermission = true
 				break
@@ -123,7 +121,7 @@ func (s *UserHandler) LoginRestApi(c *gin.Context) {
 		if existingUser.AddressID != nil {
 			addr, err := s.userService.GetAddressByID(*existingUser.AddressID)
 			if err != nil {
-				helper.SendErrorResponse(c.Writer, http.StatusInternalServerError, []string{"Failed to fetch address"})
+				helper.SendErrorResponse(c.Writer, http.StatusInternalServerError, []string{err.Error()})
 				return
 			}
 

@@ -51,7 +51,7 @@ func (s *UserHandler) PasswordResetHandler(c *gin.Context) {
 	// Find the user
 	user, err := s.userService.FindUserByUsername(req.Username)
 	if err != nil {
-		helper.SendErrorResponse(c.Writer, http.StatusNotFound, []string{"User not found"})
+		helper.SendErrorResponse(c.Writer, http.StatusNotFound, []string{err.Error()})
 		return
 	}
 	key := fmt.Sprintf("otp:%s", user.ID)
@@ -127,7 +127,7 @@ func (s *UserHandler) PasswordResetHandler(c *gin.Context) {
 		}
 
 		if err := s.userService.UpdatePassword(user.ID, hashedPassword); err != nil {
-			helper.SendErrorResponse(c.Writer, http.StatusInternalServerError, []string{"Failed to update password"})
+			helper.SendErrorResponse(c.Writer, http.StatusInternalServerError, []string{err.Error()})
 			return
 		}
 

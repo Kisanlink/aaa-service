@@ -15,9 +15,9 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/assign-permissions": {
+        "/actions": {
             "get": {
-                "description": "Retrieves all role-permission relationships in the system with full details",
+                "description": "Retrieves all actions with optional filtering by ID or name",
                 "consumes": [
                     "application/json"
                 ],
@@ -25,12 +25,26 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Role Permissions"
+                    "Actions"
                 ],
-                "summary": "Get all role-permission assignments",
+                "summary": "Get  actions",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter by action ID",
+                        "name": "id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by action name",
+                        "name": "name",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "Role-permission assignments fetched successfully",
+                        "description": "List of actions retrieved successfully",
                         "schema": {
                             "allOf": [
                                 {
@@ -40,7 +54,10 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/model.RolePermissionResponse"
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/model.Action"
+                                            }
                                         }
                                     }
                                 }
@@ -48,7 +65,7 @@ const docTemplate = `{
                         }
                     },
                     "500": {
-                        "description": "Failed to fetch role-permission connections",
+                        "description": "Failed to retrieve actions",
                         "schema": {
                             "$ref": "#/definitions/helper.Response"
                         }
@@ -56,7 +73,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Assigns one or more permissions to a role and updates all affected user relationships",
+                "description": "Creates a new action with the provided details",
                 "consumes": [
                     "application/json"
                 ],
@@ -64,23 +81,23 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Role Permissions"
+                    "Actions"
                 ],
-                "summary": "Assign permissions to role",
+                "summary": "Create a new action",
                 "parameters": [
                     {
-                        "description": "Permission assignment request",
+                        "description": "Action creation data",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.AssignPermissionRequest"
+                            "$ref": "#/definitions/model.CreateActionRequest"
                         }
                     }
                 ],
                 "responses": {
                     "201": {
-                        "description": "Permissions assigned successfully",
+                        "description": "Action created successfully",
                         "schema": {
                             "allOf": [
                                 {
@@ -90,7 +107,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/model.ConnRolePermissionResponse"
+                                            "$ref": "#/definitions/model.Action"
                                         }
                                     }
                                 }
@@ -103,20 +120,14 @@ const docTemplate = `{
                             "$ref": "#/definitions/helper.Response"
                         }
                     },
-                    "404": {
-                        "description": "Role or permission not found",
-                        "schema": {
-                            "$ref": "#/definitions/helper.Response"
-                        }
-                    },
                     "409": {
-                        "description": "Permission already assigned to role",
+                        "description": "Action already exists",
                         "schema": {
                             "$ref": "#/definitions/helper.Response"
                         }
                     },
                     "500": {
-                        "description": "Failed to assign permissions or update relationships",
+                        "description": "Failed to create action",
                         "schema": {
                             "$ref": "#/definitions/helper.Response"
                         }
@@ -124,9 +135,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/assign-permissions/by": {
-            "get": {
-                "description": "Retrieves all permissions assigned to a specific role identified by name",
+        "/actions/{id}": {
+            "put": {
+                "description": "Updates an existing action with the provided details",
                 "consumes": [
                     "application/json"
                 ],
@@ -134,22 +145,30 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Role Permissions"
+                    "Actions"
                 ],
-                "summary": "Get permissions by role name",
+                "summary": "Update an action",
                 "parameters": [
                     {
                         "type": "string",
-                        "example": "\"admin\"",
-                        "description": "Role name",
-                        "name": "role",
-                        "in": "query",
+                        "description": "Action ID",
+                        "name": "id",
+                        "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "Action update data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.CreateActionRequest"
+                        }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Role permissions fetched successfully",
+                        "description": "Action updated successfully",
                         "schema": {
                             "allOf": [
                                 {
@@ -159,7 +178,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/model.RolePermissionWrapper"
+                                            "$ref": "#/definitions/model.Action"
                                         }
                                     }
                                 }
@@ -167,19 +186,67 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Role name parameter is required",
+                        "description": "Invalid request body",
                         "schema": {
                             "$ref": "#/definitions/helper.Response"
                         }
                     },
                     "404": {
-                        "description": "Role not found or no permissions assigned",
+                        "description": "Action not found",
                         "schema": {
                             "$ref": "#/definitions/helper.Response"
                         }
                     },
                     "500": {
-                        "description": "Failed to fetch role-permission connections",
+                        "description": "Failed to update action",
+                        "schema": {
+                            "$ref": "#/definitions/helper.Response"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Deletes an existing action by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Actions"
+                ],
+                "summary": "Delete an action",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Action ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Action deleted successfully",
+                        "schema": {
+                            "$ref": "#/definitions/helper.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid action ID",
+                        "schema": {
+                            "$ref": "#/definitions/helper.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Action not found",
+                        "schema": {
+                            "$ref": "#/definitions/helper.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to delete action",
                         "schema": {
                             "$ref": "#/definitions/helper.Response"
                         }
@@ -408,169 +475,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/permissions": {
-            "get": {
-                "description": "Retrieves a list of all permissions in the system with their details",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Permissions"
-                ],
-                "summary": "Get all permissions",
-                "responses": {
-                    "200": {
-                        "description": "Permissions retrieved successfully",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/helper.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/definitions/model.Permission"
-                                            }
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "500": {
-                        "description": "Failed to retrieve permissions",
-                        "schema": {
-                            "$ref": "#/definitions/helper.Response"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "description": "Creates a new permission and updates the authorization schema with the new permission",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Permissions"
-                ],
-                "summary": "Create a new permission",
-                "parameters": [
-                    {
-                        "description": "Permission creation data",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.CreatePermissionRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Permission created successfully",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/helper.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/model.Permission"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid request or missing required fields",
-                        "schema": {
-                            "$ref": "#/definitions/helper.Response"
-                        }
-                    },
-                    "409": {
-                        "description": "Permission already exists",
-                        "schema": {
-                            "$ref": "#/definitions/helper.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "Failed to create permission or update schema",
-                        "schema": {
-                            "$ref": "#/definitions/helper.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/permissions/{id}": {
-            "get": {
-                "description": "Retrieves a single permission's details by its unique identifier",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Permissions"
-                ],
-                "summary": "Get permission by ID",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "example": "\"123e4567-e89b-12d3-a456-426614174000\"",
-                        "description": "Permission ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Permission retrieved successfully",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/helper.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/model.Permission"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "400": {
-                        "description": "ID is required",
-                        "schema": {
-                            "$ref": "#/definitions/helper.Response"
-                        }
-                    },
-                    "404": {
-                        "description": "Permission not found",
-                        "schema": {
-                            "$ref": "#/definitions/helper.Response"
-                        }
-                    }
-                }
-            }
-        },
         "/register": {
             "post": {
                 "description": "Creates a new user account with the provided details. Optionally sends OTP for Aadhaar verification if Aadhaar number is provided.",
@@ -635,9 +539,299 @@ const docTemplate = `{
                 }
             }
         },
+        "/remove/{role}/by/{userID}": {
+            "delete": {
+                "description": "Removes a specified role from a user and returns the updated user details with remaining roles and permissions",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Remove a role from a user",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "userID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Role Name",
+                        "name": "role",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Role removed successfully",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/helper.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/model.AssignRolePermission"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid user ID or role",
+                        "schema": {
+                            "$ref": "#/definitions/helper.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "User or Role not found",
+                        "schema": {
+                            "$ref": "#/definitions/helper.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/helper.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/resources": {
+            "get": {
+                "description": "Get resources with optional filtering by ID or name",
+                "tags": [
+                    "Resources"
+                ],
+                "summary": "Get resources",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter by resource ID",
+                        "name": "id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by resource name",
+                        "name": "name",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/helper.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/model.Resource"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Creates a new resource with the provided details",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Resources"
+                ],
+                "summary": "Create a new resource",
+                "parameters": [
+                    {
+                        "description": "Resource creation data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.CreateResourceRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Resource created successfully",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/helper.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/model.Resource"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body",
+                        "schema": {
+                            "$ref": "#/definitions/helper.Response"
+                        }
+                    },
+                    "409": {
+                        "description": "Resource already exists",
+                        "schema": {
+                            "$ref": "#/definitions/helper.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to create resource",
+                        "schema": {
+                            "$ref": "#/definitions/helper.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/resources/{id}": {
+            "put": {
+                "description": "Updates an existing resource with the provided details",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Resources"
+                ],
+                "summary": "Update a resource",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Resource ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Resource update data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.CreateResourceRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Resource updated successfully",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/helper.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/model.Resource"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body",
+                        "schema": {
+                            "$ref": "#/definitions/helper.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Resource not found",
+                        "schema": {
+                            "$ref": "#/definitions/helper.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to update resource",
+                        "schema": {
+                            "$ref": "#/definitions/helper.Response"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Deletes an existing resource by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Resources"
+                ],
+                "summary": "Delete a resource",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Resource ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Resource deleted successfully",
+                        "schema": {
+                            "$ref": "#/definitions/helper.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid resource ID",
+                        "schema": {
+                            "$ref": "#/definitions/helper.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to delete resource",
+                        "schema": {
+                            "$ref": "#/definitions/helper.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/roles": {
             "get": {
-                "description": "Retrieves a list of all roles in the system",
+                "description": "Retrieves all roles with optional filtering by ID or name",
                 "consumes": [
                     "application/json"
                 ],
@@ -647,7 +841,21 @@ const docTemplate = `{
                 "tags": [
                     "Roles"
                 ],
-                "summary": "Get all roles",
+                "summary": "Get  roles",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter by role ID",
+                        "name": "id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by role name",
+                        "name": "name",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Roles retrieved successfully",
@@ -679,7 +887,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Creates a new role with the provided details and updates the authorization schema",
+                "description": "Creates a new role with associated permissions",
                 "consumes": [
                     "application/json"
                 ],
@@ -689,10 +897,10 @@ const docTemplate = `{
                 "tags": [
                     "Roles"
                 ],
-                "summary": "Create a new role",
+                "summary": "Create a new role with permissions",
                 "parameters": [
                     {
-                        "description": "Role creation data",
+                        "description": "Role and permissions data",
                         "name": "request",
                         "in": "body",
                         "required": true,
@@ -721,7 +929,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Invalid request or missing required fields",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/helper.Response"
                         }
@@ -733,7 +941,7 @@ const docTemplate = `{
                         }
                     },
                     "500": {
-                        "description": "Failed to create role or update schema",
+                        "description": "Failed to create role",
                         "schema": {
                             "$ref": "#/definitions/helper.Response"
                         }
@@ -742,8 +950,8 @@ const docTemplate = `{
             }
         },
         "/roles/{id}": {
-            "get": {
-                "description": "Retrieves a single role's details by its unique identifier",
+            "put": {
+                "description": "Updates an existing role and its permissions",
                 "consumes": [
                     "application/json"
                 ],
@@ -753,20 +961,28 @@ const docTemplate = `{
                 "tags": [
                     "Roles"
                 ],
-                "summary": "Get role by ID",
+                "summary": "Update a role with permissions",
                 "parameters": [
                     {
                         "type": "string",
-                        "example": "\"123e4567-e89b-12d3-a456-426614174000\"",
                         "description": "Role ID",
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "Role and permissions data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.CreateRoleRequest"
+                        }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Role retrieved successfully",
+                        "description": "Role updated successfully",
                         "schema": {
                             "allOf": [
                                 {
@@ -784,13 +1000,61 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "ID is required",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/helper.Response"
                         }
                     },
                     "404": {
                         "description": "Role not found",
+                        "schema": {
+                            "$ref": "#/definitions/helper.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to update role",
+                        "schema": {
+                            "$ref": "#/definitions/helper.Response"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Deletes a role and all its associated permissions",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Roles"
+                ],
+                "summary": "Delete a role",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Role ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Role deleted successfully",
+                        "schema": {
+                            "$ref": "#/definitions/helper.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid role ID",
+                        "schema": {
+                            "$ref": "#/definitions/helper.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to delete role",
                         "schema": {
                             "$ref": "#/definitions/helper.Response"
                         }
@@ -844,6 +1108,50 @@ const docTemplate = `{
                 }
             }
         },
+        "/update/schema": {
+            "get": {
+                "description": "update schema by Retrieves all roles",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SpiceDB"
+                ],
+                "summary": "update spice db schema",
+                "responses": {
+                    "200": {
+                        "description": "Roles retrieved successfully",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/helper.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/model.Role"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to retrieve roles",
+                        "schema": {
+                            "$ref": "#/definitions/helper.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/users": {
             "get": {
                 "description": "Retrieves a list of all users including their roles, permissions, and address information",
@@ -889,6 +1197,67 @@ const docTemplate = `{
             }
         },
         "/users/{id}": {
+            "get": {
+                "description": "Retrieves a single user's details including roles, permissions, and address information by their unique ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Get user by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "\"123e4567-e89b-12d3-a456-426614174000\"",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User fetched successfully",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/helper.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/model.UserRes"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "ID is required",
+                        "schema": {
+                            "$ref": "#/definitions/helper.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "User not found",
+                        "schema": {
+                            "$ref": "#/definitions/helper.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error when fetching user or related data",
+                        "schema": {
+                            "$ref": "#/definitions/helper.Response"
+                        }
+                    }
+                }
+            },
             "put": {
                 "description": "Updates user information by ID. Only provided fields will be updated (partial update supported).",
                 "consumes": [
@@ -1017,6 +1386,24 @@ const docTemplate = `{
                 }
             }
         },
+        "model.Action": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "description": "Use string for ID",
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
         "model.Address": {
             "type": "object",
             "properties": {
@@ -1112,24 +1499,6 @@ const docTemplate = `{
                 }
             }
         },
-        "model.AssignPermissionRequest": {
-            "type": "object",
-            "required": [
-                "permissions",
-                "role"
-            ],
-            "properties": {
-                "permissions": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "role": {
-                    "type": "string"
-                }
-            }
-        },
         "model.AssignRolePermission": {
             "type": "object",
             "properties": {
@@ -1142,10 +1511,10 @@ const docTemplate = `{
                 "is_validated": {
                     "type": "boolean"
                 },
-                "role_permissions": {
+                "roles": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/model.RoleResp"
+                        "$ref": "#/definitions/model.RoleDetail"
                     }
                 },
                 "updated_at": {
@@ -1171,51 +1540,44 @@ const docTemplate = `{
                 }
             }
         },
-        "model.ConnRolePermissionResponse": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "is_active": {
-                    "type": "boolean"
-                },
-                "permissions": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.Permission"
-                    }
-                },
-                "role": {
-                    "$ref": "#/definitions/model.Role"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "model.CreatePermissionRequest": {
+        "model.CreateActionRequest": {
             "type": "object",
             "required": [
                 "name"
             ],
             "properties": {
-                "action": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
                 "name": {
+                    "description": "Action name",
                     "type": "string"
+                }
+            }
+        },
+        "model.CreatePermissionInput": {
+            "type": "object",
+            "required": [
+                "actions",
+                "resource"
+            ],
+            "properties": {
+                "actions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "resource": {
                     "type": "string"
-                },
-                "source": {
+                }
+            }
+        },
+        "model.CreateResourceRequest": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "name": {
+                    "description": "Action name",
                     "type": "string"
                 }
             }
@@ -1231,6 +1593,12 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string"
+                },
+                "permissions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.CreatePermissionInput"
+                    }
                 },
                 "source": {
                     "type": "string"
@@ -1344,13 +1712,35 @@ const docTemplate = `{
         "model.Permission": {
             "type": "object",
             "properties": {
-                "action": {
-                    "type": "string"
+                "actions": {
+                    "description": "Actions  pq.StringArray ` + "`" + `json:\"actions\" gorm:\"type:text[]\"` + "`" + `",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "created_at": {
                     "type": "string"
                 },
-                "description": {
+                "id": {
+                    "description": "Use string for ID",
+                    "type": "string"
+                },
+                "resource": {
+                    "type": "string"
+                },
+                "roleId": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.Resource": {
+            "type": "object",
+            "properties": {
+                "created_at": {
                     "type": "string"
                 },
                 "id": {
@@ -1360,25 +1750,7 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
-                "resource": {
-                    "type": "string"
-                },
-                "rolePermissions": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.RolePermission"
-                    }
-                },
-                "source": {
-                    "type": "string"
-                },
                 "updated_at": {
-                    "type": "string"
-                },
-                "valid_end_time": {
-                    "type": "string"
-                },
-                "valid_start_time": {
                     "type": "string"
                 }
             }
@@ -1399,10 +1771,10 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
-                "rolePermissions": {
+                "permissions": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/model.RolePermission"
+                        "$ref": "#/definitions/model.Permission"
                     }
                 },
                 "roles": {
@@ -1419,97 +1791,30 @@ const docTemplate = `{
                 }
             }
         },
+        "model.RoleDetail": {
+            "type": "object",
+            "properties": {
+                "permissions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.RolePermission"
+                    }
+                },
+                "role_name": {
+                    "type": "string"
+                }
+            }
+        },
         "model.RolePermission": {
             "type": "object",
             "properties": {
-                "created_at": {
-                    "type": "string"
-                },
-                "id": {
-                    "description": "Use string for ID",
-                    "type": "string"
-                },
-                "is_active": {
-                    "type": "boolean"
-                },
-                "permission": {
-                    "$ref": "#/definitions/model.Permission"
-                },
-                "permissionID": {
-                    "type": "string"
-                },
-                "role": {
-                    "$ref": "#/definitions/model.Role"
-                },
-                "roleID": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "model.RolePermissionResponse": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "is_active": {
-                    "type": "boolean"
-                },
-                "permission": {
+                "actions": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/model.Permission"
+                        "type": "string"
                     }
                 },
-                "role": {
-                    "$ref": "#/definitions/model.Role"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "model.RolePermissionWrapper": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/model.RolePermissionResponse"
-                },
-                "timestamp": {
-                    "type": "string"
-                }
-            }
-        },
-        "model.RoleRes": {
-            "type": "object",
-            "properties": {
-                "permissions": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.Permission"
-                    }
-                },
-                "role_name": {
-                    "type": "string"
-                }
-            }
-        },
-        "model.RoleResp": {
-            "type": "object",
-            "properties": {
-                "permissions": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.Permission"
-                    }
-                },
-                "role_name": {
+                "resource": {
                     "type": "string"
                 }
             }
@@ -1681,10 +1986,10 @@ const docTemplate = `{
                 "photo": {
                     "type": "string"
                 },
-                "role_permissions": {
+                "roles": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/model.RoleResp"
+                        "$ref": "#/definitions/model.RoleDetail"
                     }
                 },
                 "share_code": {
@@ -1746,10 +2051,10 @@ const docTemplate = `{
                 "photo": {
                     "type": "string"
                 },
-                "role_permissions": {
+                "roles": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/model.RoleRes"
+                        "$ref": "#/definitions/model.RoleDetail"
                     }
                 },
                 "share_code": {

@@ -13,6 +13,7 @@ func UserRoutes(r *gin.RouterGroup, database *gorm.DB, s user.UserHandler) {
 	r.GET("/users/:id", s.GetUserByIdRestApi)
 	r.PATCH("/users/:id", s.UpdateUserRestApi)
 	r.POST("/assign-role", s.AssignRoleRestApi)
+	r.DELETE("/remove/:role/by/:userID", s.DeleteAssignRoleRestApi)
 	r.POST("/forgot-password", s.PasswordResetHandler)
 	r.POST("token-transaction", s.TokenUsageHandler)
 }
