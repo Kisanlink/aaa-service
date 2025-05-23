@@ -12,7 +12,7 @@ import (
 )
 
 func (s *Server) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.GetUserResponse, error) {
-	users, err := s.userService.GetUsers()
+	users, err := s.userService.GetUsers(0, 0)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to fetch users: %v", err)
 	}
@@ -43,6 +43,11 @@ func (s *Server) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.GetUs
 			}
 		}
 
+		// Get updated user details with roles and permissions
+		rolesResponse, err := s.userService.GetUserRolesWithPermissions(user.ID)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "Failed to fetch user roles: %v", err)
+		}
 		pbUser := &pb.User{
 			Id:            user.ID,
 			Username:      user.Username,
@@ -63,6 +68,7 @@ func (s *Server) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.GetUs
 			MobileNumber:  user.MobileNumber,
 			CountryCode:   helper.SafeString(user.CountryCode),
 			Address:       pbAddress,
+			Roles:         convertRoleResponseToPB(rolesResponse),
 		}
 
 		pbUsers = append(pbUsers, pbUser)

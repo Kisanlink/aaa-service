@@ -14,7 +14,7 @@ type RoleServiceInterface interface {
 	CreateRoleWithPermissions(role *model.Role, permissions []model.Permission) error
 	GetRoleByName(name string) (*model.Role, error)
 	FindRoleByID(id string) (*model.Role, error)
-	FindRoles(filter map[string]interface{}) ([]model.Role, error)
+	FindRoles(filter map[string]interface{}, page, limit int) ([]model.Role, error)
 	UpdateRoleWithPermissions(id string, updatedRole model.Role, permissions []model.Permission) error
 	DeleteRole(id string) error
 }
@@ -88,7 +88,7 @@ func (s *RoleService) FindRoleByID(id string) (*model.Role, error) {
 	return role, nil
 }
 
-func (s *RoleService) FindRoles(filter map[string]interface{}) ([]model.Role, error) {
+func (s *RoleService) FindRoles(filter map[string]interface{}, page, limit int) ([]model.Role, error) {
 	// Validate filter parameters
 	if id, ok := filter["id"]; ok {
 		if id == "" {
@@ -102,7 +102,7 @@ func (s *RoleService) FindRoles(filter map[string]interface{}) ([]model.Role, er
 		}
 	}
 
-	roles, err := s.repo.FindRoles(filter)
+	roles, err := s.repo.FindRoles(filter, page, limit)
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve roles: %w", err)
 	}

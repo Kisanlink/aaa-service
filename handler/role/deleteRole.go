@@ -33,7 +33,7 @@ func (h *RoleHandler) DeleteRoleRestApi(c *gin.Context) {
 	}
 
 	// Get all roles to build SpiceDB schema
-	roles, err := h.roleService.FindRoles(map[string]interface{}{})
+	roles, err := h.roleService.FindRoles(map[string]interface{}{}, 0, 0)
 	if err != nil {
 		helper.SendErrorResponse(c.Writer, http.StatusInternalServerError, []string{err.Error()})
 		return

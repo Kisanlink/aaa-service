@@ -37,16 +37,22 @@ definitions:
   model.AadhaarOTPResponse:
     properties:
       entity:
+        example: aadhaar
         type: string
       otp_message:
+        example: OTP sent successfully
         type: string
       reference_id:
+        example: REF987654321
         type: string
       status_code:
+        example: 200
         type: integer
       timestamp:
+        example: 1672531200
         type: integer
       transaction_id:
+        example: TXN123456789
         type: string
     type: object
   model.Action:
@@ -96,56 +102,78 @@ definitions:
   model.AddressRes:
     properties:
       country:
+        example: USA
         type: string
       created_at:
+        example: "2023-01-01T12:00:00Z"
         type: string
       district:
+        example: Central District
         type: string
       full_address:
+        example: 123 Main Street, Near Central Park, Metro City, California, USA -
+          123456
         type: string
       house:
+        example: "123"
         type: string
       id:
+        example: 123e4567-e89b-12d3-a456-426614174000
         type: string
       landmark:
+        example: Near Central Park
         type: string
       pincode:
+        example: "123456"
         type: string
       post_office:
+        example: Main Post Office
         type: string
       state:
+        example: California
         type: string
       street:
+        example: Main Street
         type: string
       subdistrict:
+        example: Downtown
         type: string
       updated_at:
+        example: "2023-01-02T10:30:00Z"
         type: string
       vtc:
+        example: Metro City
         type: string
     type: object
   model.AssignRolePermission:
     properties:
       created_at:
+        example: "2023-01-01T12:00:00Z"
         type: string
       id:
+        example: 123e4567-e89b-12d3-a456-426614174000
         type: string
       is_validated:
+        example: true
         type: boolean
       roles:
         items:
           $ref: '#/definitions/model.RoleDetail'
         type: array
       updated_at:
+        example: "2023-01-02T10:30:00Z"
         type: string
       username:
+        example: johndoe
         type: string
     type: object
   model.AssignRoleRequest:
     properties:
       role:
+        example: admin
         type: string
       user_id:
+        example: 123e4567-e89b-12d3-a456-426614174000
         type: string
     required:
     - role
@@ -154,7 +182,7 @@ definitions:
   model.CreateActionRequest:
     properties:
       name:
-        description: Action name
+        example: read
         type: string
     required:
     - name
@@ -162,10 +190,15 @@ definitions:
   model.CreatePermissionInput:
     properties:
       actions:
+        example:
+        - read
+        - write
+        - delete
         items:
           type: string
         type: array
       resource:
+        example: document
         type: string
     required:
     - actions
@@ -174,7 +207,7 @@ definitions:
   model.CreateResourceRequest:
     properties:
       name:
-        description: Action name
+        example: document
         type: string
     required:
     - name
@@ -182,14 +215,17 @@ definitions:
   model.CreateRoleRequest:
     properties:
       description:
+        example: Administrator role with full access
         type: string
       name:
+        example: admin
         type: string
       permissions:
         items:
           $ref: '#/definitions/model.CreatePermissionInput'
         type: array
       source:
+        example: system
         type: string
     required:
     - name
@@ -197,14 +233,19 @@ definitions:
   model.CreateUserRequest:
     properties:
       aadhaar_number:
+        example: "123456789012"
         type: string
       country_code:
+        example: "+91"
         type: string
       mobile_number:
+        example: 9876543210
         type: integer
       password:
+        example: securePassword123
         type: string
       username:
+        example: johndoe
         type: string
     required:
     - mobile_number
@@ -212,13 +253,13 @@ definitions:
   model.CreditUsageRequest:
     properties:
       tokens:
-        description: Required for transactions
+        example: 100
         type: integer
       transaction_type:
-        description: '"debit", "credit", or nil'
+        example: debit
         type: string
       user_id:
-        description: Using Base.ID
+        example: 123e4567-e89b-12d3-a456-426614174000
         type: string
     required:
     - user_id
@@ -226,8 +267,10 @@ definitions:
   model.LoginRequest:
     properties:
       password:
+        example: securePassword123
         type: string
       username:
+        example: johndoe
         type: string
     required:
     - password
@@ -236,29 +279,39 @@ definitions:
   model.MinimalUser:
     properties:
       country_code:
+        example: "+91"
         type: string
       created_at:
+        example: "2023-01-01T12:00:00Z"
         type: string
       id:
+        example: 123e4567-e89b-12d3-a456-426614174000
         type: string
       is_validated:
+        example: true
         type: boolean
       mobile_number:
+        example: 9876543210
         type: integer
       otp_response:
         $ref: '#/definitions/model.AadhaarOTPResponse'
       updated_at:
+        example: "2023-01-02T10:30:00Z"
         type: string
       username:
+        example: johndoe
         type: string
     type: object
   model.PasswordResetFlowRequest:
     properties:
       new_password:
+        example: newSecurePassword123
         type: string
       otp:
+        example: "123456"
         type: string
       username:
+        example: johndoe
         type: string
     required:
     - username
@@ -325,38 +378,54 @@ definitions:
           $ref: '#/definitions/model.RolePermission'
         type: array
       role_name:
+        example: admin
         type: string
     type: object
   model.RolePermission:
     properties:
       actions:
+        example:
+        - read
+        - write
+        - delete
         items:
           type: string
         type: array
       resource:
+        example: document
         type: string
     type: object
   model.UpdateUserRequest:
     properties:
       care_of:
+        example: Father
         type: string
       date_of_birth:
+        example: "1990-01-01"
         type: string
       email_hash:
+        example: a1b2c3d4e5f6
         type: string
       message:
+        example: Profile updated
         type: string
       mobile_number:
+        example: 9876543210
         type: integer
       name:
+        example: John Doe
         type: string
       photo:
+        example: base64encodedimage
         type: string
       status:
+        example: active
         type: string
       username:
+        example: johndoe
         type: string
       year_of_birth:
+        example: "1990"
         type: string
     type: object
   model.User:
@@ -420,89 +489,124 @@ definitions:
   model.UserRes:
     properties:
       aadhaar_number:
+        example: "123456789012"
         type: string
       address:
         $ref: '#/definitions/model.AddressRes'
       care_of:
+        example: Father
         type: string
       country_code:
+        example: "+91"
         type: string
       created_at:
+        example: "2023-01-01T12:00:00Z"
         type: string
       date_of_birth:
+        example: "1990-01-01"
         type: string
       email_hash:
+        example: a1b2c3d4e5f6
         type: string
       id:
+        example: 123e4567-e89b-12d3-a456-426614174000
         type: string
       is_validated:
+        example: true
         type: boolean
       message:
+        example: Welcome
         type: string
       mobile_number:
+        example: 9876543210
         type: integer
       name:
+        example: John Doe
         type: string
       password:
+        example: hashedpassword
         type: string
       photo:
+        example: base64encodedimage
         type: string
       roles:
         items:
           $ref: '#/definitions/model.RoleDetail'
         type: array
       share_code:
+        example: SHARE123
         type: string
       status:
+        example: active
         type: string
       updated_at:
+        example: "2023-01-02T10:30:00Z"
         type: string
       username:
+        example: johndoe
         type: string
       year_of_birth:
+        example: "1990"
         type: string
     type: object
   model.UserResponse:
     properties:
       aadhaar_number:
+        example: "123456789012"
         type: string
       address:
         $ref: '#/definitions/model.AddressRes'
       care_of:
+        example: Father
         type: string
       country_code:
+        example: "+91"
         type: string
       created_at:
+        example: "2023-01-01T12:00:00Z"
         type: string
       date_of_birth:
+        example: "1990-01-01"
         type: string
       email_hash:
+        example: a1b2c3d4e5f6
         type: string
       id:
+        example: 123e4567-e89b-12d3-a456-426614174000
         type: string
       is_validated:
+        example: true
         type: boolean
       message:
+        example: Welcome
         type: string
       mobile_number:
+        example: 9876543210
         type: integer
       name:
+        example: John Doe
         type: string
       photo:
+        example: base64encodedimage
         type: string
       roles:
         items:
           $ref: '#/definitions/model.RoleDetail'
         type: array
       share_code:
+        example: SHARE123
         type: string
       status:
+        example: active
         type: string
       updated_at:
+        example: "2023-01-02T10:30:00Z"
         type: string
       username:
+        example: johndoe
         type: string
       year_of_birth:
+        example: "1990"
         type: string
     type: object
   model.UserRole:
@@ -538,7 +642,8 @@ paths:
     get:
       consumes:
       - application/json
-      description: Retrieves all actions with optional filtering by ID or name
+      description: Retrieves actions with optional filtering by ID or name and pagination
+        support
       parameters:
       - description: Filter by action ID
         in: query
@@ -548,6 +653,14 @@ paths:
         in: query
         name: name
         type: string
+      - description: Page number (starts from 1)
+        in: query
+        name: page
+        type: integer
+      - description: Number of items per page
+        in: query
+        name: limit
+        type: integer
       produces:
       - application/json
       responses:
@@ -566,7 +679,7 @@ paths:
           description: Failed to retrieve actions
           schema:
             $ref: '#/definitions/helper.Response'
-      summary: Get  actions
+      summary: Get actions with pagination
       tags:
       - Actions
     post:
@@ -917,7 +1030,7 @@ paths:
       - Users
   /resources:
     get:
-      description: Get resources with optional filtering by ID or name
+      description: Get resources with optional filtering by ID or name and pagination
       parameters:
       - description: Filter by resource ID
         in: query
@@ -927,6 +1040,14 @@ paths:
         in: query
         name: name
         type: string
+      - description: Page number (starts from 1)
+        in: query
+        name: page
+        type: integer
+      - description: Number of items per page
+        in: query
+        name: limit
+        type: integer
       responses:
         "200":
           description: OK
@@ -1056,7 +1177,8 @@ paths:
     get:
       consumes:
       - application/json
-      description: Retrieves all roles with optional filtering by ID or name
+      description: Retrieves roles with optional filtering by ID or name and pagination
+        support
       parameters:
       - description: Filter by role ID
         in: query
@@ -1066,6 +1188,14 @@ paths:
         in: query
         name: name
         type: string
+      - description: Page number (starts from 1)
+        in: query
+        name: page
+        type: integer
+      - description: Number of items per page
+        in: query
+        name: limit
+        type: integer
       produces:
       - application/json
       responses:
@@ -1084,7 +1214,7 @@ paths:
           description: Failed to retrieve roles
           schema:
             $ref: '#/definitions/helper.Response'
-      summary: Get  roles
+      summary: Get roles with pagination
       tags:
       - Roles
     post:
@@ -1260,8 +1390,17 @@ paths:
     get:
       consumes:
       - application/json
-      description: Retrieves a list of all users including their roles, permissions,
-        and address information
+      description: Retrieves a list of users including their roles, permissions, and
+        address information with optional pagination
+      parameters:
+      - description: Page number (starts from 1)
+        in: query
+        name: page
+        type: integer
+      - description: Number of items per page
+        in: query
+        name: limit
+        type: integer
       produces:
       - application/json
       responses:
@@ -1280,7 +1419,7 @@ paths:
           description: Internal server error when fetching users or their details
           schema:
             $ref: '#/definitions/helper.Response'
-      summary: Get all users
+      summary: Get users with pagination
       tags:
       - Users
   /users/{id}:

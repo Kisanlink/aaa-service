@@ -14,7 +14,7 @@ type ResourceRepositoryInterface interface {
 	CheckIfResourceExists(resourceName string) error
 	CreateResource(newResource *model.Resource) error
 	FindResourceByID(id string) (*model.Resource, error)
-	FindResources(filter map[string]interface{}) ([]model.Resource, error)
+	FindResources(filter map[string]interface{}, page, limit int) ([]model.Resource, error)
 	UpdateResource(id string, updatedResource model.Resource) error
 	DeleteResource(id string) error
 }
@@ -58,7 +58,7 @@ func (repo *ResourceRepository) FindResourceByID(id string) (*model.Resource, er
 	return &resource, nil
 }
 
-func (repo *ResourceRepository) FindResources(filter map[string]interface{}) ([]model.Resource, error) {
+func (repo *ResourceRepository) FindResources(filter map[string]interface{}, page, limit int) ([]model.Resource, error) {
 	var resources []model.Resource
 	query := repo.DB.Table("resources")
 
@@ -70,6 +70,12 @@ func (repo *ResourceRepository) FindResources(filter map[string]interface{}) ([]
 		if nameStr, ok := name.(string); ok {
 			query = query.Where("name ILIKE ?", "%"+nameStr+"%") // Case-insensitive partial match
 		}
+	}
+
+	// Apply pagination if both page and limit are provided and valid
+	if page > 0 && limit > 0 {
+		offset := (page - 1) * limit
+		query = query.Offset(offset).Limit(limit)
 	}
 
 	err := query.Find(&resources).Error

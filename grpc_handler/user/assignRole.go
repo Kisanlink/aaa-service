@@ -2,9 +2,12 @@ package user
 
 import (
 	"context"
+	"log"
 	"net/http"
 	"time"
 
+	"github.com/Kisanlink/aaa-service/client"
+	"github.com/Kisanlink/aaa-service/helper"
 	"github.com/Kisanlink/aaa-service/model"
 	"github.com/kisanlink/protobuf/pb-aaa"
 	"google.golang.org/grpc/codes"
@@ -13,7 +16,7 @@ import (
 
 func (s *Server) AssignRole(ctx context.Context, req *pb.AssignRoleToUserRequest) (*pb.AssignRoleToUserResponse, error) {
 	// Validate user exists
-	_, err := s.userService.GetUserByID(req.UserId)
+	user, err := s.userService.GetUserByID(req.UserId)
 	if err != nil {
 		return nil, status.Errorf(codes.NotFound, "User with ID %s not found", req.UserId)
 	}
@@ -38,10 +41,40 @@ func (s *Server) AssignRole(ctx context.Context, req *pb.AssignRoleToUserRequest
 		}
 		return nil, status.Errorf(codes.Internal, "failed to assign role to user: %v", err)
 	}
-	// Get updated user details
-	updatedUser, err := s.userService.GetUserByID(req.UserId)
+	userRoles, err := s.userService.FindUserRoles(user.ID)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "Failed to fetch user details: %v", err)
+
+		return nil, status.Errorf(codes.Internal, "failed to fetch user role: %v", err)
+	}
+	roleNames, err := helper.ExtractRoleNames(userRoles)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to extract role name: %v", err)
+
+	}
+
+	err = client.DeleteRelationships(
+		roleNames,
+		user.Username,
+		user.ID,
+	)
+
+	if err != nil {
+		log.Printf("Error deleting relationships: %v", err)
+	}
+
+	err = client.CreateRelationships(
+		roleNames,
+		user.Username,
+		user.ID,
+	)
+
+	if err != nil {
+		log.Printf("Error creating relationships: %v", err)
+	}
+	// Get updated user details with roles and permissions
+	rolesResponse, err := s.userService.GetUserRolesWithPermissions(user.ID)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "Failed to fetch user roles: %v", err)
 	}
 
 	// Build response
@@ -51,10 +84,40 @@ func (s *Server) AssignRole(ctx context.Context, req *pb.AssignRoleToUserRequest
 		Message:       "Role assigned to user successfully",
 		DataTimeStamp: time.Now().Format(time.RFC3339),
 		Data: &pb.AssignRolePermission{
-			Id:          updatedUser.ID,
-			Username:    updatedUser.Username,
-			Password:    "", // Explicitly empty for security
-			IsValidated: updatedUser.IsValidated,
-		},
+			Id:          user.ID,
+			Username:    user.Username,
+			IsValidated: user.IsValidated,
+			CreatedAt:   user.CreatedAt.Format(time.RFC3339),
+			UpdatedAt:   user.UpdatedAt.Format(time.RFC3339),
+			Roles:       convertRoleResponseToPB(rolesResponse)},
 	}, nil
+}
+
+// convertRoleResponseToPB converts RoleResponse to protobuf Role format
+func convertRoleResponseToPB(rolesResponse *model.RoleResponse) []*pb.Role {
+	var pbRoles []*pb.Role
+	for _, roleDetail := range rolesResponse.Roles {
+		pbRoles = append(pbRoles, convertRoleDetailToPB(roleDetail))
+	}
+	return pbRoles
+}
+
+// convertRoleDetailToPB converts a single RoleDetail to protobuf Role format
+func convertRoleDetailToPB(roleDetail model.RoleDetail) *pb.Role {
+	return &pb.Role{
+		RoleName:    roleDetail.RoleName,
+		Permissions: convertPermissionsToPB(roleDetail.Permissions),
+	}
+}
+
+// convertPermissionsToPB converts RolePermissions to protobuf Permissions
+func convertPermissionsToPB(permissions []model.RolePermission) []*pb.Permission {
+	var pbPermissions []*pb.Permission
+	for _, perm := range permissions {
+		pbPermissions = append(pbPermissions, &pb.Permission{
+			Resource: perm.Resource,
+			Actions:  perm.Actions,
+		})
+	}
+	return pbPermissions
 }

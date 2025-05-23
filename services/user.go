@@ -15,7 +15,7 @@ type UserServiceInterface interface {
 	CheckIfUserExists(username string) error
 	GetUserByID(id string) (*model.User, error)
 	GetAddressByID(addressId string) (*model.Address, error)
-	GetUsers() ([]model.User, error)
+	GetUsers(page, limit int) ([]model.User, error)
 	FindUserRoles(userID string) ([]model.UserRole, error)
 	CreateUserRoles(userRole model.UserRole) error
 	GetUserRoleByID(userID string) (*model.User, error)
@@ -89,9 +89,8 @@ func (s *UserService) GetAddressByID(addressId string) (*model.Address, error) {
 	}
 	return result, nil
 }
-
-func (s *UserService) GetUsers() ([]model.User, error) {
-	result, err := s.repo.GetUsers()
+func (s *UserService) GetUsers(page, limit int) ([]model.User, error) {
+	result, err := s.repo.GetUsers(page, limit)
 	if err != nil {
 		return nil, helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to get users: %w", err))
 	}
@@ -100,7 +99,6 @@ func (s *UserService) GetUsers() ([]model.User, error) {
 	}
 	return result, nil
 }
-
 func (s *UserService) FindUserRoles(userID string) ([]model.UserRole, error) {
 	result, err := s.repo.FindUserRoles(userID)
 	if err != nil {
@@ -260,7 +258,7 @@ func (s *UserService) GetUserRolesWithPermissions(userID string) (*model.RoleRes
 		// 4. Get the role with its permissions using existing FindRoles method
 		roles, err := s.roleRepo.FindRoles(map[string]interface{}{
 			"id": userRole.Role.ID,
-		})
+		}, 0, 0)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get role %s: %w", userRole.Role.ID, err)
 		}

@@ -2,6 +2,7 @@ package user
 
 import (
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/Kisanlink/aaa-service/helper"
@@ -9,17 +10,23 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// GetUserRestApi retrieves all users with their details
-// @Summary Get all users
-// @Description Retrieves a list of all users including their roles, permissions, and address information
+// GetUserRestApi retrieves users with pagination support
+// @Summary Get users with pagination
+// @Description Retrieves a list of users including their roles, permissions, and address information with optional pagination
 // @Tags Users
 // @Accept json
 // @Produce json
+// @Param page query int false "Page number (starts from 1)"
+// @Param limit query int false "Number of items per page"
 // @Success 200 {object} helper.Response{data=[]model.UserRes} "Users fetched successfully"
 // @Failure 500 {object} helper.Response "Internal server error when fetching users or their details"
 // @Router /users [get]
 func (s *UserHandler) GetUserRestApi(c *gin.Context) {
-	users, err := s.userService.GetUsers()
+	// Get pagination parameters from query, default to 0 (which means no pagination)
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "0"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "0"))
+
+	users, err := s.userService.GetUsers(page, limit)
 	if err != nil {
 		helper.SendErrorResponse(c.Writer, http.StatusInternalServerError, []string{"Failed to fetch users"})
 		return

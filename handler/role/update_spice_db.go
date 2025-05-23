@@ -20,7 +20,7 @@ import (
 // @Router /update/schema [get]
 func (h *RoleHandler) UpdateSpiceDb(c *gin.Context) {
 	filter := make(map[string]interface{})
-	roles, err := h.roleService.FindRoles(filter)
+	roles, err := h.roleService.FindRoles(filter, 0, 0)
 	if err != nil {
 		helper.SendErrorResponse(c.Writer, http.StatusInternalServerError, []string{err.Error()})
 		return

@@ -13,8 +13,8 @@ import (
 func CheckPermission(
 	username string, // "alice"
 	action string, // "edit"
-	resourceType string, // "farmers"
-	resourceID string, // "123"
+	resourceType string, // "db/farmers"
+	resourceID string, // "123" it is userid
 ) (bool, error) {
 	// Validate parameters
 	if username == "" || action == "" || resourceType == "" || resourceID == "" {

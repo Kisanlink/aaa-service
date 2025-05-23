@@ -15,7 +15,7 @@ type RoleRepositoryInterface interface {
 	CreateRoleWithPermissions(role *model.Role, permissions []model.Permission) error
 	GetRoleByName(name string) (*model.Role, error)
 	FindRoleByID(id string) (*model.Role, error)
-	FindRoles(filter map[string]interface{}) ([]model.Role, error)
+	FindRoles(filter map[string]interface{}, page, limit int) ([]model.Role, error)
 	UpdateRoleWithPermissions(id string, updatedRole model.Role, permissions []model.Permission) error
 	DeleteRole(id string) error
 }
@@ -100,8 +100,7 @@ func (repo *RoleRepository) FindRoleByID(id string) (*model.Role, error) {
 	return &role, nil
 }
 
-// FindRoles retrieves roles with optional filtering by ID or name
-func (repo *RoleRepository) FindRoles(filter map[string]interface{}) ([]model.Role, error) {
+func (repo *RoleRepository) FindRoles(filter map[string]interface{}, page, limit int) ([]model.Role, error) {
 	var roles []model.Role
 	query := repo.DB.Preload("Permissions")
 
@@ -115,6 +114,12 @@ func (repo *RoleRepository) FindRoles(filter map[string]interface{}) ([]model.Ro
 		}
 	}
 
+	// Apply pagination if both page and limit are provided and valid
+	if page > 0 && limit > 0 {
+		offset := (page - 1) * limit
+		query = query.Offset(offset).Limit(limit)
+	}
+
 	err := query.Find(&roles).Error
 	if err != nil {
 		return nil, helper.NewAppError(http.StatusInternalServerError,
@@ -122,7 +127,6 @@ func (repo *RoleRepository) FindRoles(filter map[string]interface{}) ([]model.Ro
 	}
 	return roles, nil
 }
-
 func (repo *RoleRepository) UpdateRoleWithPermissions(id string, updatedRole model.Role, permissions []model.Permission) error {
 	tx := repo.DB.Begin()
 	defer func() {

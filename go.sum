@@ -117,6 +117,8 @@ github.com/jzelinskie/stringz v0.0.3 h1:0GhG3lVMYrYtIvRbxvQI6zqRTT1P1xyQlpa0FhfU
 github.com/jzelinskie/stringz v0.0.3/go.mod h1:hHYbgxJuNLRw91CmpuFsYEOyQqpDVFg8pvEh23vy4P0=
 github.com/kisanlink/protobuf v0.0.0-20250508102416-b66d4e5f9a60 h1:YqbsQ6wMiBgIMJX6PobahALD1wZnqujg/1Cs+FyzV8o=
 github.com/kisanlink/protobuf v0.0.0-20250508102416-b66d4e5f9a60/go.mod h1:ILhCEEYRycYagb1aVsEwj+0tk4Ue2kdtB6DYbVTUgP8=
+github.com/kisanlink/protobuf v0.0.0-20250522074649-a6aa0d37f907 h1:4W6iWYI7mEbfFOKU9waljKFh1+COqc/ZTahkfOPHH98=
+github.com/kisanlink/protobuf v0.0.0-20250522074649-a6aa0d37f907/go.mod h1:ILhCEEYRycYagb1aVsEwj+0tk4Ue2kdtB6DYbVTUgP8=
 github.com/kisielk/errcheck v1.5.0/go.mod h1:pFxgyoBC7bSaBwPgfKdkLd5X25qrDl4LWUI2bnpBCr8=
 github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+oQHNcck=
 github.com/klauspost/cpuid/v2 v2.0.9/go.mod h1:FInQzS24/EEf25PyTYn52gqo7WaD8xa0213Md/qVLRg=

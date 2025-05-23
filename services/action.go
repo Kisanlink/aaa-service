@@ -13,7 +13,7 @@ type ActionServiceInterface interface {
 	CheckIfActionExists(actionName string) error
 	CreateAction(newAction *model.Action) error
 	FindActionByID(id string) (*model.Action, error)
-	FindActions(filter map[string]interface{}) ([]model.Action, error)
+	FindActions(filter map[string]interface{}, page, limit int) ([]model.Action, error)
 	UpdateAction(id string, updatedAction model.Action) error
 	DeleteAction(id string) error
 }
@@ -55,8 +55,8 @@ func (s *ActionService) FindActionByID(id string) (*model.Action, error) {
 	return result, nil
 }
 
-func (s *ActionService) FindActions(filter map[string]interface{}) ([]model.Action, error) {
-	actions, err := s.repo.FindActions(filter)
+func (s *ActionService) FindActions(filter map[string]interface{}, page, limit int) ([]model.Action, error) {
+	actions, err := s.repo.FindActions(filter, page, limit)
 	if err != nil {
 		return nil, helper.NewAppError(http.StatusInternalServerError,
 			fmt.Errorf("failed to retrieve actions: %w", err))

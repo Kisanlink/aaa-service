@@ -66,6 +66,10 @@ func (s *Server) ValidateUser(ctx context.Context, req *pb.ValidateUserRequest) 
 		if err := s.userService.UpdateUser(*existingUser); err != nil {
 			return nil, err
 		}
+		rolesResponse, err := s.userService.GetUserRolesWithPermissions(existingUser.ID)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "Failed to fetch user roles: %v", err)
+		}
 		pbUser := &pb.User{
 			Id:            existingUser.ID,
 			Username:      existingUser.Username,
@@ -100,6 +104,7 @@ func (s *Server) ValidateUser(ctx context.Context, req *pb.ValidateUserRequest) 
 				CreatedAt:   existingUser.CreatedAt.Format(time.RFC3339Nano),
 				UpdatedAt:   existingUser.UpdatedAt.Format(time.RFC3339Nano),
 			},
+			Roles: convertRoleResponseToPB(rolesResponse),
 		}
 
 		return &pb.ValidateUserResponse{

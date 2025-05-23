@@ -13,7 +13,7 @@ type ResourceServiceInterface interface {
 	CheckIfResourceExists(resourceName string) error
 	CreateResource(newResource *model.Resource) error
 	FindResourceByID(id string) (*model.Resource, error)
-	FindResources(filter map[string]interface{}) ([]model.Resource, error)
+	FindResources(filter map[string]interface{}, page, limit int) ([]model.Resource, error)
 	UpdateResource(id string, updatedResource model.Resource) error
 	DeleteResource(id string) error
 }
@@ -54,15 +54,14 @@ func (s *ResourceService) FindResourceByID(id string) (*model.Resource, error) {
 	}
 	return result, nil
 }
-func (s *ResourceService) FindResources(filter map[string]interface{}) ([]model.Resource, error) {
-	resources, err := s.repo.FindResources(filter)
+func (s *ResourceService) FindResources(filter map[string]interface{}, page, limit int) ([]model.Resource, error) {
+	resources, err := s.repo.FindResources(filter, page, limit)
 	if err != nil {
 		return nil, helper.NewAppError(http.StatusInternalServerError,
 			fmt.Errorf("failed to retrieve resources: %w", err))
 	}
 	return resources, nil
 }
-
 func (s *ResourceService) UpdateResource(id string, updatedResource model.Resource) error {
 	err := s.repo.UpdateResource(id, updatedResource)
 	if err != nil {

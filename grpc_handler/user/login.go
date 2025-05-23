@@ -52,6 +52,11 @@ func (s *Server) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResp
 		return nil, status.Errorf(codes.Internal, "failed to set auth headers: %v", err)
 	}
 
+	// Get updated user details with roles and permissions
+	rolesResponse, err := s.userService.GetUserRolesWithPermissions(existingUser.ID)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "Failed to fetch user roles: %v", err)
+	}
 	// Build the response
 	response := &pb.LoginResponse{
 		StatusCode:    http.StatusOK,
@@ -65,6 +70,7 @@ func (s *Server) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResp
 			IsValidated: existingUser.IsValidated,
 			CreatedAt:   existingUser.CreatedAt.Format(time.RFC3339Nano),
 			UpdatedAt:   existingUser.UpdatedAt.Format(time.RFC3339Nano),
+			Roles:       convertRoleResponseToPB(rolesResponse),
 		},
 	}
 

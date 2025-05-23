@@ -16,7 +16,7 @@ type UserRepositoryInterface interface {
 	CheckIfUserExists(username string) error
 	GetUserByID(userID string) (*model.User, error)
 	GetAddressByID(addressId string) (*model.Address, error)
-	GetUsers() ([]model.User, error)
+	GetUsers(page, limit int) ([]model.User, error)
 	FindUserRoles(userID string) ([]model.UserRole, error)
 	CreateUserRoles(userRole model.UserRole) error
 	GetUserRoleByID(userID string) (*model.User, error)
@@ -92,15 +92,22 @@ func (repo *UserRepository) GetAddressByID(addressId string) (*model.Address, er
 	return &address, nil
 }
 
-func (repo *UserRepository) GetUsers() ([]model.User, error) {
+func (repo *UserRepository) GetUsers(page, limit int) ([]model.User, error) {
 	var users []model.User
-	err := repo.DB.Table("users").Find(&users).Error
+	query := repo.DB.Table("users")
+
+	// Apply pagination if both page and limit are provided and valid
+	if page > 0 && limit > 0 {
+		offset := (page - 1) * limit
+		query = query.Offset(offset).Limit(limit)
+	}
+
+	err := query.Find(&users).Error
 	if err != nil {
 		return nil, helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to fetch users: %w", err))
 	}
 	return users, nil
 }
-
 func (repo *UserRepository) FindUserRoles(userID string) ([]model.UserRole, error) {
 	var userRoles []model.UserRole
 	err := repo.DB.

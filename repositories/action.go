@@ -14,7 +14,7 @@ type ActionRepositoryInterface interface {
 	CheckIfActionExists(actionName string) error
 	CreateAction(newAction *model.Action) error
 	FindActionByID(id string) (*model.Action, error)
-	FindActions(filter map[string]interface{}) ([]model.Action, error)
+	FindActions(filter map[string]interface{}, page, limit int) ([]model.Action, error)
 	UpdateAction(id string, updatedAction model.Action) error
 	DeleteAction(id string) error
 }
@@ -58,7 +58,7 @@ func (repo *ActionRepository) FindActionByID(id string) (*model.Action, error) {
 	return &action, nil
 }
 
-func (repo *ActionRepository) FindActions(filter map[string]interface{}) ([]model.Action, error) {
+func (repo *ActionRepository) FindActions(filter map[string]interface{}, page, limit int) ([]model.Action, error) {
 	var actions []model.Action
 	query := repo.DB.Table("actions")
 
@@ -67,7 +67,15 @@ func (repo *ActionRepository) FindActions(filter map[string]interface{}) ([]mode
 		query = query.Where("id = ?", id)
 	}
 	if name, ok := filter["name"]; ok {
-		query = query.Where("name ILIKE ?", name)
+		if nameStr, ok := name.(string); ok {
+			query = query.Where("name ILIKE ?", nameStr) // Case-insensitive match
+		}
+	}
+
+	// Apply pagination if both page and limit are provided and valid
+	if page > 0 && limit > 0 {
+		offset := (page - 1) * limit
+		query = query.Offset(offset).Limit(limit)
 	}
 
 	err := query.Find(&actions).Error

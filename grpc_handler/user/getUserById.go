@@ -52,7 +52,11 @@ func (s *Server) GetUserById(ctx context.Context, req *pb.GetUserByIdRequest) (*
 			}
 		}
 	}
-
+	// Get updated user details with roles and permissions
+	rolesResponse, err := s.userService.GetUserRolesWithPermissions(user.ID)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "Failed to fetch user roles: %v", err)
+	}
 	// Prepare user response with role permissions
 	pbUser := &pb.User{
 		Id:            user.ID,
@@ -74,6 +78,7 @@ func (s *Server) GetUserById(ctx context.Context, req *pb.GetUserByIdRequest) (*
 		MobileNumber:  user.MobileNumber,
 		CountryCode:   helper.SafeString(user.CountryCode),
 		Address:       pbAddress,
+		Roles:         convertRoleResponseToPB(rolesResponse),
 	}
 
 	return &pb.GetUserByIdResponse{

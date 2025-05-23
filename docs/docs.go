@@ -17,7 +17,7 @@ const docTemplate = `{
     "paths": {
         "/actions": {
             "get": {
-                "description": "Retrieves all actions with optional filtering by ID or name",
+                "description": "Retrieves actions with optional filtering by ID or name and pagination support",
                 "consumes": [
                     "application/json"
                 ],
@@ -27,7 +27,7 @@ const docTemplate = `{
                 "tags": [
                     "Actions"
                 ],
-                "summary": "Get  actions",
+                "summary": "Get actions with pagination",
                 "parameters": [
                     {
                         "type": "string",
@@ -39,6 +39,18 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Filter by action name",
                         "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (starts from 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of items per page",
+                        "name": "limit",
                         "in": "query"
                     }
                 ],
@@ -610,7 +622,7 @@ const docTemplate = `{
         },
         "/resources": {
             "get": {
-                "description": "Get resources with optional filtering by ID or name",
+                "description": "Get resources with optional filtering by ID or name and pagination",
                 "tags": [
                     "Resources"
                 ],
@@ -626,6 +638,18 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Filter by resource name",
                         "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (starts from 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of items per page",
+                        "name": "limit",
                         "in": "query"
                     }
                 ],
@@ -831,7 +855,7 @@ const docTemplate = `{
         },
         "/roles": {
             "get": {
-                "description": "Retrieves all roles with optional filtering by ID or name",
+                "description": "Retrieves roles with optional filtering by ID or name and pagination support",
                 "consumes": [
                     "application/json"
                 ],
@@ -841,7 +865,7 @@ const docTemplate = `{
                 "tags": [
                     "Roles"
                 ],
-                "summary": "Get  roles",
+                "summary": "Get roles with pagination",
                 "parameters": [
                     {
                         "type": "string",
@@ -853,6 +877,18 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Filter by role name",
                         "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (starts from 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of items per page",
+                        "name": "limit",
                         "in": "query"
                     }
                 ],
@@ -1154,7 +1190,7 @@ const docTemplate = `{
         },
         "/users": {
             "get": {
-                "description": "Retrieves a list of all users including their roles, permissions, and address information",
+                "description": "Retrieves a list of users including their roles, permissions, and address information with optional pagination",
                 "consumes": [
                     "application/json"
                 ],
@@ -1164,7 +1200,21 @@ const docTemplate = `{
                 "tags": [
                     "Users"
                 ],
-                "summary": "Get all users",
+                "summary": "Get users with pagination",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number (starts from 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of items per page",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Users fetched successfully",
@@ -1367,22 +1417,28 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "entity": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "aadhaar"
                 },
                 "otp_message": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "OTP sent successfully"
                 },
                 "reference_id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "REF987654321"
                 },
                 "status_code": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 200
                 },
                 "timestamp": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 1672531200
                 },
                 "transaction_id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "TXN123456789"
                 }
             }
         },
@@ -1456,46 +1512,60 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "country": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "USA"
                 },
                 "created_at": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "2023-01-01T12:00:00Z"
                 },
                 "district": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Central District"
                 },
                 "full_address": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "123 Main Street, Near Central Park, Metro City, California, USA - 123456"
                 },
                 "house": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "123"
                 },
                 "id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "123e4567-e89b-12d3-a456-426614174000"
                 },
                 "landmark": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Near Central Park"
                 },
                 "pincode": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "123456"
                 },
                 "post_office": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Main Post Office"
                 },
                 "state": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "California"
                 },
                 "street": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Main Street"
                 },
                 "subdistrict": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Downtown"
                 },
                 "updated_at": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "2023-01-02T10:30:00Z"
                 },
                 "vtc": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Metro City"
                 }
             }
         },
@@ -1503,13 +1573,16 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "created_at": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "2023-01-01T12:00:00Z"
                 },
                 "id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "123e4567-e89b-12d3-a456-426614174000"
                 },
                 "is_validated": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "example": true
                 },
                 "roles": {
                     "type": "array",
@@ -1518,10 +1591,12 @@ const docTemplate = `{
                     }
                 },
                 "updated_at": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "2023-01-02T10:30:00Z"
                 },
                 "username": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "johndoe"
                 }
             }
         },
@@ -1533,10 +1608,12 @@ const docTemplate = `{
             ],
             "properties": {
                 "role": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "admin"
                 },
                 "user_id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "123e4567-e89b-12d3-a456-426614174000"
                 }
             }
         },
@@ -1547,8 +1624,8 @@ const docTemplate = `{
             ],
             "properties": {
                 "name": {
-                    "description": "Action name",
-                    "type": "string"
+                    "type": "string",
+                    "example": "read"
                 }
             }
         },
@@ -1563,10 +1640,16 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "type": "string"
-                    }
+                    },
+                    "example": [
+                        "read",
+                        "write",
+                        "delete"
+                    ]
                 },
                 "resource": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "document"
                 }
             }
         },
@@ -1577,8 +1660,8 @@ const docTemplate = `{
             ],
             "properties": {
                 "name": {
-                    "description": "Action name",
-                    "type": "string"
+                    "type": "string",
+                    "example": "document"
                 }
             }
         },
@@ -1589,10 +1672,12 @@ const docTemplate = `{
             ],
             "properties": {
                 "description": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Administrator role with full access"
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "admin"
                 },
                 "permissions": {
                     "type": "array",
@@ -1601,7 +1686,8 @@ const docTemplate = `{
                     }
                 },
                 "source": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "system"
                 }
             }
         },
@@ -1612,19 +1698,24 @@ const docTemplate = `{
             ],
             "properties": {
                 "aadhaar_number": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "123456789012"
                 },
                 "country_code": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "+91"
                 },
                 "mobile_number": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 9876543210
                 },
                 "password": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "securePassword123"
                 },
                 "username": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "johndoe"
                 }
             }
         },
@@ -1635,16 +1726,16 @@ const docTemplate = `{
             ],
             "properties": {
                 "tokens": {
-                    "description": "Required for transactions",
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 100
                 },
                 "transaction_type": {
-                    "description": "\"debit\", \"credit\", or nil",
-                    "type": "string"
+                    "type": "string",
+                    "example": "debit"
                 },
                 "user_id": {
-                    "description": "Using Base.ID",
-                    "type": "string"
+                    "type": "string",
+                    "example": "123e4567-e89b-12d3-a456-426614174000"
                 }
             }
         },
@@ -1656,10 +1747,12 @@ const docTemplate = `{
             ],
             "properties": {
                 "password": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "securePassword123"
                 },
                 "username": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "johndoe"
                 }
             }
         },
@@ -1667,28 +1760,35 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "country_code": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "+91"
                 },
                 "created_at": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "2023-01-01T12:00:00Z"
                 },
                 "id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "123e4567-e89b-12d3-a456-426614174000"
                 },
                 "is_validated": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "example": true
                 },
                 "mobile_number": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 9876543210
                 },
                 "otp_response": {
                     "$ref": "#/definitions/model.AadhaarOTPResponse"
                 },
                 "updated_at": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "2023-01-02T10:30:00Z"
                 },
                 "username": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "johndoe"
                 }
             }
         },
@@ -1699,13 +1799,16 @@ const docTemplate = `{
             ],
             "properties": {
                 "new_password": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "newSecurePassword123"
                 },
                 "otp": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "123456"
                 },
                 "username": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "johndoe"
                 }
             }
         },
@@ -1801,7 +1904,8 @@ const docTemplate = `{
                     }
                 },
                 "role_name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "admin"
                 }
             }
         },
@@ -1812,10 +1916,16 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "type": "string"
-                    }
+                    },
+                    "example": [
+                        "read",
+                        "write",
+                        "delete"
+                    ]
                 },
                 "resource": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "document"
                 }
             }
         },
@@ -1823,34 +1933,44 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "care_of": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Father"
                 },
                 "date_of_birth": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "1990-01-01"
                 },
                 "email_hash": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "a1b2c3d4e5f6"
                 },
                 "message": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Profile updated"
                 },
                 "mobile_number": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 9876543210
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "John Doe"
                 },
                 "photo": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "base64encodedimage"
                 },
                 "status": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "active"
                 },
                 "username": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "johndoe"
                 },
                 "year_of_birth": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "1990"
                 }
             }
         },
@@ -1945,46 +2065,59 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "aadhaar_number": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "123456789012"
                 },
                 "address": {
                     "$ref": "#/definitions/model.AddressRes"
                 },
                 "care_of": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Father"
                 },
                 "country_code": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "+91"
                 },
                 "created_at": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "2023-01-01T12:00:00Z"
                 },
                 "date_of_birth": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "1990-01-01"
                 },
                 "email_hash": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "a1b2c3d4e5f6"
                 },
                 "id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "123e4567-e89b-12d3-a456-426614174000"
                 },
                 "is_validated": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "example": true
                 },
                 "message": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Welcome"
                 },
                 "mobile_number": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 9876543210
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "John Doe"
                 },
                 "password": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "hashedpassword"
                 },
                 "photo": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "base64encodedimage"
                 },
                 "roles": {
                     "type": "array",
@@ -1993,19 +2126,24 @@ const docTemplate = `{
                     }
                 },
                 "share_code": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "SHARE123"
                 },
                 "status": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "active"
                 },
                 "updated_at": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "2023-01-02T10:30:00Z"
                 },
                 "username": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "johndoe"
                 },
                 "year_of_birth": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "1990"
                 }
             }
         },
@@ -2013,43 +2151,55 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "aadhaar_number": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "123456789012"
                 },
                 "address": {
                     "$ref": "#/definitions/model.AddressRes"
                 },
                 "care_of": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Father"
                 },
                 "country_code": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "+91"
                 },
                 "created_at": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "2023-01-01T12:00:00Z"
                 },
                 "date_of_birth": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "1990-01-01"
                 },
                 "email_hash": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "a1b2c3d4e5f6"
                 },
                 "id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "123e4567-e89b-12d3-a456-426614174000"
                 },
                 "is_validated": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "example": true
                 },
                 "message": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Welcome"
                 },
                 "mobile_number": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 9876543210
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "John Doe"
                 },
                 "photo": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "base64encodedimage"
                 },
                 "roles": {
                     "type": "array",
@@ -2058,19 +2208,24 @@ const docTemplate = `{
                     }
                 },
                 "share_code": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "SHARE123"
                 },
                 "status": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "active"
                 },
                 "updated_at": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "2023-01-02T10:30:00Z"
                 },
                 "username": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "johndoe"
                 },
                 "year_of_birth": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "1990"
                 }
             }
         },
