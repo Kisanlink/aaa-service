@@ -1507,4 +1507,56 @@ paths:
       summary: Update user
       tags:
       - Users
+  /users/by-role:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a list of users filtered by role name or role ID (both
+        optional)
+      parameters:
+      - description: Role name to filter users
+        in: query
+        name: roleName
+        type: string
+      - description: Role ID to filter users
+        in: query
+        name: roleId
+        type: string
+      - description: Page number (starts from 1)
+        in: query
+        name: page
+        type: integer
+      - description: Number of items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Users fetched successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/helper.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/model.UserRes'
+                  type: array
+              type: object
+        "400":
+          description: Bad request if both roleName and roleId are provided
+          schema:
+            $ref: '#/definitions/helper.Response'
+        "404":
+          description: Role not found when searching by name
+          schema:
+            $ref: '#/definitions/helper.Response'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/helper.Response'
+      summary: Get users by role
+      tags:
+      - Users
 swagger: "2.0"

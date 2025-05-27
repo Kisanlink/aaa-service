@@ -31,6 +31,7 @@ type UserServiceInterface interface {
 	CreditUserByID(userID string, tokens int) (*model.User, error)
 	DebitUserByID(userID string, tokens int) (*model.User, error)
 	GetUserRolesWithPermissions(userID string) (*model.RoleResponse, error)
+	GetUsersByRole(roleID string, page, limit int) ([]model.User, error)
 }
 
 type UserService struct {
@@ -101,6 +102,17 @@ func (s *UserService) GetUsers(page, limit int) ([]model.User, error) {
 }
 func (s *UserService) FindUserRoles(userID string) ([]model.UserRole, error) {
 	result, err := s.repo.FindUserRoles(userID)
+	if err != nil {
+		return nil, helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to find user roles: %w", err))
+	}
+	if result == nil {
+		return nil, helper.NewAppError(http.StatusNotFound, fmt.Errorf("user roles not found"))
+	}
+	return result, nil
+}
+
+func (s *UserService) GetUsersByRole(roleID string, page, limit int) ([]model.User, error) {
+	result, err := s.repo.GetUsersByRole(roleID, page, limit)
 	if err != nil {
 		return nil, helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to find user roles: %w", err))
 	}

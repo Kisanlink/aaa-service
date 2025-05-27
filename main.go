@@ -39,6 +39,7 @@ func main() {
 		helper.Log.Fatalf("Failed to start gRPC server: %v", err)
 	}
 	defer grpcServer.GracefulStop()
+
 	helper.Log.Println("Server is running on port:", corsSetup.Port)
 	if err := r.Run(":" + corsSetup.Port); err != nil {
 		helper.Log.Fatalf("Error starting server: %v", err)

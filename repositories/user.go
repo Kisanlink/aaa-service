@@ -31,6 +31,7 @@ type UserRepositoryInterface interface {
 	GetTokensByUserID(userID string) (int, error)
 	CreditUserByID(userID string, tokens int) (*model.User, error)
 	DebitUserByID(userID string, tokens int) (*model.User, error)
+	GetUsersByRole(roleId string, page, limit int) ([]model.User, error)
 }
 
 type UserRepository struct {
@@ -154,6 +155,26 @@ func (repo *UserRepository) GetUserRoleByID(userID string) (*model.User, error) 
 	return &user, nil
 }
 
+func (repo *UserRepository) GetUsersByRole(roleId string, page, limit int) ([]model.User, error) {
+	var users []model.User
+
+	query := repo.DB.Table("users").
+		Joins("JOIN user_roles ON user_roles.user_id = users.id AND user_roles.role_id = ?", roleId).
+		Preload("Roles")
+
+	// Apply pagination
+	if page > 0 && limit > 0 {
+		offset := (page - 1) * limit
+		query = query.Offset(offset).Limit(limit)
+	}
+
+	err := query.Find(&users).Error
+	if err != nil {
+		return nil, helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to fetch users: %w", err))
+	}
+
+	return users, nil
+}
 func (repo *UserRepository) DeleteUserRoles(id string) error {
 	if err := repo.DB.Table("user_roles").Where("user_id = ?", id).Delete(&model.UserRole{}).Error; err != nil {
 		return helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to delete user roles: %w", err))
