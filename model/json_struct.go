@@ -165,10 +165,8 @@ type CreateResourceRequest struct {
 }
 
 type CreateRoleRequest struct {
-	Name        string                  `json:"name" binding:"required" example:"admin"`
-	Description string                  `json:"description" example:"Administrator role with full access"`
-	Source      string                  `json:"source" example:"system"`
-	Permissions []CreatePermissionInput `json:"permissions"`
+	Name        string `json:"name" binding:"required" example:"admin"`
+	Description string `json:"description" example:"Administrator role with full access"`
 }
 
 type CreatePermissionInput struct {
@@ -181,11 +179,30 @@ type RoleResponse struct {
 }
 
 type RoleDetail struct {
-	RoleName    string           `json:"role_name" example:"admin"`
-	Permissions []RolePermission `json:"permissions"`
+	RoleName    string              `json:"role_name" example:"admin"`
+	Permissions []RolePermissionRes `json:"permissions"`
 }
 
-type RolePermission struct {
+type RolePermissionRes struct {
 	Resource string   `json:"resource" example:"document"`
 	Actions  []string `json:"actions" example:"read,write,delete"`
+}
+
+type RolePermissionRequest struct {
+	RoleID        string   `json:"roleId" binding:"required"`
+	PermissionIDs []string `json:"permissionId" binding:"required"`
+}
+
+type CreatePermissionRequest struct {
+	Resource string   `json:"resource"`
+	Effect   string   `json:"effect"`
+	Actions  []string `json:"actions"`
+}
+
+type GetRolePermissionResponse struct {
+	ID         string      `json:"id"`
+	CreatedAt  time.Time   `json:"created_at"`
+	UpdatedAt  time.Time   `json:"updated_at"`
+	Role       *Role       `json:"Role"`
+	Permission *Permission `json:"Permission"`
 }

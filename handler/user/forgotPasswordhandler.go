@@ -36,10 +36,10 @@ func generateOTP() string {
 // @Produce json
 // @Param request body model.PasswordResetFlowRequest true "Password reset request"
 // @Success 200 {object} object "Success responses vary by step: 1) 'OTP sent successfully', 2) 'OTP verified. Proceed to reset password.', 3) 'Password reset successfully'"
-// @Failure 400 {object} helper.Response "Invalid request body or parameters"
-// @Failure 401 {object} helper.Response "Invalid or expired OTP"
-// @Failure 404 {object} helper.Response "User not found"
-// @Failure 500 {object} helper.Response "Internal server error"
+// @Failure 400 {object} helper.ErrorResponse "Invalid request body or parameters"
+// @Failure 401 {object} helper.ErrorResponse "Invalid or expired OTP"
+// @Failure 404 {object} helper.ErrorResponse "User not found"
+// @Failure 500 {object} helper.ErrorResponse "Internal server error"
 // @Router /forgot-password [post]
 func (s *UserHandler) PasswordResetHandler(c *gin.Context) {
 	var req model.PasswordResetFlowRequest

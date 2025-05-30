@@ -29,9 +29,9 @@ func NewResourceHandler(
 // @Produce json
 // @Param request body model.CreateResourceRequest true "Resource creation data"
 // @Success 201 {object} helper.Response{data=model.Resource} "Resource created successfully"
-// @Failure 400 {object} helper.Response "Invalid request body"
-// @Failure 409 {object} helper.Response "Resource already exists"
-// @Failure 500 {object} helper.Response "Failed to create resource"
+// @Failure 400 {object} helper.ErrorResponse "Invalid request body"
+// @Failure 409 {object} helper.ErrorResponse "Resource already exists"
+// @Failure 500 {object} helper.ErrorResponse "Failed to create resource"
 // @Router /resources [post]
 func (s *ResourceHandler) CreateResourceRestApi(c *gin.Context) {
 	var req model.Resource

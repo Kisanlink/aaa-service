@@ -258,23 +258,3 @@ func NormalizeResourceType(resourceType string) string {
 	normalized = strings.ReplaceAll(normalized, " ", "_")
 	return normalized
 }
-
-func ExtractRoleNames(userRoles []model.UserRole) ([]string, error) {
-	if len(userRoles) == 0 {
-		return nil, fmt.Errorf("no user roles provided")
-	}
-
-	roleNames := make([]string, 0, len(userRoles))
-	for _, userRole := range userRoles {
-		// Double-check that Role is loaded and has a Name
-		if userRole.Role != nil && userRole.Role.Name != "" {
-			roleNames = append(roleNames, userRole.Role.Name)
-		}
-	}
-
-	if len(roleNames) == 0 {
-		return nil, fmt.Errorf("no valid roles found in user roles")
-	}
-
-	return roleNames, nil
-}

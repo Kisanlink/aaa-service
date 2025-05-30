@@ -29,9 +29,9 @@ func NewRoleHandler(roleService services.RoleServiceInterface) *RoleHandler {
 // @Produce json
 // @Param request body model.CreateRoleRequest true "Role and permissions data"
 // @Success 201 {object} helper.Response{data=model.Role} "Role created successfully"
-// @Failure 400 {object} helper.Response "Invalid request"
-// @Failure 409 {object} helper.Response "Role already exists"
-// @Failure 500 {object} helper.Response "Failed to create role"
+// @Failure 400 {object} helper.ErrorResponse "Invalid request"
+// @Failure 409 {object} helper.ErrorResponse "Role already exists"
+// @Failure 500 {object} helper.ErrorResponse "Failed to create role"
 // @Router /roles [post]
 func (h *RoleHandler) CreateRoleWithPermissionsRestApi(c *gin.Context) {
 	var req model.CreateRoleRequest
@@ -44,15 +44,6 @@ func (h *RoleHandler) CreateRoleWithPermissionsRestApi(c *gin.Context) {
 	role := &model.Role{
 		Name:        req.Name,
 		Description: req.Description,
-		Source:      req.Source,
-	}
-
-	var permissions []model.Permission
-	for _, perm := range req.Permissions {
-		permissions = append(permissions, model.Permission{
-			Resource: perm.Resource,
-			Actions:  perm.Actions,
-		})
 	}
 
 	// Check if role exists
@@ -62,7 +53,7 @@ func (h *RoleHandler) CreateRoleWithPermissionsRestApi(c *gin.Context) {
 	}
 
 	// Create role with permissions
-	if err := h.roleService.CreateRoleWithPermissions(role, permissions); err != nil {
+	if err := h.roleService.CreateRoleWithPermissions(role); err != nil {
 		helper.SendErrorResponse(c.Writer, http.StatusInternalServerError, []string{err.Error()})
 		return
 	}

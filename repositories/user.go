@@ -112,7 +112,7 @@ func (repo *UserRepository) GetUsers(page, limit int) ([]model.User, error) {
 func (repo *UserRepository) FindUserRoles(userID string) ([]model.UserRole, error) {
 	var userRoles []model.UserRole
 	err := repo.DB.
-		Preload("Role"). // This ensures Role data is loaded
+		// Preload("Role"). // This ensures Role data is loaded
 		Where("user_id = ?", userID).
 		Find(&userRoles).Error
 

@@ -17,9 +17,9 @@ import (
 // @Param id path string true "Role ID"
 // @Param request body model.CreateRoleRequest true "Role and permissions data"
 // @Success 200 {object} helper.Response{data=model.Role} "Role updated successfully"
-// @Failure 400 {object} helper.Response "Invalid request"
-// @Failure 404 {object} helper.Response "Role not found"
-// @Failure 500 {object} helper.Response "Failed to update role"
+// @Failure 400 {object} helper.ErrorResponse "Invalid request"
+// @Failure 404 {object} helper.ErrorResponse "Role not found"
+// @Failure 500 {object} helper.ErrorResponse "Failed to update role"
 // @Router /roles/{id} [put]
 func (h *RoleHandler) UpdateRoleWithPermissionsRestApi(c *gin.Context) {
 	id := c.Param("id")
@@ -38,19 +38,10 @@ func (h *RoleHandler) UpdateRoleWithPermissionsRestApi(c *gin.Context) {
 	updatedRole := model.Role{
 		Name:        req.Name,
 		Description: req.Description,
-		Source:      req.Source,
-	}
-
-	var permissions []model.Permission
-	for _, perm := range req.Permissions {
-		permissions = append(permissions, model.Permission{
-			Resource: perm.Resource,
-			Actions:  perm.Actions,
-		})
 	}
 
 	// Update role with permissions
-	if err := h.roleService.UpdateRoleWithPermissions(id, updatedRole, permissions); err != nil {
+	if err := h.roleService.UpdateRoleWithPermissions(id, updatedRole); err != nil {
 		helper.SendErrorResponse(c.Writer, http.StatusInternalServerError, []string{err.Error()})
 		return
 	}

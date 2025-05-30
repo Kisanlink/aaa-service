@@ -17,8 +17,8 @@ import (
 // @Produce json
 // @Param id path string true "Role ID"
 // @Success 200 {object} helper.Response "Role deleted successfully"
-// @Failure 400 {object} helper.Response "Invalid role ID"
-// @Failure 500 {object} helper.Response "Failed to delete role"
+// @Failure 400 {object} helper.ErrorResponse "Invalid role ID"
+// @Failure 500 {object} helper.ErrorResponse "Failed to delete role"
 // @Router /roles/{id} [delete]
 func (h *RoleHandler) DeleteRoleRestApi(c *gin.Context) {
 	id := c.Param("id")

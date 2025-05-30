@@ -4,12 +4,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	// "github.com/lucsky/cuid"
 	"gorm.io/gorm"
 )
 
 type Base struct {
-	ID        string    `gorm:"type:varchar(36);primaryKey"` // Use string for ID
+	ID        string    `json:"id" gorm:"type:varchar(36);primaryKey"` // Use string for ID
 	CreatedAt time.Time `json:"created_at" gorm:"column:created_at"`
 	UpdatedAt time.Time `json:"updated_at" gorm:"column:updated_at"`
 }

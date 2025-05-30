@@ -11,11 +11,11 @@ import (
 
 type RoleServiceInterface interface {
 	CheckIfRoleExists(roleName string) error
-	CreateRoleWithPermissions(role *model.Role, permissions []model.Permission) error
+	CreateRoleWithPermissions(role *model.Role) error
 	GetRoleByName(name string) (*model.Role, error)
 	FindRoleByID(id string) (*model.Role, error)
 	FindRoles(filter map[string]interface{}, page, limit int) ([]model.Role, error)
-	UpdateRoleWithPermissions(id string, updatedRole model.Role, permissions []model.Permission) error
+	UpdateRoleWithPermissions(id string, updatedRole model.Role) error
 	DeleteRole(id string) error
 }
 
@@ -41,23 +41,13 @@ func (s *RoleService) CheckIfRoleExists(roleName string) error {
 	return nil
 }
 
-func (s *RoleService) CreateRoleWithPermissions(role *model.Role, permissions []model.Permission) error {
+func (s *RoleService) CreateRoleWithPermissions(role *model.Role) error {
 	// Validate role name
 	if role.Name == "" {
 		return helper.NewAppError(http.StatusBadRequest, fmt.Errorf("role name is required"))
 	}
 
-	// Validate permissions
-	for _, perm := range permissions {
-		if perm.Resource == "" {
-			return helper.NewAppError(http.StatusBadRequest, fmt.Errorf("permission resource is required"))
-		}
-		if len(perm.Actions) == 0 {
-			return helper.NewAppError(http.StatusBadRequest, fmt.Errorf("permission actions cannot be empty"))
-		}
-	}
-
-	err := s.repo.CreateRoleWithPermissions(role, permissions)
+	err := s.repo.CreateRoleWithPermissions(role)
 	if err != nil {
 		return fmt.Errorf("failed to create role with permissions: %w", err)
 	}
@@ -109,22 +99,12 @@ func (s *RoleService) FindRoles(filter map[string]interface{}, page, limit int) 
 	return roles, nil
 }
 
-func (s *RoleService) UpdateRoleWithPermissions(id string, updatedRole model.Role, permissions []model.Permission) error {
+func (s *RoleService) UpdateRoleWithPermissions(id string, updatedRole model.Role) error {
 	if id == "" {
 		return helper.NewAppError(http.StatusBadRequest, fmt.Errorf("role ID is required"))
 	}
 
-	// Validate permissions
-	for _, perm := range permissions {
-		if perm.Resource == "" {
-			return helper.NewAppError(http.StatusBadRequest, fmt.Errorf("permission resource is required"))
-		}
-		if len(perm.Actions) == 0 {
-			return helper.NewAppError(http.StatusBadRequest, fmt.Errorf("permission actions cannot be empty"))
-		}
-	}
-
-	err := s.repo.UpdateRoleWithPermissions(id, updatedRole, permissions)
+	err := s.repo.UpdateRoleWithPermissions(id, updatedRole)
 	if err != nil {
 		return fmt.Errorf("failed to update role with permissions: %w", err)
 	}

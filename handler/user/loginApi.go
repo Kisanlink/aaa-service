@@ -22,10 +22,10 @@ import (
 // @Success 200 {object} helper.Response{data=model.UserResponse} "Login successful"
 // @Header 200 {string} Authorization "Bearer access token"
 // @Header 200 {string} Refresh-Token "Refresh token"
-// @Failure 400 {object} helper.Response "Invalid request body or missing credentials"
-// @Failure 401 {object} helper.Response "Invalid credentials"
-// @Failure 403 {object} helper.Response "Access Denied: Insufficient permission (when source=admin/panel but user lacks required role)"
-// @Failure 500 {object} helper.Response "Internal server error"
+// @Failure 400 {object} helper.ErrorResponse "Invalid request body or missing credentials"
+// @Failure 401 {object} helper.ErrorResponse "Invalid credentials"
+// @Failure 403 {object} helper.ErrorResponse "Access Denied: Insufficient permission (when source=admin/panel but user lacks required role)"
+// @Failure 500 {object} helper.ErrorResponse "Internal server error"
 // @Router /login [post]
 func (s *UserHandler) LoginRestApi(c *gin.Context) {
 	var req model.LoginRequest

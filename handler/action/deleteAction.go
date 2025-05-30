@@ -15,9 +15,9 @@ import (
 // @Produce json
 // @Param id path string true "Action ID"
 // @Success 200 {object} helper.Response "Action deleted successfully"
-// @Failure 400 {object} helper.Response "Invalid action ID"
-// @Failure 404 {object} helper.Response "Action not found"
-// @Failure 500 {object} helper.Response "Failed to delete action"
+// @Failure 400 {object} helper.ErrorResponse "Invalid action ID"
+// @Failure 404 {object} helper.ErrorResponse "Action not found"
+// @Failure 500 {object} helper.ErrorResponse "Failed to delete action"
 // @Router /actions/{id} [delete]
 func (s *ActionHandler) DeleteActionRestApi(c *gin.Context) {
 	id := c.Param("id")

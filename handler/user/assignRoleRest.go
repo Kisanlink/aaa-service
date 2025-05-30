@@ -34,10 +34,10 @@ func NewUserHandler(
 // @Produce json
 // @Param request body model.AssignRoleRequest true "Assign Role Request"
 // @Success 200 {object} helper.Response{data=model.AssignRolePermission} "Role assigned successfully"
-// @Failure 400 {object} helper.Response "Invalid request body"
-// @Failure 404 {object} helper.Response "User or Role not found"
-// @Failure 409 {object} helper.Response "Role already assigned to user"
-// @Failure 500 {object} helper.Response "Internal server error"
+// @Failure 400 {object} helper.ErrorResponse "Invalid request body"
+// @Failure 404 {object} helper.ErrorResponse "User or Role not found"
+// @Failure 409 {object} helper.ErrorResponse "Role already assigned to user"
+// @Failure 500 {object} helper.ErrorResponse "Internal server error"
 // @Router /assign-role [post]
 func (s *UserHandler) AssignRoleRestApi(c *gin.Context) {
 	var req model.AssignRoleRequest
@@ -85,10 +85,15 @@ func (s *UserHandler) AssignRoleRestApi(c *gin.Context) {
 		helper.SendErrorResponse(c.Writer, http.StatusInternalServerError, []string{err.Error()})
 		return
 	}
-	roleNames, err := helper.ExtractRoleNames(userRoles)
-	if err != nil {
-		helper.SendErrorResponse(c.Writer, http.StatusNotFound, []string{err.Error()})
-		return
+
+	roleNames := make([]string, 0, len(userRoles))
+
+	for _, userRole := range userRoles {
+		role, err := s.RoleService.FindRoleByID(userRole.RoleID)
+		if err != nil {
+			helper.SendErrorResponse(c.Writer, http.StatusNotFound, []string{err.Error()})
+		}
+		roleNames = append(roleNames, role.Name)
 	}
 
 	err = client.DeleteRelationships(

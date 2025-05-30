@@ -12,11 +12,11 @@ import (
 
 type RoleRepositoryInterface interface {
 	CheckIfRoleExists(roleName string) error
-	CreateRoleWithPermissions(role *model.Role, permissions []model.Permission) error
+	CreateRoleWithPermissions(role *model.Role) error
 	GetRoleByName(name string) (*model.Role, error)
 	FindRoleByID(id string) (*model.Role, error)
 	FindRoles(filter map[string]interface{}, page, limit int) ([]model.Role, error)
-	UpdateRoleWithPermissions(id string, updatedRole model.Role, permissions []model.Permission) error
+	UpdateRoleWithPermissions(id string, updatedRole model.Role) error
 	DeleteRole(id string) error
 }
 
@@ -42,7 +42,7 @@ func (repo *RoleRepository) CheckIfRoleExists(roleName string) error {
 	return nil
 }
 
-func (repo *RoleRepository) CreateRoleWithPermissions(role *model.Role, permissions []model.Permission) error {
+func (repo *RoleRepository) CreateRoleWithPermissions(role *model.Role) error {
 	tx := repo.DB.Begin()
 	defer func() {
 		if r := recover(); r != nil {
@@ -58,15 +58,6 @@ func (repo *RoleRepository) CreateRoleWithPermissions(role *model.Role, permissi
 	if err := tx.Create(role).Error; err != nil {
 		tx.Rollback()
 		return helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to create role: %w", err))
-	}
-
-	// Associate permissions with the role
-	for i := range permissions {
-		permissions[i].RoleID = role.ID
-		if err := tx.Create(&permissions[i]).Error; err != nil {
-			tx.Rollback()
-			return helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to create permission: %w", err))
-		}
 	}
 
 	if err := tx.Commit().Error; err != nil {
@@ -127,7 +118,7 @@ func (repo *RoleRepository) FindRoles(filter map[string]interface{}, page, limit
 	}
 	return roles, nil
 }
-func (repo *RoleRepository) UpdateRoleWithPermissions(id string, updatedRole model.Role, permissions []model.Permission) error {
+func (repo *RoleRepository) UpdateRoleWithPermissions(id string, updatedRole model.Role) error {
 	tx := repo.DB.Begin()
 	defer func() {
 		if r := recover(); r != nil {
@@ -138,8 +129,6 @@ func (repo *RoleRepository) UpdateRoleWithPermissions(id string, updatedRole mod
 	if err := tx.Error; err != nil {
 		return helper.NewAppError(http.StatusInternalServerError, err)
 	}
-
-	// Update role fields
 	result := tx.Model(&model.Role{}).Where("id = ?", id).Updates(updatedRole)
 	if result.Error != nil {
 		tx.Rollback()
@@ -148,25 +137,6 @@ func (repo *RoleRepository) UpdateRoleWithPermissions(id string, updatedRole mod
 	if result.RowsAffected == 0 {
 		tx.Rollback()
 		return helper.NewAppError(http.StatusNotFound, fmt.Errorf("role with ID %s not found", id))
-	}
-
-	// Delete existing permissions
-	if err := tx.Where("role_id = ?", id).Delete(&model.Permission{}).Error; err != nil {
-		tx.Rollback()
-		return helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to delete old permissions: %w", err))
-	}
-
-	// Create new permissions
-	for i := range permissions {
-		permissions[i].RoleID = id
-		if err := tx.Create(&permissions[i]).Error; err != nil {
-			tx.Rollback()
-			return helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to create permission: %w", err))
-		}
-	}
-
-	if err := tx.Commit().Error; err != nil {
-		return helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("transaction commit failed: %w", err))
 	}
 
 	return nil

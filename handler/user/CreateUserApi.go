@@ -24,9 +24,9 @@ import (
 // @Produce json
 // @Param request body model.CreateUserRequest true "User creation request"
 // @Success 201 {object} helper.Response{data=model.MinimalUser} "User created successfully"
-// @Failure 400 {object} helper.Response "Invalid request body or validation failed"
-// @Failure 409 {object} helper.Response "Username, mobile number or Aadhaar already exists"
-// @Failure 500 {object} helper.Response "Internal server error"
+// @Failure 400 {object} helper.ErrorResponse "Invalid request body or validation failed"
+// @Failure 409 {object} helper.ErrorResponse "Username, mobile number or Aadhaar already exists"
+// @Failure 500 {object} helper.ErrorResponse "Internal server error"
 // @Router /register [post]
 func (s *UserHandler) CreateUserRestApi(c *gin.Context) {
 	var req model.CreateUserRequest
@@ -192,8 +192,8 @@ func (s *UserHandler) CreateUserRestApi(c *gin.Context) {
 		MobileNumber: createdUser.MobileNumber,
 		CountryCode:  *createdUser.CountryCode,
 		IsValidated:  createdUser.IsValidated,
-		CreatedAt:    createdUser.CreatedAt.Format(time.RFC3339Nano),
-		UpdatedAt:    createdUser.UpdatedAt.Format(time.RFC3339Nano),
+		CreatedAt:    createdUser.CreatedAt.Format(time.RFC3339),
+		UpdatedAt:    createdUser.UpdatedAt.Format(time.RFC3339),
 		OtpResponse:  otpResponse,
 	}
 

@@ -19,7 +19,7 @@ import (
 // @Param page query int false "Page number (starts from 1)"
 // @Param limit query int false "Number of items per page"
 // @Success 200 {object} helper.Response{data=[]model.Role} "Roles retrieved successfully"
-// @Failure 500 {object} helper.Response "Failed to retrieve roles"
+// @Failure 500 {object} helper.ErrorResponse "Failed to retrieve roles"
 // @Router /roles [get]
 func (h *RoleHandler) GetAllRolesRestApi(c *gin.Context) {
 	filter := make(map[string]interface{})

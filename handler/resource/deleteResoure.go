@@ -15,8 +15,8 @@ import (
 // @Produce json
 // @Param id path string true "Resource ID"
 // @Success 200 {object} helper.Response "Resource deleted successfully"
-// @Failure 400 {object} helper.Response "Invalid resource ID"
-// @Failure 500 {object} helper.Response "Failed to delete resource"
+// @Failure 400 {object} helper.ErrorResponse "Invalid resource ID"
+// @Failure 500 {object} helper.ErrorResponse "Failed to delete resource"
 // @Router /resources/{id} [delete]
 func (s *ResourceHandler) DeleteResourceRestApi(c *gin.Context) {
 	id := c.Param("id")

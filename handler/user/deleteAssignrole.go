@@ -19,9 +19,9 @@ import (
 // @Param userID path string true "User ID"
 // @Param role path string true "Role Name"
 // @Success 200 {object} helper.Response{data=model.AssignRolePermission} "Role removed successfully"
-// @Failure 400 {object} helper.Response "Invalid user ID or role"
-// @Failure 404 {object} helper.Response "User or Role not found"
-// @Failure 500 {object} helper.Response "Internal server error"
+// @Failure 400 {object} helper.ErrorResponse "Invalid user ID or role"
+// @Failure 404 {object} helper.ErrorResponse "User or Role not found"
+// @Failure 500 {object} helper.ErrorResponse "Internal server error"
 // @Router /remove/{role}/by/{userID} [delete]
 func (s *UserHandler) DeleteAssignRoleRestApi(c *gin.Context) {
 	// Get userID and role from path parameters

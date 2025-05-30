@@ -10,8 +10,8 @@ import (
 // @name Response
 // @Description Standard API response structure
 // @Success 200 {object} Response "Successful operation"
-// @Failure 400 {object} Response "Bad request"
-// @Failure 500 {object} Response "Internal server error"
+// @Failure 400 {object} ErrorResponse "Bad request"
+// @Failure 500 {object} ErrorResponse "Internal server error"
 type Response struct {
 	// HTTP status code
 	// @example 200
@@ -45,13 +45,44 @@ func SendSuccessResponse(w http.ResponseWriter, statusCode int, message string, 
 		Success:    true,
 		Message:    message,
 		Data:       data,
-		Error:      []string{},
+		Error:      nil, // Initialize as nil instead of empty array
 		Timestamp:  time.Now().Format(time.RFC3339),
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
 	json.NewEncoder(w).Encode(response)
+}
+
+// ErrorResponse represents an API error response format with array of error messages and nil data
+// @name ErrorResponse
+// @Description Standard API error response structure with multiple error messages
+// @Failure 400 {object} ErrorResponse "Bad request"
+// @Failure 500 {object} ErrorResponse "Internal server error"
+type ErrorResponse struct {
+	// HTTP status code
+	// @example 400
+	StatusCode int `json:"status_code"`
+
+	// Indicates if the request was successfully processed (always false for error responses)
+	// @example false
+	Success bool `json:"success"`
+
+	// Human-readable summary message about the error
+	// @example "Validation failed"
+	Message string `json:"message"`
+
+	// The actual data payload (nil for error responses)
+	// @example null
+	Data interface{} `json:"data"`
+
+	// List of error messages describing what went wrong
+	// @example ["Invalid email format", "Password must be at least 8 characters"]
+	Errors []string `json:"errors"`
+
+	// Timestamp of when the response was generated
+	// @example "2023-05-15T10:00:00Z"
+	Timestamp string `json:"timestamp"`
 }
 
 // SendErrorResponse sends a standardized error response

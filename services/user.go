@@ -30,8 +30,8 @@ type UserServiceInterface interface {
 	GetTokensByUserID(userID string) (int, error)
 	CreditUserByID(userID string, tokens int) (*model.User, error)
 	DebitUserByID(userID string, tokens int) (*model.User, error)
-	GetUserRolesWithPermissions(userID string) (*model.RoleResponse, error)
 	GetUsersByRole(roleID string, page, limit int) ([]model.User, error)
+	GetUserRolesWithPermissions(userID string) (*model.RoleResponse, error)
 }
 
 type UserService struct {
@@ -250,55 +250,38 @@ func (s *UserService) DebitUserByID(userID string, tokens int) (*model.User, err
 }
 
 func (s *UserService) GetUserRolesWithPermissions(userID string) (*model.RoleResponse, error) {
-	// 1. Get user roles
+	// Step 1: Get user roles for the given user ID
 	userRoles, err := s.repo.FindUserRoles(userID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to find user roles: %w", err)
+		return nil, fmt.Errorf("failed to get user roles: %w", err)
 	}
 
-	// 2. Prepare response structure
+	// Initialize the response structure
 	response := &model.RoleResponse{
 		Roles: make([]model.RoleDetail, 0, len(userRoles)),
 	}
 
-	// 3. Process each role
+	// Step 2: For each user role, get role details and permissions
 	for _, userRole := range userRoles {
-		if userRole.Role == nil {
-			continue // Skip if role not loaded
-		}
-
-		// 4. Get the role with its permissions using existing FindRoles method
-		roles, err := s.roleRepo.FindRoles(map[string]interface{}{
-			"id": userRole.Role.ID,
-		}, 0, 0)
+		role, err := s.roleRepo.FindRoleByID(userRole.RoleID)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get role %s: %w", userRole.Role.ID, err)
+			return nil, fmt.Errorf("failed to get role details for role ID %s: %w", userRole.RoleID, err)
 		}
 
-		if len(roles) == 0 {
-			continue // Role not found (shouldn't happen if referential integrity is maintained)
-		}
-
-		role := roles[0] // We queried by ID so there should be only one
-
-		// 5. Convert permissions to API format
-		rolePerms := make([]model.RolePermission, 0, len(role.Permissions))
+		// Convert permissions to the response format
+		permissions := make([]model.RolePermissionRes, 0, len(role.Permissions))
 		for _, perm := range role.Permissions {
-			rolePerms = append(rolePerms, model.RolePermission{
+			permissions = append(permissions, model.RolePermissionRes{
 				Resource: perm.Resource,
 				Actions:  perm.Actions,
 			})
 		}
 
-		// 6. Add to response
+		// Add role detail to the response
 		response.Roles = append(response.Roles, model.RoleDetail{
 			RoleName:    role.Name,
-			Permissions: rolePerms,
+			Permissions: permissions,
 		})
-	}
-
-	if len(response.Roles) == 0 {
-		return nil, fmt.Errorf("no roles with permissions found for user %s", userID)
 	}
 
 	return response, nil

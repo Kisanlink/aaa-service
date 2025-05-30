@@ -16,7 +16,7 @@ import (
 // @Accept json
 // @Produce json
 // @Success 200 {object} helper.Response{data=[]model.Role} "Roles retrieved successfully"
-// @Failure 500 {object} helper.Response "Failed to retrieve roles"
+// @Failure 500 {object} helper.ErrorResponse "Failed to retrieve roles"
 // @Router /update/schema [get]
 func (h *RoleHandler) UpdateSpiceDb(c *gin.Context) {
 	filter := make(map[string]interface{})

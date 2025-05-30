@@ -17,9 +17,9 @@ import (
 // @Produce json
 // @Param id path string true "User ID" example("123e4567-e89b-12d3-a456-426614174000")
 // @Success 200 {object} helper.Response{data=model.UserRes} "User fetched successfully"
-// @Failure 400 {object} helper.Response "ID is required"
-// @Failure 404 {object} helper.Response "User not found"
-// @Failure 500 {object} helper.Response "Internal server error when fetching user or related data"
+// @Failure 400 {object} helper.ErrorResponse "ID is required"
+// @Failure 404 {object} helper.ErrorResponse "User not found"
+// @Failure 500 {object} helper.ErrorResponse "Internal server error when fetching user or related data"
 // @Router /users/{id} [get]
 func (s *UserHandler) GetUserByIdRestApi(c *gin.Context) {
 	id := c.Param("id")

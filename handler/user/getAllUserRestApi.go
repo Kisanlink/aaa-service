@@ -19,7 +19,7 @@ import (
 // @Param page query int false "Page number (starts from 1)"
 // @Param limit query int false "Number of items per page"
 // @Success 200 {object} helper.Response{data=[]model.UserRes} "Users fetched successfully"
-// @Failure 500 {object} helper.Response "Internal server error when fetching users or their details"
+// @Failure 500 {object} helper.ErrorResponse "Internal server error when fetching users or their details"
 // @Router /users [get]
 func (s *UserHandler) GetUserRestApi(c *gin.Context) {
 	// Get pagination parameters from query, default to 0 (which means no pagination)

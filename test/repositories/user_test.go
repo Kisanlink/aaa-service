@@ -627,3 +627,279 @@ func TestCreditDebitUserByID(t *testing.T) {
 
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
+
+func TestFindUserByUsername(t *testing.T) {
+	repo, mock := setupUserRepository(t)
+	username := "testuser"
+	user := model.User{
+		Base:     model.Base{ID: uuid.New().String()},
+		Username: username,
+		Tokens:   100,
+	}
+
+	t.Run("Success - user found", func(t *testing.T) {
+		rows := sqlmock.NewRows([]string{"id", "username", "tokens"}).
+			AddRow(user.ID, user.Username, user.Tokens)
+
+		mock.ExpectQuery(regexp.QuoteMeta(
+			`SELECT * FROM "users" WHERE username = $1 ORDER BY "users"."id" LIMIT $2`)).
+			WithArgs(username, 1).
+			WillReturnRows(rows)
+
+		result, err := repo.FindUserByUsername(username)
+		assert.NoError(t, err)
+		assert.Equal(t, user.ID, result.ID)
+		assert.Equal(t, user.Username, result.Username)
+	})
+
+	t.Run("Error - user not found", func(t *testing.T) {
+		mock.ExpectQuery(regexp.QuoteMeta(
+			`SELECT * FROM "users" WHERE username = $1 ORDER BY "users"."id" LIMIT $2`)).
+			WithArgs("nonexistent", 1).
+			WillReturnError(gorm.ErrRecordNotFound)
+
+		result, err := repo.FindUserByUsername("nonexistent")
+		assert.Error(t, err)
+		assert.Nil(t, result)
+		assert.Equal(t, http.StatusNotFound, err.(*helper.AppError).StatusCode)
+	})
+
+	t.Run("Error - database error", func(t *testing.T) {
+		mock.ExpectQuery(regexp.QuoteMeta(
+			`SELECT * FROM "users" WHERE username = $1 ORDER BY "users"."id" LIMIT $2`)).
+			WithArgs(username, 1).
+			WillReturnError(errors.New("database error"))
+
+		result, err := repo.FindUserByUsername(username)
+		assert.Error(t, err)
+		assert.Nil(t, result)
+		assert.Equal(t, http.StatusInternalServerError, err.(*helper.AppError).StatusCode)
+	})
+
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestFindUserByMobile(t *testing.T) {
+	repo, mock := setupUserRepository(t)
+	mobileNumber := uint64(1234567890)
+	user := model.User{
+		Base:         model.Base{ID: uuid.New().String()},
+		MobileNumber: mobileNumber,
+	}
+
+	t.Run("Success - user found", func(t *testing.T) {
+		rows := sqlmock.NewRows([]string{"id", "mobile_number"}).
+			AddRow(user.ID, user.MobileNumber)
+
+		mock.ExpectQuery(regexp.QuoteMeta(
+			`SELECT * FROM "users" WHERE mobile_number = $1 ORDER BY "users"."id" LIMIT $2`)).
+			WithArgs(mobileNumber, 1).
+			WillReturnRows(rows)
+
+		result, err := repo.FindUserByMobile(mobileNumber)
+		assert.NoError(t, err)
+		assert.Equal(t, user.ID, result.ID)
+		assert.Equal(t, user.MobileNumber, result.MobileNumber)
+	})
+
+	t.Run("Success - user not found", func(t *testing.T) {
+		mock.ExpectQuery(regexp.QuoteMeta(
+			`SELECT * FROM "users" WHERE mobile_number = $1 ORDER BY "users"."id" LIMIT $2`)).
+			WithArgs(uint64(9876543210), 1).
+			WillReturnError(gorm.ErrRecordNotFound)
+
+		result, err := repo.FindUserByMobile(9876543210)
+		assert.NoError(t, err)
+		assert.Nil(t, result)
+	})
+
+	t.Run("Error - database error", func(t *testing.T) {
+		mock.ExpectQuery(regexp.QuoteMeta(
+			`SELECT * FROM "users" WHERE mobile_number = $1 ORDER BY "users"."id" LIMIT $2`)).
+			WithArgs(mobileNumber, 1).
+			WillReturnError(errors.New("database error"))
+
+		result, err := repo.FindUserByMobile(mobileNumber)
+		assert.Error(t, err)
+		assert.Nil(t, result)
+		assert.Equal(t, http.StatusInternalServerError, err.(*helper.AppError).StatusCode)
+	})
+
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestFindUserByAadhaar(t *testing.T) {
+	repo, mock := setupUserRepository(t)
+	aadhaarNumber := "123456789012"
+	user := model.User{
+		Base:          model.Base{ID: uuid.New().String()},
+		AadhaarNumber: &aadhaarNumber,
+	}
+
+	t.Run("Success - user found", func(t *testing.T) {
+		rows := sqlmock.NewRows([]string{"id", "aadhaar_number"}).
+			AddRow(user.ID, user.AadhaarNumber)
+
+		mock.ExpectQuery(regexp.QuoteMeta(
+			`SELECT * FROM "users" WHERE aadhaar_number = $1 ORDER BY "users"."id" LIMIT $2`)).
+			WithArgs(aadhaarNumber, 1).
+			WillReturnRows(rows)
+
+		result, err := repo.FindUserByAadhaar(aadhaarNumber)
+		assert.NoError(t, err)
+		assert.Equal(t, user.ID, result.ID)
+		assert.Equal(t, *user.AadhaarNumber, *result.AadhaarNumber)
+	})
+
+	t.Run("Success - user not found", func(t *testing.T) {
+		mock.ExpectQuery(regexp.QuoteMeta(
+			`SELECT * FROM "users" WHERE aadhaar_number = $1 ORDER BY "users"."id" LIMIT $2`)).
+			WithArgs("000000000000", 1).
+			WillReturnError(gorm.ErrRecordNotFound)
+
+		result, err := repo.FindUserByAadhaar("000000000000")
+
+		assert.NoError(t, err)
+		assert.Nil(t, result)
+	})
+
+	t.Run("Error - database error", func(t *testing.T) {
+		mock.ExpectQuery(regexp.QuoteMeta(
+			`SELECT * FROM "users" WHERE aadhaar_number = $1 ORDER BY "users"."id" LIMIT $2`)).
+			WithArgs(aadhaarNumber, 1).
+			WillReturnError(errors.New("database error"))
+
+		result, err := repo.FindUserByAadhaar(aadhaarNumber)
+		assert.Error(t, err)
+		assert.Nil(t, result)
+		assert.Equal(t, http.StatusInternalServerError, err.(*helper.AppError).StatusCode)
+	})
+
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetTokensByUserID(t *testing.T) {
+	repo, mock := setupUserRepository(t)
+	userID := uuid.New().String()
+	tokens := 500
+
+	t.Run("Success - get tokens", func(t *testing.T) {
+		rows := sqlmock.NewRows([]string{"id", "tokens"}).
+			AddRow(userID, tokens)
+
+		mock.ExpectQuery(regexp.QuoteMeta(
+			`SELECT * FROM "users" WHERE id = $1 ORDER BY "users"."id" LIMIT $2`)).
+			WithArgs(userID, 1).
+			WillReturnRows(rows)
+
+		result, err := repo.GetTokensByUserID(userID)
+		assert.NoError(t, err)
+		assert.Equal(t, tokens, result)
+	})
+
+	t.Run("Error - user not found", func(t *testing.T) {
+		mock.ExpectQuery(regexp.QuoteMeta(
+			`SELECT * FROM "users" WHERE id = $1 ORDER BY "users"."id" LIMIT $2`)).
+			WithArgs("nonexistent-id", 1).
+			WillReturnError(gorm.ErrRecordNotFound)
+
+		result, err := repo.GetTokensByUserID("nonexistent-id")
+		assert.Error(t, err)
+		assert.Equal(t, 0, result)
+		assert.Equal(t, http.StatusNotFound, err.(*helper.AppError).StatusCode)
+	})
+
+	t.Run("Error - database error", func(t *testing.T) {
+		mock.ExpectQuery(regexp.QuoteMeta(
+			`SELECT * FROM "users" WHERE id = $1 ORDER BY "users"."id" LIMIT $2`)).
+			WithArgs(userID, 1).
+			WillReturnError(errors.New("database error"))
+
+		result, err := repo.GetTokensByUserID(userID)
+		assert.Error(t, err)
+		assert.Equal(t, 0, result)
+		assert.Equal(t, http.StatusInternalServerError, err.(*helper.AppError).StatusCode)
+	})
+
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestUpdateUser(t *testing.T) {
+	repo, mock := setupUserRepository(t)
+	user := model.User{
+		Base:     model.Base{ID: uuid.New().String()},
+		Username: "updated_user",
+		Tokens:   200,
+	}
+
+	t.Run("Success - update user", func(t *testing.T) {
+		mock.ExpectBegin()
+		// Match the exact UPDATE statement with all fields
+		mock.ExpectExec(regexp.QuoteMeta(
+			`UPDATE "users" SET "created_at"=$1,"updated_at"=$2,"username"=$3,"password"=$4,"is_validated"=$5,"aadhaar_number"=$6,"status"=$7,"name"=$8,"care_of"=$9,"date_of_birth"=$10,"photo"=$11,"email_hash"=$12,"share_code"=$13,"year_of_birth"=$14,"mobile_number"=$15,"country_code"=$16,"message"=$17,"address_id"=$18,"tokens"=$19 WHERE "id" = $20`)).
+			WithArgs(
+				sqlmock.AnyArg(), // created_at
+				sqlmock.AnyArg(), // updated_at
+				user.Username,
+				"",        // password
+				false,     // is_validated
+				nil,       // aadhaar_number
+				nil,       // status
+				nil,       // name
+				nil,       // care_of
+				nil,       // date_of_birth
+				nil,       // photo
+				nil,       // email_hash
+				nil,       // share_code
+				nil,       // year_of_birth
+				uint64(0), // mobile_number
+				nil,       // country_code
+				nil,       // message
+				nil,       // address_id
+				user.Tokens,
+				user.ID,
+			).
+			WillReturnResult(sqlmock.NewResult(1, 1))
+		mock.ExpectCommit()
+
+		err := repo.UpdateUser(user)
+		assert.NoError(t, err)
+	})
+
+	t.Run("Error - database error", func(t *testing.T) {
+		mock.ExpectBegin()
+		// Match the exact UPDATE statement with all fields
+		mock.ExpectExec(regexp.QuoteMeta(
+			`UPDATE "users" SET "created_at"=$1,"updated_at"=$2,"username"=$3,"password"=$4,"is_validated"=$5,"aadhaar_number"=$6,"status"=$7,"name"=$8,"care_of"=$9,"date_of_birth"=$10,"photo"=$11,"email_hash"=$12,"share_code"=$13,"year_of_birth"=$14,"mobile_number"=$15,"country_code"=$16,"message"=$17,"address_id"=$18,"tokens"=$19 WHERE "id" = $20`)).
+			WithArgs(
+				sqlmock.AnyArg(), // created_at
+				sqlmock.AnyArg(), // updated_at
+				user.Username,
+				"",        // password
+				false,     // is_validated
+				nil,       // aadhaar_number
+				nil,       // status
+				nil,       // name
+				nil,       // care_of
+				nil,       // date_of_birth
+				nil,       // photo
+				nil,       // email_hash
+				nil,       // share_code
+				nil,       // year_of_birth
+				uint64(0), // mobile_number
+				nil,       // country_code
+				nil,       // message
+				nil,       // address_id
+				user.Tokens,
+				user.ID,
+			).
+			WillReturnError(errors.New("update failed"))
+		mock.ExpectRollback()
+
+		err := repo.UpdateUser(user)
+		assert.Error(t, err)
+		assert.Equal(t, http.StatusInternalServerError, err.(*helper.AppError).StatusCode)
+	})
+
+	assert.NoError(t, mock.ExpectationsWereMet())
+}

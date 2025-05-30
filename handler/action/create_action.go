@@ -29,9 +29,9 @@ func NewActionHandler(
 // @Produce json
 // @Param request body model.CreateActionRequest true "Action creation data"
 // @Success 201 {object} helper.Response{data=model.Action} "Action created successfully"
-// @Failure 400 {object} helper.Response "Invalid request or missing required fields"
-// @Failure 409 {object} helper.Response "Action already exists"
-// @Failure 500 {object} helper.Response "Failed to create action"
+// @Failure 400 {object} helper.ErrorResponse "Invalid request or missing required fields"
+// @Failure 409 {object} helper.ErrorResponse "Action already exists"
+// @Failure 500 {object} helper.ErrorResponse "Failed to create action"
 // @Router /actions [post]
 func (s *ActionHandler) CreateActionRestApi(c *gin.Context) {
 	var req model.Action

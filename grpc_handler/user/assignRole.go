@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/Kisanlink/aaa-service/client"
-	"github.com/Kisanlink/aaa-service/helper"
 	"github.com/Kisanlink/aaa-service/model"
 	"github.com/kisanlink/protobuf/pb-aaa"
 	"google.golang.org/grpc/codes"
@@ -46,10 +45,14 @@ func (s *Server) AssignRole(ctx context.Context, req *pb.AssignRoleToUserRequest
 
 		return nil, status.Errorf(codes.Internal, "failed to fetch user role: %v", err)
 	}
-	roleNames, err := helper.ExtractRoleNames(userRoles)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to extract role name: %v", err)
+	roleNames := make([]string, 0, len(userRoles))
 
+	for _, userRole := range userRoles {
+		role, err := s.roleService.FindRoleByID(userRole.RoleID)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to find role with ID %s: %w", userRole.RoleID, err)
+		}
+		roleNames = append(roleNames, role.Name)
 	}
 
 	err = client.DeleteRelationships(
@@ -89,7 +92,8 @@ func (s *Server) AssignRole(ctx context.Context, req *pb.AssignRoleToUserRequest
 			IsValidated: user.IsValidated,
 			CreatedAt:   user.CreatedAt.Format(time.RFC3339),
 			UpdatedAt:   user.UpdatedAt.Format(time.RFC3339),
-			Roles:       convertRoleResponseToPB(rolesResponse)},
+			Roles:       convertRoleResponseToPB(rolesResponse),
+		},
 	}, nil
 }
 
@@ -111,7 +115,7 @@ func convertRoleDetailToPB(roleDetail model.RoleDetail) *pb.Role {
 }
 
 // convertPermissionsToPB converts RolePermissions to protobuf Permissions
-func convertPermissionsToPB(permissions []model.RolePermission) []*pb.Permission {
+func convertPermissionsToPB(permissions []model.RolePermissionRes) []*pb.Permission {
 	var pbPermissions []*pb.Permission
 	for _, perm := range permissions {
 		pbPermissions = append(pbPermissions, &pb.Permission{

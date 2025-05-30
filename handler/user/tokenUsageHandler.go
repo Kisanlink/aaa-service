@@ -16,8 +16,8 @@ import (
 // @Produce json
 // @Param request body model.CreditUsageRequest true "Token transaction request"
 // @Success 200 {object} object "Returns remaining tokens in all cases" example({"remaining_tokens": 100})
-// @Failure 400 {object} helper.Response "Invalid request, insufficient tokens, or invalid transaction type"
-// @Failure 404 {object} helper.Response "User not found"
+// @Failure 400 {object} helper.ErrorResponse "Invalid request, insufficient tokens, or invalid transaction type"
+// @Failure 404 {object} helper.ErrorResponse "User not found"
 // @Router /token-transaction [post]
 func (s *UserHandler) TokenUsageHandler(c *gin.Context) {
 	var req model.CreditUsageRequest

@@ -17,9 +17,9 @@ import (
 // @Param id path string true "Resource ID"
 // @Param request body model.CreateResourceRequest true "Resource update data"
 // @Success 200 {object} helper.Response{data=model.Resource} "Resource updated successfully"
-// @Failure 400 {object} helper.Response "Invalid request body"
-// @Failure 404 {object} helper.Response "Resource not found"
-// @Failure 500 {object} helper.Response "Failed to update resource"
+// @Failure 400 {object} helper.ErrorResponse "Invalid request body"
+// @Failure 404 {object} helper.ErrorResponse "Resource not found"
+// @Failure 500 {object} helper.ErrorResponse "Failed to update resource"
 // @Router /resources/{id} [put]
 func (s *ResourceHandler) UpdateResourceRestApi(c *gin.Context) {
 	id := c.Param("id")

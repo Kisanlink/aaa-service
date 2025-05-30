@@ -17,9 +17,9 @@ import (
 // @Param id path string true "Action ID"
 // @Param request body model.CreateActionRequest true "Action update data"
 // @Success 200 {object} helper.Response{data=model.Action} "Action updated successfully"
-// @Failure 400 {object} helper.Response "Invalid request body"
-// @Failure 404 {object} helper.Response "Action not found"
-// @Failure 500 {object} helper.Response "Failed to update action"
+// @Failure 400 {object} helper.ErrorResponse "Invalid request body"
+// @Failure 404 {object} helper.ErrorResponse "Action not found"
+// @Failure 500 {object} helper.ErrorResponse "Failed to update action"
 // @Router /actions/{id} [put]
 func (s *ActionHandler) UpdateActionRestApi(c *gin.Context) {
 	id := c.Param("id")

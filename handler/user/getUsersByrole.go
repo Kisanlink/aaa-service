@@ -21,9 +21,9 @@ import (
 // @Param page query int false "Page number (starts from 1)"
 // @Param limit query int false "Number of items per page"
 // @Success 200 {object} helper.Response{data=[]model.UserRes} "Users fetched successfully"
-// @Failure 400 {object} helper.Response "Bad request if both roleName and roleId are provided"
-// @Failure 404 {object} helper.Response "Role not found when searching by name"
-// @Failure 500 {object} helper.Response "Internal server error"
+// @Failure 400 {object} helper.ErrorResponse "Bad request if both roleName and roleId are provided"
+// @Failure 404 {object} helper.ErrorResponse "Role not found when searching by name"
+// @Failure 500 {object} helper.ErrorResponse "Internal server error"
 // @Router /users/by-role [get]
 func (s *UserHandler) GetUsersByRoleRestApi(c *gin.Context) {
 	// Get query parameters
