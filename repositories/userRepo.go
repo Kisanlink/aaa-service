@@ -261,14 +261,6 @@ func (repo *UserRepository) FindRoleUsersAndPermissionsByRoleId(ctx context.Cont
 	return roles, permissions, actions, connectedUsernames, nil
 }
 
-// func (repo *UserRepository) CreateUserRoles(ctx context.Context, userRoles model.UserRole) error {
-// 	if err := repo.DB.Table("user_roles").Create(&userRoles).Error; err != nil {
-// 		return status.Error(codes.Internal, "Failed to create UserRole entries")
-// 	}
-
-//		return nil
-//	}
-
 func (repo *UserRepository) CreateUserRoles(ctx context.Context, userRole model.UserRole) error {
 	// First check if this user-role assignment already exists
 	var count int64
