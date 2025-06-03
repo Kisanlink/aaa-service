@@ -232,6 +232,27 @@ func (repo *UserRepository) FindRoleUsersAndPermissionsByRoleId(ctx context.Cont
 
 //		return nil
 //	}
+
+func (repo *UserRepository) GetUsersByRole(roleId string, page, limit int) ([]model.User, error) {
+	var users []model.User
+
+	query := repo.DB.Table("users").
+		Joins("JOIN user_roles ON user_roles.user_id = users.id AND user_roles.role_id = ?", roleId).
+		Preload("Roles")
+
+	// Apply pagination
+	if page > 0 && limit > 0 {
+		offset := (page - 1) * limit
+		query = query.Offset(offset).Limit(limit)
+	}
+
+	err := query.Find(&users).Error
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to fetch users: %w", err)
+	}
+
+	return users, nil
+}
 func (repo *UserRepository) CreateUserRoles(ctx context.Context, userRole model.UserRole) error {
 	// First check if this user-role assignment already exists
 	var count int64

@@ -2,8 +2,10 @@ package user
 
 import (
 	"net/http"
+	"strconv"
 	"time"
 
+	"github.com/Kisanlink/aaa-service/model"
 	"github.com/gin-gonic/gin"
 )
 
@@ -58,7 +60,75 @@ type GetUserResponse struct {
 func (s *Server) GetUserRestApi(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	users, err := s.UserRepo.GetUsers(ctx)
+	// Get query parameters for role filtering
+	roleName := c.Query("roleName")
+	roleIdStr := c.Query("roleId")
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "0"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "0"))
+
+	var users []User
+	var err error
+
+	// If role filtering parameters are provided, use GetUsersByRole logic
+	if roleName != "" || roleIdStr != "" {
+		// Validate that not both roleName and roleId are provided
+		if roleName != "" && roleIdStr != "" {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"status_code": http.StatusBadRequest,
+				"success":     false,
+				"message":     "Please provide either roleName or roleId, not both",
+				"data":        nil,
+			})
+			return
+		}
+
+		var roleId string
+
+		// If roleName is provided, find the role by name first
+		if roleName != "" {
+			role, err := s.RoleRepo.GetRoleByName(ctx, roleName)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"status_code": http.StatusInternalServerError,
+					"success":     false,
+					"message":     err.Error(),
+					"data":        nil,
+				})
+				return
+			}
+			roleId = role.ID
+		} else {
+			roleId = roleIdStr
+		}
+
+		var modelUsers []model.User
+		modelUsers, err = s.UserRepo.GetUsersByRole(roleId, page, limit)
+		// Convert []model.User to []User
+		for _, mu := range modelUsers {
+			users = append(users, User{
+				ID:            mu.ID,
+				Username:      mu.Username,
+				Password:      mu.Password,
+				IsValidated:   mu.IsValidated,
+				CreatedAt:     mu.CreatedAt.Format(time.RFC3339),
+				UpdatedAt:     mu.UpdatedAt.Format(time.RFC3339),
+				AadhaarNumber: *mu.AadhaarNumber,
+				Status:        *mu.Status,
+				Name:          *mu.Name,
+				CareOf:        *mu.CareOf,
+				DateOfBirth:   *mu.DateOfBirth,
+				Photo:         *mu.Photo,
+				EmailHash:     *mu.EmailHash,
+				ShareCode:     *mu.ShareCode,
+				YearOfBirth:   *mu.YearOfBirth,
+				Message:       *mu.Message,
+				MobileNumber:  mu.MobileNumber,
+				CountryCode:   *mu.CountryCode,
+				// Address and RolePermission will be filled later
+			})
+		}
+	}
+
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status_code": http.StatusInternalServerError,
@@ -82,8 +152,6 @@ func (s *Server) GetUserRestApi(c *gin.Context) {
 			})
 			return
 		}
-
-		// Convert role permissions to the new structure
 		var rolesResponse []RoleResponse
 		for roleName, permissions := range rolePermissions {
 			uniquePerms := make(map[string]PermissionResponse)
@@ -97,8 +165,6 @@ func (s *Server) GetUserRestApi(c *gin.Context) {
 					Resource:    perm.Resource,
 				}
 			}
-
-			// Convert unique permissions map to slice
 			var permsSlice []PermissionResponse
 			for _, perm := range uniquePerms {
 				permsSlice = append(permsSlice, perm)
@@ -111,17 +177,17 @@ func (s *Server) GetUserRestApi(c *gin.Context) {
 		}
 
 		var address *Address
-		if user.AddressID != nil {
-			addr, err := s.UserRepo.GetAddressByID(ctx, *user.AddressID)
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"status_code": http.StatusInternalServerError,
-					"success":     false,
-					"message":     "Failed to fetch address",
-					"data":        nil,
-				})
-				return
-			}
+		if user.Address != nil && user.Address.ID != "" {
+			addr, _ := s.UserRepo.GetAddressByID(ctx, user.Address.ID)
+			// if err != nil {
+			// 	c.JSON(http.StatusInternalServerError, gin.H{
+			// 		"status_code": http.StatusInternalServerError,
+			// 		"success":     false,
+			// 		"message":     "Failed to fetch address",
+			// 		"data":        nil,
+			// 	})
+			// 	return
+			// }
 
 			address = &Address{
 				ID:          addr.ID,
@@ -146,21 +212,21 @@ func (s *Server) GetUserRestApi(c *gin.Context) {
 			Username:       user.Username,
 			Password:       "", // Don't return password in response
 			IsValidated:    user.IsValidated,
-			CreatedAt:      user.CreatedAt.Format(time.RFC3339),
-			UpdatedAt:      user.UpdatedAt.Format(time.RFC3339),
+			CreatedAt:      user.CreatedAt,
+			UpdatedAt:      user.UpdatedAt,
 			RolePermission: rolesResponse,
-			AadhaarNumber:  safeString(user.AadhaarNumber),
-			Status:         safeString(user.Status),
-			Name:           safeString(user.Name),
-			CareOf:         safeString(user.CareOf),
-			DateOfBirth:    safeString(user.DateOfBirth),
-			Photo:          safeString(user.Photo),
-			EmailHash:      safeString(user.EmailHash),
-			ShareCode:      safeString(user.ShareCode),
-			YearOfBirth:    safeString(user.YearOfBirth),
-			Message:        safeString(user.Message),
+			AadhaarNumber:  safeString(&user.AadhaarNumber),
+			Status:         safeString(&user.Status),
+			Name:           safeString(&user.Name),
+			CareOf:         safeString(&user.CareOf),
+			DateOfBirth:    safeString(&user.DateOfBirth),
+			Photo:          safeString(&user.Photo),
+			EmailHash:      safeString(&user.EmailHash),
+			ShareCode:      safeString(&user.ShareCode),
+			YearOfBirth:    safeString(&user.YearOfBirth),
+			Message:        safeString(&user.Message),
 			MobileNumber:   user.MobileNumber,
-			CountryCode:    safeString(user.CountryCode),
+			CountryCode:    safeString(&user.CountryCode),
 			Address:        address,
 		}
 
