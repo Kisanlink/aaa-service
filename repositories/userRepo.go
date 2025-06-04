@@ -69,15 +69,51 @@ func (repo *UserRepository) GetAddressByID(ctx context.Context, addressId string
 	return &address, nil
 }
 
-func (repo *UserRepository) GetUsers(ctx context.Context) ([]model.User, error) {
+//	func (repo *UserRepository) GetUsers(ctx context.Context) ([]model.User, error) {
+//		var users []model.User
+//		err := repo.DB.Table("users").Find(&users).Error
+//		if err != nil {
+//			return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to fetch users: %v", err))
+//		}
+//		return users, nil
+//	}
+func (repo *UserRepository) GetUsers(ctx context.Context, roleId, roleName string, page, limit int) ([]model.User, error) {
 	var users []model.User
-	err := repo.DB.Table("users").Find(&users).Error
-	if err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to fetch users: %v", err))
+	query := repo.DB.Table("users")
+
+	// Handle role filtering if either roleId or roleName is provided
+	if roleId != "" || roleName != "" {
+		// If roleName is provided, we need to get the roleId first
+		if roleName != "" {
+			var role model.Role
+			if err := repo.DB.Table("roles").Where("name = ?", roleName).First(&role).Error; err != nil {
+				if errors.Is(err, gorm.ErrRecordNotFound) {
+					return nil, status.Error(codes.NotFound, "role not found")
+				}
+				return nil, status.Error(codes.Internal, fmt.Sprintf("failed to find role: %v", err))
+			}
+			roleId = role.ID
+		}
+
+		// Join with user_roles table to filter by role
+		query = query.
+			Joins("JOIN user_roles ON user_roles.user_id = users.id AND user_roles.role_id = ?", roleId).
+			Preload("Roles")
 	}
+
+	// Apply pagination if parameters are provided
+	if page > 0 && limit > 0 {
+		offset := (page - 1) * limit
+		query = query.Offset(offset).Limit(limit)
+	}
+
+	// Execute the query
+	if err := query.Find(&users).Error; err != nil {
+		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to fetch users: %v", err))
+	}
+
 	return users, nil
 }
-
 func (repo *UserRepository) FindUserRoles(ctx context.Context, userID string) ([]model.UserRole, error) {
 	var userRoles []model.UserRole
 	err := repo.DB.Table("user_roles").Where("user_id = ?", userID).Find(&userRoles).Error
@@ -225,13 +261,6 @@ func (repo *UserRepository) FindRoleUsersAndPermissionsByRoleId(ctx context.Cont
 	return roles, permissions, actions, connectedUsernames, nil
 }
 
-// func (repo *UserRepository) CreateUserRoles(ctx context.Context, userRoles model.UserRole) error {
-// 	if err := repo.DB.Table("user_roles").Create(&userRoles).Error; err != nil {
-// 		return status.Error(codes.Internal, "Failed to create UserRole entries")
-// 	}
-
-//		return nil
-//	}
 func (repo *UserRepository) CreateUserRoles(ctx context.Context, userRole model.UserRole) error {
 	// First check if this user-role assignment already exists
 	var count int64

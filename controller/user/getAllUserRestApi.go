@@ -2,6 +2,7 @@ package user
 
 import (
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -57,8 +58,12 @@ type GetUserResponse struct {
 
 func (s *Server) GetUserRestApi(c *gin.Context) {
 	ctx := c.Request.Context()
+	roleName := c.Query("roleName")
+	roleIdStr := c.Query("roleId")
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "0"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "0"))
 
-	users, err := s.UserRepo.GetUsers(ctx)
+	users, err := s.UserRepo.GetUsers(ctx, roleIdStr, roleName, page, limit)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status_code": http.StatusInternalServerError,
