@@ -290,9 +290,11 @@ func (repo *UserRepository) GetUserRoleByID(ctx context.Context, userID string) 
 	}
 	return &user, nil
 }
-func (repo *UserRepository) DeleteUserRoles(ctx context.Context, id string) error {
-	if err := repo.DB.Table("user_roles").Where("user_id = ?", id).Delete(&model.UserRole{}).Error; err != nil {
-		return status.Error(codes.Internal, fmt.Sprintf("Failed to delete user roles: %v", err))
+func (repo *UserRepository) DeleteUserRole(ctx context.Context, userID string, roleID string) error {
+	if err := repo.DB.Table("user_roles").
+		Where("user_id = ? AND role_id = ?", userID, roleID).
+		Delete(&model.UserRole{}).Error; err != nil {
+		return status.Error(codes.Internal, fmt.Sprintf("Failed to delete user role: %v", err))
 	}
 	return nil
 }

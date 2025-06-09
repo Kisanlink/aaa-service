@@ -22,31 +22,29 @@ func (s *Server) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest) (*pb
 	if err != nil {
 		return nil, err
 	}
-	if err := s.UserRepo.DeleteUserRoles(ctx, id); err != nil {
-		return nil, err
-	}
+
 	if err := s.UserRepo.DeleteUser(ctx, id); err != nil {
 		return nil, err
 	}
-	roles, permissions,actions, err := s.UserRepo.FindUserRolesAndPermissions(ctx, existingUser.ID)
-    if err != nil {
+	roles, permissions, actions, err := s.UserRepo.FindUserRolesAndPermissions(ctx, existingUser.ID)
+	if err != nil {
 		return nil, status.Errorf(codes.Internal, "Failed to fetch user roles and permissions")
 
-    }
+	}
 	updated, err := client.DeleteUserRoleRelationship(
-		strings.ToLower(existingUser.Username), 
-		helper.LowerCaseSlice(roles), 
+		strings.ToLower(existingUser.Username),
+		helper.LowerCaseSlice(roles),
 		helper.LowerCaseSlice(permissions),
 		helper.LowerCaseSlice(actions),
 	)
-		if err != nil {
+	if err != nil {
 		return nil, status.Errorf(codes.Internal, "Failed to delete user relationship")
 
 	}
 	log.Printf("delete Relation  Response: %+v", updated)
 	return &pb.DeleteUserResponse{
 		StatusCode: http.StatusOK,
-		Success: true,
+		Success:    true,
 		Message:    "User deleted successfully",
 	}, nil
 }
