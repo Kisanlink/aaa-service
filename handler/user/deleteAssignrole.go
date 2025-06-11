@@ -10,65 +10,81 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// DeleteAssignRoleRestApi removes a role from a user
-// @Summary Remove a role from a user
-// @Description Removes a specified role from a user and returns the updated user details with remaining roles and permissions
+// DeleteAssignRole delete a role to a user
+// @Summary delete a role to a user
+// @Description API to delete a specific role assigned to a user
 // @Tags Users
 // @Accept json
 // @Produce json
-// @Param userID path string true "User ID"
-// @Param role path string true "Role Name"
-// @Success 200 {object} helper.Response{data=model.AssignRolePermission} "Role removed successfully"
-// @Failure 400 {object} helper.ErrorResponse "Invalid user ID or role"
+// @Param request body model.AssignRoleRequest true "Assign Role Request"
+// @Success 200 {object} helper.Response{data=nil} "delete assigned Role successfully"
+// @Failure 400 {object} helper.ErrorResponse "Invalid request body"
 // @Failure 404 {object} helper.ErrorResponse "User or Role not found"
 // @Failure 500 {object} helper.ErrorResponse "Internal server error"
-// @Router /remove/{role}/by/{userID} [delete]
+// @Router /assign-role [delete]
 func (s *UserHandler) DeleteAssignRoleRestApi(c *gin.Context) {
-	// Get userID and role from path parameters
-	userID := c.Param("userID")
-	role := c.Param("role")
-
-	if userID == "" {
-		helper.SendErrorResponse(c.Writer, http.StatusBadRequest, []string{"User ID is required"})
-		return
-	}
-
-	if role == "" {
-		helper.SendErrorResponse(c.Writer, http.StatusBadRequest, []string{"Role is required"})
+	var req model.AssignRoleRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		helper.SendErrorResponse(c.Writer, http.StatusBadRequest, []string{"Invalid request body"})
 		return
 	}
 
 	// Validate user exists
-	user, err := s.userService.GetUserByID(userID)
+	user, err := s.userService.GetUserByID(req.UserID)
 	if err != nil {
-		helper.SendErrorResponse(c.Writer, http.StatusNotFound, []string{err.Error()})
+		helper.SendErrorResponse(c.Writer, http.StatusNotFound, []string{"User not found"})
 		return
 	}
 
-	// Delete user-role relationship
-	if err := s.userService.DeleteUserRoles(userID); err != nil {
+	// Validate role exists
+	role, err := s.RoleService.GetRoleByName(req.Role)
+	if err != nil {
+		helper.SendErrorResponse(c.Writer, http.StatusNotFound, []string{"Role not found"})
+		return
+	}
+
+	if err := s.userService.DeleteUserRoles(req.UserID, role.ID); err != nil {
 
 		helper.SendErrorResponse(c.Writer, http.StatusInternalServerError, []string{err.Error()})
-
 		return
 	}
 
-	// Update relationships in the authorization service
+	userRoles, err := s.userService.FindUserRoles(user.ID)
+	if err != nil {
+
+		helper.SendErrorResponse(c.Writer, http.StatusInternalServerError, []string{err.Error()})
+		return
+	}
+
+	roleNames := make([]string, 0, len(userRoles))
+
+	for _, userRole := range userRoles {
+		role, err := s.RoleService.FindRoleByID(userRole.RoleID)
+		if err != nil {
+			helper.SendErrorResponse(c.Writer, http.StatusNotFound, []string{err.Error()})
+		}
+		roleNames = append(roleNames, role.Name)
+	}
+
 	err = client.DeleteRelationships(
-		[]string{role}, // Delete the specific role being removed
+		roleNames,
 		user.Username,
 		user.ID,
 	)
+
 	if err != nil {
 		log.Printf("Error deleting relationships: %v", err)
 	}
 
-	// Build response data
-	responseData := &model.AssignRolePermission{
-		ID:          user.ID,
-		Username:    user.Username,
-		IsValidated: user.IsValidated,
+	err = client.CreateRelationships(
+		roleNames,
+		user.Username,
+		user.ID,
+	)
+
+	if err != nil {
+		log.Printf("Error creating relationships: %v", err)
 	}
 
-	helper.SendSuccessResponse(c.Writer, http.StatusOK, "Role removed from user successfully", responseData)
+	helper.SendSuccessResponse(c.Writer, http.StatusOK, "Role assigned to user successfully", nil)
 }

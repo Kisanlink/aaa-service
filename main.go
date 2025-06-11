@@ -1,7 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"log"
+	"net/http"
+	"os"
 
 	"github.com/Kisanlink/aaa-service/config"
 	"github.com/Kisanlink/aaa-service/database"
@@ -9,7 +12,9 @@ import (
 	"github.com/Kisanlink/aaa-service/grpc"
 	"github.com/Kisanlink/aaa-service/helper"
 	"github.com/Kisanlink/aaa-service/routes"
+	"github.com/MarceloPetrucio/go-scalar-api-reference"
 	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	swaggerfiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -34,6 +39,22 @@ func main() {
 	r := routes.SetupRouter(database.DB)
 	r.GET("/doc/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 	r.Use(cors.New(config.GetCorsConfig(corsSetup)))
+	r.GET("/docs", func(c *gin.Context) {
+		htmlContent, err := scalar.ApiReferenceHTML(&scalar.Options{
+			SpecURL: fmt.Sprintf("%s/doc/doc.json", os.Getenv("URL")),
+			CustomOptions: scalar.CustomOptions{
+				PageTitle: "AAA-SERVICE API",
+			},
+			DarkMode: true,
+		})
+
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(htmlContent))
+	})
 	grpcServer, err := grpc.StartGRPCServer(database.DB)
 	if err != nil {
 		helper.Log.Fatalf("Failed to start gRPC server: %v", err)

@@ -334,6 +334,68 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "delete": {
+                "description": "API to delete a specific role assigned to a user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "delete a role to a user",
+                "parameters": [
+                    {
+                        "description": "Assign Role Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.AssignRoleRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "delete assigned Role successfully",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/helper.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body",
+                        "schema": {
+                            "$ref": "#/definitions/helper.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "User or Role not found",
+                        "schema": {
+                            "$ref": "#/definitions/helper.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/helper.ErrorResponse"
+                        }
+                    }
+                }
             }
         },
         "/forgot-password": {
@@ -867,75 +929,6 @@ const docTemplate = `{
                     },
                     "409": {
                         "description": "Username, mobile number or Aadhaar already exists",
-                        "schema": {
-                            "$ref": "#/definitions/helper.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "$ref": "#/definitions/helper.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/remove/{role}/by/{userID}": {
-            "delete": {
-                "description": "Removes a specified role from a user and returns the updated user details with remaining roles and permissions",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Users"
-                ],
-                "summary": "Remove a role from a user",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "User ID",
-                        "name": "userID",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Role Name",
-                        "name": "role",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Role removed successfully",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/helper.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/model.AssignRolePermission"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid user ID or role",
-                        "schema": {
-                            "$ref": "#/definitions/helper.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "User or Role not found",
                         "schema": {
                             "$ref": "#/definitions/helper.ErrorResponse"
                         }
@@ -1823,88 +1816,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/users/by-role": {
-            "get": {
-                "description": "Retrieves a list of users filtered by role name or role ID (both optional)",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Users"
-                ],
-                "summary": "Get users by role",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Role name to filter users",
-                        "name": "roleName",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Role ID to filter users",
-                        "name": "roleId",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Page number (starts from 1)",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Number of items per page",
-                        "name": "limit",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Users fetched successfully",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/helper.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/definitions/model.UserRes"
-                                            }
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "400": {
-                        "description": "Bad request if both roleName and roleId are provided",
-                        "schema": {
-                            "$ref": "#/definitions/helper.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Role not found when searching by name",
-                        "schema": {
-                            "$ref": "#/definitions/helper.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "$ref": "#/definitions/helper.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/users/{id}": {
             "get": {
                 "description": "Retrieves a single user's details including roles, permissions, and address information by their unique ID",
@@ -2080,7 +1991,7 @@ const docTemplate = `{
                     "description": "The actual data payload (can be any type)\n@example {\"id\": 1, \"name\": \"John Doe\"}"
                 },
                 "error": {
-                    "description": "List of error messages (if any)\n@example [\"Invalid email format\", \"Password too short\"]",
+                    "description": "List of error messages (if any)\n@example null",
                     "type": "array",
                     "items": {
                         "type": "string"

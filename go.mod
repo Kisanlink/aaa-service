@@ -21,6 +21,8 @@ require (
 	gorm.io/gorm v1.25.10
 )
 
+require github.com/MarceloPetrucio/go-scalar-api-reference v0.0.0-20240521013641-ce5d2efe0e06 // indirect
+
 require (
 	cloud.google.com/go/compute/metadata v0.6.0 // indirect
 	github.com/DATA-DOG/go-sqlmock v1.5.2

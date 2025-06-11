@@ -10,7 +10,6 @@ func UserRoutes(r *gin.RouterGroup, database *gorm.DB, s user.UserHandler) {
 	r.POST("/login", s.LoginRestApi)
 	r.POST("/register", s.CreateUserRestApi)
 	r.GET("/users", s.GetUserRestApi)
-	r.GET("/users/by-role", s.GetUsersByRoleRestApi)
 	r.GET("/users/:id", s.GetUserByIdRestApi)
 	r.PATCH("/users/:id", s.UpdateUserRestApi)
 	r.POST("/assign-role", s.AssignRoleRestApi)

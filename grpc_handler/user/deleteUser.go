@@ -18,9 +18,6 @@ func (s *Server) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest) (*pb
 	// if err != nil {
 	// 	return nil, err
 	// }
-	if err := s.userService.DeleteUserRoles(id); err != nil {
-		return nil, err
-	}
 	if err := s.userService.DeleteUser(id); err != nil {
 		return nil, err
 	}

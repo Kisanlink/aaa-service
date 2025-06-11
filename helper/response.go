@@ -30,7 +30,7 @@ type Response struct {
 	Data interface{} `json:"data"`
 
 	// List of error messages (if any)
-	// @example ["Invalid email format", "Password too short"]
+	// @example null
 	Error []string `json:"error"`
 
 	// Timestamp of when the response was generated

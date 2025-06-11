@@ -239,7 +239,7 @@ func TestGetUsers(t *testing.T) {
 			WithArgs(10).
 			WillReturnRows(rows)
 
-		result, err := repo.GetUsers(1, 10)
+		result, err := repo.GetUsers("", "", 1, 10)
 		assert.NoError(t, err)
 		if assert.Len(t, result, 2) {
 			assert.Equal(t, users[0].ID, result[0].ID)
@@ -260,7 +260,7 @@ func TestGetUsers(t *testing.T) {
 		mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "users"`)).
 			WillReturnRows(rows)
 
-		result, err := repo.GetUsers(0, 0)
+		result, err := repo.GetUsers("", "", 1, 10)
 		assert.NoError(t, err)
 		if assert.Len(t, result, 1) {
 			assert.Equal(t, user.Username, result[0].Username)
@@ -274,7 +274,7 @@ func TestGetUsers(t *testing.T) {
 			WithArgs(10).
 			WillReturnRows(rows)
 
-		result, err := repo.GetUsers(1, 10)
+		result, err := repo.GetUsers("", "", 1, 10)
 		assert.NoError(t, err)
 		assert.Empty(t, result)
 	})
@@ -284,7 +284,7 @@ func TestGetUsers(t *testing.T) {
 			WithArgs(10).
 			WillReturnError(errors.New("database error"))
 
-		result, err := repo.GetUsers(1, 10)
+		result, err := repo.GetUsers("", "", 1, 10)
 		assert.Error(t, err)
 		assert.Nil(t, result)
 		assert.Contains(t, err.Error(), "database error")

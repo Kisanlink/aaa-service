@@ -1,13 +1,11 @@
 package model
 
-import "github.com/lib/pq"
-
 type Permission struct {
 	Base
-	Resource string         `json:"resource" gorm:"size:100;not null"`
-	Effect   string         `json:"effect" gorm:"type:text"`
-	Actions  pq.StringArray `json:"actions" gorm:"type:text[]"`
-	// Actions []string `json:"actions" gorm:"type:text[]"`
+	Resource string `json:"resource" gorm:"size:100;not null"`
+	Effect   string `json:"effect" gorm:"type:text"`
+	// Actions  pq.StringArray `json:"actions" gorm:"type:text[]"`
+	Actions []string `json:"actions" gorm:"type:text[]"`
 }
 type Role struct {
 	Base

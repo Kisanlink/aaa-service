@@ -16,11 +16,11 @@ type UserRepositoryInterface interface {
 	CheckIfUserExists(username string) error
 	GetUserByID(userID string) (*model.User, error)
 	GetAddressByID(addressId string) (*model.Address, error)
-	GetUsers(page, limit int) ([]model.User, error)
+	GetUsers(roleId, roleName string, page, limit int) ([]model.User, error)
 	FindUserRoles(userID string) ([]model.UserRole, error)
 	CreateUserRoles(userRole model.UserRole) error
 	GetUserRoleByID(userID string) (*model.User, error)
-	DeleteUserRoles(id string) error
+	DeleteUserRoles(userID string, roleID string) error
 	DeleteUser(id string) error
 	FindExistingUserByID(id string) (*model.User, error)
 	UpdateUser(existingUser model.User) error
@@ -93,20 +93,58 @@ func (repo *UserRepository) GetAddressByID(addressId string) (*model.Address, er
 	return &address, nil
 }
 
-func (repo *UserRepository) GetUsers(page, limit int) ([]model.User, error) {
+// func (repo *UserRepository) GetUsers(page, limit int) ([]model.User, error) {
+// 	var users []model.User
+// 	query := repo.DB.Table("users")
+
+// 	// Apply pagination if both page and limit are provided and valid
+// 	if page > 0 && limit > 0 {
+// 		offset := (page - 1) * limit
+// 		query = query.Offset(offset).Limit(limit)
+// 	}
+
+//		err := query.Find(&users).Error
+//		if err != nil {
+//			return nil, helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to fetch users: %w", err))
+//		}
+//		return users, nil
+//	}
+func (repo *UserRepository) GetUsers(roleId, roleName string, page, limit int) ([]model.User, error) {
 	var users []model.User
 	query := repo.DB.Table("users")
 
-	// Apply pagination if both page and limit are provided and valid
+	// Handle role filtering if either roleId or roleName is provided
+	if roleId != "" || roleName != "" {
+		// If roleName is provided, we need to get the roleId first
+		if roleName != "" {
+			var role model.Role
+			if err := repo.DB.Table("roles").Where("name = ?", roleName).First(&role).Error; err != nil {
+				if errors.Is(err, gorm.ErrRecordNotFound) {
+					return nil, helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("role not found: %w", err))
+				}
+				return nil, helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to find role: %w", err))
+			}
+			roleId = role.ID
+		}
+
+		// Join with user_roles table to filter by role
+		query = query.
+			Joins("JOIN user_roles ON user_roles.user_id = users.id AND user_roles.role_id = ?", roleId).
+			Preload("Roles")
+	}
+
+	// Apply pagination if parameters are provided
 	if page > 0 && limit > 0 {
 		offset := (page - 1) * limit
 		query = query.Offset(offset).Limit(limit)
 	}
 
-	err := query.Find(&users).Error
-	if err != nil {
+	// Execute the query
+	if err := query.Find(&users).Error; err != nil {
 		return nil, helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to fetch users: %w", err))
+
 	}
+
 	return users, nil
 }
 func (repo *UserRepository) FindUserRoles(userID string) ([]model.UserRole, error) {
@@ -175,9 +213,12 @@ func (repo *UserRepository) GetUsersByRole(roleId string, page, limit int) ([]mo
 
 	return users, nil
 }
-func (repo *UserRepository) DeleteUserRoles(id string) error {
-	if err := repo.DB.Table("user_roles").Where("user_id = ?", id).Delete(&model.UserRole{}).Error; err != nil {
-		return helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to delete user roles: %w", err))
+func (repo *UserRepository) DeleteUserRoles(userID string, roleID string) error {
+	if err := repo.DB.Table("user_roles").
+		Where("user_id = ? AND role_id = ?", userID, roleID).
+		Delete(&model.UserRole{}).Error; err != nil {
+		return helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("Failed to delete user role: %w", err))
+
 	}
 	return nil
 }

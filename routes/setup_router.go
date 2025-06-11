@@ -24,7 +24,7 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 
 	r.GET("/", func(c *gin.Context) {
 		c.JSON(200, gin.H{
-			"message": "Welcome to the DIVYA DHRISHTI server!",
+			"message": "Welcome to the AAA-SERVICE server!",
 		})
 	})
 	api := r.Group("/api")

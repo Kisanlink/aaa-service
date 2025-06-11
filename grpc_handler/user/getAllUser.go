@@ -12,7 +12,7 @@ import (
 )
 
 func (s *Server) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.GetUserResponse, error) {
-	users, err := s.userService.GetUsers(0, 0)
+	users, err := s.userService.GetUsers("", "", 0, 0)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to fetch users: %v", err)
 	}

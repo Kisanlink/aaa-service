@@ -15,11 +15,11 @@ type UserServiceInterface interface {
 	CheckIfUserExists(username string) error
 	GetUserByID(id string) (*model.User, error)
 	GetAddressByID(addressId string) (*model.Address, error)
-	GetUsers(page, limit int) ([]model.User, error)
+	GetUsers(roleId, roleName string, page, limit int) ([]model.User, error)
 	FindUserRoles(userID string) ([]model.UserRole, error)
 	CreateUserRoles(userRole model.UserRole) error
 	GetUserRoleByID(userID string) (*model.User, error)
-	DeleteUserRoles(id string) error
+	DeleteUserRoles(id string, roleId string) error
 	DeleteUser(id string) error
 	FindExistingUserByID(id string) (*model.User, error)
 	UpdateUser(existingUser model.User) error
@@ -90,8 +90,8 @@ func (s *UserService) GetAddressByID(addressId string) (*model.Address, error) {
 	}
 	return result, nil
 }
-func (s *UserService) GetUsers(page, limit int) ([]model.User, error) {
-	result, err := s.repo.GetUsers(page, limit)
+func (s *UserService) GetUsers(roleId, roleName string, page, limit int) ([]model.User, error) {
+	result, err := s.repo.GetUsers(roleId, roleName, page, limit)
 	if err != nil {
 		return nil, helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to get users: %w", err))
 	}
@@ -141,9 +141,9 @@ func (s *UserService) GetUserRoleByID(userID string) (*model.User, error) {
 	return result, nil
 }
 
-func (s *UserService) DeleteUserRoles(id string) error {
+func (s *UserService) DeleteUserRoles(id string, roleId string) error {
 
-	err := s.repo.DeleteUserRoles(id)
+	err := s.repo.DeleteUserRoles(id, roleId)
 	if err != nil {
 		return helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to delete user roles: %w", err))
 	}

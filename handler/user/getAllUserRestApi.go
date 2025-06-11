@@ -25,8 +25,9 @@ func (s *UserHandler) GetUserRestApi(c *gin.Context) {
 	// Get pagination parameters from query, default to 0 (which means no pagination)
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "0"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "0"))
-
-	users, err := s.userService.GetUsers(page, limit)
+	roleName := c.Query("roleName")
+	roleIdStr := c.Query("roleId")
+	users, err := s.userService.GetUsers(roleIdStr, roleName, page, limit)
 	if err != nil {
 		helper.SendErrorResponse(c.Writer, http.StatusInternalServerError, []string{"Failed to fetch users"})
 		return
