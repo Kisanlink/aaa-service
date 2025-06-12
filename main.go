@@ -1,106 +1,68 @@
 package main
 
 import (
-	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
-	"os/signal"
-	"strings"
-	"syscall"
-	"time"
 
+	"github.com/Kisanlink/aaa-service/config"
 	"github.com/Kisanlink/aaa-service/database"
-	"github.com/Kisanlink/aaa-service/grpc_server"
+	docs "github.com/Kisanlink/aaa-service/docs"
+	"github.com/Kisanlink/aaa-service/grpc"
+	"github.com/Kisanlink/aaa-service/helper"
 	"github.com/Kisanlink/aaa-service/routes"
+	"github.com/MarceloPetrucio/go-scalar-api-reference"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	swaggerfiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 func init() {
 	if err := godotenv.Load(); err != nil {
-		log.Println("No .env file found, using environment variables")
+		log.Fatal("Error loading .env file")
 	}
 }
 
+// @title AAA-Service API
+// @version 1.0
+// @description Authentication, Authorization, and Accounting (AAA) service providing RBAC-based access control. Supports both gRPC and REST API interfaces for seamless integration with client applications. Offers comprehensive user management, role-based permission control, and session accounting capabilities for secure system access.
 func main() {
-	database.ConnectDB()
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "3000"
-	}
 
-	grpcServer, err := grpc_server.StartGRPCServer(database.DB)
+	database.ConnectDB()
+	corsSetup := config.LoadConfig()
+	database.HandleMigrationCommands()
+	helper.InitLogger()
+	docs.SwaggerInfo.BasePath = "/api/v1"
+	r := routes.SetupRouter(database.DB)
+	r.GET("/doc/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
+	r.Use(cors.New(config.GetCorsConfig(corsSetup)))
+	r.GET("/docs", func(c *gin.Context) {
+		htmlContent, err := scalar.ApiReferenceHTML(&scalar.Options{
+			SpecURL: fmt.Sprintf("%s/doc/doc.json", os.Getenv("URL")),
+			CustomOptions: scalar.CustomOptions{
+				PageTitle: "AAA-SERVICE API",
+			},
+			DarkMode: true,
+		})
+
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(htmlContent))
+	})
+	grpcServer, err := grpc.StartGRPCServer(database.DB)
 	if err != nil {
-		log.Fatalf("Failed to start gRPC server: %v", err)
+		helper.Log.Fatalf("Failed to start gRPC server: %v", err)
 	}
 	defer grpcServer.GracefulStop()
 
-	r := gin.Default()
-allowedOrigins := strings.Split(os.Getenv("CORS_ALLOWED_ORIGINS"), ",")
-if len(allowedOrigins) == 0 {
-	allowedOrigins = []string{"http://localhost:5173"} // Default fallback
-}
-allowMethods := strings.Split(os.Getenv("CORS_ALLOW_METHODS"), ",")
-if len(allowMethods) == 0 {
-	allowMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"}
-}
-
-allowHeaders := strings.Split(os.Getenv("CORS_ALLOW_HEADERS"), ",")
-if len(allowHeaders) == 0 {
-	allowHeaders = []string{
-		"Origin",
-		"Content-Type",
-		"Accept",
-		"Authorization",
+	helper.Log.Println("Server is running on port:", corsSetup.Port)
+	if err := r.Run(":" + corsSetup.Port); err != nil {
+		helper.Log.Fatalf("Error starting server: %v", err)
 	}
-}
-exposeHeaders := strings.Split(os.Getenv("CORS_EXPOSE_HEADERS"), ",")
-if len(exposeHeaders) == 0 {
-	exposeHeaders = []string{
-		"Content-Length",
-	}
-}
-
-allowCredentials := os.Getenv("CORS_ALLOW_CREDENTIALS") != "false" 
-r.Use(cors.New(cors.Config{
-	AllowOrigins:     allowedOrigins,
-	AllowMethods:     allowMethods,
-	AllowHeaders:     allowHeaders,
-	ExposeHeaders:    exposeHeaders,
-	AllowCredentials: allowCredentials,
-	MaxAge:           12 * time.Hour,
-}))
-	r.GET("/", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"status":  "ok",
-			"message": "Welcome to AAA Service",
-			"time":    time.Now().UTC(),
-		})
-	})
-	api := r.Group("/api")
-	routes.Routes(api, database.DB)
-	srv := &http.Server{
-		Addr:    ":" + port,
-		Handler: r,
-	}
-	go func() {
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("Failed to start HTTP server: %v", err)
-		}
-	}()
-
-	log.Printf("Server running on port %s", port)
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
-	log.Println("Shutting down server...")
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	if err := srv.Shutdown(ctx); err != nil {
-		log.Fatalf("Server forced to shutdown: %v", err)
-	}
-
-	log.Println("Server exiting")
 }

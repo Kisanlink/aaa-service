@@ -13,7 +13,6 @@ import (
 
 type contextKey string
 
-
 func AuthInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		md, ok := metadata.FromIncomingContext(ctx)
@@ -32,22 +31,21 @@ func AuthInterceptor() grpc.UnaryServerInterceptor {
 			return nil, status.Errorf(codes.Unauthenticated, "Invalid token: %v", err)
 		}
 
-		ctx = context.WithValue(ctx,"user_id", userID)
+		ctx = context.WithValue(ctx, "user_id", userID)
 		return handler(ctx, req)
 	}
 }
 
-
 func ErrorInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-    resp, err := handler(ctx, req)
-    if err != nil {
-        // Log the error
-        log.Printf("Method %s failed: %v", info.FullMethod, err)
-        
-        // Convert to status error if not already
-        if _, ok := status.FromError(err); !ok {
-            err = status.Error(codes.Unknown, err.Error())
-        }
-    }
-    return resp, err
+	resp, err := handler(ctx, req)
+	if err != nil {
+		// Log the error
+		log.Printf("Method %s failed: %v", info.FullMethod, err)
+
+		// Convert to status error if not already
+		if _, ok := status.FromError(err); !ok {
+			err = status.Error(codes.Unknown, err.Error())
+		}
+	}
+	return resp, err
 }
