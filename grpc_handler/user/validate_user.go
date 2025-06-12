@@ -24,7 +24,7 @@ func (s *Server) ValidateUser(ctx context.Context, req *pb.ValidateUserRequest) 
 
 		log.Printf("Authenticated user with ID: %s", userID)
 
-		existingUser, err := s.userService.FindExistingUserByID(userID)
+		existingUser, err := s.userService.FindExistingUserByID(req.(*pb.ValidateUserRequest).UserId)
 		if err != nil {
 			return nil, err
 		}
