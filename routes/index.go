@@ -35,10 +35,10 @@ func ApiRoutes(r *gin.RouterGroup, db *gorm.DB) {
 	rolePermHandler := rolepermission.NewRolePermissionHandler(rolePermService, roleService, permissionService)
 
 	RolesRoutes(v1, db, *rolHandler)
-	UserRoutes(v1, db, *userHandler)
 	ActionRoutes(v1, db, *actionHandler)
 	ResourceRoutes(v1, db, *resourceHandler)
 	RolePermRoutes(v1, db, *rolePermHandler)
 	PermissionRoutes(v1, db, *permHandler)
+	UsersRoutes(v1, db, *userHandler)
 
 }

@@ -6,7 +6,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func UserRoutes(r *gin.RouterGroup, database *gorm.DB, s user.UserHandler) {
+func UsersRoutes(r *gin.RouterGroup, database *gorm.DB, s user.UserHandler) {
 	r.POST("/login", s.LoginRestApi)
 	r.POST("/register", s.CreateUserRestApi)
 	r.GET("/users", s.GetUserRestApi)

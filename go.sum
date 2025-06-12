@@ -119,8 +119,6 @@ github.com/json-iterator/go v1.1.12 h1:PV8peI4a0ysnczrg+LtxykD8LfKY9ML6u2jnxaEnr
 github.com/json-iterator/go v1.1.12/go.mod h1:e30LSqwooZae/UwlEbR2852Gd8hjQvJoHmT4TnhNGBo=
 github.com/jzelinskie/stringz v0.0.3 h1:0GhG3lVMYrYtIvRbxvQI6zqRTT1P1xyQlpa0FhfUXas=
 github.com/jzelinskie/stringz v0.0.3/go.mod h1:hHYbgxJuNLRw91CmpuFsYEOyQqpDVFg8pvEh23vy4P0=
-github.com/kisanlink/protobuf v0.0.0-20250522074649-a6aa0d37f907 h1:4W6iWYI7mEbfFOKU9waljKFh1+COqc/ZTahkfOPHH98=
-github.com/kisanlink/protobuf v0.0.0-20250522074649-a6aa0d37f907/go.mod h1:ILhCEEYRycYagb1aVsEwj+0tk4Ue2kdtB6DYbVTUgP8=
 github.com/kisanlink/protobuf v0.0.0-20250612055432-be9d4788d6cb h1:geAO8c46UX6y9Kc+rbX+L+z13lLI9WK0kWo7DV4Mwnw=
 github.com/kisanlink/protobuf v0.0.0-20250612055432-be9d4788d6cb/go.mod h1:ILhCEEYRycYagb1aVsEwj+0tk4Ue2kdtB6DYbVTUgP8=
 github.com/kisielk/errcheck v1.5.0/go.mod h1:pFxgyoBC7bSaBwPgfKdkLd5X25qrDl4LWUI2bnpBCr8=
