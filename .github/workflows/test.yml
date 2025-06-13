@@ -17,11 +17,11 @@ jobs:
 
     services:
       postgres:
-        image: postgres:16-alpine
+        image: postgres:15
         env:
-          POSTGRES_USER: aaa_user
-          POSTGRES_PASSWORD: aaa_password
-          POSTGRES_DB: aaa_db
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: aaa_service_test
         ports:
           - 5432:5432
         options: >-
@@ -32,21 +32,19 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v3
         with:
           go-version: '1.21'
 
-      - name: Install dependencies
-        run: go mod download
-
       - name: Run tests
-        run: go test -v ./...
         env:
           DB_HOST: localhost
           DB_PORT: 5432
-          DB_USER: aaa_user
-          DB_PASSWORD: aaa_password
-          DB_NAME: aaa_db 
+          DB_USER: postgres
+          DB_PASSWORD: postgres
+          DB_NAME: aaa_service_test
+        run: |
+          go test -v ./... 
