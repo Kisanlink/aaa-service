@@ -1,0 +1,121 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches:
+      - main
+      - beta
+  pull_request:
+    branches:
+      - main
+      - beta
+
+env:
+  AWS_REGION: ap-south-1
+  ECR_REPOSITORY_PREFIX: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
+
+jobs:
+  build-and-push:
+    name: Build and Push Docker Images
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push AAA Service
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/aaa-service:${{ github.sha }}
+            ${{ steps.login-ecr.outputs.registry }}/aaa-service:${{ github.ref_name }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push SpiceDB
+        uses: docker/build-push-action@v5
+        with:
+          context: ../spicedb
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/spicedb:${{ github.sha }}
+            ${{ steps.login-ecr.outputs.registry }}/spicedb:${{ github.ref_name }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push Aadhaar Verification
+        uses: docker/build-push-action@v5
+        with:
+          context: ../aadhaar-verification
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/aadhaar-verification:${{ github.sha }}
+            ${{ steps.login-ecr.outputs.registry }}/aadhaar-verification:${{ github.ref_name }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy-beta:
+    name: Deploy to Beta
+    needs: build-and-push
+    if: github.ref == 'refs/heads/beta'
+    runs-on: ubuntu-latest
+    environment: beta
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Update ECS service
+        run: |
+          aws ecs update-service \
+            --cluster beta-cluster \
+            --service aaa-service \
+            --force-new-deployment
+
+  deploy-prod:
+    name: Deploy to Production
+    needs: build-and-push
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Update ECS service
+        run: |
+          aws ecs update-service \
+            --cluster prod-cluster \
+            --service aaa-service \
+            --force-new-deployment 
