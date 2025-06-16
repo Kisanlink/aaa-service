@@ -53,7 +53,7 @@ func main() {
 	})
 
 	// Setup routes after middleware
-	routes.SetupRouter(database.DB)
+	routes.SetupRouter(database.DB, r)
 
 	// Swagger documentation
 	r.GET("/doc/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
