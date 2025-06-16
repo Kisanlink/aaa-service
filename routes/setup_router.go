@@ -27,6 +27,7 @@ func SetupRouter(db *gorm.DB, router *gin.Engine) {
 		})
 	})
 
-	api := router.Group("/api/v1")
+	// API routes under /api/v1
+	api := router.Group("/api")
 	ApiRoutes(api, db)
 }
