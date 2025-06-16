@@ -17,9 +17,15 @@ type ServerConfig struct {
 }
 
 func LoadConfig() *ServerConfig {
+	// Default allowed origins including the frontend domain
+	defaultOrigins := []string{
+		"http://localhost:5173",
+		"https://farmers.kisanlink.in",
+	}
+
 	allowedOrigins := strings.Split(GetEnv("CORS_ALLOWED_ORIGINS"), ",")
 	if len(allowedOrigins) == 0 {
-		allowedOrigins = []string{"http://localhost:5173"}
+		allowedOrigins = defaultOrigins
 	}
 
 	allowMethods := strings.Split(GetEnv("CORS_ALLOW_METHODS"), ",")
@@ -29,12 +35,24 @@ func LoadConfig() *ServerConfig {
 
 	allowHeaders := strings.Split(GetEnv("CORS_ALLOW_HEADERS"), ",")
 	if len(allowHeaders) == 0 {
-		allowHeaders = []string{"Origin", "Content-Type", "Accept", "Authorization"}
+		allowHeaders = []string{
+			"Origin",
+			"Content-Type",
+			"Accept",
+			"Authorization",
+			"X-Requested-With",
+			"Access-Control-Request-Method",
+			"Access-Control-Request-Headers",
+		}
 	}
 
 	exposeHeaders := strings.Split(GetEnv("CORS_EXPOSE_HEADERS"), ",")
 	if len(exposeHeaders) == 0 {
-		exposeHeaders = []string{"Content-Length"}
+		exposeHeaders = []string{
+			"Content-Length",
+			"Content-Type",
+			"Authorization",
+		}
 	}
 
 	port := GetEnv("PORT")
@@ -60,5 +78,10 @@ func GetCorsConfig(config *ServerConfig) cors.Config {
 		ExposeHeaders:    config.ExposeHeaders,
 		AllowCredentials: config.AllowCredentials,
 		MaxAge:           12 * time.Hour,
+		// Ensure CORS headers are set for all responses
+		AllowWildcard:          false,
+		AllowBrowserExtensions: false,
+		AllowWebSockets:        false,
+		AllowFiles:             false,
 	}
 }
