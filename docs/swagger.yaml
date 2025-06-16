@@ -741,6 +741,162 @@ paths:
       summary: Update an action
       tags:
       - Actions
+  /assign-permissions:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves roles with their associated permissions, with optional
+        filtering and pagination
+      parameters:
+      - description: Filter by role ID
+        in: query
+        name: role_id
+        type: string
+      - description: Filter by role name (case-insensitive partial match)
+        in: query
+        name: role_name
+        type: string
+      - description: Filter by permission ID
+        in: query
+        name: permission_id
+        type: string
+      - description: Page number (starts from 1)
+        in: query
+        name: page
+        type: integer
+      - description: Number of items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of roles with permissions retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/helper.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/model.GetRolePermissionResponse'
+                  type: array
+              type: object
+        "400":
+          description: Invalid request parameters
+          schema:
+            $ref: '#/definitions/helper.ErrorResponse'
+        "500":
+          description: Failed to retrieve roles with permissions
+          schema:
+            $ref: '#/definitions/helper.ErrorResponse'
+      summary: Get roles with permissions
+      tags:
+      - RolePermissions
+    post:
+      consumes:
+      - application/json
+      description: Creates an association between a role and permission
+      parameters:
+      - description: Assignment data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.RolePermissionRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Permission assigned successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/helper.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.RolePermission'
+              type: object
+        "400":
+          description: Invalid request or missing required fields
+          schema:
+            $ref: '#/definitions/helper.ErrorResponse'
+        "404":
+          description: Role or permission not found
+          schema:
+            $ref: '#/definitions/helper.ErrorResponse'
+        "409":
+          description: Association already exists
+          schema:
+            $ref: '#/definitions/helper.ErrorResponse'
+        "500":
+          description: Failed to assign permission
+          schema:
+            $ref: '#/definitions/helper.ErrorResponse'
+      summary: Assign permission to role
+      tags:
+      - RolePermissions
+  /assign-permissions/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes a role-permission relationship by its ID
+      parameters:
+      - description: Role-Permission ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Role-permission deleted successfully
+          schema:
+            $ref: '#/definitions/helper.Response'
+        "404":
+          description: Role-permission not found
+          schema:
+            $ref: '#/definitions/helper.ErrorResponse'
+        "500":
+          description: Failed to delete role-permission
+          schema:
+            $ref: '#/definitions/helper.ErrorResponse'
+      summary: Delete role-permission
+      tags:
+      - RolePermissions
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a single role-permission relationship by its ID
+      parameters:
+      - description: Role-Permission ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Role-permission retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/helper.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.GetRolePermissionResponse'
+              type: object
+        "404":
+          description: Role-permission not found
+          schema:
+            $ref: '#/definitions/helper.ErrorResponse'
+        "500":
+          description: Failed to retrieve role-permission
+          schema:
+            $ref: '#/definitions/helper.ErrorResponse'
+      summary: Get role-permission by ID
+      tags:
+      - RolePermissions
   /assign-role:
     delete:
       consumes:
@@ -1318,162 +1474,6 @@ paths:
       summary: Update a resource
       tags:
       - Resources
-  /role-permissions:
-    get:
-      consumes:
-      - application/json
-      description: Retrieves roles with their associated permissions, with optional
-        filtering and pagination
-      parameters:
-      - description: Filter by role ID
-        in: query
-        name: role_id
-        type: string
-      - description: Filter by role name (case-insensitive partial match)
-        in: query
-        name: role_name
-        type: string
-      - description: Filter by permission ID
-        in: query
-        name: permission_id
-        type: string
-      - description: Page number (starts from 1)
-        in: query
-        name: page
-        type: integer
-      - description: Number of items per page
-        in: query
-        name: limit
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: List of roles with permissions retrieved successfully
-          schema:
-            allOf:
-            - $ref: '#/definitions/helper.Response'
-            - properties:
-                data:
-                  items:
-                    $ref: '#/definitions/model.GetRolePermissionResponse'
-                  type: array
-              type: object
-        "400":
-          description: Invalid request parameters
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-        "500":
-          description: Failed to retrieve roles with permissions
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-      summary: Get roles with permissions
-      tags:
-      - RolePermissions
-    post:
-      consumes:
-      - application/json
-      description: Creates an association between a role and permission
-      parameters:
-      - description: Assignment data
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/model.RolePermissionRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Permission assigned successfully
-          schema:
-            allOf:
-            - $ref: '#/definitions/helper.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/model.RolePermission'
-              type: object
-        "400":
-          description: Invalid request or missing required fields
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-        "404":
-          description: Role or permission not found
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-        "409":
-          description: Association already exists
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-        "500":
-          description: Failed to assign permission
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-      summary: Assign permission to role
-      tags:
-      - RolePermissions
-  /role-permissions/{id}:
-    delete:
-      consumes:
-      - application/json
-      description: Deletes a role-permission relationship by its ID
-      parameters:
-      - description: Role-Permission ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Role-permission deleted successfully
-          schema:
-            $ref: '#/definitions/helper.Response'
-        "404":
-          description: Role-permission not found
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-        "500":
-          description: Failed to delete role-permission
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-      summary: Delete role-permission
-      tags:
-      - RolePermissions
-    get:
-      consumes:
-      - application/json
-      description: Retrieves a single role-permission relationship by its ID
-      parameters:
-      - description: Role-Permission ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Role-permission retrieved successfully
-          schema:
-            allOf:
-            - $ref: '#/definitions/helper.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/model.GetRolePermissionResponse'
-              type: object
-        "404":
-          description: Role-permission not found
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-        "500":
-          description: Failed to retrieve role-permission
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-      summary: Get role-permission by ID
-      tags:
-      - RolePermissions
   /roles:
     get:
       consumes:

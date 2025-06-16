@@ -19,7 +19,7 @@ import (
 // @Success 200 {object} helper.Response{data=model.GetRolePermissionResponse} "Role-permission retrieved successfully"
 // @Failure 404 {object} helper.ErrorResponse "Role-permission not found"
 // @Failure 500 {object} helper.ErrorResponse "Failed to retrieve role-permission"
-// @Router /role-permissions/{id} [get]
+// @Router /assign-permissions/{id} [get]
 func (s *RolePermissionHandler) GetRolePermissionByIDRestApi(c *gin.Context) {
 	id := c.Param("id")
 

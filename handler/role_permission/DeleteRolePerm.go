@@ -17,7 +17,7 @@ import (
 // @Success 200 {object} helper.Response "Role-permission deleted successfully"
 // @Failure 404 {object} helper.ErrorResponse "Role-permission not found"
 // @Failure 500 {object} helper.ErrorResponse "Failed to delete role-permission"
-// @Router /role-permissions/{id} [delete]
+// @Router /assign-permissions/{id} [delete]
 func (s *RolePermissionHandler) DeleteRolePermissionRestApi(c *gin.Context) {
 	id := c.Param("id")
 	err := s.rolePermissionService.DeleteByID(id)

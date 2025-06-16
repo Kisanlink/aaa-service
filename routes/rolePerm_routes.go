@@ -7,8 +7,8 @@ import (
 )
 
 func RolePermRoutes(r *gin.RouterGroup, database *gorm.DB, s rolepermission.RolePermissionHandler) {
-	r.POST("/role-permissions", s.AssignPermissionToRoleRestApi)
-	r.GET("/role-permissions", s.GetAllRolesWithPermissionsRestApi)
-	r.GET("/role-permissions/:id", s.GetRolePermissionByIDRestApi)
-	r.DELETE("/role-permissions/:id", s.DeleteRolePermissionRestApi)
+	r.POST("/assign-permissions", s.AssignPermissionToRoleRestApi)
+	r.GET("/assign-permissions", s.GetAllRolesWithPermissionsRestApi)
+	r.GET("/assign-permissions/:id", s.GetRolePermissionByIDRestApi)
+	r.DELETE("/assign-permissions/:id", s.DeleteRolePermissionRestApi)
 }

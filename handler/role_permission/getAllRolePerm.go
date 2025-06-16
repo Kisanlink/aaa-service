@@ -24,7 +24,7 @@ import (
 // @Success 200 {object} helper.Response{data=[]model.GetRolePermissionResponse} "List of roles with permissions retrieved successfully"
 // @Failure 400 {object} helper.ErrorResponse "Invalid request parameters"
 // @Failure 500 {object} helper.ErrorResponse "Failed to retrieve roles with permissions"
-// @Router /role-permissions [get]
+// @Router /assign-permissions [get]
 // GetAllRolesWithPermissionsRestApi retrieves roles with their permissions
 func (s *RolePermissionHandler) GetAllRolesWithPermissionsRestApi(c *gin.Context) {
 	filter := make(map[string]interface{})

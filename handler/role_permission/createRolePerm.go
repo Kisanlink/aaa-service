@@ -39,7 +39,7 @@ func NewRolePermissionHandler(
 // @Failure 404 {object} helper.ErrorResponse "Role or permission not found"
 // @Failure 409 {object} helper.ErrorResponse "Association already exists"
 // @Failure 500 {object} helper.ErrorResponse "Failed to assign permission"
-// @Router /role-permissions [post]
+// @Router /assign-permissions [post]
 func (h *RolePermissionHandler) AssignPermissionToRoleRestApi(c *gin.Context) {
 	var req model.RolePermissionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

@@ -266,6 +266,254 @@ const docTemplate = `{
                 }
             }
         },
+        "/assign-permissions": {
+            "get": {
+                "description": "Retrieves roles with their associated permissions, with optional filtering and pagination",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "RolePermissions"
+                ],
+                "summary": "Get roles with permissions",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter by role ID",
+                        "name": "role_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by role name (case-insensitive partial match)",
+                        "name": "role_name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by permission ID",
+                        "name": "permission_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (starts from 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of items per page",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of roles with permissions retrieved successfully",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/helper.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/model.GetRolePermissionResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request parameters",
+                        "schema": {
+                            "$ref": "#/definitions/helper.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to retrieve roles with permissions",
+                        "schema": {
+                            "$ref": "#/definitions/helper.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Creates an association between a role and permission",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "RolePermissions"
+                ],
+                "summary": "Assign permission to role",
+                "parameters": [
+                    {
+                        "description": "Assignment data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.RolePermissionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Permission assigned successfully",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/helper.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/model.RolePermission"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request or missing required fields",
+                        "schema": {
+                            "$ref": "#/definitions/helper.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Role or permission not found",
+                        "schema": {
+                            "$ref": "#/definitions/helper.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Association already exists",
+                        "schema": {
+                            "$ref": "#/definitions/helper.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to assign permission",
+                        "schema": {
+                            "$ref": "#/definitions/helper.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/assign-permissions/{id}": {
+            "get": {
+                "description": "Retrieves a single role-permission relationship by its ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "RolePermissions"
+                ],
+                "summary": "Get role-permission by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Role-Permission ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Role-permission retrieved successfully",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/helper.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/model.GetRolePermissionResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "404": {
+                        "description": "Role-permission not found",
+                        "schema": {
+                            "$ref": "#/definitions/helper.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to retrieve role-permission",
+                        "schema": {
+                            "$ref": "#/definitions/helper.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Deletes a role-permission relationship by its ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "RolePermissions"
+                ],
+                "summary": "Delete role-permission",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Role-Permission ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Role-permission deleted successfully",
+                        "schema": {
+                            "$ref": "#/definitions/helper.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Role-permission not found",
+                        "schema": {
+                            "$ref": "#/definitions/helper.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to delete role-permission",
+                        "schema": {
+                            "$ref": "#/definitions/helper.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/assign-role": {
             "post": {
                 "description": "Assigns a specified role to a user and returns the updated user details with roles and permissions",
@@ -1168,254 +1416,6 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Failed to delete resource",
-                        "schema": {
-                            "$ref": "#/definitions/helper.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/role-permissions": {
-            "get": {
-                "description": "Retrieves roles with their associated permissions, with optional filtering and pagination",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "RolePermissions"
-                ],
-                "summary": "Get roles with permissions",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Filter by role ID",
-                        "name": "role_id",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Filter by role name (case-insensitive partial match)",
-                        "name": "role_name",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Filter by permission ID",
-                        "name": "permission_id",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Page number (starts from 1)",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Number of items per page",
-                        "name": "limit",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "List of roles with permissions retrieved successfully",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/helper.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/definitions/model.GetRolePermissionResponse"
-                                            }
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid request parameters",
-                        "schema": {
-                            "$ref": "#/definitions/helper.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Failed to retrieve roles with permissions",
-                        "schema": {
-                            "$ref": "#/definitions/helper.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "description": "Creates an association between a role and permission",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "RolePermissions"
-                ],
-                "summary": "Assign permission to role",
-                "parameters": [
-                    {
-                        "description": "Assignment data",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.RolePermissionRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Permission assigned successfully",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/helper.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/model.RolePermission"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid request or missing required fields",
-                        "schema": {
-                            "$ref": "#/definitions/helper.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Role or permission not found",
-                        "schema": {
-                            "$ref": "#/definitions/helper.ErrorResponse"
-                        }
-                    },
-                    "409": {
-                        "description": "Association already exists",
-                        "schema": {
-                            "$ref": "#/definitions/helper.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Failed to assign permission",
-                        "schema": {
-                            "$ref": "#/definitions/helper.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/role-permissions/{id}": {
-            "get": {
-                "description": "Retrieves a single role-permission relationship by its ID",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "RolePermissions"
-                ],
-                "summary": "Get role-permission by ID",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Role-Permission ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Role-permission retrieved successfully",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/helper.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/model.GetRolePermissionResponse"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "404": {
-                        "description": "Role-permission not found",
-                        "schema": {
-                            "$ref": "#/definitions/helper.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Failed to retrieve role-permission",
-                        "schema": {
-                            "$ref": "#/definitions/helper.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "description": "Deletes a role-permission relationship by its ID",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "RolePermissions"
-                ],
-                "summary": "Delete role-permission",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Role-Permission ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Role-permission deleted successfully",
-                        "schema": {
-                            "$ref": "#/definitions/helper.Response"
-                        }
-                    },
-                    "404": {
-                        "description": "Role-permission not found",
-                        "schema": {
-                            "$ref": "#/definitions/helper.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Failed to delete role-permission",
                         "schema": {
                             "$ref": "#/definitions/helper.ErrorResponse"
                         }
