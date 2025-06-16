@@ -36,8 +36,10 @@ func main() {
 	helper.InitLogger()
 	docs.SwaggerInfo.BasePath = "/api/v1"
 
-	// Create router
+	// Create router with logger
 	r := gin.New()
+	r.Use(gin.Logger())
+	r.Use(gin.Recovery())
 
 	// Add CORS middleware first, before any routes
 	r.Use(cors.New(config.GetCorsConfig(corsSetup)))
