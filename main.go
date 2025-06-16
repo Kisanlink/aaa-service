@@ -30,15 +30,33 @@ func init() {
 // @version 1.0
 // @description Authentication, Authorization, and Accounting (AAA) service providing RBAC-based access control. Supports both gRPC and REST API interfaces for seamless integration with client applications. Offers comprehensive user management, role-based permission control, and session accounting capabilities for secure system access.
 func main() {
-
 	database.ConnectDB()
 	corsSetup := config.LoadConfig()
 	database.HandleMigrationCommands()
 	helper.InitLogger()
 	docs.SwaggerInfo.BasePath = "/api/v1"
-	r := routes.SetupRouter(database.DB)
-	r.GET("/doc/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
+
+	// Create router
+	r := gin.New()
+
+	// Add CORS middleware first, before any routes
 	r.Use(cors.New(config.GetCorsConfig(corsSetup)))
+
+	// Add error handling middleware to ensure CORS headers are present in error responses
+	r.Use(func(c *gin.Context) {
+		c.Next()
+		if len(c.Errors) > 0 {
+			// Ensure CORS headers are set even for error responses
+			c.Header("Access-Control-Allow-Origin", c.GetHeader("Origin"))
+			c.Header("Access-Control-Allow-Credentials", "true")
+		}
+	})
+
+	// Setup routes after middleware
+	routes.SetupRouter(database.DB)
+
+	// Swagger documentation
+	r.GET("/doc/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 	r.GET("/docs", func(c *gin.Context) {
 		htmlContent, err := scalar.ApiReferenceHTML(&scalar.Options{
 			SpecURL: fmt.Sprintf("%s/doc/doc.json", os.Getenv("URL")),
@@ -55,6 +73,8 @@ func main() {
 
 		c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(htmlContent))
 	})
+
+	// Start gRPC server
 	grpcServer, err := grpc.StartGRPCServer(database.DB)
 	if err != nil {
 		helper.Log.Fatalf("Failed to start gRPC server: %v", err)
