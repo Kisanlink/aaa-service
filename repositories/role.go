@@ -119,61 +119,16 @@ func (repo *RoleRepository) FindRoles(filter map[string]interface{}, page, limit
 	return roles, nil
 }
 func (repo *RoleRepository) UpdateRoleWithPermissions(id string, updatedRole model.Role) error {
-	tx := repo.DB.Begin()
-	defer func() {
-		if r := recover(); r != nil {
-			tx.Rollback()
-		}
-	}()
-
-	if err := tx.Error; err != nil {
-		return helper.NewAppError(http.StatusInternalServerError, err)
+	// First approach: Using Where with Updates
+	if err := repo.DB.Table("roles").Where("id = ?", id).Updates(&updatedRole).Error; err != nil {
+		return helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to update role: %w", err))
 	}
-	result := tx.Model(&model.Role{}).Where("id = ?", id).Updates(updatedRole)
-	if result.Error != nil {
-		tx.Rollback()
-		return helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to update role: %w", result.Error))
-	}
-	if result.RowsAffected == 0 {
-		tx.Rollback()
-		return helper.NewAppError(http.StatusNotFound, fmt.Errorf("role with ID %s not found", id))
-	}
-
 	return nil
 }
 
 func (repo *RoleRepository) DeleteRole(id string) error {
-	tx := repo.DB.Begin()
-	defer func() {
-		if r := recover(); r != nil {
-			tx.Rollback()
-		}
-	}()
-
-	if err := tx.Error; err != nil {
-		return helper.NewAppError(http.StatusInternalServerError, err)
+	if err := repo.DB.Table("roles").Delete(&model.Role{}, "id = ?", id).Error; err != nil {
+		return helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to delete role: %w", err))
 	}
-
-	// First delete all permissions associated with the role
-	if err := tx.Where("role_id = ?", id).Delete(&model.Permission{}).Error; err != nil {
-		tx.Rollback()
-		return helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to delete permissions: %w", err))
-	}
-
-	// Then delete the role
-	result := tx.Where("id = ?", id).Delete(&model.Role{})
-	if result.Error != nil {
-		tx.Rollback()
-		return helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to delete role: %w", result.Error))
-	}
-	if result.RowsAffected == 0 {
-		tx.Rollback()
-		return helper.NewAppError(http.StatusNotFound, fmt.Errorf("role with ID %s not found", id))
-	}
-
-	if err := tx.Commit().Error; err != nil {
-		return helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("transaction commit failed: %w", err))
-	}
-
 	return nil
 }

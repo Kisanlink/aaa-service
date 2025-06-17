@@ -56,12 +56,12 @@ func (s *Server) ValidateUser(ctx context.Context, req *pb.ValidateUserRequest) 
 		existingUser.CareOf = &req.(*pb.ValidateUserRequest).CareOf
 		existingUser.Photo = &req.(*pb.ValidateUserRequest).Photo
 		existingUser.DateOfBirth = &req.(*pb.ValidateUserRequest).DateOfBirth
+		existingUser.EmailHash = &req.(*pb.ValidateUserRequest).EmailHash
 		existingUser.YearOfBirth = &req.(*pb.ValidateUserRequest).YearOfBirth
 		existingUser.Message = &req.(*pb.ValidateUserRequest).Message
 		existingUser.AddressID = &address.ID
-		existingUser.CountryCode = &req.(*pb.ValidateUserRequest).CountryCode
 
-		if err := s.userService.UpdateUser(*existingUser); err != nil {
+		if err := s.userService.UpdateUserById(existingUser); err != nil {
 			return nil, err
 		}
 		rolesResponse, err := s.userService.GetUserRolesWithPermissions(existingUser.ID)

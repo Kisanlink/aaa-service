@@ -23,6 +23,7 @@ type UserServiceInterface interface {
 	DeleteUser(id string) error
 	FindExistingUserByID(id string) (*model.User, error)
 	UpdateUser(existingUser model.User) error
+	UpdateUserById(user *model.User) error
 	UpdatePassword(userID string, newPassword string) error
 	FindUserByUsername(username string) (*model.User, error)
 	FindUserByMobile(mobileNumber uint64) (*model.User, error)
@@ -168,6 +169,13 @@ func (s *UserService) FindExistingUserByID(id string) (*model.User, error) {
 
 func (s *UserService) UpdateUser(existingUser model.User) error {
 	err := s.repo.UpdateUser(existingUser)
+	if err != nil {
+		return helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to update user: %w", err))
+	}
+	return nil
+}
+func (s *UserService) UpdateUserById(user *model.User) error {
+	err := s.repo.UpdateUserById(user)
 	if err != nil {
 		return helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to update user: %w", err))
 	}

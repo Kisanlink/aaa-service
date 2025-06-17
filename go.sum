@@ -114,6 +114,8 @@ github.com/jzelinskie/stringz v0.0.3 h1:0GhG3lVMYrYtIvRbxvQI6zqRTT1P1xyQlpa0FhfU
 github.com/jzelinskie/stringz v0.0.3/go.mod h1:hHYbgxJuNLRw91CmpuFsYEOyQqpDVFg8pvEh23vy4P0=
 github.com/kisanlink/protobuf v0.0.0-20250612055432-be9d4788d6cb h1:geAO8c46UX6y9Kc+rbX+L+z13lLI9WK0kWo7DV4Mwnw=
 github.com/kisanlink/protobuf v0.0.0-20250612055432-be9d4788d6cb/go.mod h1:ILhCEEYRycYagb1aVsEwj+0tk4Ue2kdtB6DYbVTUgP8=
+github.com/kisanlink/protobuf v0.0.0-20250616104738-2e92429655fd h1:au46IJN8C1daiEiC9DQ0IyMX1eJsnBFE6gweOURcUPY=
+github.com/kisanlink/protobuf v0.0.0-20250616104738-2e92429655fd/go.mod h1:ILhCEEYRycYagb1aVsEwj+0tk4Ue2kdtB6DYbVTUgP8=
 github.com/kisielk/errcheck v1.5.0/go.mod h1:pFxgyoBC7bSaBwPgfKdkLd5X25qrDl4LWUI2bnpBCr8=
 github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+oQHNcck=
 github.com/kisielk/sqlstruct v0.0.0-20201105191214-5f3e10d3ab46/go.mod h1:yyMNCyc/Ib3bDTKd379tNMpB/7/H5TjM2Y9QJ5THLbE=

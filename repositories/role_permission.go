@@ -127,23 +127,8 @@ func (repo *RolePermissionRepository) FetchByID(id string) (*model.RolePermissio
 }
 
 func (repo *RolePermissionRepository) DeleteByID(id string) error {
-	result := repo.DB.
-		Where("id = ?", id).
-		Delete(&model.RolePermission{})
-
-	if result.Error != nil {
-		return helper.NewAppError(
-			http.StatusInternalServerError,
-			fmt.Errorf("failed to delete role permission: %w", result.Error),
-		)
+	if err := repo.DB.Table("role_permissions").Delete(&model.RolePermission{}, "id = ?", id).Error; err != nil {
+		return helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to delete role permission: %w", err))
 	}
-
-	if result.RowsAffected == 0 {
-		return helper.NewAppError(
-			http.StatusNotFound,
-			fmt.Errorf("role permission not found"),
-		)
-	}
-
 	return nil
 }

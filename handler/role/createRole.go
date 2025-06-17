@@ -21,9 +21,9 @@ func NewRoleHandler(roleService services.RoleServiceInterface) *RoleHandler {
 	}
 }
 
-// CreateRoleWithPermissionsRestApi creates a new role with permissions
-// @Summary Create a new role with permissions
-// @Description Creates a new role with associated permissions
+// CreateRoleWithPermissionsRestApi creates a new role
+// @Summary Create a new role
+// @Description Creates a new role
 // @Tags Roles
 // @Accept json
 // @Produce json

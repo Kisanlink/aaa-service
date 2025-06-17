@@ -1493,7 +1493,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Creates a new role with associated permissions",
+                "description": "Creates a new role",
                 "consumes": [
                     "application/json"
                 ],
@@ -1503,7 +1503,7 @@ const docTemplate = `{
                 "tags": [
                     "Roles"
                 ],
-                "summary": "Create a new role with permissions",
+                "summary": "Create a new role",
                 "parameters": [
                     {
                         "description": "Role and permissions data",
@@ -1557,7 +1557,7 @@ const docTemplate = `{
         },
         "/roles/{id}": {
             "put": {
-                "description": "Updates an existing role and its permissions",
+                "description": "Updates an existing role with identified by ID",
                 "consumes": [
                     "application/json"
                 ],
@@ -1567,7 +1567,7 @@ const docTemplate = `{
                 "tags": [
                     "Roles"
                 ],
-                "summary": "Update a role with permissions",
+                "summary": "Update a role",
                 "parameters": [
                     {
                         "type": "string",

@@ -6,6 +6,7 @@ import (
 	"github.com/Kisanlink/aaa-service/handler/resource"
 	"github.com/Kisanlink/aaa-service/handler/role"
 	rolepermission "github.com/Kisanlink/aaa-service/handler/role_permission"
+	"github.com/Kisanlink/aaa-service/handler/spicedb"
 	"github.com/Kisanlink/aaa-service/handler/user"
 	"github.com/Kisanlink/aaa-service/repositories"
 	"github.com/Kisanlink/aaa-service/services"
@@ -33,12 +34,13 @@ func ApiRoutes(r *gin.RouterGroup, db *gorm.DB) {
 	rolHandler := role.NewRoleHandler(roleService)
 	permHandler := permission.NewPermissionHandler(permissionService)
 	rolePermHandler := rolepermission.NewRolePermissionHandler(rolePermService, roleService, permissionService)
-
+	spiceHandler := spicedb.NewSpiceDBHandler(roleService)
 	RolesRoutes(v1, db, *rolHandler)
 	ActionRoutes(v1, db, *actionHandler)
 	ResourceRoutes(v1, db, *resourceHandler)
 	RolePermRoutes(v1, db, *rolePermHandler)
 	PermissionRoutes(v1, db, *permHandler)
 	UsersRoutes(v1, db, *userHandler)
+	SpiceDBRoutes(v1, db, *spiceHandler)
 
 }

@@ -1,4 +1,4 @@
-package role
+package spicedb
 
 import (
 	"log"
@@ -6,8 +6,19 @@ import (
 
 	"github.com/Kisanlink/aaa-service/client"
 	"github.com/Kisanlink/aaa-service/helper"
+	"github.com/Kisanlink/aaa-service/services"
 	"github.com/gin-gonic/gin"
 )
+
+type SpiceDBHandler struct {
+	roleService services.RoleServiceInterface
+}
+
+func NewSpiceDBHandler(roleService services.RoleServiceInterface) *SpiceDBHandler {
+	return &SpiceDBHandler{
+		roleService: roleService,
+	}
+}
 
 // UpdateSpiceDb schema
 // @Summary update spice db schema
@@ -18,7 +29,7 @@ import (
 // @Success 200 {object} helper.Response{data=[]model.Role} "Roles retrieved successfully"
 // @Failure 500 {object} helper.ErrorResponse "Failed to retrieve roles"
 // @Router /update/schema [get]
-func (h *RoleHandler) UpdateSpiceDb(c *gin.Context) {
+func (h *SpiceDBHandler) UpdateSpiceDb(c *gin.Context) {
 	filter := make(map[string]interface{})
 	roles, err := h.roleService.FindRoles(filter, 0, 0)
 	if err != nil {

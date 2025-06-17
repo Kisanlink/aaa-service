@@ -24,6 +24,7 @@ type UserRepositoryInterface interface {
 	DeleteUser(id string) error
 	FindExistingUserByID(id string) (*model.User, error)
 	UpdateUser(existingUser model.User) error
+	UpdateUserById(user *model.User) error
 	UpdatePassword(userID string, newPassword string) error
 	FindUserByUsername(username string) (*model.User, error)
 	FindUserByMobile(mobileNumber uint64) (*model.User, error)
@@ -217,7 +218,7 @@ func (repo *UserRepository) DeleteUserRoles(userID string, roleID string) error 
 	if err := repo.DB.Table("user_roles").
 		Where("user_id = ? AND role_id = ?", userID, roleID).
 		Delete(&model.UserRole{}).Error; err != nil {
-		return helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("Failed to delete user role: %w", err))
+		return helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to delete user role: %w", err))
 
 	}
 	return nil
@@ -242,6 +243,19 @@ func (repo *UserRepository) FindExistingUserByID(id string) (*model.User, error)
 	return &existingUser, nil
 }
 
+func (repo *UserRepository) UpdateUserById(user *model.User) error {
+	// Update only the user fields without returning the updated record
+	if err := repo.DB.Table("users").
+		Where("id = ?", user.ID).
+		Updates(user).
+		Error; err != nil {
+		return helper.NewAppError(
+			http.StatusInternalServerError,
+			fmt.Errorf("failed to update user: %w", err),
+		)
+	}
+	return nil
+}
 func (repo *UserRepository) UpdateUser(existingUser model.User) error {
 	if err := repo.DB.Table("users").Save(&existingUser).Error; err != nil {
 		return helper.NewAppError(http.StatusInternalServerError, fmt.Errorf("failed to update user: %w", err))

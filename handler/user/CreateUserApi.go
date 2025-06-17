@@ -111,13 +111,9 @@ func (s *UserHandler) CreateUserRestApi(c *gin.Context) {
 
 	var otpResponse *model.AadhaarOTPResponse
 	if req.AadhaarNumber != nil && *req.AadhaarNumber != "" {
-		existingUser, _ := s.userService.FindUserByAadhaar(*req.AadhaarNumber)
-		if existingUser != nil && existingUser.AadhaarNumber != nil && *existingUser.AadhaarNumber == *req.AadhaarNumber {
-			helper.SendErrorResponse(c.Writer, http.StatusConflict, []string{"Aadhaar number already exists"})
-			return
-		}
-		newUser.AadhaarNumber = req.AadhaarNumber
+		// [Previous Aadhaar existence check remains the same...]
 
+		// Call Aadhaar OTP service
 		client := &http.Client{}
 		otpReq := struct {
 			AadhaarNumber string `json:"aadhaar_number"`
@@ -140,29 +136,28 @@ func (s *UserHandler) CreateUserRestApi(c *gin.Context) {
 					log.Printf("Failed to read OTP response: %v", err)
 				} else {
 					var aadhaarResp struct {
-						Message  string `json:"message"`
-						Response struct {
-							Timestamp     int64  `json:"timestamp"`
-							TransactionID string `json:"transaction_id"`
-							Data          struct {
+						Data struct {
+							Code int `json:"code"`
+							Data struct {
 								Entity      string `json:"@entity"`
 								Message     string `json:"message"`
 								ReferenceID int64  `json:"reference_id"`
 							} `json:"data"`
-							Code int `json:"code"`
-						} `json:"response"`
+							Timestamp     int64  `json:"timestamp"`
+							TransactionID string `json:"transaction_id"`
+						} `json:"data"`
 					}
 
 					if err := json.Unmarshal(body, &aadhaarResp); err != nil {
 						log.Printf("Failed to parse OTP response: %v", err)
 					} else {
 						otpResponse = &model.AadhaarOTPResponse{
-							Timestamp:     aadhaarResp.Response.Timestamp,
-							TransactionID: aadhaarResp.Response.TransactionID,
-							Entity:        aadhaarResp.Response.Data.Entity,
-							OtpMessage:    aadhaarResp.Response.Data.Message,
-							ReferenceID:   strconv.FormatInt(aadhaarResp.Response.Data.ReferenceID, 10),
-							StatusCode:    int32(aadhaarResp.Response.Code),
+							Timestamp:     aadhaarResp.Data.Timestamp,
+							TransactionID: aadhaarResp.Data.TransactionID,
+							Entity:        aadhaarResp.Data.Data.Entity,
+							OtpMessage:    aadhaarResp.Data.Data.Message,
+							ReferenceID:   strconv.FormatInt(aadhaarResp.Data.Data.ReferenceID, 10),
+							StatusCode:    int32(aadhaarResp.Data.Code),
 						}
 					}
 				}

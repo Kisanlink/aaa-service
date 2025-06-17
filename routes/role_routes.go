@@ -11,5 +11,4 @@ func RolesRoutes(r *gin.RouterGroup, database *gorm.DB, s role.RoleHandler) {
 	r.GET("/roles", s.GetAllRolesRestApi)
 	r.PUT("/roles/:id", s.UpdateRoleWithPermissionsRestApi)
 	r.DELETE("/roles/:id", s.DeleteRoleRestApi)
-	r.GET("/update/schema", s.UpdateSpiceDb)
 }

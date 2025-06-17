@@ -1,6 +1,7 @@
 package role
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/Kisanlink/aaa-service/helper"
@@ -8,9 +9,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// UpdateRoleWithPermissionsRestApi updates a role and its permissions
-// @Summary Update a role with permissions
-// @Description Updates an existing role and its permissions
+// UpdateRoleWithPermissionsRestApi updates a role
+// @Summary Update a role
+// @Description Updates an existing role with identified by ID
 // @Tags Roles
 // @Accept json
 // @Produce json
@@ -33,7 +34,7 @@ func (h *RoleHandler) UpdateRoleWithPermissionsRestApi(c *gin.Context) {
 		helper.SendErrorResponse(c.Writer, http.StatusBadRequest, []string{err.Error()})
 		return
 	}
-
+	fmt.Println("UpdateRoleWithPermissionsRestApi called with ID:", req.Name)
 	// Convert request to role and permissions
 	updatedRole := model.Role{
 		Name:        req.Name,
