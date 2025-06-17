@@ -52,33 +52,10 @@ func (s *UserHandler) UpdateUserRestApi(c *gin.Context) {
 	if req.AadhaarNumber != nil && *req.AadhaarNumber != "" {
 		existingUser.AadhaarNumber = req.AadhaarNumber
 	}
-	if req.Status != nil && *req.Status != "" {
-		existingUser.Status = req.Status
-	}
-	if req.Name != nil && *req.Name != "" {
-		existingUser.Name = req.Name
-	}
-	if req.CareOf != nil && *req.CareOf != "" {
-		existingUser.CareOf = req.CareOf
-	}
-	if req.DateOfBirth != nil && *req.DateOfBirth != "" {
-		existingUser.DateOfBirth = req.DateOfBirth
-	}
-	if req.Photo != nil && *req.Photo != "" {
-		existingUser.Photo = req.Photo
-	}
 	if req.EmailHash != nil && *req.EmailHash != "" {
 		existingUser.EmailHash = req.EmailHash
 	}
-	if req.ShareCode != nil && *req.ShareCode != "" {
-		existingUser.ShareCode = req.ShareCode
-	}
-	if req.YearOfBirth != nil && *req.YearOfBirth != "" {
-		existingUser.YearOfBirth = req.YearOfBirth
-	}
-	if req.Message != nil && *req.Message != "" {
-		existingUser.Message = req.Message
-	}
+
 	if req.MobileNumber != 0 {
 		existingUser.MobileNumber = req.MobileNumber
 	}

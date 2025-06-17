@@ -7,14 +7,15 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"os"
 	"time"
+
+	"github.com/Kisanlink/aaa-service/config"
 )
 
 // SMSRequest represents the JSON payload for sending an SMS.
 type SMSRequest struct {
-	PhoneNumber string `json:"phone_number"`
-	Message     string `json:"message"`
+	PhoneNumbers []string `json:"phone_numbers"` // Array of phone numbers
+	Message      string   `json:"message"`
 }
 
 // SendOTP sends an OTP code to the given mobile phone number by calling the notification service HTTP endpoint.
@@ -26,10 +27,9 @@ func SendOTP(countryCode, phoneNumber, otp string) {
 
 	// Prepare the JSON payload.
 	requestPayload := SMSRequest{
-		PhoneNumber: countryCode + phoneNumber,
-		Message:     fmt.Sprintf("Your OTP is: %s", otp),
+		PhoneNumbers: []string{countryCode + phoneNumber},
+		Message:      fmt.Sprintf("Your OTP is: %s", otp),
 	}
-
 	jsonData, err := json.Marshal(requestPayload)
 	if err != nil {
 		log.Printf("Failed to marshal SMS request: %v", err)
@@ -37,7 +37,7 @@ func SendOTP(countryCode, phoneNumber, otp string) {
 	}
 
 	// Build the URL from an environment variable.
-	url := fmt.Sprintf("%s/api/v1/send/sms", os.Getenv("NOTIFICATION_SERVICE_ENDPOINT"))
+	url := fmt.Sprintf("%s/api/v1/sms", config.GetEnv("NOTIFICATION_SERVICE_ENDPOINT"))
 
 	// Send the HTTP POST request.
 	resp, err := client.Post(url, "application/json", bytes.NewBuffer(jsonData))

@@ -30,6 +30,7 @@ func init() {
 // @version 1.0
 // @description Authentication, Authorization, and Accounting (AAA) service providing RBAC-based access control. Supports both gRPC and REST API interfaces for seamless integration with client applications. Offers comprehensive user management, role-based permission control, and session accounting capabilities for secure system access.
 func main() {
+
 	database.ConnectDB()
 	corsSetup := config.LoadConfig()
 	database.HandleMigrationCommands()
@@ -84,6 +85,7 @@ func main() {
 	defer grpcServer.GracefulStop()
 
 	helper.Log.Println("Server is running on port:", corsSetup.Port)
+
 	if err := r.Run(":" + corsSetup.Port); err != nil {
 		helper.Log.Fatalf("Error starting server: %v", err)
 	}

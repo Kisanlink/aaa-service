@@ -420,35 +420,17 @@ definitions:
     type: object
   model.UpdateUserRequest:
     properties:
-      care_of:
-        example: Father
-        type: string
-      date_of_birth:
-        example: "1990-01-01"
+      aadhaar_number:
+        example: "123456789012"
         type: string
       email_hash:
-        example: a1b2c3d4e5f6
-        type: string
-      message:
-        example: Profile updated
+        example: example@gmail.com
         type: string
       mobile_number:
         example: 9876543210
         type: integer
-      name:
-        example: John Doe
-        type: string
-      photo:
-        example: base64encodedimage
-        type: string
-      status:
-        example: active
-        type: string
       username:
         example: johndoe
-        type: string
-      year_of_birth:
-        example: "1990"
         type: string
     type: object
   model.UserRes:
@@ -1289,6 +1271,34 @@ paths:
       summary: Update a permission
       tags:
       - Permissions
+  /read/schema:
+    get:
+      consumes:
+      - application/json
+      description: Read schema from SpiceDB
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Schema Read successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/helper.Response'
+            - properties:
+                data:
+                  additionalProperties:
+                    items:
+                      type: string
+                    type: array
+                  type: object
+              type: object
+        "500":
+          description: Failed to Read SpiceDB schema
+          schema:
+            $ref: '#/definitions/helper.ErrorResponse'
+      summary: Read spice db schema
+      tags:
+      - SpiceDB
   /register:
     post:
       consumes:

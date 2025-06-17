@@ -8,4 +8,5 @@ import (
 
 func SpiceDBRoutes(r *gin.RouterGroup, database *gorm.DB, s spicedb.SpiceDBHandler) {
 	r.GET("/update/schema", s.UpdateSpiceDb)
+	r.GET("/read/schema", s.ReadSpiceDB)
 }

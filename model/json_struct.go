@@ -79,16 +79,10 @@ type CreateUserRequest struct {
 }
 
 type UpdateUserRequest struct {
-	Username     string `json:"username" example:"johndoe"`
-	Status       string `json:"status" example:"active"`
-	Name         string `json:"name" example:"John Doe"`
-	CareOf       string `json:"care_of" example:"Father"`
-	DateOfBirth  string `json:"date_of_birth" example:"1990-01-01"`
-	Photo        string `json:"photo" example:"base64encodedimage"`
-	EmailHash    string `json:"email_hash" example:"a1b2c3d4e5f6"`
-	YearOfBirth  string `json:"year_of_birth" example:"1990"`
-	Message      string `json:"message" example:"Profile updated"`
-	MobileNumber uint64 `json:"mobile_number" example:"9876543210"`
+	Username      string `json:"username" example:"johndoe"`
+	AadhaarNumber string `json:"aadhaar_number" example:"123456789012"`
+	EmailHash     string `json:"email_hash" example:"example@gmail.com"`
+	MobileNumber  uint64 `json:"mobile_number" example:"9876543210"`
 }
 
 type CreateSchema struct {

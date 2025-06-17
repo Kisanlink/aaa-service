@@ -2,12 +2,14 @@ package helper
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"reflect"
 	"regexp"
 	"sort"
 	"strings"
+	"unicode"
 
 	"github.com/Kisanlink/aaa-service/model"
 	"golang.org/x/crypto/bcrypt"
@@ -258,3 +260,151 @@ func NormalizeResourceType(resourceType string) string {
 	normalized = strings.ReplaceAll(normalized, " ", "_")
 	return normalized
 }
+
+// SanitizeDBName converts a string into a valid database name with efficient handling of:
+// - Multiple slashes converted to single underscore
+// - Multiple spaces converted to single underscore
+// - Trimmed trailing/leading special chars
+// - Proper handling of all special characters
+func SanitizeDBName(input string) string {
+	var result strings.Builder
+	lastWasSpecial := false // Track if last character was special
+
+	for _, r := range strings.TrimSpace(input) {
+		switch {
+		case r == '/' || r == '-':
+			if !lastWasSpecial {
+				result.WriteRune('_')
+				lastWasSpecial = true
+			}
+		case unicode.IsLetter(r) || unicode.IsDigit(r):
+			result.WriteRune(r)
+			lastWasSpecial = false
+		case r == '_':
+			// Preserve existing underscores
+			result.WriteRune(r)
+			lastWasSpecial = false
+		case unicode.IsSpace(r):
+			if !lastWasSpecial {
+				result.WriteRune('_')
+				lastWasSpecial = true
+			}
+		default:
+			// Skip all other special characters
+			continue
+		}
+	}
+
+	// Get the sanitized string
+	s := result.String()
+
+	// Trim any remaining underscores at ends
+	s = strings.Trim(s, "_")
+
+	// Ensure we don't return an empty string
+	if s == "" {
+		return "invalid_name"
+	}
+
+	return s
+}
+
+// testCases := []string{
+// "db/aaa/users",
+// "my@database/name",
+// "  spaces  /front/back  ",
+// "special!chars#here",
+// "UPPER/lower/CASE",
+// "multiple///slashes",
+// "   leading/trailing///   ",
+// "normal-name_123",
+// "multiple---dashes",
+// "mixed-hyphen_underscore/and space",
+// "",
+// "just    spaces",
+// }
+
+// for _, tc := range testCases {
+// 	fmt.Printf("Original: '%s'\nSanitized: '%s'\n\n", tc, SanitizeDBName(tc))
+// }
+
+var (
+	ErrEmptyName                 = errors.New("name cannot be empty")
+	ErrInvalidFormat             = errors.New("name must be lowercase letters separated by single underscores (like 'good_vibes')")
+	ErrInvalidChars              = errors.New("name contains invalid characters (only lowercase a-z and _ allowed)")
+	ErrConsecutiveUnderscores    = errors.New("name contains consecutive underscores")
+	ErrLeadingTrailingUnderscore = errors.New("name cannot start or end with underscore")
+)
+
+// OnlyValidName checks if the name exactly matches "good_vibes" format
+func OnlyValidName(input string) error {
+	if input == "" {
+		return ErrEmptyName
+	}
+
+	// Check for invalid characters
+	for _, r := range input {
+		if !(r >= 'a' && r <= 'z') && r != '_' {
+			return ErrInvalidChars
+		}
+	}
+
+	// Check start/end
+	if strings.HasPrefix(input, "_") || strings.HasSuffix(input, "_") {
+		return ErrLeadingTrailingUnderscore
+	}
+
+	// Check consecutive underscores
+	if strings.Contains(input, "__") {
+		return ErrConsecutiveUnderscores
+	}
+
+	// Check the general pattern (at least one underscore between lowercase words)
+	parts := strings.Split(input, "_")
+	if len(parts) < 2 {
+		return ErrInvalidFormat
+	}
+	for _, part := range parts {
+		if part == "" {
+			return ErrConsecutiveUnderscores
+		}
+		for _, r := range part {
+			if !(r >= 'a' && r <= 'z') {
+				return ErrInvalidChars
+			}
+		}
+	}
+
+	return nil
+}
+
+// testCases := []string{
+// 		"good_vibes", // only valid case
+// 		"db/aaa/users",
+// 		"my@database/name",
+// 		"  spaces  /front/back  ",
+// 		"special!chars#here",
+// 		"UPPER/lower/CASE",
+// 		"multiple///slashes",
+// 		"   leading/trailing///   ",
+// 		"normal-name_123",
+// 		"multiple---dashes",
+// 		"mixed-hyphen_underscore/and space",
+// 		"",
+// 		"just    spaces",
+// 		"good__vibes", // consecutive _
+// 		"_good_vibes", // starts with _
+// 		"good_vibes_", // ends with _
+// 		"Good_Vibes",  // uppercase
+// 		"goodVibes",   // camelCase
+// 		"good-vibes",  // hyphen
+// 	}
+
+// 	for _, tc := range testCases {
+// 		err := OnlyValidName(tc)
+// 		if err != nil {
+// 			fmt.Printf("Invalid: '%s' - %v\n", tc, err)
+// 		} else {
+// 			fmt.Printf("Valid:   '%s'\n", tc)
+// 		}
+// 	}

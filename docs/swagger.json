@@ -1118,6 +1118,53 @@
                 }
             }
         },
+        "/read/schema": {
+            "get": {
+                "description": "Read schema from SpiceDB",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SpiceDB"
+                ],
+                "summary": "Read spice db schema",
+                "responses": {
+                    "200": {
+                        "description": "Schema Read successfully",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/helper.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "additionalProperties": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to Read SpiceDB schema",
+                        "schema": {
+                            "$ref": "#/definitions/helper.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/register": {
             "post": {
                 "description": "Creates a new user account with the provided details. Optionally sends OTP for Aadhaar verification if Aadhaar number is provided.",
@@ -2511,45 +2558,21 @@
         "model.UpdateUserRequest": {
             "type": "object",
             "properties": {
-                "care_of": {
+                "aadhaar_number": {
                     "type": "string",
-                    "example": "Father"
-                },
-                "date_of_birth": {
-                    "type": "string",
-                    "example": "1990-01-01"
+                    "example": "123456789012"
                 },
                 "email_hash": {
                     "type": "string",
-                    "example": "a1b2c3d4e5f6"
-                },
-                "message": {
-                    "type": "string",
-                    "example": "Profile updated"
+                    "example": "example@gmail.com"
                 },
                 "mobile_number": {
                     "type": "integer",
                     "example": 9876543210
                 },
-                "name": {
-                    "type": "string",
-                    "example": "John Doe"
-                },
-                "photo": {
-                    "type": "string",
-                    "example": "base64encodedimage"
-                },
-                "status": {
-                    "type": "string",
-                    "example": "active"
-                },
                 "username": {
                     "type": "string",
                     "example": "johndoe"
-                },
-                "year_of_birth": {
-                    "type": "string",
-                    "example": "1990"
                 }
             }
         },
