@@ -8,10 +8,9 @@ import (
 	"gorm.io/gorm"
 )
 
-func SetupRouter(db *gorm.DB) *gin.Engine {
-	r := gin.Default()
+func SetupRouter(db *gorm.DB, router *gin.Engine) {
 	// Recovery middleware
-	r.Use(gin.CustomRecovery(func(c *gin.Context, recovered interface{}) {
+	router.Use(gin.CustomRecovery(func(c *gin.Context, recovered interface{}) {
 		if err, ok := recovered.(*helper.AppError); ok {
 			helper.SendErrorResponse(c.Writer, err.StatusCode, []string{err.Error()})
 			c.Abort()
@@ -22,15 +21,13 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 		c.Abort()
 	}))
 
-	r.GET("/", func(c *gin.Context) {
+	router.GET("/", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"message": "Welcome to the AAA-SERVICE server!",
 		})
 	})
-	api := r.Group("/api")
 
+	// API routes under /api/v1
+	api := router.Group("/api")
 	ApiRoutes(api, db)
-
-	return r
-
 }
