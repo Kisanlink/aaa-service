@@ -49,7 +49,6 @@ func (s *Server) ValidateUser(ctx context.Context, req *pb.ValidateUserRequest) 
 		}
 
 		existingUser.IsValidated = req.(*pb.ValidateUserRequest).IsValidated
-		existingUser.AadhaarNumber = &req.(*pb.ValidateUserRequest).AadhaarNumber
 		existingUser.Status = &req.(*pb.ValidateUserRequest).Status
 		existingUser.Name = &req.(*pb.ValidateUserRequest).Name
 		existingUser.ShareCode = &req.(*pb.ValidateUserRequest).ShareCode
