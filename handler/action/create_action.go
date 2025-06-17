@@ -1,6 +1,7 @@
 package action
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/Kisanlink/aaa-service/helper"
@@ -45,6 +46,11 @@ func (s *ActionHandler) CreateActionRestApi(c *gin.Context) {
 		return
 	}
 
+	err := helper.OnlyValidName(req.Name)
+	if err != nil {
+		helper.SendErrorResponse(c.Writer, http.StatusBadRequest, []string{fmt.Sprintf("Invalid: '%s' - %v", req.Name, err)})
+		return
+	}
 	// Check if action already exists
 	if err := s.actionService.CheckIfActionExists(req.Name); err != nil {
 		helper.SendErrorResponse(c.Writer, http.StatusConflict, []string{err.Error()})
@@ -53,7 +59,7 @@ func (s *ActionHandler) CreateActionRestApi(c *gin.Context) {
 
 	// Create new action
 	newAction := model.Action{
-		Name: req.Name,
+		Name: helper.SanitizeDBName(req.Name),
 	}
 
 	if err := s.actionService.CreateAction(&newAction); err != nil {

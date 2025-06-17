@@ -1,6 +1,7 @@
 package role
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
@@ -40,9 +41,15 @@ func (h *RoleHandler) CreateRoleWithPermissionsRestApi(c *gin.Context) {
 		return
 	}
 
+	err := helper.OnlyValidName(req.Name)
+	if err != nil {
+		helper.SendErrorResponse(c.Writer, http.StatusBadRequest, []string{fmt.Sprintf("Invalid: '%s' - %v", req.Name, err)})
+		return
+	}
+
 	// Convert request to role and permissions
 	role := &model.Role{
-		Name:        req.Name,
+		Name:        helper.SanitizeDBName(req.Name),
 		Description: req.Description,
 	}
 

@@ -1,6 +1,7 @@
 package resource
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/Kisanlink/aaa-service/helper"
@@ -34,9 +35,14 @@ func (s *ResourceHandler) UpdateResourceRestApi(c *gin.Context) {
 		return
 	}
 
+	err := helper.OnlyValidName(req.Name)
+	if err != nil {
+		helper.SendErrorResponse(c.Writer, http.StatusBadRequest, []string{fmt.Sprintf("Invalid: '%s' - %v", req.Name, err)})
+		return
+	}
 	// Update only allowed fields
 	updateData := model.Resource{
-		Name: req.Name, // Only update name field
+		Name: helper.SanitizeDBName(req.Name), // Only update name field
 	}
 
 	if err := s.resourceService.UpdateResource(id, updateData); err != nil {

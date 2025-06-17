@@ -34,10 +34,15 @@ func (h *RoleHandler) UpdateRoleWithPermissionsRestApi(c *gin.Context) {
 		helper.SendErrorResponse(c.Writer, http.StatusBadRequest, []string{err.Error()})
 		return
 	}
-	fmt.Println("UpdateRoleWithPermissionsRestApi called with ID:", req.Name)
+
+	err := helper.OnlyValidName(req.Name)
+	if err != nil {
+		helper.SendErrorResponse(c.Writer, http.StatusBadRequest, []string{fmt.Sprintf("Invalid: '%s' - %v", req.Name, err)})
+		return
+	}
 	// Convert request to role and permissions
 	updatedRole := model.Role{
-		Name:        req.Name,
+		Name:        helper.SanitizeDBName(req.Name),
 		Description: req.Description,
 	}
 

@@ -1,6 +1,7 @@
 package resource
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/Kisanlink/aaa-service/helper"
@@ -45,12 +46,18 @@ func (s *ResourceHandler) CreateResourceRestApi(c *gin.Context) {
 		return
 	}
 
+	err := helper.OnlyValidName(req.Name)
+	if err != nil {
+		helper.SendErrorResponse(c.Writer, http.StatusBadRequest, []string{fmt.Sprintf("Invalid: '%s' - %v", req.Name, err)})
+		return
+	}
 	// Check if resource already exists
 	if err := s.resourceService.CheckIfResourceExists(req.Name); err != nil {
 		helper.SendErrorResponse(c.Writer, http.StatusConflict, []string{err.Error()})
 		return
 	}
 
+	req.Name = helper.SanitizeDBName(req.Name)
 	// Create new resource
 	if err := s.resourceService.CreateResource(&req); err != nil {
 		helper.SendErrorResponse(c.Writer, http.StatusInternalServerError, []string{err.Error()})
