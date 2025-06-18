@@ -200,3 +200,10 @@ type GetRolePermissionResponse struct {
 	Role       *Role       `json:"Role"`
 	Permission *Permission `json:"Permission"`
 }
+
+type CheckPermissionRequest struct {
+	Username     string `json:"username"`     // "alice"
+	Action       string `json:"action"`       // "edit"
+	ResourceType string `json:"resourceType"` // "db/farmers"
+	ResourceID   string `json:"resourceID"`   // "123" (userid)
+}

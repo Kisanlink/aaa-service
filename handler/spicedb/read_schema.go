@@ -19,11 +19,11 @@ import (
 // @Failure 500 {object} helper.ErrorResponse "Failed to Read SpiceDB schema"
 // @Router /read/schema [get]
 func (h *SpiceDBHandler) ReadSpiceDB(c *gin.Context) {
-	// Generate SpiceDB schema definitions
 	data, err := client.ReadSchema()
 	if err != nil {
-		log.Printf("Failed to update SpiceDB schema: %v", err)
-
+		log.Printf("Failed to read SpiceDB schema: %v", err)
+		helper.SendErrorResponse(c.Writer, http.StatusInternalServerError, []string{"Failed to read schema"})
+		return
 	}
 	helper.SendSuccessResponse(c.Writer, http.StatusOK, "Schema Read successfully", data)
 }

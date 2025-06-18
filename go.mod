@@ -10,7 +10,7 @@ require (
 	github.com/gin-gonic/gin v1.10.1
 	github.com/google/uuid v1.6.0
 	github.com/joho/godotenv v1.5.1
-	github.com/kisanlink/protobuf v0.0.0-20250616104738-2e92429655fd
+	github.com/kisanlink/protobuf v0.0.0-20250618080345-35900b5c74ee
 	github.com/sirupsen/logrus v1.9.3
 	github.com/swaggo/files v1.0.1
 	github.com/swaggo/gin-swagger v1.6.0

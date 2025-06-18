@@ -37,13 +37,7 @@ func (s *PermissionService) CreatePermission(permission *model.Permission) error
 		return helper.NewAppError(http.StatusBadRequest, fmt.Errorf("at least one action is required"))
 	}
 
-	// Check if permission already exists for this resource
-	err := s.repo.CheckPermissionExists(permission.Resource)
-	if err != nil {
-		return err
-	}
-
-	err = s.repo.CreatePermission(permission)
+	err := s.repo.CreatePermission(permission)
 	if err != nil {
 		return fmt.Errorf("failed to create permission: %w", err)
 	}

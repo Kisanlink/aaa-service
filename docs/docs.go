@@ -646,6 +646,64 @@ const docTemplate = `{
                 }
             }
         },
+        "/check-permission": {
+            "post": {
+                "description": "Checks if a user has permission to perform a specific action on a resource",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SpiceDB"
+                ],
+                "summary": "Check user permission",
+                "parameters": [
+                    {
+                        "description": "Permission Check Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.CheckPermissionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Permission check result",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/helper.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "boolean"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request parameters",
+                        "schema": {
+                            "$ref": "#/definitions/helper.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to check permission",
+                        "schema": {
+                            "$ref": "#/definitions/helper.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/forgot-password": {
             "post": {
                 "description": "Handles the complete password reset flow in three steps: 1) Request OTP, 2) Verify OTP, 3) Reset password. Each step requires different request parameters.",
@@ -2215,6 +2273,27 @@ const docTemplate = `{
                 "user_id": {
                     "type": "string",
                     "example": "123e4567-e89b-12d3-a456-426614174000"
+                }
+            }
+        },
+        "model.CheckPermissionRequest": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "description": "\"edit\"",
+                    "type": "string"
+                },
+                "resourceID": {
+                    "description": "\"123\" (userid)",
+                    "type": "string"
+                },
+                "resourceType": {
+                    "description": "\"db/farmers\"",
+                    "type": "string"
+                },
+                "username": {
+                    "description": "\"alice\"",
+                    "type": "string"
                 }
             }
         },

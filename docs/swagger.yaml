@@ -182,6 +182,21 @@ definitions:
     - role
     - user_id
     type: object
+  model.CheckPermissionRequest:
+    properties:
+      action:
+        description: '"edit"'
+        type: string
+      resourceID:
+        description: '"123" (userid)'
+        type: string
+      resourceType:
+        description: '"db/farmers"'
+        type: string
+      username:
+        description: '"alice"'
+        type: string
+    type: object
   model.CreateActionRequest:
     properties:
       name:
@@ -961,6 +976,42 @@ paths:
       summary: Assign a role to a user
       tags:
       - Users
+  /check-permission:
+    post:
+      consumes:
+      - application/json
+      description: Checks if a user has permission to perform a specific action on
+        a resource
+      parameters:
+      - description: Permission Check Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.CheckPermissionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Permission check result
+          schema:
+            allOf:
+            - $ref: '#/definitions/helper.Response'
+            - properties:
+                data:
+                  type: boolean
+              type: object
+        "400":
+          description: Invalid request parameters
+          schema:
+            $ref: '#/definitions/helper.ErrorResponse'
+        "500":
+          description: Failed to check permission
+          schema:
+            $ref: '#/definitions/helper.ErrorResponse'
+      summary: Check user permission
+      tags:
+      - SpiceDB
   /forgot-password:
     post:
       consumes:
