@@ -1,7 +1,6 @@
 package resource
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/Kisanlink/aaa-service/helper"
@@ -37,7 +36,7 @@ func (s *ResourceHandler) UpdateResourceRestApi(c *gin.Context) {
 
 	err := helper.OnlyValidName(req.Name)
 	if err != nil {
-		helper.SendErrorResponse(c.Writer, http.StatusBadRequest, []string{fmt.Sprintf("Invalid: '%s' - %v", req.Name, err)})
+		helper.SendErrorResponse(c.Writer, http.StatusBadRequest, []string{err.Error()})
 		return
 	}
 	// Update only allowed fields

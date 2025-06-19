@@ -6,7 +6,6 @@ import (
 	"log"
 
 	"github.com/Kisanlink/aaa-service/database"
-	"github.com/Kisanlink/aaa-service/helper"
 	v1 "github.com/authzed/authzed-go/proto/authzed/api/v1"
 )
 
@@ -20,7 +19,7 @@ func CheckPermission(
 	if username == "" || action == "" || resourceType == "" || resourceID == "" {
 		return false, fmt.Errorf("username, action, resourceType and resourceID are required")
 	}
-	normalizedResourceType := helper.NormalizeResourceType(resourceType)
+	normalizedResourceType := resourceType
 
 	spicedb, err := database.SpiceDB()
 	if err != nil {

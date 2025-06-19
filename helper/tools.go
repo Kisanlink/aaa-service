@@ -112,9 +112,7 @@ func IsSequentialNumber(num string) bool {
 
 	return ascending || descending
 }
-
-func GenerateSpiceDBSchema(roles []model.Role) []model.CreateSchema {
-	PrettyJSON(roles)
+func GenerateSpiceDBSchema(roles []model.Role, resources []model.Resource) []model.CreateSchema {
 	// First, let's create a structure to organize the data
 	type ResourceInfo struct {
 		Relations   map[string]struct{}            // Track all relations needed
@@ -122,6 +120,21 @@ func GenerateSpiceDBSchema(roles []model.Role) []model.CreateSchema {
 	}
 
 	resourceMap := make(map[string]*ResourceInfo)
+
+	// First pass: create resource entries for all resources
+	for _, res := range resources {
+		resource := SanitizeDBName(res.Name)
+		if resource == "" || resource == "db_" {
+			continue
+		}
+
+		if _, exists := resourceMap[resource]; !exists {
+			resourceMap[resource] = &ResourceInfo{
+				Relations:   make(map[string]struct{}),
+				Permissions: make(map[string]map[string]struct{}),
+			}
+		}
+	}
 
 	// Process all roles and permissions
 	for _, role := range roles {
@@ -136,7 +149,7 @@ func GenerateSpiceDBSchema(roles []model.Role) []model.CreateSchema {
 				continue
 			}
 
-			// Initialize resource if not exists
+			// Initialize resource if not exists (shouldn't happen due to first pass)
 			if _, exists := resourceMap[resource]; !exists {
 				resourceMap[resource] = &ResourceInfo{
 					Relations:   make(map[string]struct{}),
@@ -163,17 +176,43 @@ func GenerateSpiceDBSchema(roles []model.Role) []model.CreateSchema {
 		}
 	}
 
+	// Second pass: handle inheritance for resources with more than two words
+	for resource, resInfo := range resourceMap {
+		parts := strings.Split(resource, "_")
+		if len(parts) <= 2 {
+			continue // Only process resources with more than two words
+		}
+
+		parentResource := strings.Join(parts[:2], "_")
+		if parentInfo, exists := resourceMap[parentResource]; exists {
+			// Inherit relations from parent
+			for relation := range parentInfo.Relations {
+				resInfo.Relations[relation] = struct{}{}
+			}
+
+			// Inherit permissions from parent
+			for action, roles := range parentInfo.Permissions {
+				if _, exists := resInfo.Permissions[action]; !exists {
+					resInfo.Permissions[action] = make(map[string]struct{})
+				}
+				for role := range roles {
+					resInfo.Permissions[action][role] = struct{}{}
+				}
+			}
+		}
+	}
+
 	// Convert to the output format
 	var schemaDefinitions []model.CreateSchema
 
 	// Sort resources for consistent output
-	resources := make([]string, 0, len(resourceMap))
+	resourceNames := make([]string, 0, len(resourceMap))
 	for resource := range resourceMap {
-		resources = append(resources, resource)
+		resourceNames = append(resourceNames, resource)
 	}
-	sort.Strings(resources)
+	sort.Strings(resourceNames)
 
-	for _, resource := range resources {
+	for _, resource := range resourceNames {
 		resInfo := resourceMap[resource]
 
 		// Prepare relations slice
@@ -217,6 +256,111 @@ func GenerateSpiceDBSchema(roles []model.Role) []model.CreateSchema {
 
 	return schemaDefinitions
 }
+
+// func GenerateSpiceDBSchema(roles []model.Role) []model.CreateSchema {
+// 	PrettyJSON(roles)
+// 	// First, let's create a structure to organize the data
+// 	type ResourceInfo struct {
+// 		Relations   map[string]struct{}            // Track all relations needed
+// 		Permissions map[string]map[string]struct{} // action -> roles
+// 	}
+
+// 	resourceMap := make(map[string]*ResourceInfo)
+
+// 	// Process all roles and permissions
+// 	for _, role := range roles {
+// 		roleName := SanitizeDBName(role.Name)
+// 		if roleName == "" {
+// 			continue
+// 		}
+
+// 		for _, perm := range role.Permissions {
+// 			resource := SanitizeDBName(perm.Resource)
+// 			if resource == "db_" {
+// 				continue
+// 			}
+
+// 			// Initialize resource if not exists
+// 			if _, exists := resourceMap[resource]; !exists {
+// 				resourceMap[resource] = &ResourceInfo{
+// 					Relations:   make(map[string]struct{}),
+// 					Permissions: make(map[string]map[string]struct{}),
+// 				}
+// 			}
+// 			resInfo := resourceMap[resource]
+
+// 			// Add relation (role becomes the relation)
+// 			resInfo.Relations[roleName] = struct{}{}
+
+// 			// Add permissions for each action
+// 			for _, action := range perm.Actions {
+// 				actionName := SanitizeDBName(action)
+// 				if actionName == "" {
+// 					continue
+// 				}
+
+// 				if _, exists := resInfo.Permissions[actionName]; !exists {
+// 					resInfo.Permissions[actionName] = make(map[string]struct{})
+// 				}
+// 				resInfo.Permissions[actionName][roleName] = struct{}{}
+// 			}
+// 		}
+// 	}
+
+// 	// Convert to the output format
+// 	var schemaDefinitions []model.CreateSchema
+
+// 	// Sort resources for consistent output
+// 	resources := make([]string, 0, len(resourceMap))
+// 	for resource := range resourceMap {
+// 		resources = append(resources, resource)
+// 	}
+// 	sort.Strings(resources)
+
+// 	for _, resource := range resources {
+// 		resInfo := resourceMap[resource]
+
+// 		// Prepare relations slice
+// 		relations := make([]string, 0, len(resInfo.Relations))
+// 		for relation := range resInfo.Relations {
+// 			relations = append(relations, relation)
+// 		}
+// 		sort.Strings(relations)
+
+// 		// Prepare permissions
+// 		var permissionData []model.Data
+
+// 		// Sort actions for consistent output
+// 		actions := make([]string, 0, len(resInfo.Permissions))
+// 		for action := range resInfo.Permissions {
+// 			actions = append(actions, action)
+// 		}
+// 		sort.Strings(actions)
+
+// 		for _, action := range actions {
+// 			// Get roles for this action
+// 			roles := make([]string, 0, len(resInfo.Permissions[action]))
+// 			for role := range resInfo.Permissions[action] {
+// 				roles = append(roles, role)
+// 			}
+// 			sort.Strings(roles)
+
+// 			// Create permission entry
+// 			permissionData = append(permissionData, model.Data{
+// 				Action: action,
+// 				Roles:  roles,
+// 			})
+// 		}
+
+// 		schemaDefinitions = append(schemaDefinitions, model.CreateSchema{
+// 			Resource:  resource,
+// 			Relations: relations,
+// 			Data:      permissionData,
+// 		})
+// 	}
+
+// 	return schemaDefinitions
+// }
 
 func NormalizeResourceType(resourceType string) string {
 	// Replace slashes with underscores

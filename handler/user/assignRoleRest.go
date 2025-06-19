@@ -85,9 +85,8 @@ func (s *UserHandler) AssignRoleRestApi(c *gin.Context) {
 		helper.SendErrorResponse(c.Writer, http.StatusInternalServerError, []string{err.Error()})
 		return
 	}
-
+	helper.PrettyJSON(userRoles)
 	roleNames := make([]string, 0, len(userRoles))
-
 	for _, userRole := range userRoles {
 		role, err := s.RoleService.FindRoleByID(userRole.RoleID)
 		if err != nil {

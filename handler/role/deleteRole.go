@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/Kisanlink/aaa-service/client"
+	"github.com/Kisanlink/aaa-service/handler/spicedb"
 	"github.com/Kisanlink/aaa-service/helper"
 	"github.com/gin-gonic/gin"
 )
@@ -39,8 +40,13 @@ func (h *RoleHandler) DeleteRoleRestApi(c *gin.Context) {
 		return
 	}
 
+	resource, err := h.resourceService.FindResources(map[string]interface{}{}, 0, 0)
+	if err != nil {
+		helper.SendErrorResponse(c.Writer, http.StatusInternalServerError, []string{err.Error()})
+		return
+	}
 	// Generate SpiceDB schema definitions
-	schemaDefinitions := helper.GenerateSpiceDBSchema(roles)
+	schemaDefinitions := helper.GenerateSpiceDBSchema(roles, resource)
 
 	// Update SpiceDB schema
 	_, err = client.UpdateSchema(schemaDefinitions)
@@ -48,5 +54,8 @@ func (h *RoleHandler) DeleteRoleRestApi(c *gin.Context) {
 		log.Printf("Failed to update SpiceDB schema: %v", err)
 
 	}
+
+	spicedb.UpdateSpiceDBData(h.roleService, h.userService)
+
 	helper.SendSuccessResponse(c.Writer, http.StatusOK, "Role deleted successfully", nil)
 }

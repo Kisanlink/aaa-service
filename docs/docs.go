@@ -1353,7 +1353,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Creates a new resource with the provided details",
+                "description": "Creates a new resource with the provided details (Format: db_name_table_name - e.g. db_aaa_users or db_farmer_crop_cycle)",
                 "consumes": [
                     "application/json"
                 ],
@@ -1363,7 +1363,7 @@ const docTemplate = `{
                 "tags": [
                     "Resources"
                 ],
-                "summary": "Create a new resource",
+                "summary": "Create resource",
                 "parameters": [
                     {
                         "description": "Resource creation data",
@@ -1395,7 +1395,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Invalid request body",
+                        "description": "Invalid request body or resource name format (must be db/name/table_name)",
                         "schema": {
                             "$ref": "#/definitions/helper.ErrorResponse"
                         }
@@ -1819,6 +1819,47 @@ const docTemplate = `{
                 }
             }
         },
+        "/update/relations": {
+            "get": {
+                "description": "Updates all user-role relationships in SpiceDB by syncing with the current database state",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "SpiceDB"
+                ],
+                "summary": "Update SpiceDB relationships",
+                "responses": {
+                    "200": {
+                        "description": "Relationships updated successfully",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/helper.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/model.User"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to update relationships",
+                        "schema": {
+                            "$ref": "#/definitions/helper.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/update/schema": {
             "get": {
                 "description": "update schema by Retrieves all roles",
@@ -2163,6 +2204,54 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.Address": {
+            "type": "object",
+            "properties": {
+                "country": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "district": {
+                    "type": "string"
+                },
+                "full_address": {
+                    "type": "string"
+                },
+                "house": {
+                    "type": "string"
+                },
+                "id": {
+                    "description": "Use string for ID",
+                    "type": "string"
+                },
+                "landmark": {
+                    "type": "string"
+                },
+                "pincode": {
+                    "type": "string"
+                },
+                "post_office": {
+                    "type": "string"
+                },
+                "state": {
+                    "type": "string"
+                },
+                "street": {
+                    "type": "string"
+                },
+                "subdistrict": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "vtc": {
                     "type": "string"
                 }
             }
@@ -2663,6 +2752,88 @@ const docTemplate = `{
                 }
             }
         },
+        "model.User": {
+            "type": "object",
+            "required": [
+                "password",
+                "username"
+            ],
+            "properties": {
+                "aadhaar_number": {
+                    "type": "string"
+                },
+                "address": {
+                    "$ref": "#/definitions/model.Address"
+                },
+                "address_id": {
+                    "type": "string"
+                },
+                "care_of": {
+                    "type": "string"
+                },
+                "country_code": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "date_of_birth": {
+                    "type": "string"
+                },
+                "email_hash": {
+                    "type": "string"
+                },
+                "id": {
+                    "description": "Use string for ID",
+                    "type": "string"
+                },
+                "isValidate": {
+                    "type": "boolean"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "mobile_number": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 8
+                },
+                "photo": {
+                    "type": "string"
+                },
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.UserRole"
+                    }
+                },
+                "share_code": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "tokens": {
+                    "description": "for credits",
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                },
+                "year_of_birth": {
+                    "type": "string"
+                }
+            }
+        },
         "model.UserRes": {
             "type": "object",
             "properties": {
@@ -2828,6 +2999,33 @@ const docTemplate = `{
                 "year_of_birth": {
                     "type": "string",
                     "example": "1990"
+                }
+            }
+        },
+        "model.UserRole": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "description": "Use string for ID",
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "roleID": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/model.User"
+                },
+                "userID": {
+                    "type": "string"
                 }
             }
         }

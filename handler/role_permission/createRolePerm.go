@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/Kisanlink/aaa-service/client"
+	"github.com/Kisanlink/aaa-service/handler/spicedb"
 	"github.com/Kisanlink/aaa-service/helper"
 	"github.com/Kisanlink/aaa-service/model"
 	"github.com/Kisanlink/aaa-service/services"
@@ -15,15 +16,19 @@ type RolePermissionHandler struct {
 	rolePermissionService services.RolePermissionServiceInterface
 	roleService           services.RoleServiceInterface
 	permissionService     services.PermissionServiceInterface
+	resourceService       services.ResourceServiceInterface
+	userService           services.UserServiceInterface
 }
 
 func NewRolePermissionHandler(
-	rolePermissionService services.RolePermissionServiceInterface, roleService services.RoleServiceInterface, permissionService services.PermissionServiceInterface,
+	rolePermissionService services.RolePermissionServiceInterface, roleService services.RoleServiceInterface, permissionService services.PermissionServiceInterface, resourceService services.ResourceServiceInterface, userService services.UserServiceInterface,
 ) *RolePermissionHandler {
 	return &RolePermissionHandler{
 		rolePermissionService: rolePermissionService,
 		roleService:           roleService,
 		permissionService:     permissionService,
+		resourceService:       resourceService,
+		userService:           userService,
 	}
 }
 
@@ -68,8 +73,13 @@ func (h *RolePermissionHandler) AssignPermissionToRoleRestApi(c *gin.Context) {
 		return
 	}
 
+	resource, err := h.resourceService.FindResources(map[string]interface{}{}, 0, 0)
+	if err != nil {
+		helper.SendErrorResponse(c.Writer, http.StatusInternalServerError, []string{err.Error()})
+		return
+	}
 	// Generate SpiceDB schema definitions
-	schemaDefinitions := helper.GenerateSpiceDBSchema(roles)
+	schemaDefinitions := helper.GenerateSpiceDBSchema(roles, resource)
 
 	// Update SpiceDB schema
 	_, err = client.UpdateSchema(schemaDefinitions)
@@ -77,6 +87,8 @@ func (h *RolePermissionHandler) AssignPermissionToRoleRestApi(c *gin.Context) {
 		log.Printf("Failed to update SpiceDB schema: %v", err)
 
 	}
+
+	spicedb.UpdateSpiceDBData(h.roleService, h.userService)
 
 	helper.SendSuccessResponse(c.Writer, http.StatusCreated, "Permission assigned to role successfully", req)
 }

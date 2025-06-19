@@ -43,7 +43,7 @@ func (s *ActionHandler) UpdateActionRestApi(c *gin.Context) {
 
 	// Update only allowed fields
 	updateData := model.Action{
-		Name: helper.SanitizeDBName(req.Name), // Only update name field
+		Name: req.Name, // Only update name field
 	}
 
 	if err := s.actionService.UpdateAction(id, updateData); err != nil {

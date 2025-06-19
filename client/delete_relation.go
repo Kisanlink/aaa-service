@@ -6,7 +6,6 @@ import (
 	"log"
 
 	"github.com/Kisanlink/aaa-service/database"
-	"github.com/Kisanlink/aaa-service/helper"
 	v1 "github.com/authzed/authzed-go/proto/authzed/api/v1"
 )
 
@@ -20,7 +19,7 @@ func DeleteRelationship(
 	if role == "" || username == "" || resourceType == "" || resourceID == "" {
 		return fmt.Errorf("role, username, resourceType and resourceID are required")
 	}
-	normalizedResourceType := helper.NormalizeResourceType(resourceType)
+	normalizedResourceType := resourceType
 
 	// Connect to SpiceDB
 	spicedb, err := database.SpiceDB()
@@ -55,12 +54,12 @@ func DeleteRelationship(
 		return fmt.Errorf("failed to delete relationship: %w", err)
 	}
 
-	log.Printf(
-		"Deleted relationship: %s#%s@user:%s",
-		fmt.Sprintf("%s:%s", resourceType, resourceID),
-		role,
-		username,
-	)
+	// log.Printf(
+	// 	"Deleted relationship: %s#%s@user:%s",
+	// 	fmt.Sprintf("%s:%s", resourceType, resourceID),
+	// 	role,
+	// 	username,
+	// )
 
 	return nil
 }

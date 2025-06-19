@@ -1,7 +1,6 @@
 package resource
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/Kisanlink/aaa-service/helper"
@@ -23,14 +22,14 @@ func NewResourceHandler(
 }
 
 // CreateResourceRestApi creates a new resource
-// @Summary Create a new resource
-// @Description Creates a new resource with the provided details
+// @Summary Create resource
+// @Description Creates a new resource with the provided details (Format: db_name_table_name - e.g. db_aaa_users or db_farmer_crop_cycle)
 // @Tags Resources
 // @Accept json
 // @Produce json
 // @Param request body model.CreateResourceRequest true "Resource creation data"
 // @Success 201 {object} helper.Response{data=model.Resource} "Resource created successfully"
-// @Failure 400 {object} helper.ErrorResponse "Invalid request body"
+// @Failure 400 {object} helper.ErrorResponse "Invalid request body or resource name format (must be db/name/table_name)"
 // @Failure 409 {object} helper.ErrorResponse "Resource already exists"
 // @Failure 500 {object} helper.ErrorResponse "Failed to create resource"
 // @Router /resources [post]
@@ -48,7 +47,7 @@ func (s *ResourceHandler) CreateResourceRestApi(c *gin.Context) {
 
 	err := helper.OnlyValidName(req.Name)
 	if err != nil {
-		helper.SendErrorResponse(c.Writer, http.StatusBadRequest, []string{fmt.Sprintf("Invalid: '%s' - %v", req.Name, err)})
+		helper.SendErrorResponse(c.Writer, http.StatusBadRequest, []string{err.Error()})
 		return
 	}
 	// Check if resource already exists

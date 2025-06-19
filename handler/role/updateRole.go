@@ -42,7 +42,7 @@ func (h *RoleHandler) UpdateRoleWithPermissionsRestApi(c *gin.Context) {
 	}
 	// Convert request to role and permissions
 	updatedRole := model.Role{
-		Name:        helper.SanitizeDBName(req.Name),
+		Name:        req.Name,
 		Description: req.Description,
 	}
 

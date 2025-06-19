@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/Kisanlink/aaa-service/client"
+	"github.com/Kisanlink/aaa-service/handler/spicedb"
 	"github.com/Kisanlink/aaa-service/helper"
 	"github.com/Kisanlink/aaa-service/model"
 	"github.com/Kisanlink/aaa-service/services"
@@ -13,12 +14,16 @@ import (
 )
 
 type RoleHandler struct {
-	roleService services.RoleServiceInterface
+	roleService     services.RoleServiceInterface
+	resourceService services.ResourceServiceInterface
+	userService     services.UserServiceInterface
 }
 
-func NewRoleHandler(roleService services.RoleServiceInterface) *RoleHandler {
+func NewRoleHandler(roleService services.RoleServiceInterface, resourceService services.ResourceServiceInterface, userService services.UserServiceInterface) *RoleHandler {
 	return &RoleHandler{
-		roleService: roleService,
+		roleService:     roleService,
+		resourceService: resourceService,
+		userService:     userService,
 	}
 }
 
@@ -49,7 +54,7 @@ func (h *RoleHandler) CreateRoleWithPermissionsRestApi(c *gin.Context) {
 
 	// Convert request to role and permissions
 	role := &model.Role{
-		Name:        helper.SanitizeDBName(req.Name),
+		Name:        req.Name,
 		Description: req.Description,
 	}
 
@@ -71,9 +76,13 @@ func (h *RoleHandler) CreateRoleWithPermissionsRestApi(c *gin.Context) {
 		helper.SendErrorResponse(c.Writer, http.StatusInternalServerError, []string{err.Error()})
 		return
 	}
-
+	resource, err := h.resourceService.FindResources(map[string]interface{}{}, 0, 0)
+	if err != nil {
+		helper.SendErrorResponse(c.Writer, http.StatusInternalServerError, []string{err.Error()})
+		return
+	}
 	// Generate SpiceDB schema definitions
-	schemaDefinitions := helper.GenerateSpiceDBSchema(roles)
+	schemaDefinitions := helper.GenerateSpiceDBSchema(roles, resource)
 
 	// Update SpiceDB schema
 	_, err = client.UpdateSchema(schemaDefinitions)
@@ -81,6 +90,8 @@ func (h *RoleHandler) CreateRoleWithPermissionsRestApi(c *gin.Context) {
 		log.Printf("Failed to update SpiceDB schema: %v", err)
 
 	}
+
+	spicedb.UpdateSpiceDBData(h.roleService, h.userService)
 
 	// Get the created role with permissions
 	createdRole, err := h.roleService.FindRoleByID(role.ID)

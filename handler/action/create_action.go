@@ -59,7 +59,7 @@ func (s *ActionHandler) CreateActionRestApi(c *gin.Context) {
 
 	// Create new action
 	newAction := model.Action{
-		Name: helper.SanitizeDBName(req.Name),
+		Name: req.Name,
 	}
 
 	if err := s.actionService.CreateAction(&newAction); err != nil {
