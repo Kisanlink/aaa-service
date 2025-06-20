@@ -112,16 +112,6 @@ github.com/json-iterator/go v1.1.12 h1:PV8peI4a0ysnczrg+LtxykD8LfKY9ML6u2jnxaEnr
 github.com/json-iterator/go v1.1.12/go.mod h1:e30LSqwooZae/UwlEbR2852Gd8hjQvJoHmT4TnhNGBo=
 github.com/jzelinskie/stringz v0.0.3 h1:0GhG3lVMYrYtIvRbxvQI6zqRTT1P1xyQlpa0FhfUXas=
 github.com/jzelinskie/stringz v0.0.3/go.mod h1:hHYbgxJuNLRw91CmpuFsYEOyQqpDVFg8pvEh23vy4P0=
-github.com/kisanlink/protobuf v0.0.0-20250612055432-be9d4788d6cb h1:geAO8c46UX6y9Kc+rbX+L+z13lLI9WK0kWo7DV4Mwnw=
-github.com/kisanlink/protobuf v0.0.0-20250612055432-be9d4788d6cb/go.mod h1:ILhCEEYRycYagb1aVsEwj+0tk4Ue2kdtB6DYbVTUgP8=
-github.com/kisanlink/protobuf v0.0.0-20250616104738-2e92429655fd h1:au46IJN8C1daiEiC9DQ0IyMX1eJsnBFE6gweOURcUPY=
-github.com/kisanlink/protobuf v0.0.0-20250616104738-2e92429655fd/go.mod h1:ILhCEEYRycYagb1aVsEwj+0tk4Ue2kdtB6DYbVTUgP8=
-github.com/kisanlink/protobuf v0.0.0-20250618080345-35900b5c74ee h1:6lMbGtahDb0ZBC/EivPCZJ5TdvyLmAhjiv+LSWZ91OA=
-github.com/kisanlink/protobuf v0.0.0-20250618080345-35900b5c74ee/go.mod h1:ILhCEEYRycYagb1aVsEwj+0tk4Ue2kdtB6DYbVTUgP8=
-github.com/kisanlink/protobuf v0.0.0-20250619120626-950ad02502ee h1:qvkzCD9sOetH80eQZDZOATyakXgbO1YRkSd4REXo7t0=
-github.com/kisanlink/protobuf v0.0.0-20250619120626-950ad02502ee/go.mod h1:ILhCEEYRycYagb1aVsEwj+0tk4Ue2kdtB6DYbVTUgP8=
-github.com/kisanlink/protobuf v0.0.0-20250620041207-2fdcbb9a2c5c h1:xaUmotDCqb9aGbdBIhcWAB1I4M9UKB8tP7iS1+hwP/I=
-github.com/kisanlink/protobuf v0.0.0-20250620041207-2fdcbb9a2c5c/go.mod h1:ILhCEEYRycYagb1aVsEwj+0tk4Ue2kdtB6DYbVTUgP8=
 github.com/kisanlink/protobuf v0.0.0-20250620043806-ce07a868490f h1:Ug3SeaFq5+pCRELA0K8IurSZupNR09N493Oph2Vfd3Y=
 github.com/kisanlink/protobuf v0.0.0-20250620043806-ce07a868490f/go.mod h1:ILhCEEYRycYagb1aVsEwj+0tk4Ue2kdtB6DYbVTUgP8=
 github.com/kisielk/errcheck v1.5.0/go.mod h1:pFxgyoBC7bSaBwPgfKdkLd5X25qrDl4LWUI2bnpBCr8=

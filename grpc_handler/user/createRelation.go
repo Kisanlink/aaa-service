@@ -26,8 +26,7 @@ func (s *Server) CreateRelationship(ctx context.Context, req *pb.CreateRelations
 		log.Printf("Error creating relationships: %v", err)
 		return nil, err
 	}
-	// user:bob#kisansathi@db_farmer_farmers:123
-	// Return success response with the relationship string
+
 	relationshipString := "user" + ":" + req.Username + "#" + req.Relation + "@" + req.Resource + ":" + req.ResourceId
 	return &pb.CreateRelationshipResponse{
 		StatusCode:    200,

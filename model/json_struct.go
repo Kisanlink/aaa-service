@@ -202,8 +202,15 @@ type GetRolePermissionResponse struct {
 }
 
 type CheckPermissionRequest struct {
-	Username     string `json:"username"`     // "alice"
-	Action       string `json:"action"`       // "edit"
-	ResourceType string `json:"resourceType"` // "db/farmers"
-	ResourceID   string `json:"resourceID"`   // "123" (userid)
+	Username   string `json:"username" binding:"required" example:"johndoe"`
+	Action     string `json:"action" binding:"required" example:"update"` // "edit"
+	Resource   string `json:"resource" binding:"required" example:"db_farmer_farmers"`
+	ResourceID string `json:"resource_id" binding:"required" example:"123e4567-e89b-12d3-a456-426614174000"`
+}
+
+type CreateRelationshipRequest struct {
+	Relation   string `json:"relation" binding:"required" example:"owner"`
+	Username   string `json:"username" binding:"required" example:"johndoe"`
+	Resource   string `json:"resource" binding:"required" example:"db_farmer_farmers"`
+	ResourceID string `json:"resource_id" binding:"required" example:"123e4567-e89b-12d3-a456-426614174000"`
 }

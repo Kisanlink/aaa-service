@@ -33,7 +33,7 @@ func (h *SpiceDBHandler) CheckPermissionSpiceDB(c *gin.Context) {
 	hasPermission, err := client.CheckPermission(
 		req.Username,
 		req.Action,
-		req.ResourceType,
+		req.Resource,
 		req.ResourceID,
 	)
 	if err != nil {

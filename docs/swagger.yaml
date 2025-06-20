@@ -102,38 +102,6 @@ definitions:
       updated_at:
         type: string
     type: object
-  model.Address:
-    properties:
-      country:
-        type: string
-      created_at:
-        type: string
-      district:
-        type: string
-      full_address:
-        type: string
-      house:
-        type: string
-      id:
-        description: Use string for ID
-        type: string
-      landmark:
-        type: string
-      pincode:
-        type: string
-      post_office:
-        type: string
-      state:
-        type: string
-      street:
-        type: string
-      subdistrict:
-        type: string
-      updated_at:
-        type: string
-      vtc:
-        type: string
-    type: object
   model.AddressRes:
     properties:
       country:
@@ -218,16 +186,22 @@ definitions:
     properties:
       action:
         description: '"edit"'
+        example: update
         type: string
-      resourceID:
-        description: '"123" (userid)'
+      resource:
+        example: db_farmer_farmers
         type: string
-      resourceType:
-        description: '"db/farmers"'
+      resource_id:
+        example: 123e4567-e89b-12d3-a456-426614174000
         type: string
       username:
-        description: '"alice"'
+        example: johndoe
         type: string
+    required:
+    - action
+    - resource
+    - resource_id
+    - username
     type: object
   model.CreateActionRequest:
     properties:
@@ -247,6 +221,26 @@ definitions:
         type: string
       resource:
         type: string
+    type: object
+  model.CreateRelationshipRequest:
+    properties:
+      relation:
+        example: owner
+        type: string
+      resource:
+        example: db_farmer_farmers
+        type: string
+      resource_id:
+        example: 123e4567-e89b-12d3-a456-426614174000
+        type: string
+      username:
+        example: johndoe
+        type: string
+    required:
+    - relation
+    - resource
+    - resource_id
+    - username
     type: object
   model.CreateResourceRequest:
     properties:
@@ -480,62 +474,6 @@ definitions:
         example: johndoe
         type: string
     type: object
-  model.User:
-    properties:
-      aadhaar_number:
-        type: string
-      address:
-        $ref: '#/definitions/model.Address'
-      address_id:
-        type: string
-      care_of:
-        type: string
-      country_code:
-        type: string
-      created_at:
-        type: string
-      date_of_birth:
-        type: string
-      email_hash:
-        type: string
-      id:
-        description: Use string for ID
-        type: string
-      isValidate:
-        type: boolean
-      message:
-        type: string
-      mobile_number:
-        type: integer
-      name:
-        type: string
-      password:
-        maxLength: 128
-        minLength: 8
-        type: string
-      photo:
-        type: string
-      roles:
-        items:
-          $ref: '#/definitions/model.UserRole'
-        type: array
-      share_code:
-        type: string
-      status:
-        type: string
-      tokens:
-        description: for credits
-        type: integer
-      updated_at:
-        type: string
-      username:
-        type: string
-      year_of_birth:
-        type: string
-    required:
-    - password
-    - username
-    type: object
   model.UserRes:
     properties:
       aadhaar_number:
@@ -657,24 +595,6 @@ definitions:
         type: string
       year_of_birth:
         example: "1990"
-        type: string
-    type: object
-  model.UserRole:
-    properties:
-      created_at:
-        type: string
-      id:
-        description: Use string for ID
-        type: string
-      is_active:
-        type: boolean
-      roleID:
-        type: string
-      updated_at:
-        type: string
-      user:
-        $ref: '#/definitions/model.User'
-      userID:
         type: string
     type: object
 info:
@@ -1496,6 +1416,76 @@ paths:
       summary: Create a new user
       tags:
       - Users
+  /relation:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes an existing relationship between a user and a resource
+        in SpiceDB
+      parameters:
+      - description: Relationship deletion request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.CreateRelationshipRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Relationship deleted successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/helper.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Invalid request format or missing fields
+          schema:
+            $ref: '#/definitions/helper.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/helper.ErrorResponse'
+      summary: Delete a relationship in SpiceDB
+      tags:
+      - SpiceDB
+    post:
+      consumes:
+      - application/json
+      description: Creates a new relationship between a user and a resource in SpiceDB
+      parameters:
+      - description: Relationship creation request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.CreateRelationshipRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Relationship created successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/helper.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Invalid request format or missing fields
+          schema:
+            $ref: '#/definitions/helper.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/helper.ErrorResponse'
+      summary: Create a relationship in SpiceDB
+      tags:
+      - SpiceDB
   /resources:
     get:
       description: Get resources with optional filtering by ID or name and pagination
@@ -1829,31 +1819,6 @@ paths:
       summary: Manage user tokens
       tags:
       - Users
-  /update/relations:
-    get:
-      consumes:
-      - application/json
-      description: Updates all user-role relationships in SpiceDB by syncing with
-        the current database state
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Relationships updated successfully
-          schema:
-            allOf:
-            - $ref: '#/definitions/helper.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/model.User'
-              type: object
-        "500":
-          description: Failed to update relationships
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-      summary: Update SpiceDB relationships
-      tags:
-      - SpiceDB
   /update/schema:
     get:
       consumes:

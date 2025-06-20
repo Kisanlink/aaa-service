@@ -10,5 +10,6 @@ func SpiceDBRoutes(r *gin.RouterGroup, database *gorm.DB, s spicedb.SpiceDBHandl
 	r.GET("/update/schema", s.UpdateSpiceDb)
 	r.GET("/read/schema", s.ReadSpiceDB)
 	r.POST("/check-permission", s.CheckPermissionSpiceDB)
-	r.GET("/update/relations", s.CreateRelation)
+	r.POST("/relation", s.CreateRelation)
+	r.DELETE("/relation", s.DeleteRelation)
 }
