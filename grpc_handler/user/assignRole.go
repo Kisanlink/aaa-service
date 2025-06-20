@@ -3,6 +3,7 @@ package user
 import (
 	"context"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/Kisanlink/aaa-service/model"
@@ -20,7 +21,7 @@ func (s *Server) AssignRole(ctx context.Context, req *pb.AssignRoleToUserRequest
 
 	// Validate role exists
 	roleName := req.GetRole()
-	role, err := s.roleService.GetRoleByName(roleName)
+	role, err := s.roleService.GetRoleByName(strings.ToLower(roleName))
 	if err != nil {
 		return nil, status.Errorf(codes.NotFound, "Role with name %s not found", roleName)
 	}

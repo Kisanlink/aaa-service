@@ -2,6 +2,7 @@ package user
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/Kisanlink/aaa-service/helper"
 	"github.com/Kisanlink/aaa-service/model"
@@ -52,7 +53,7 @@ func (s *UserHandler) AssignRoleRestApi(c *gin.Context) {
 	}
 
 	// Validate role exists
-	role, err := s.RoleService.GetRoleByName(req.Role)
+	role, err := s.RoleService.GetRoleByName(strings.ToLower(req.Role))
 	if err != nil {
 		helper.SendErrorResponse(c.Writer, http.StatusNotFound, []string{"Role not found"})
 		return
