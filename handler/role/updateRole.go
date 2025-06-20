@@ -2,8 +2,10 @@ package role
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 
+	"github.com/Kisanlink/aaa-service/client"
 	"github.com/Kisanlink/aaa-service/helper"
 	"github.com/Kisanlink/aaa-service/model"
 	"github.com/gin-gonic/gin"
@@ -51,7 +53,26 @@ func (h *RoleHandler) UpdateRoleWithPermissionsRestApi(c *gin.Context) {
 		helper.SendErrorResponse(c.Writer, http.StatusInternalServerError, []string{err.Error()})
 		return
 	}
+	// Get all roles to build SpiceDB schema
+	roles, err := h.roleService.FindRoles(map[string]interface{}{}, 0, 0)
+	if err != nil {
+		helper.SendErrorResponse(c.Writer, http.StatusInternalServerError, []string{err.Error()})
+		return
+	}
+	resource, err := h.resourceService.FindResources(map[string]interface{}{}, 0, 0)
+	if err != nil {
+		helper.SendErrorResponse(c.Writer, http.StatusInternalServerError, []string{err.Error()})
+		return
+	}
+	// Generate SpiceDB schema definitions
+	schemaDefinitions := helper.GenerateSpiceDBSchema(roles, resource)
 
+	// Update SpiceDB schema
+	_, err = client.UpdateSchema(schemaDefinitions)
+	if err != nil {
+		log.Printf("Failed to update SpiceDB schema: %v", err)
+
+	}
 	// Get the updated role with permissions
 	updated, err := h.roleService.FindRoleByID(id)
 	if err != nil {

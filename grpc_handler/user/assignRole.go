@@ -2,11 +2,9 @@ package user
 
 import (
 	"context"
-	"log"
 	"net/http"
 	"time"
 
-	"github.com/Kisanlink/aaa-service/client"
 	"github.com/Kisanlink/aaa-service/model"
 	"github.com/kisanlink/protobuf/pb-aaa"
 	"google.golang.org/grpc/codes"
@@ -40,40 +38,7 @@ func (s *Server) AssignRole(ctx context.Context, req *pb.AssignRoleToUserRequest
 		}
 		return nil, status.Errorf(codes.Internal, "failed to assign role to user: %v", err)
 	}
-	userRoles, err := s.userService.FindUserRoles(user.ID)
-	if err != nil {
 
-		return nil, status.Errorf(codes.Internal, "failed to fetch user role: %v", err)
-	}
-	roleNames := make([]string, 0, len(userRoles))
-
-	for _, userRole := range userRoles {
-		role, err := s.roleService.FindRoleByID(userRole.RoleID)
-		if err != nil {
-			return nil, status.Errorf(codes.Internal, "failed to find role with ID %s: %w", userRole.RoleID, err)
-		}
-		roleNames = append(roleNames, role.Name)
-	}
-
-	err = client.DeleteRelationships(
-		roleNames,
-		user.Username,
-		user.ID,
-	)
-
-	if err != nil {
-		log.Printf("Error deleting relationships: %v", err)
-	}
-
-	err = client.CreateRelationships(
-		roleNames,
-		user.Username,
-		user.ID,
-	)
-
-	if err != nil {
-		log.Printf("Error creating relationships: %v", err)
-	}
 	// Get updated user details with roles and permissions
 	rolesResponse, err := s.userService.GetUserRolesWithPermissions(user.ID)
 	if err != nil {

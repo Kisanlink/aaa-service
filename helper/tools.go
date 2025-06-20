@@ -257,111 +257,6 @@ func GenerateSpiceDBSchema(roles []model.Role, resources []model.Resource) []mod
 	return schemaDefinitions
 }
 
-// func GenerateSpiceDBSchema(roles []model.Role) []model.CreateSchema {
-// 	PrettyJSON(roles)
-// 	// First, let's create a structure to organize the data
-// 	type ResourceInfo struct {
-// 		Relations   map[string]struct{}            // Track all relations needed
-// 		Permissions map[string]map[string]struct{} // action -> roles
-// 	}
-
-// 	resourceMap := make(map[string]*ResourceInfo)
-
-// 	// Process all roles and permissions
-// 	for _, role := range roles {
-// 		roleName := SanitizeDBName(role.Name)
-// 		if roleName == "" {
-// 			continue
-// 		}
-
-// 		for _, perm := range role.Permissions {
-// 			resource := SanitizeDBName(perm.Resource)
-// 			if resource == "db_" {
-// 				continue
-// 			}
-
-// 			// Initialize resource if not exists
-// 			if _, exists := resourceMap[resource]; !exists {
-// 				resourceMap[resource] = &ResourceInfo{
-// 					Relations:   make(map[string]struct{}),
-// 					Permissions: make(map[string]map[string]struct{}),
-// 				}
-// 			}
-// 			resInfo := resourceMap[resource]
-
-// 			// Add relation (role becomes the relation)
-// 			resInfo.Relations[roleName] = struct{}{}
-
-// 			// Add permissions for each action
-// 			for _, action := range perm.Actions {
-// 				actionName := SanitizeDBName(action)
-// 				if actionName == "" {
-// 					continue
-// 				}
-
-// 				if _, exists := resInfo.Permissions[actionName]; !exists {
-// 					resInfo.Permissions[actionName] = make(map[string]struct{})
-// 				}
-// 				resInfo.Permissions[actionName][roleName] = struct{}{}
-// 			}
-// 		}
-// 	}
-
-// 	// Convert to the output format
-// 	var schemaDefinitions []model.CreateSchema
-
-// 	// Sort resources for consistent output
-// 	resources := make([]string, 0, len(resourceMap))
-// 	for resource := range resourceMap {
-// 		resources = append(resources, resource)
-// 	}
-// 	sort.Strings(resources)
-
-// 	for _, resource := range resources {
-// 		resInfo := resourceMap[resource]
-
-// 		// Prepare relations slice
-// 		relations := make([]string, 0, len(resInfo.Relations))
-// 		for relation := range resInfo.Relations {
-// 			relations = append(relations, relation)
-// 		}
-// 		sort.Strings(relations)
-
-// 		// Prepare permissions
-// 		var permissionData []model.Data
-
-// 		// Sort actions for consistent output
-// 		actions := make([]string, 0, len(resInfo.Permissions))
-// 		for action := range resInfo.Permissions {
-// 			actions = append(actions, action)
-// 		}
-// 		sort.Strings(actions)
-
-// 		for _, action := range actions {
-// 			// Get roles for this action
-// 			roles := make([]string, 0, len(resInfo.Permissions[action]))
-// 			for role := range resInfo.Permissions[action] {
-// 				roles = append(roles, role)
-// 			}
-// 			sort.Strings(roles)
-
-// 			// Create permission entry
-// 			permissionData = append(permissionData, model.Data{
-// 				Action: action,
-// 				Roles:  roles,
-// 			})
-// 		}
-
-// 		schemaDefinitions = append(schemaDefinitions, model.CreateSchema{
-// 			Resource:  resource,
-// 			Relations: relations,
-// 			Data:      permissionData,
-// 		})
-// 	}
-
-// 	return schemaDefinitions
-// }
-
 func NormalizeResourceType(resourceType string) string {
 	// Replace slashes with underscores
 	normalized := strings.ReplaceAll(resourceType, "/", "_")
@@ -441,6 +336,7 @@ var (
 	ErrEmptyName                 = errors.New("name cannot be empty")
 	ErrInvalidFormat             = errors.New("name must be lowercase letters separated by single underscores (like 'good_vibes')")
 	ErrInvalidChars              = errors.New("name contains invalid characters (only lowercase a-z and _ allowed)")
+	ErrCapInvalidChars           = errors.New("name contains invalid characters (only lowercase A-Z and _ allowed)")
 	ErrConsecutiveUnderscores    = errors.New("name contains consecutive underscores")
 	ErrLeadingTrailingUnderscore = errors.New("name cannot start or end with underscore")
 )
@@ -517,3 +413,44 @@ func OnlyValidName(input string) error {
 // 			fmt.Printf("Valid:   '%s'\n", tc)
 // 		}
 // 	}
+
+func OnlyValidCapitalName(input string) error {
+	if input == "" {
+		return ErrEmptyName
+	}
+
+	// Check for invalid characters (only A-Z and _ allowed)
+	for _, r := range input {
+		if !(r >= 'A' && r <= 'Z') && r != '_' {
+			return ErrCapInvalidChars
+		}
+	}
+
+	// Cannot start/end with underscore
+	if strings.HasPrefix(input, "_") || strings.HasSuffix(input, "_") {
+		return ErrLeadingTrailingUnderscore
+	}
+
+	// No consecutive underscores
+	if strings.Contains(input, "__") {
+		return ErrConsecutiveUnderscores
+	}
+
+	// If underscores exist, validate parts between them
+	if strings.Contains(input, "_") {
+		parts := strings.Split(input, "_")
+		for _, part := range parts {
+			if part == "" {
+				return ErrConsecutiveUnderscores
+			}
+			// Each part must be uppercase letters only
+			for _, r := range part {
+				if !(r >= 'A' && r <= 'Z') {
+					return ErrCapInvalidChars
+				}
+			}
+		}
+	}
+
+	return nil
+}

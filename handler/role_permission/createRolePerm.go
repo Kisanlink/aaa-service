@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/Kisanlink/aaa-service/client"
-	"github.com/Kisanlink/aaa-service/handler/spicedb"
 	"github.com/Kisanlink/aaa-service/helper"
 	"github.com/Kisanlink/aaa-service/model"
 	"github.com/Kisanlink/aaa-service/services"
@@ -87,8 +86,5 @@ func (h *RolePermissionHandler) AssignPermissionToRoleRestApi(c *gin.Context) {
 		log.Printf("Failed to update SpiceDB schema: %v", err)
 
 	}
-
-	spicedb.UpdateSpiceDBData(h.roleService, h.userService)
-
 	helper.SendSuccessResponse(c.Writer, http.StatusCreated, "Permission assigned to role successfully", req)
 }

@@ -64,3 +64,11 @@ func CreateRelationship(
 
 	return nil
 }
+
+// username: bob
+// role: kisansathi
+// resource: db_farmer_farmers
+
+// create farmer -----> 123
+
+// user:bob#kisansathi@db_farmer_farmers:123

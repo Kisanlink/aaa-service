@@ -1,10 +1,8 @@
 package user
 
 import (
-	"log"
 	"net/http"
 
-	"github.com/Kisanlink/aaa-service/client"
 	"github.com/Kisanlink/aaa-service/helper"
 	"github.com/Kisanlink/aaa-service/model"
 	"github.com/Kisanlink/aaa-service/services"
@@ -47,7 +45,7 @@ func (s *UserHandler) AssignRoleRestApi(c *gin.Context) {
 	}
 
 	// Validate user exists
-	user, err := s.userService.GetUserByID(req.UserID)
+	_, err := s.userService.GetUserByID(req.UserID)
 	if err != nil {
 		helper.SendErrorResponse(c.Writer, http.StatusNotFound, []string{"User not found"})
 		return
@@ -77,42 +75,6 @@ func (s *UserHandler) AssignRoleRestApi(c *gin.Context) {
 	if err != nil {
 		helper.SendErrorResponse(c.Writer, http.StatusInternalServerError, []string{err.Error()})
 		return
-	}
-
-	userRoles, err := s.userService.FindUserRoles(user.ID)
-	if err != nil {
-
-		helper.SendErrorResponse(c.Writer, http.StatusInternalServerError, []string{err.Error()})
-		return
-	}
-	helper.PrettyJSON(userRoles)
-	roleNames := make([]string, 0, len(userRoles))
-	for _, userRole := range userRoles {
-		role, err := s.RoleService.FindRoleByID(userRole.RoleID)
-		if err != nil {
-			helper.SendErrorResponse(c.Writer, http.StatusNotFound, []string{err.Error()})
-		}
-		roleNames = append(roleNames, role.Name)
-	}
-
-	err = client.DeleteRelationships(
-		roleNames,
-		user.Username,
-		user.ID,
-	)
-
-	if err != nil {
-		log.Printf("Error deleting relationships: %v", err)
-	}
-
-	err = client.CreateRelationships(
-		roleNames,
-		user.Username,
-		user.ID,
-	)
-
-	if err != nil {
-		log.Printf("Error creating relationships: %v", err)
 	}
 
 	rolesResponse, err := s.userService.GetUserRolesWithPermissions(req.UserID)

@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/Kisanlink/aaa-service/client"
-	"github.com/Kisanlink/aaa-service/handler/spicedb"
 	"github.com/Kisanlink/aaa-service/helper"
 	"github.com/Kisanlink/aaa-service/model"
 	"github.com/Kisanlink/aaa-service/services"
@@ -90,8 +89,6 @@ func (h *RoleHandler) CreateRoleWithPermissionsRestApi(c *gin.Context) {
 		log.Printf("Failed to update SpiceDB schema: %v", err)
 
 	}
-
-	spicedb.UpdateSpiceDBData(h.roleService, h.userService)
 
 	// Get the created role with permissions
 	createdRole, err := h.roleService.FindRoleByID(role.ID)
