@@ -224,23 +224,23 @@ definitions:
     type: object
   model.CreateRelationshipRequest:
     properties:
-      relation:
-        example: owner
-        type: string
-      resource:
-        example: db_farmer_farmers
-        type: string
-      resource_id:
+      principal_id:
         example: 123e4567-e89b-12d3-a456-426614174000
         type: string
-      username:
+      resource_name:
+        example: db_farmer_farmers
+        type: string
+      role_name:
+        example: owner
+        type: string
+      user_id:
         example: johndoe
         type: string
     required:
-    - relation
-    - resource
-    - resource_id
-    - username
+    - principal_id
+    - resource_name
+    - role_name
+    - user_id
     type: object
   model.CreateResourceRequest:
     properties:
@@ -1786,6 +1786,112 @@ paths:
       summary: Update a role
       tags:
       - Roles
+  /test-permission-get:
+    get:
+      consumes:
+      - application/json
+      description: Tests the GeneralPermissionCheck middleware with GET request
+      parameters:
+      - description: User ID
+        in: header
+        name: x-user-id
+        required: true
+        type: string
+      - description: Resource Name
+        in: header
+        name: x-resource-name
+        required: true
+        type: string
+      - description: Resource ID
+        in: header
+        name: x-principal-id
+        required: true
+        type: string
+      - description: Action
+        in: header
+        name: x-action
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success message
+          schema:
+            allOf:
+            - $ref: '#/definitions/helper.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Missing required headers
+          schema:
+            $ref: '#/definitions/helper.ErrorResponse'
+        "403":
+          description: Permission denied
+          schema:
+            $ref: '#/definitions/helper.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/helper.ErrorResponse'
+      summary: Test GET permission
+      tags:
+      - Middleware
+  /test-permission-post:
+    post:
+      consumes:
+      - application/json
+      description: Tests the CanCreatePermission middleware with POST request
+      parameters:
+      - description: User ID
+        in: header
+        name: x-user-id
+        required: true
+        type: string
+      - description: Resource Name
+        in: header
+        name: x-resource-name
+        required: true
+        type: string
+      - description: Action
+        in: header
+        name: x-action
+        required: true
+        type: string
+      - description: Role Name
+        in: header
+        name: x-role-name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success message
+          schema:
+            allOf:
+            - $ref: '#/definitions/helper.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: Missing required headers
+          schema:
+            $ref: '#/definitions/helper.ErrorResponse'
+        "403":
+          description: Permission denied
+          schema:
+            $ref: '#/definitions/helper.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/helper.ErrorResponse'
+      summary: Test POST permission
+      tags:
+      - Middleware
   /token-transaction:
     post:
       consumes:

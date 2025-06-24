@@ -202,15 +202,15 @@ type GetRolePermissionResponse struct {
 }
 
 type CheckPermissionRequest struct {
-	Username   string `json:"username" binding:"required" example:"johndoe"`
-	Action     string `json:"action" binding:"required" example:"update"` // "edit"
-	Resource   string `json:"resource" binding:"required" example:"db_farmer_farmers"`
-	ResourceID string `json:"resource_id" binding:"required" example:"123e4567-e89b-12d3-a456-426614174000"`
+	Action       string `json:"action" binding:"required" example:"update"` // "edit"
+	UserID       string `json:"user_id" binding:"required" example:"johndoe"`
+	ResourceName string `json:"resource_name" binding:"required" example:"db_farmer_farmers"`
+	PrincipalID  string `json:"principal_id" binding:"required" example:"123e4567-e89b-12d3-a456-426614174000"`
 }
 
 type CreateRelationshipRequest struct {
-	Relation   string `json:"relation" binding:"required" example:"owner"`
-	Username   string `json:"username" binding:"required" example:"johndoe"`
-	Resource   string `json:"resource" binding:"required" example:"db_farmer_farmers"`
-	ResourceID string `json:"resource_id" binding:"required" example:"123e4567-e89b-12d3-a456-426614174000"`
+	RoleName     string `json:"role_name" binding:"required" example:"owner"`
+	UserID       string `json:"user_id" binding:"required" example:"johndoe"`
+	ResourceName string `json:"resource_name" binding:"required" example:"db_farmer_farmers"`
+	PrincipalID  string `json:"principal_id" binding:"required" example:"123e4567-e89b-12d3-a456-426614174000"`
 }

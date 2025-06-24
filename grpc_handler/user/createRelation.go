@@ -12,14 +12,14 @@ import (
 )
 
 func (s *Server) CreateRelationship(ctx context.Context, req *pb.CreateRelationshipRequest) (*pb.CreateRelationshipResponse, error) {
-	if req.Relation == "" || req.Username == "" || req.Resource == "" || req.ResourceId == "" {
+	if req.RoleName == "" || req.UserId == "" || req.ResourceName == "" || req.PrincipalId == "" {
 		return nil, status.Errorf(codes.InvalidArgument, "Missing required fields in request")
 	}
 	err := client.CreateRelationship(
-		req.Relation,
-		req.Username,
-		req.Resource,
-		req.ResourceId,
+		req.RoleName,
+		req.UserId,
+		req.ResourceName,
+		req.PrincipalId,
 	)
 
 	if err != nil {
@@ -27,7 +27,7 @@ func (s *Server) CreateRelationship(ctx context.Context, req *pb.CreateRelations
 		return nil, err
 	}
 
-	relationshipString := "user" + ":" + req.Username + "#" + req.Relation + "@" + req.Resource + ":" + req.ResourceId
+	relationshipString := "user" + ":" + req.UserId + "#" + req.RoleName + "@" + req.ResourceName + ":" + req.PrincipalId
 	return &pb.CreateRelationshipResponse{
 		StatusCode:    200,
 		Message:       "Relationship created successfully",

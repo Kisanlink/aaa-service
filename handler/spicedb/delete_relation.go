@@ -28,15 +28,15 @@ func (h *SpiceDBHandler) DeleteRelation(c *gin.Context) {
 		helper.SendErrorResponse(c.Writer, http.StatusBadRequest, []string{"Invalid request format"})
 		return
 	}
-	if req.Relation == "" || req.Username == "" || req.Resource == "" || req.ResourceID == "" {
+	if req.RoleName == "" || req.UserID == "" || req.ResourceName == "" || req.PrincipalID == "" {
 		helper.SendErrorResponse(c.Writer, http.StatusBadRequest, []string{"Missing required fields in request"})
 		return
 	}
 	err := client.DeleteRelationship(
-		req.Relation,
-		req.Username,
-		req.Resource,
-		req.ResourceID,
+		req.RoleName,
+		req.UserID,
+		req.ResourceName,
+		req.PrincipalID,
 	)
 
 	if err != nil {
@@ -44,7 +44,7 @@ func (h *SpiceDBHandler) DeleteRelation(c *gin.Context) {
 		return
 	}
 
-	relationshipString := "user" + ":" + req.Username + "#" + req.Relation + "@" + req.Resource + ":" + req.ResourceID
+	relationshipString := "user" + ":" + req.UserID + "#" + req.RoleName + "@" + req.ResourceName + ":" + req.PrincipalID
 
 	helper.SendSuccessResponse(c.Writer, http.StatusOK, "Relationship deleted successfully", relationshipString)
 }

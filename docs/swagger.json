@@ -1879,6 +1879,172 @@
                 }
             }
         },
+        "/test-permission-get": {
+            "get": {
+                "description": "Tests the GeneralPermissionCheck middleware with GET request",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Middleware"
+                ],
+                "summary": "Test GET permission",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "x-user-id",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Resource Name",
+                        "name": "x-resource-name",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Resource ID",
+                        "name": "x-principal-id",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Action",
+                        "name": "x-action",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success message",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/helper.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Missing required headers",
+                        "schema": {
+                            "$ref": "#/definitions/helper.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Permission denied",
+                        "schema": {
+                            "$ref": "#/definitions/helper.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/helper.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/test-permission-post": {
+            "post": {
+                "description": "Tests the CanCreatePermission middleware with POST request",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Middleware"
+                ],
+                "summary": "Test POST permission",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "x-user-id",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Resource Name",
+                        "name": "x-resource-name",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Action",
+                        "name": "x-action",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Role Name",
+                        "name": "x-role-name",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success message",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/helper.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Missing required headers",
+                        "schema": {
+                            "$ref": "#/definitions/helper.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Permission denied",
+                        "schema": {
+                            "$ref": "#/definitions/helper.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/helper.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/token-transaction": {
             "post": {
                 "description": "Handles token transactions (credit/debit) or fetches token balance when no transaction type is specified",
@@ -2442,25 +2608,25 @@
         "model.CreateRelationshipRequest": {
             "type": "object",
             "required": [
-                "relation",
-                "resource",
-                "resource_id",
-                "username"
+                "principal_id",
+                "resource_name",
+                "role_name",
+                "user_id"
             ],
             "properties": {
-                "relation": {
-                    "type": "string",
-                    "example": "owner"
-                },
-                "resource": {
-                    "type": "string",
-                    "example": "db_farmer_farmers"
-                },
-                "resource_id": {
+                "principal_id": {
                     "type": "string",
                     "example": "123e4567-e89b-12d3-a456-426614174000"
                 },
-                "username": {
+                "resource_name": {
+                    "type": "string",
+                    "example": "db_farmer_farmers"
+                },
+                "role_name": {
+                    "type": "string",
+                    "example": "owner"
+                },
+                "user_id": {
                     "type": "string",
                     "example": "johndoe"
                 }

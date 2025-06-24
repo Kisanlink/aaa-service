@@ -35,6 +35,7 @@ func ApiRoutes(r *gin.RouterGroup, db *gorm.DB) {
 	permHandler := permission.NewPermissionHandler(permissionService)
 	rolePermHandler := rolepermission.NewRolePermissionHandler(rolePermService, roleService, permissionService, resourceService, userService)
 	spiceHandler := spicedb.NewSpiceDBHandler(roleService, resourceService, userService)
+
 	RolesRoutes(v1, db, *rolHandler)
 	ActionRoutes(v1, db, *actionHandler)
 	ResourceRoutes(v1, db, *resourceHandler)

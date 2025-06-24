@@ -31,10 +31,10 @@ func (h *SpiceDBHandler) CheckPermissionSpiceDB(c *gin.Context) {
 
 	// Call the CheckPermission function
 	hasPermission, err := client.CheckPermission(
-		req.Username,
+		req.UserID,
 		req.Action,
-		req.Resource,
-		req.ResourceID,
+		req.ResourceName,
+		req.PrincipalID,
 	)
 	if err != nil {
 		log.Printf("Permission check failed: %v", err)
