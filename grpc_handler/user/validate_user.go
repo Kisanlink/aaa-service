@@ -104,10 +104,12 @@ func (s *Server) ValidateUser(ctx context.Context, req *pb.ValidateUserRequest) 
 
 		// Prepare response with nil checks
 		pbUser := &pb.User{
-			Id:           existingUser.ID,
-			Username:     existingUser.Username,
-			IsValidated:  existingUser.IsValidated,
-			MobileNumber: existingUser.MobileNumber,
+			Id:            existingUser.ID,
+			Username:      existingUser.Username,
+			IsValidated:   existingUser.IsValidated,
+			MobileNumber:  existingUser.MobileNumber,
+			AadhaarNumber: safeDerefString(existingUser.AadhaarNumber),
+			EmailHash:     safeDerefString(existingUser.EmailHash),
 		}
 
 		if existingUser.AadhaarNumber != nil {
