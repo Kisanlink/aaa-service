@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"log"
+	"net/http"
 
 	"github.com/Kisanlink/aaa-service/helper"
 	"google.golang.org/grpc"
@@ -48,4 +49,28 @@ func ErrorInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServ
 		}
 	}
 	return resp, err
+}
+
+func AuthMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Get the token from the header
+		token := r.Header.Get("aaa-auth-token")
+		if token == "" {
+			http.Error(w, "Authorization token is not provided", http.StatusUnauthorized)
+			return
+		}
+
+		// Validate the token
+		userID, err := helper.ValidateToken(token)
+		if err != nil {
+			http.Error(w, "Invalid token: "+err.Error(), http.StatusUnauthorized)
+			return
+		}
+
+		// Add userID to the context
+		ctx := context.WithValue(r.Context(), "user_id", userID)
+
+		// Call the next handler with the new context
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
 }
