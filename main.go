@@ -2,43 +2,143 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 
-	"github.com/Kisanlink/aaa-service/database"
-	"github.com/Kisanlink/aaa-service/grpc_server"
-	"github.com/joho/godotenv"
+	"aaa-service/config"
+	"aaa-service/entities/models"
+	"aaa-service/entities/requests/users"
+	"aaa-service/repositories/addresses"
+	"aaa-service/repositories/roles"
+	"aaa-service/repositories/users"
+
+	"go.uber.org/zap"
 )
 
-func init() {
-	if err := godotenv.Load(); err != nil {
-		log.Println("Error loading .env file, skipping...")
+func main() {
+	// Initialize logger
+	logger, err := zap.NewProduction()
+	if err != nil {
+		log.Fatalf("Failed to initialize logger: %v", err)
 	}
+	defer logger.Sync()
+
+	// Initialize database manager
+	dbManager, err := config.NewDatabaseManager(logger)
+	if err != nil {
+		logger.Fatal("Failed to initialize database manager", zap.Error(err))
+	}
+	defer dbManager.Close()
+
+	// Initialize repositories
+	userRepo := users.NewUserRepository(dbManager.GetPostgresManager())
+	addressRepo := addresses.NewAddressRepository(dbManager.GetPostgresManager())
+	roleRepo := roles.NewRoleRepository(dbManager.GetPostgresManager())
+	userRoleRepo := roles.NewUserRoleRepository(dbManager.GetPostgresManager())
+
+	// Create a context for graceful shutdown
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Handle graceful shutdown
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		<-sigChan
+		logger.Info("Received shutdown signal, closing database connections...")
+		cancel()
+	}()
+
+	// Example usage of the refactored code
+	if err := runExample(ctx, userRepo, addressRepo, roleRepo, userRoleRepo, logger); err != nil {
+		logger.Error("Example failed", zap.Error(err))
+		os.Exit(1)
+	}
+
+	logger.Info("Application completed successfully")
 }
 
-func main() {
-	database.ConnectDB()
-	if err := database.SpiceDB(); err != nil {
-		log.Fatalf("Failed to initialize SpiceDB: %v", err)
+func runExample(ctx context.Context, userRepo *users.UserRepository, addressRepo *addresses.AddressRepository, roleRepo *roles.RoleRepository, userRoleRepo *roles.UserRoleRepository, logger *zap.Logger) error {
+	logger.Info("Starting example usage of refactored AAA service")
+
+	// Create a new user
+	user := models.NewUser("testuser", "password123", 9876543210)
+	user.Name = &[]string{"Test User"}[0]
+	user.CountryCode = &[]string{"+91"}[0]
+
+	if err := userRepo.Create(ctx, user); err != nil {
+		return fmt.Errorf("failed to create user: %w", err)
+	}
+	logger.Info("Created user", zap.String("userID", user.ID), zap.String("username", user.Username))
+
+	// Create a new address
+	address := models.NewAddress()
+	address.House = &[]string{"123"}[0]
+	address.Street = &[]string{"Test Street"}[0]
+	address.District = &[]string{"Test District"}[0]
+	address.State = &[]string{"Test State"}[0]
+	address.Country = &[]string{"India"}[0]
+	address.Pincode = &[]string{"123456"}[0]
+	address.BuildFullAddress()
+
+	if err := addressRepo.Create(ctx, address); err != nil {
+		return fmt.Errorf("failed to create address: %w", err)
+	}
+	logger.Info("Created address", zap.String("addressID", address.ID))
+
+	// Update user with address
+	user.AddressID = &address.ID
+	if err := userRepo.Update(ctx, user); err != nil {
+		return fmt.Errorf("failed to update user with address: %w", err)
 	}
 
-	// Start the gRPC server
-	grpcServer, err := grpc_server.StartGRPCServer(database.DB)
+	// Create a new role
+	role := models.NewRole("user", "Basic user role")
+	if err := roleRepo.Create(ctx, role); err != nil {
+		return fmt.Errorf("failed to create role: %w", err)
+	}
+	logger.Info("Created role", zap.String("roleID", role.ID), zap.String("roleName", role.Name))
+
+	// Assign role to user
+	userRole := models.NewUserRole(user.ID, role.ID)
+	if err := userRoleRepo.Create(ctx, userRole); err != nil {
+		return fmt.Errorf("failed to assign role to user: %w", err)
+	}
+	logger.Info("Assigned role to user", zap.String("userRoleID", userRole.ID))
+
+	// Retrieve user with relationships
+	retrievedUser, err := userRepo.GetByID(ctx, user.ID)
 	if err != nil {
-		log.Fatalf("Failed to start gRPC server: %v", err)
+		return fmt.Errorf("failed to retrieve user: %w", err)
 	}
 
-	log.Println("Application started successfully")
+	// Convert to response format
+	userResponse := retrievedUser.ToResponse()
+	logger.Info("Retrieved user",
+		zap.String("userID", userResponse.ID),
+		zap.String("username", userResponse.Username),
+		zap.Bool("isValidated", userResponse.IsValidated),
+		zap.Int("tokens", userResponse.Tokens),
+	)
 
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
+	// Search for users
+	users, err := userRepo.ListActive(ctx, 10, 0)
+	if err != nil {
+		return fmt.Errorf("failed to list active users: %w", err)
+	}
+	logger.Info("Found active users", zap.Int("count", len(users)))
 
-	<-ctx.Done()
+	// Search for addresses
+	addresses, err := addressRepo.SearchByKeyword(ctx, "Test", 10, 0)
+	if err != nil {
+		return fmt.Errorf("failed to search addresses: %w", err)
+	}
+	logger.Info("Found addresses", zap.Int("count", len(addresses)))
 
-	log.Println("Shutting down gRPC server...")
-	grpcServer.GracefulStop()
-	log.Println("gRPC server stopped. Exiting application.")
-
+	logger.Info("Example completed successfully")
+	return nil
 }
