@@ -3,7 +3,7 @@ package addresses
 import (
 	"context"
 
-	"aaa-service/entities/models"
+	"github.com/Kisanlink/aaa-service/entities/models"
 
 	"github.com/Kisanlink/kisanlink-db/pkg/db"
 )

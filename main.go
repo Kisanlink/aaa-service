@@ -8,13 +8,12 @@ import (
 	"os/signal"
 	"syscall"
 
-	"aaa-service/config"
-	"aaa-service/entities/models"
-	"aaa-service/entities/requests/users"
-	"aaa-service/repositories/addresses"
-	"aaa-service/repositories/roles"
-	"aaa-service/repositories/users"
-
+	"github.com/Kisanlink/aaa-service/config"
+	"github.com/Kisanlink/aaa-service/repositories/addresses"
+	"github.com/Kisanlink/aaa-service/repositories/roles"
+	"github.com/Kisanlink/aaa-service/repositories/users"
+	"github.com/Kisanlink/aaa-service/server"
+	"github.com/Kisanlink/aaa-service/services"
 	"go.uber.org/zap"
 )
 
@@ -26,6 +25,8 @@ func main() {
 	}
 	defer logger.Sync()
 
+	logger.Info("Starting AAA Service")
+
 	// Initialize database manager
 	dbManager, err := config.NewDatabaseManager(logger)
 	if err != nil {
@@ -33,11 +34,37 @@ func main() {
 	}
 	defer dbManager.Close()
 
+	// Initialize cache service
+	cacheService, err := services.NewCacheService(
+		"localhost:6379", // Redis address
+		"",               // Redis password
+		0,                // Redis database
+		logger,
+	)
+	if err != nil {
+		logger.Fatal("Failed to initialize cache service", zap.Error(err))
+	}
+	defer cacheService.Close()
+
 	// Initialize repositories
 	userRepo := users.NewUserRepository(dbManager.GetPostgresManager())
 	addressRepo := addresses.NewAddressRepository(dbManager.GetPostgresManager())
 	roleRepo := roles.NewRoleRepository(dbManager.GetPostgresManager())
 	userRoleRepo := roles.NewUserRoleRepository(dbManager.GetPostgresManager())
+
+	// Initialize HTTP server
+	httpServer, err := server.NewHTTPServer(
+		logger,
+		dbManager,
+		cacheService,
+		userRepo,
+		addressRepo,
+		roleRepo,
+		userRoleRepo,
+	)
+	if err != nil {
+		logger.Fatal("Failed to initialize HTTP server", zap.Error(err))
+	}
 
 	// Create a context for graceful shutdown
 	ctx, cancel := context.WithCancel(context.Background())
@@ -47,21 +74,36 @@ func main() {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
+	// Start HTTP server in a goroutine
 	go func() {
-		<-sigChan
-		logger.Info("Received shutdown signal, closing database connections...")
-		cancel()
+		logger.Info("Starting HTTP server on :8080")
+		if err := httpServer.Start(); err != nil {
+			logger.Error("HTTP server error", zap.Error(err))
+			cancel()
+		}
 	}()
 
-	// Example usage of the refactored code
-	if err := runExample(ctx, userRepo, addressRepo, roleRepo, userRoleRepo, logger); err != nil {
-		logger.Error("Example failed", zap.Error(err))
-		os.Exit(1)
+	// Wait for shutdown signal
+	select {
+	case <-sigChan:
+		logger.Info("Received shutdown signal, starting graceful shutdown...")
+	case <-ctx.Done():
+		logger.Info("Context cancelled, starting graceful shutdown...")
 	}
 
-	logger.Info("Application completed successfully")
+	// Graceful shutdown
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 30)
+	defer shutdownCancel()
+
+	logger.Info("Shutting down HTTP server...")
+	if err := httpServer.Stop(shutdownCtx); err != nil {
+		logger.Error("Error during HTTP server shutdown", zap.Error(err))
+	}
+
+	logger.Info("AAA Service shutdown complete")
 }
 
+// Example usage function for testing the refactored code
 func runExample(ctx context.Context, userRepo *users.UserRepository, addressRepo *addresses.AddressRepository, roleRepo *roles.RoleRepository, userRoleRepo *roles.UserRoleRepository, logger *zap.Logger) error {
 	logger.Info("Starting example usage of refactored AAA service")
 

@@ -1,197 +1,336 @@
 package utils
 
 import (
-	"errors"
+	"fmt"
 	"regexp"
-	"strconv"
 	"strings"
 
-	"github.com/Kisanlink/kisanlink-db/pkg/base"
-	"github.com/gin-gonic/gin"
+	"github.com/Kisanlink/aaa-service/interfaces"
+	"github.com/go-playground/validator/v10"
 )
 
-// Validator provides validation utilities for requests
+// Validator implements the Validator interface
 type Validator struct {
-	emailRegex    *regexp.Regexp
-	phoneRegex    *regexp.Regexp
-	userIDRegex   *regexp.Regexp
-	usernameRegex *regexp.Regexp
+	validate *validator.Validate
+	logger   interfaces.Logger
 }
 
 // NewValidator creates a new Validator instance
-func NewValidator() *Validator {
+func NewValidator(logger interfaces.Logger) interfaces.Validator {
+	v := validator.New()
+
+	// Register custom validations
+	v.RegisterValidation("username", validateUsername)
+	v.RegisterValidation("password", validatePassword)
+	v.RegisterValidation("mobile", validateMobile)
+	v.RegisterValidation("aadhaar", validateAadhaar)
+	v.RegisterValidation("pincode", validatePincode)
+
 	return &Validator{
-		emailRegex:    regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`),
-		phoneRegex:    regexp.MustCompile(`^\+?[1-9]\d{1,14}$`),
-		userIDRegex:   regexp.MustCompile(`^USER[A-Z0-9]{8}$`),
-		usernameRegex: regexp.MustCompile(`^[a-zA-Z0-9_]{3,20}$`),
+		validate: v,
+		logger:   logger,
 	}
+}
+
+// ValidateUserID validates user ID format
+func (v *Validator) ValidateUserID(userID string) error {
+	if userID == "" {
+		return fmt.Errorf("user ID cannot be empty")
+	}
+
+	// Check if it starts with "usr_" prefix
+	if !strings.HasPrefix(userID, "usr_") {
+		return fmt.Errorf("user ID must start with 'usr_' prefix")
+	}
+
+	// Check length (usr_ + 22 characters = 26 total)
+	if len(userID) != 26 {
+		return fmt.Errorf("user ID must be exactly 26 characters long")
+	}
+
+	// Check if it contains only alphanumeric characters and underscores
+	matched, err := regexp.MatchString(`^usr_[a-zA-Z0-9_]+$`, userID)
+	if err != nil {
+		return fmt.Errorf("failed to validate user ID format: %w", err)
+	}
+
+	if !matched {
+		return fmt.Errorf("user ID contains invalid characters")
+	}
+
+	return nil
 }
 
 // ValidateEmail validates email format
 func (v *Validator) ValidateEmail(email string) error {
 	if email == "" {
-		return errors.New("email is required")
+		return fmt.Errorf("email cannot be empty")
 	}
-	if !v.emailRegex.MatchString(email) {
-		return errors.New("invalid email format")
+
+	// Use regex for email validation
+	emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
+	if !emailRegex.MatchString(email) {
+		return fmt.Errorf("invalid email format")
 	}
+
+	// Check length
+	if len(email) > 254 {
+		return fmt.Errorf("email cannot exceed 254 characters")
+	}
+
 	return nil
 }
 
 // ValidatePhone validates phone number format
 func (v *Validator) ValidatePhone(phone string) error {
 	if phone == "" {
-		return nil // Phone is optional
+		return fmt.Errorf("phone number cannot be empty")
 	}
-	if !v.phoneRegex.MatchString(phone) {
-		return errors.New("invalid phone number format")
-	}
-	return nil
-}
 
-// ValidateUserID validates user ID format
-func (v *Validator) ValidateUserID(userID string) error {
-	if userID == "" {
-		return errors.New("user ID is required")
+	// Remove any non-digit characters
+	phone = regexp.MustCompile(`[^\d]`).ReplaceAllString(phone, "")
+
+	// Check if it's a valid Indian mobile number (10 digits)
+	if len(phone) != 10 {
+		return fmt.Errorf("phone number must be exactly 10 digits")
 	}
-	if !v.userIDRegex.MatchString(userID) {
-		return errors.New("invalid user ID format")
+
+	// Check if it starts with valid Indian mobile prefixes
+	validPrefixes := []string{"6", "7", "8", "9"}
+	firstDigit := string(phone[0])
+	isValidPrefix := false
+	for _, prefix := range validPrefixes {
+		if firstDigit == prefix {
+			isValidPrefix = true
+			break
+		}
 	}
+
+	if !isValidPrefix {
+		return fmt.Errorf("phone number must start with 6, 7, 8, or 9")
+	}
+
 	return nil
 }
 
 // ValidateUsername validates username format
 func (v *Validator) ValidateUsername(username string) error {
 	if username == "" {
-		return errors.New("username is required")
+		return fmt.Errorf("username cannot be empty")
 	}
-	if !v.usernameRegex.MatchString(username) {
-		return errors.New("username must be 3-20 characters long and contain only letters, numbers, and underscores")
+
+	// Check length
+	if len(username) < 3 {
+		return fmt.Errorf("username must be at least 3 characters long")
 	}
+	if len(username) > 50 {
+		return fmt.Errorf("username cannot exceed 50 characters")
+	}
+
+	// Check if it contains only alphanumeric characters, underscores, and hyphens
+	matched, err := regexp.MatchString(`^[a-zA-Z0-9_-]+$`, username)
+	if err != nil {
+		return fmt.Errorf("failed to validate username format: %w", err)
+	}
+
+	if !matched {
+		return fmt.Errorf("username can only contain letters, numbers, underscores, and hyphens")
+	}
+
+	// Check if it starts with a letter or number
+	if !regexp.MustCompile(`^[a-zA-Z0-9]`).MatchString(username) {
+		return fmt.Errorf("username must start with a letter or number")
+	}
+
+	// Check if it ends with a letter or number
+	if !regexp.MustCompile(`[a-zA-Z0-9]$`).MatchString(username) {
+		return fmt.Errorf("username must end with a letter or number")
+	}
+
 	return nil
 }
 
-// ValidateName validates name format
-func (v *Validator) ValidateName(name string) error {
-	if name == "" {
-		return errors.New("name is required")
+// ValidatePassword validates password strength
+func (v *Validator) ValidatePassword(password string) error {
+	if password == "" {
+		return fmt.Errorf("password cannot be empty")
 	}
-	if len(name) < 2 || len(name) > 100 {
-		return errors.New("name must be between 2 and 100 characters")
+
+	// Check length
+	if len(password) < 8 {
+		return fmt.Errorf("password must be at least 8 characters long")
 	}
-	if strings.TrimSpace(name) != name {
-		return errors.New("name cannot start or end with whitespace")
+	if len(password) > 128 {
+		return fmt.Errorf("password cannot exceed 128 characters")
 	}
+
+	// Check for at least one uppercase letter
+	if !regexp.MustCompile(`[A-Z]`).MatchString(password) {
+		return fmt.Errorf("password must contain at least one uppercase letter")
+	}
+
+	// Check for at least one lowercase letter
+	if !regexp.MustCompile(`[a-z]`).MatchString(password) {
+		return fmt.Errorf("password must contain at least one lowercase letter")
+	}
+
+	// Check for at least one digit
+	if !regexp.MustCompile(`\d`).MatchString(password) {
+		return fmt.Errorf("password must contain at least one digit")
+	}
+
+	// Check for at least one special character
+	if !regexp.MustCompile(`[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]`).MatchString(password) {
+		return fmt.Errorf("password must contain at least one special character")
+	}
+
 	return nil
 }
 
-// ValidateStatus validates user status
-func (v *Validator) ValidateStatus(status string) error {
-	if status == "" {
-		return nil // Status is optional
-	}
-	validStatuses := []string{"active", "inactive", "pending", "suspended"}
-	for _, validStatus := range validStatuses {
-		if status == validStatus {
-			return nil
-		}
-	}
-	return errors.New("invalid status value")
-}
-
-// ParseListFilters parses query parameters into base.Filters
-func (v *Validator) ParseListFilters(c *gin.Context) (*base.Filters, error) {
-	filters := &base.Filters{
-		Conditions: make(map[string]interface{}),
+// ValidateStruct validates a struct using tags
+func (v *Validator) ValidateStruct(s interface{}) error {
+	if s == nil {
+		return fmt.Errorf("struct cannot be nil")
 	}
 
-	// Parse pagination parameters
-	if pageStr := c.Query("page"); pageStr != "" {
-		page, err := strconv.Atoi(pageStr)
-		if err != nil || page < 1 {
-			return nil, errors.New("invalid page parameter")
-		}
-		filters.Offset = (page - 1) * filters.Limit
-	}
-
-	if limitStr := c.Query("limit"); limitStr != "" {
-		limit, err := strconv.Atoi(limitStr)
-		if err != nil || limit < 1 || limit > 100 {
-			return nil, errors.New("invalid limit parameter (must be between 1 and 100)")
-		}
-		filters.Limit = limit
-	} else {
-		filters.Limit = 10 // Default limit
-	}
-
-	// Parse filter parameters
-	if status := c.Query("status"); status != "" {
-		if err := v.ValidateStatus(status); err != nil {
-			return nil, err
-		}
-		filters.Conditions["status"] = status
-	}
-
-	if search := c.Query("search"); search != "" {
-		if len(search) < 2 {
-			return nil, errors.New("search term must be at least 2 characters")
-		}
-		filters.Conditions["search"] = search
-	}
-
-	// Parse sorting parameters
-	if sortBy := c.Query("sort_by"); sortBy != "" {
-		validSortFields := []string{"name", "email", "created_at", "updated_at"}
-		isValid := false
-		for _, field := range validSortFields {
-			if sortBy == field {
-				isValid = true
-				break
+	if err := v.validate.Struct(s); err != nil {
+		if validationErrors, ok := err.(validator.ValidationErrors); ok {
+			var errors []string
+			for _, e := range validationErrors {
+				errors = append(errors, formatValidationError(e))
 			}
+			return fmt.Errorf("validation failed: %s", strings.Join(errors, "; "))
 		}
-		if !isValid {
-			return nil, errors.New("invalid sort_by parameter")
-		}
-		filters.SortBy = sortBy
+		return fmt.Errorf("validation failed: %w", err)
 	}
 
-	if sortOrder := c.Query("sort_order"); sortOrder != "" {
-		if sortOrder != "asc" && sortOrder != "desc" {
-			return nil, errors.New("invalid sort_order parameter (must be 'asc' or 'desc')")
-		}
-		filters.SortOrder = sortOrder
-	} else {
-		filters.SortOrder = "desc" // Default sort order
-	}
-
-	return filters, nil
-}
-
-// ValidatePagination validates pagination parameters
-func (v *Validator) ValidatePagination(page, limit int) error {
-	if page < 1 {
-		return errors.New("page must be greater than 0")
-	}
-	if limit < 1 || limit > 100 {
-		return errors.New("limit must be between 1 and 100")
-	}
 	return nil
 }
 
-// ValidateRequiredField validates that a required field is not empty
-func (v *Validator) ValidateRequiredField(value, fieldName string) error {
-	if strings.TrimSpace(value) == "" {
-		return errors.New(fieldName + " is required")
+// Helper functions
+
+func validateUsername(fl validator.FieldLevel) bool {
+	username := fl.Field().String()
+
+	// Check length
+	if len(username) < 3 || len(username) > 50 {
+		return false
 	}
-	return nil
+
+	// Check format
+	matched, _ := regexp.MatchString(`^[a-zA-Z0-9_-]+$`, username)
+	if !matched {
+		return false
+	}
+
+	// Check start and end
+	if !regexp.MustCompile(`^[a-zA-Z0-9]`).MatchString(username) {
+		return false
+	}
+	if !regexp.MustCompile(`[a-zA-Z0-9]$`).MatchString(username) {
+		return false
+	}
+
+	return true
 }
 
-// ValidateStringLength validates string length constraints
-func (v *Validator) ValidateStringLength(value, fieldName string, min, max int) error {
-	length := len(strings.TrimSpace(value))
-	if length < min || length > max {
-		return errors.New(fieldName + " must be between " + strconv.Itoa(min) + " and " + strconv.Itoa(max) + " characters")
+func validatePassword(fl validator.FieldLevel) bool {
+	password := fl.Field().String()
+
+	// Check length
+	if len(password) < 8 || len(password) > 128 {
+		return false
 	}
-	return nil
+
+	// Check requirements
+	hasUpper := regexp.MustCompile(`[A-Z]`).MatchString(password)
+	hasLower := regexp.MustCompile(`[a-z]`).MatchString(password)
+	hasDigit := regexp.MustCompile(`\d`).MatchString(password)
+	hasSpecial := regexp.MustCompile(`[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]`).MatchString(password)
+
+	return hasUpper && hasLower && hasDigit && hasSpecial
+}
+
+func validateMobile(fl validator.FieldLevel) bool {
+	mobile := fl.Field().String()
+
+	// Remove non-digits
+	mobile = regexp.MustCompile(`[^\d]`).ReplaceAllString(mobile, "")
+
+	// Check length and prefix
+	if len(mobile) != 10 {
+		return false
+	}
+
+	validPrefixes := []string{"6", "7", "8", "9"}
+	firstDigit := string(mobile[0])
+	for _, prefix := range validPrefixes {
+		if firstDigit == prefix {
+			return true
+		}
+	}
+
+	return false
+}
+
+func validateAadhaar(fl validator.FieldLevel) bool {
+	aadhaar := fl.Field().String()
+
+	// Remove non-digits
+	aadhaar = regexp.MustCompile(`[^\d]`).ReplaceAllString(aadhaar, "")
+
+	// Check length
+	if len(aadhaar) != 12 {
+		return false
+	}
+
+	// Check if it doesn't start with 0 or 1
+	if strings.HasPrefix(aadhaar, "0") || strings.HasPrefix(aadhaar, "1") {
+		return false
+	}
+
+	return true
+}
+
+func validatePincode(fl validator.FieldLevel) bool {
+	pincode := fl.Field().String()
+
+	// Remove non-digits
+	pincode = regexp.MustCompile(`[^\d]`).ReplaceAllString(pincode, "")
+
+	// Check length
+	if len(pincode) != 6 {
+		return false
+	}
+
+	return true
+}
+
+func formatValidationError(e validator.FieldError) string {
+	field := e.Field()
+	tag := e.Tag()
+	param := e.Param()
+
+	switch tag {
+	case "required":
+		return fmt.Sprintf("%s is required", field)
+	case "min":
+		return fmt.Sprintf("%s must be at least %s characters long", field, param)
+	case "max":
+		return fmt.Sprintf("%s cannot exceed %s characters", field, param)
+	case "email":
+		return fmt.Sprintf("%s must be a valid email address", field)
+	case "username":
+		return fmt.Sprintf("%s must be a valid username (3-50 characters, alphanumeric with underscores and hyphens)", field)
+	case "password":
+		return fmt.Sprintf("%s must be a strong password (8-128 characters, with uppercase, lowercase, digit, and special character)", field)
+	case "mobile":
+		return fmt.Sprintf("%s must be a valid 10-digit mobile number", field)
+	case "aadhaar":
+		return fmt.Sprintf("%s must be a valid 12-digit Aadhaar number", field)
+	case "pincode":
+		return fmt.Sprintf("%s must be a valid 6-digit pincode", field)
+	default:
+		return fmt.Sprintf("%s failed validation for tag %s", field, tag)
+	}
 }

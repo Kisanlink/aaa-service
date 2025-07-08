@@ -4,8 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"aaa-service/entities/users"
-
+	"github.com/Kisanlink/aaa-service/entities/models"
 	"github.com/Kisanlink/kisanlink-db/pkg/db"
 )
 
@@ -23,7 +22,7 @@ func NewUserTokenRepository(dbManager db.DBManager) *UserTokenRepository {
 
 // UpdateTokens updates user tokens
 func (r *UserTokenRepository) UpdateTokens(ctx context.Context, userID string, tokens int) error {
-	var user users.User
+	var user models.User
 	if err := r.dbManager.GetByID(ctx, userID, &user); err != nil {
 		return fmt.Errorf("failed to get user for token update: %w", err)
 	}
@@ -34,7 +33,7 @@ func (r *UserTokenRepository) UpdateTokens(ctx context.Context, userID string, t
 
 // DeductTokens deducts tokens from user account
 func (r *UserTokenRepository) DeductTokens(ctx context.Context, userID string, amount int) error {
-	var user users.User
+	var user models.User
 	if err := r.dbManager.GetByID(ctx, userID, &user); err != nil {
 		return fmt.Errorf("failed to get user for token deduction: %w", err)
 	}
@@ -48,7 +47,7 @@ func (r *UserTokenRepository) DeductTokens(ctx context.Context, userID string, a
 
 // AddTokens adds tokens to user account
 func (r *UserTokenRepository) AddTokens(ctx context.Context, userID string, amount int) error {
-	var user users.User
+	var user models.User
 	if err := r.dbManager.GetByID(ctx, userID, &user); err != nil {
 		return fmt.Errorf("failed to get user for token addition: %w", err)
 	}
@@ -59,7 +58,7 @@ func (r *UserTokenRepository) AddTokens(ctx context.Context, userID string, amou
 
 // ValidateUser validates a user's Aadhaar
 func (r *UserTokenRepository) ValidateUser(ctx context.Context, userID string) error {
-	var user users.User
+	var user models.User
 	if err := r.dbManager.GetByID(ctx, userID, &user); err != nil {
 		return fmt.Errorf("failed to get user for validation: %w", err)
 	}
