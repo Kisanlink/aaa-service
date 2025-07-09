@@ -4,23 +4,20 @@ import (
 	"context"
 	"fmt"
 
-	"aaa-service/entities/models"
+	"github.com/Kisanlink/aaa-service/entities/models"
 
-	"github.com/Kisanlink/kisanlink-db/pkg/base"
 	"github.com/Kisanlink/kisanlink-db/pkg/db"
 )
 
 // UserRoleRepository handles database operations for UserRole entities
 type UserRoleRepository struct {
-	*base.BaseRepository[*models.UserRole]
 	dbManager db.DBManager
 }
 
 // NewUserRoleRepository creates a new UserRoleRepository
 func NewUserRoleRepository(dbManager db.DBManager) *UserRoleRepository {
 	return &UserRoleRepository{
-		BaseRepository: base.NewBaseRepository[*models.UserRole](),
-		dbManager:      dbManager,
+		dbManager: dbManager,
 	}
 }
 

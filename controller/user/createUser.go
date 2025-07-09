@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/Kisanlink/aaa-service/model"
-	"github.com/Kisanlink/aaa-service/pb"
+	pb "github.com/Kisanlink/aaa-service/proto"
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

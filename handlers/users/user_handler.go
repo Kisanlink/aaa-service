@@ -3,247 +3,342 @@ package users
 import (
 	"context"
 	"net/http"
+	"strconv"
 
 	"github.com/Kisanlink/aaa-service/entities/requests/users"
-	"github.com/Kisanlink/aaa-service/entities/responses/users"
-	"github.com/Kisanlink/aaa-service/services"
-	"github.com/Kisanlink/aaa-service/utils"
+	"github.com/Kisanlink/aaa-service/interfaces"
+	"github.com/Kisanlink/aaa-service/pkg/errors"
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
-// UserHandler handles HTTP requests for user operations
+// UserHandler handles user-related HTTP requests
 type UserHandler struct {
-	userService *services.UserService
-	validator   *utils.Validator
-	responder   *utils.Responder
+	userService interfaces.UserService
+	validator   interfaces.Validator
+	responder   interfaces.Responder
+	logger      *zap.Logger
 }
 
 // NewUserHandler creates a new UserHandler instance
-func NewUserHandler(userService *services.UserService, validator *utils.Validator, responder *utils.Responder) *UserHandler {
+func NewUserHandler(
+	userService interfaces.UserService,
+	validator interfaces.Validator,
+	responder interfaces.Responder,
+	logger *zap.Logger,
+) *UserHandler {
 	return &UserHandler{
 		userService: userService,
 		validator:   validator,
 		responder:   responder,
+		logger:      logger,
 	}
 }
 
-// CreateUser handles user creation requests
-// @Summary Create a new user
-// @Description Creates a new user account with the provided details
-// @Tags Users
-// @Accept json
-// @Produce json
-// @Param name body string true "User's full name"
-// @Param email body string true "User's email address"
-// @Param phone body string false "User's phone number"
-// @Param status body string true "User's status (active/inactive)" Enums(active,inactive)
-// @Success 201 {object} users.UserResponse "User created successfully" {id: string, name: string, email: string, phone: string, status: string, created_at: string, updated_at: string}
-// @Success 200 {object} users.UserResponse "User already exists but was updated"
-// @Failure 400 {object} utils.ErrorResponse "Invalid request body or validation failed" {code: string, message: string, details: string}
-// @Failure 409 {object} utils.ErrorResponse "User already exists and cannot be updated" {code: string, message: string, details: string}
-// @Failure 422 {object} utils.ErrorResponse "Validation error" {code: string, message: string, details: []ValidationError}
-// @Failure 500 {object} utils.ErrorResponse "Internal server error" {code: string, message: string}
-// @Router /users [post]
+// CreateUser handles POST /users
 func (h *UserHandler) CreateUser(c *gin.Context) {
-	// Parse and validate request
+	h.logger.Info("Creating user")
+
 	var req users.CreateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		h.responder.SendError(c, http.StatusBadRequest, "Invalid request body", err)
+		h.logger.Error("Failed to bind request", zap.Error(err))
+		h.responder.SendValidationError(c, []string{err.Error()})
 		return
 	}
 
 	// Validate request
 	if err := req.Validate(); err != nil {
-		h.responder.SendError(c, http.StatusBadRequest, "Validation failed", err)
+		h.logger.Error("Request validation failed", zap.Error(err))
+		h.responder.SendValidationError(c, []string{err.Error()})
 		return
 	}
 
-	// Set request metadata
-	req.SetProtocol("http")
-	req.SetOperation("post")
-	req.SetVersion("v1")
-	req.SetRequestID(c.GetString("request_id"))
-	req.SetHeaders(c.Request.Header)
-	req.SetContext(map[string]interface{}{
-		"user_agent": c.GetHeader("User-Agent"),
-		"ip_address": c.ClientIP(),
-	})
+	// Additional validation using validator service
+	if err := h.validator.ValidateStruct(&req); err != nil {
+		h.logger.Error("Struct validation failed", zap.Error(err))
+		h.responder.SendValidationError(c, []string{err.Error()})
+		return
+	}
 
-	// Create user
-	ctx := context.Background()
-	response, err := h.userService.CreateUser(ctx, &req)
+	// Create user through service
+	userResponse, err := h.userService.CreateUser(c.Request.Context(), &req)
 	if err != nil {
-		h.responder.SendError(c, http.StatusInternalServerError, "Failed to create user", err)
+		h.logger.Error("Failed to create user", zap.Error(err))
+		if validationErr, ok := err.(*errors.ValidationError); ok {
+			h.responder.SendValidationError(c, []string{validationErr.Error()})
+			return
+		}
+		if conflictErr, ok := err.(*errors.ConflictError); ok {
+			h.responder.SendError(c, http.StatusConflict, conflictErr.Error(), conflictErr)
+			return
+		}
+		h.responder.SendInternalError(c, err)
 		return
 	}
 
-	// Send response
-	h.responder.SendSuccess(c, http.StatusCreated, response)
+	h.logger.Info("User created successfully", zap.String("userID", userResponse.ID))
+	h.responder.SendSuccess(c, http.StatusCreated, userResponse)
 }
 
-// GetUserByID handles user retrieval by ID
-// @Summary Get user by ID
-// @Description Retrieves a user by their ID
-// @Tags Users
-// @Accept json
-// @Produce json
-// @Param id path string true "User ID"
-// @Success 200 {object} users.UserResponse "User retrieved successfully"
-// @Failure 400 {object} utils.ErrorResponse "Invalid user ID"
-// @Failure 404 {object} utils.ErrorResponse "User not found"
-// @Failure 500 {object} utils.ErrorResponse "Internal server error"
-// @Router /users/{id} [get]
+// GetUserByID handles GET /users/:id
 func (h *UserHandler) GetUserByID(c *gin.Context) {
 	userID := c.Param("id")
+	h.logger.Info("Getting user by ID", zap.String("userID", userID))
+
 	if userID == "" {
-		h.responder.SendError(c, http.StatusBadRequest, "User ID is required", nil)
+		h.responder.SendValidationError(c, []string{"user ID is required"})
 		return
 	}
 
-	// Validate user ID format
-	if err := h.validator.ValidateUserID(userID); err != nil {
-		h.responder.SendError(c, http.StatusBadRequest, "Invalid user ID format", err)
-		return
-	}
-
-	// Get user
-	ctx := context.Background()
-	response, err := h.userService.GetUserByID(ctx, userID)
+	// Get user through service
+	userResponse, err := h.userService.GetUserByID(c.Request.Context(), userID)
 	if err != nil {
-		h.responder.SendError(c, http.StatusInternalServerError, "Failed to retrieve user", err)
+		h.logger.Error("Failed to get user", zap.Error(err))
+		if notFoundErr, ok := err.(*errors.NotFoundError); ok {
+			h.responder.SendError(c, http.StatusNotFound, notFoundErr.Error(), notFoundErr)
+			return
+		}
+		h.responder.SendInternalError(c, err)
 		return
 	}
 
-	// Send response
-	h.responder.SendSuccess(c, http.StatusOK, response)
+	h.logger.Info("User retrieved successfully", zap.String("userID", userID))
+	h.responder.SendSuccess(c, http.StatusOK, userResponse)
 }
 
-// UpdateUser handles user update requests
-// @Summary Update user
-// @Description Updates an existing user's information
-// @Tags Users
-// @Accept json
-// @Produce json
-// @Param id path string true "User ID"
-// @Param request body users.UpdateUserRequest true "User update request"
-// @Success 200 {object} users.UserResponse "User updated successfully"
-// @Failure 400 {object} utils.ErrorResponse "Invalid request body or validation failed"
-// @Failure 404 {object} utils.ErrorResponse "User not found"
-// @Failure 500 {object} utils.ErrorResponse "Internal server error"
-// @Router /users/{id} [put]
+// UpdateUser handles PUT /users/:id
 func (h *UserHandler) UpdateUser(c *gin.Context) {
 	userID := c.Param("id")
+	h.logger.Info("Updating user", zap.String("userID", userID))
+
 	if userID == "" {
-		h.responder.SendError(c, http.StatusBadRequest, "User ID is required", nil)
+		h.responder.SendValidationError(c, []string{"user ID is required"})
 		return
 	}
 
-	// Parse and validate request
 	var req users.UpdateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		h.responder.SendError(c, http.StatusBadRequest, "Invalid request body", err)
+		h.logger.Error("Failed to bind request", zap.Error(err))
+		h.responder.SendValidationError(c, []string{err.Error()})
 		return
 	}
-
-	// Set user ID from path parameter
-	req.SetUserID(userID)
 
 	// Validate request
 	if err := req.Validate(); err != nil {
-		h.responder.SendError(c, http.StatusBadRequest, "Validation failed", err)
+		h.logger.Error("Request validation failed", zap.Error(err))
+		h.responder.SendValidationError(c, []string{err.Error()})
 		return
 	}
 
-	// Set request metadata
-	req.SetProtocol("http")
-	req.SetOperation("put")
-	req.SetVersion("v1")
-	req.SetRequestID(c.GetString("request_id"))
-	req.SetHeaders(c.Request.Header)
-	req.SetContext(map[string]interface{}{
-		"user_agent": c.GetHeader("User-Agent"),
-		"ip_address": c.ClientIP(),
-	})
+	// Additional validation using validator service
+	if err := h.validator.ValidateStruct(&req); err != nil {
+		h.logger.Error("Struct validation failed", zap.Error(err))
+		h.responder.SendValidationError(c, []string{err.Error()})
+		return
+	}
 
-	// Update user
-	ctx := context.Background()
-	response, err := h.userService.UpdateUser(ctx, &req)
+	// Update user through service
+	// Note: Setting userID in context since current service implementation expects it there
+	ctx := context.WithValue(c.Request.Context(), "userID", userID)
+	userResponse, err := h.userService.UpdateUser(ctx, &req)
 	if err != nil {
-		h.responder.SendError(c, http.StatusInternalServerError, "Failed to update user", err)
+		h.logger.Error("Failed to update user", zap.Error(err))
+		if notFoundErr, ok := err.(*errors.NotFoundError); ok {
+			h.responder.SendError(c, http.StatusNotFound, notFoundErr.Error(), notFoundErr)
+			return
+		}
+		if validationErr, ok := err.(*errors.ValidationError); ok {
+			h.responder.SendValidationError(c, []string{validationErr.Error()})
+			return
+		}
+		h.responder.SendInternalError(c, err)
 		return
 	}
 
-	// Send response
-	h.responder.SendSuccess(c, http.StatusOK, response)
+	h.logger.Info("User updated successfully", zap.String("userID", userID))
+	h.responder.SendSuccess(c, http.StatusOK, userResponse)
 }
 
-// DeleteUser handles user deletion requests
-// @Summary Delete user
-// @Description Soft deletes a user by their ID
-// @Tags Users
-// @Accept json
-// @Produce json
-// @Param id path string true "User ID"
-// @Success 200 {object} users.UserResponse "User deleted successfully"
-// @Failure 400 {object} utils.ErrorResponse "Invalid user ID"
-// @Failure 404 {object} utils.ErrorResponse "User not found"
-// @Failure 500 {object} utils.ErrorResponse "Internal server error"
-// @Router /users/{id} [delete]
+// DeleteUser handles DELETE /users/:id
 func (h *UserHandler) DeleteUser(c *gin.Context) {
 	userID := c.Param("id")
+	h.logger.Info("Deleting user", zap.String("userID", userID))
+
 	if userID == "" {
-		h.responder.SendError(c, http.StatusBadRequest, "User ID is required", nil)
+		h.responder.SendValidationError(c, []string{"user ID is required"})
 		return
 	}
 
-	// Validate user ID format
-	if err := h.validator.ValidateUserID(userID); err != nil {
-		h.responder.SendError(c, http.StatusBadRequest, "Invalid user ID format", err)
-		return
-	}
-
-	// Delete user
-	ctx := context.Background()
-	response, err := h.userService.DeleteUser(ctx, userID)
+	// Delete user through service
+	userResponse, err := h.userService.DeleteUser(c.Request.Context(), userID)
 	if err != nil {
-		h.responder.SendError(c, http.StatusInternalServerError, "Failed to delete user", err)
+		h.logger.Error("Failed to delete user", zap.Error(err))
+		if notFoundErr, ok := err.(*errors.NotFoundError); ok {
+			h.responder.SendError(c, http.StatusNotFound, notFoundErr.Error(), notFoundErr)
+			return
+		}
+		h.responder.SendInternalError(c, err)
 		return
 	}
 
-	// Send response
-	h.responder.SendSuccess(c, http.StatusOK, response)
+	h.logger.Info("User deleted successfully", zap.String("userID", userID))
+	h.responder.SendSuccess(c, http.StatusOK, userResponse)
 }
 
-// ListUsers handles user listing requests
-// @Summary List users
-// @Description Retrieves a list of users with optional filtering and pagination
-// @Tags Users
-// @Accept json
-// @Produce json
-// @Param page query int false "Page number (default: 1)"
-// @Param limit query int false "Number of items per page (default: 10, max: 100)"
-// @Param status query string false "Filter by status (active, inactive)"
-// @Param search query string false "Search by name or email"
-// @Success 200 {object} users.UsersListResponse "Users retrieved successfully"
-// @Failure 400 {object} utils.ErrorResponse "Invalid query parameters"
-// @Failure 500 {object} utils.ErrorResponse "Internal server error"
-// @Router /users [get]
+// ListUsers handles GET /users
 func (h *UserHandler) ListUsers(c *gin.Context) {
-	// Parse query parameters
+	h.logger.Info("Listing users")
+
+	// Parse filters from query parameters
 	filters, err := h.validator.ParseListFilters(c)
 	if err != nil {
-		h.responder.SendError(c, http.StatusBadRequest, "Invalid query parameters", err)
+		h.logger.Error("Failed to parse filters", zap.Error(err))
+		h.responder.SendValidationError(c, []string{err.Error()})
 		return
 	}
 
-	// List users
-	ctx := context.Background()
-	response, err := h.userService.ListUsers(ctx, filters)
+	// Get users through service
+	result, err := h.userService.ListUsers(c.Request.Context(), filters)
 	if err != nil {
-		h.responder.SendError(c, http.StatusInternalServerError, "Failed to list users", err)
+		h.logger.Error("Failed to list users", zap.Error(err))
+		h.responder.SendInternalError(c, err)
 		return
 	}
 
-	// Send response
-	h.responder.SendSuccess(c, http.StatusOK, response)
+	h.logger.Info("Users listed successfully")
+	h.responder.SendSuccess(c, http.StatusOK, result)
+}
+
+// SearchUsers handles GET /users/search
+func (h *UserHandler) SearchUsers(c *gin.Context) {
+	query := c.Query("q")
+	h.logger.Info("Searching users", zap.String("query", query))
+
+	if query == "" {
+		h.responder.SendValidationError(c, []string{"search query is required"})
+		return
+	}
+
+	// Parse pagination parameters
+	limitStr := c.DefaultQuery("limit", "10")
+	offsetStr := c.DefaultQuery("offset", "0")
+
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil {
+		h.responder.SendValidationError(c, []string{"invalid limit parameter"})
+		return
+	}
+
+	offset, err := strconv.Atoi(offsetStr)
+	if err != nil {
+		h.responder.SendValidationError(c, []string{"invalid offset parameter"})
+		return
+	}
+
+	// Search users through service
+	result, err := h.userService.SearchUsers(c.Request.Context(), query, limit, offset)
+	if err != nil {
+		h.logger.Error("Failed to search users", zap.Error(err))
+		h.responder.SendInternalError(c, err)
+		return
+	}
+
+	h.logger.Info("Users search completed", zap.String("query", query))
+	h.responder.SendSuccess(c, http.StatusOK, result)
+}
+
+// ValidateUser handles POST /users/:id/validate
+func (h *UserHandler) ValidateUser(c *gin.Context) {
+	userID := c.Param("id")
+	h.logger.Info("Validating user", zap.String("userID", userID))
+
+	if userID == "" {
+		h.responder.SendValidationError(c, []string{"user ID is required"})
+		return
+	}
+
+	// Validate user through service
+	userResponse, err := h.userService.ValidateUser(c.Request.Context(), userID)
+	if err != nil {
+		h.logger.Error("Failed to validate user", zap.Error(err))
+		if notFoundErr, ok := err.(*errors.NotFoundError); ok {
+			h.responder.SendError(c, http.StatusNotFound, notFoundErr.Error(), notFoundErr)
+			return
+		}
+		if conflictErr, ok := err.(*errors.ConflictError); ok {
+			h.responder.SendError(c, http.StatusConflict, conflictErr.Error(), conflictErr)
+			return
+		}
+		h.responder.SendInternalError(c, err)
+		return
+	}
+
+	h.logger.Info("User validated successfully", zap.String("userID", userID))
+	h.responder.SendSuccess(c, http.StatusOK, userResponse)
+}
+
+// AssignRole handles POST /users/:id/roles/:roleId
+func (h *UserHandler) AssignRole(c *gin.Context) {
+	userID := c.Param("id")
+	roleID := c.Param("roleId")
+	h.logger.Info("Assigning role to user", zap.String("userID", userID), zap.String("roleID", roleID))
+
+	if userID == "" {
+		h.responder.SendValidationError(c, []string{"user ID is required"})
+		return
+	}
+	if roleID == "" {
+		h.responder.SendValidationError(c, []string{"role ID is required"})
+		return
+	}
+
+	// Assign role through service
+	userResponse, err := h.userService.AssignRole(c.Request.Context(), userID, roleID)
+	if err != nil {
+		h.logger.Error("Failed to assign role", zap.Error(err))
+		if notFoundErr, ok := err.(*errors.NotFoundError); ok {
+			h.responder.SendError(c, http.StatusNotFound, notFoundErr.Error(), notFoundErr)
+			return
+		}
+		if conflictErr, ok := err.(*errors.ConflictError); ok {
+			h.responder.SendError(c, http.StatusConflict, conflictErr.Error(), conflictErr)
+			return
+		}
+		h.responder.SendInternalError(c, err)
+		return
+	}
+
+	h.logger.Info("Role assigned successfully", zap.String("userID", userID), zap.String("roleID", roleID))
+	h.responder.SendSuccess(c, http.StatusOK, userResponse)
+}
+
+// RemoveRole handles DELETE /users/:id/roles/:roleId
+func (h *UserHandler) RemoveRole(c *gin.Context) {
+	userID := c.Param("id")
+	roleID := c.Param("roleId")
+	h.logger.Info("Removing role from user", zap.String("userID", userID), zap.String("roleID", roleID))
+
+	if userID == "" {
+		h.responder.SendValidationError(c, []string{"user ID is required"})
+		return
+	}
+	if roleID == "" {
+		h.responder.SendValidationError(c, []string{"role ID is required"})
+		return
+	}
+
+	// Remove role through service
+	userResponse, err := h.userService.RemoveRole(c.Request.Context(), userID, roleID)
+	if err != nil {
+		h.logger.Error("Failed to remove role", zap.Error(err))
+		if notFoundErr, ok := err.(*errors.NotFoundError); ok {
+			h.responder.SendError(c, http.StatusNotFound, notFoundErr.Error(), notFoundErr)
+			return
+		}
+		h.responder.SendInternalError(c, err)
+		return
+	}
+
+	h.logger.Info("Role removed successfully", zap.String("userID", userID), zap.String("roleID", roleID))
+	h.responder.SendSuccess(c, http.StatusOK, userResponse)
 }

@@ -10,7 +10,7 @@ import (
 	rolepermission "github.com/Kisanlink/aaa-service/controller/role_Permission"
 	"github.com/Kisanlink/aaa-service/controller/roles"
 	"github.com/Kisanlink/aaa-service/controller/user"
-	pb "github.com/Kisanlink/aaa-service/pb"
+	pb "github.com/Kisanlink/aaa-service/proto"
 	"google.golang.org/grpc"
 	"gorm.io/gorm"
 )

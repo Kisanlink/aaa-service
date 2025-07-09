@@ -21,10 +21,15 @@ type Address struct {
 	FullAddress *string `json:"full_address" gorm:"type:text"`
 }
 
+const (
+	AddressTable     = "ADDR"
+	AddressTableSize = hash.Large
+)
+
 // NewAddress creates a new Address instance
 func NewAddress() *Address {
 	return &Address{
-		BaseModel: base.NewBaseModel("addr", hash.TableSizeSmall),
+		BaseModel: base.NewBaseModel(AddressTable, AddressTableSize),
 	}
 }
 
@@ -50,12 +55,12 @@ func (a *Address) BeforeSoftDelete() error {
 
 // GetTableIdentifier returns the table identifier for Address
 func (a *Address) GetTableIdentifier() string {
-	return "addr"
+	return AddressTable
 }
 
 // GetTableSize returns the table size for Address
 func (a *Address) GetTableSize() hash.TableSize {
-	return hash.TableSizeSmall
+	return AddressTableSize
 }
 
 // BuildFullAddress builds the full address string from individual components

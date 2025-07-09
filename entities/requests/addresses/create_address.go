@@ -6,7 +6,7 @@ import (
 
 // CreateAddressRequest represents a request to create an address
 type CreateAddressRequest struct {
-	requests.Request
+	*requests.BaseRequest
 	UserID      string  `json:"user_id" validate:"required"`
 	House       *string `json:"house" validate:"omitempty,max:255"`
 	Street      *string `json:"street" validate:"omitempty,max:255"`
@@ -44,15 +44,16 @@ func NewCreateAddressRequest(
 	context map[string]interface{},
 ) *CreateAddressRequest {
 	return &CreateAddressRequest{
-		Request: requests.Request{
-			Protocol:  protocol,
-			Operation: operation,
-			Version:   version,
-			RequestID: requestID,
-			Headers:   headers,
-			Body:      body,
-			Context:   context,
-		},
+		BaseRequest: requests.NewBaseRequest(
+			protocol,
+			operation,
+			version,
+			requestID,
+			"CreateAddress",
+			headers,
+			body,
+			context,
+		),
 		UserID:      userID,
 		House:       house,
 		Street:      street,

@@ -9,6 +9,7 @@ import (
 	"syscall"
 
 	"github.com/Kisanlink/aaa-service/config"
+	"github.com/Kisanlink/aaa-service/entities/models"
 	"github.com/Kisanlink/aaa-service/repositories/addresses"
 	"github.com/Kisanlink/aaa-service/repositories/roles"
 	"github.com/Kisanlink/aaa-service/repositories/users"
@@ -46,11 +47,14 @@ func main() {
 	}
 	defer cacheService.Close()
 
+	// Get the primary database manager
+	primaryDBManager := dbManager.GetManager(dbManager.GetPostgresManager().GetBackendType())
+
 	// Initialize repositories
-	userRepo := users.NewUserRepository(dbManager.GetPostgresManager())
-	addressRepo := addresses.NewAddressRepository(dbManager.GetPostgresManager())
-	roleRepo := roles.NewRoleRepository(dbManager.GetPostgresManager())
-	userRoleRepo := roles.NewUserRoleRepository(dbManager.GetPostgresManager())
+	userRepo := users.NewUserRepository(primaryDBManager)
+	addressRepo := addresses.NewAddressRepository(primaryDBManager)
+	roleRepo := roles.NewRoleRepository(primaryDBManager)
+	userRoleRepo := roles.NewUserRoleRepository(primaryDBManager)
 
 	// Initialize HTTP server
 	httpServer, err := server.NewHTTPServer(

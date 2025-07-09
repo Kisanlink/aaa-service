@@ -5,21 +5,18 @@ import (
 	"fmt"
 
 	"github.com/Kisanlink/aaa-service/entities/models"
-	"github.com/Kisanlink/kisanlink-db/pkg/base"
 	"github.com/Kisanlink/kisanlink-db/pkg/db"
 )
 
 // UserRepository handles database operations for User entities
 type UserRepository struct {
-	base.Repository[models.User]
-	dbManager *db.Manager
+	dbManager db.DBManager
 }
 
 // NewUserRepository creates a new UserRepository instance
-func NewUserRepository(dbManager *db.Manager) *UserRepository {
+func NewUserRepository(dbManager db.DBManager) *UserRepository {
 	return &UserRepository{
-		Repository: base.NewRepository[models.User](dbManager),
-		dbManager:  dbManager,
+		dbManager: dbManager,
 	}
 }
 

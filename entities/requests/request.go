@@ -19,7 +19,7 @@ func (e *ValidationError) Error() string {
 
 // NewValidationError creates a new validation error
 func NewValidationError(field, message string) error {
-	return errors.NewInvalidInputError(field, nil, message)
+	return errors.NewValidationError(fmt.Sprintf("validation error for field '%s': %s", field, message))
 }
 
 // Request defines the interface that all request DTOs must implement to support
@@ -58,16 +58,104 @@ type Request interface {
 
 	// GetBody returns the main payload/body of the request as a generic
 	// interface{} that can be type asserted by implementations
-	GetBody() interface{}
+	GetBody() any
 
 	// GetContext returns any request-scoped context data
-	GetContext() map[string]interface{}
+	GetContext() map[string]any
 
 	// ToProto converts the request to a protocol buffer message format
 	// for gRPC transport if applicable
-	ToProto() interface{}
+	ToProto() any
 
 	// String returns a human-readable representation of the request
 	// useful for logging and debugging
 	String() string
+}
+
+// BaseRequest provides a concrete implementation of the Request interface
+// that other request types can embed
+type BaseRequest struct {
+	Protocol  string              `json:"protocol"`
+	Operation string              `json:"operation"`
+	Version   string              `json:"version"`
+	RequestID string              `json:"request_id"`
+	Headers   map[string][]string `json:"headers"`
+	Body      any                 `json:"body"`
+	Context   map[string]any      `json:"context"`
+	Type      string              `json:"type"`
+}
+
+// NewBaseRequest creates a new BaseRequest
+func NewBaseRequest(
+	protocol, operation, version, requestID, requestType string,
+	headers map[string][]string,
+	body any,
+	context map[string]any,
+) *BaseRequest {
+	return &BaseRequest{
+		Protocol:  protocol,
+		Operation: operation,
+		Version:   version,
+		RequestID: requestID,
+		Headers:   headers,
+		Body:      body,
+		Context:   context,
+		Type:      requestType,
+	}
+}
+
+// Validate implements the Request interface
+func (br *BaseRequest) Validate() error {
+	return nil // Base validation is empty, specific requests override this
+}
+
+// GetType implements the Request interface
+func (br *BaseRequest) GetType() string {
+	return br.Type
+}
+
+// GetProtocol implements the Request interface
+func (br *BaseRequest) GetProtocol() string {
+	return br.Protocol
+}
+
+// GetOperation implements the Request interface
+func (br *BaseRequest) GetOperation() string {
+	return br.Operation
+}
+
+// GetVersion implements the Request interface
+func (br *BaseRequest) GetVersion() string {
+	return br.Version
+}
+
+// GetRequestID implements the Request interface
+func (br *BaseRequest) GetRequestID() string {
+	return br.RequestID
+}
+
+// GetHeaders implements the Request interface
+func (br *BaseRequest) GetHeaders() map[string][]string {
+	return br.Headers
+}
+
+// GetBody implements the Request interface
+func (br *BaseRequest) GetBody() any {
+	return br.Body
+}
+
+// GetContext implements the Request interface
+func (br *BaseRequest) GetContext() map[string]any {
+	return br.Context
+}
+
+// ToProto implements the Request interface
+func (br *BaseRequest) ToProto() any {
+	return nil // Default implementation returns nil, specific requests can override
+}
+
+// String implements the Request interface
+func (br *BaseRequest) String() string {
+	return fmt.Sprintf("Request{Type: %s, Protocol: %s, Operation: %s, Version: %s, RequestID: %s}",
+		br.Type, br.Protocol, br.Operation, br.Version, br.RequestID)
 }

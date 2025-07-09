@@ -44,7 +44,7 @@ func (r *Responder) SendSuccess(c interface{}, statusCode int, data interface{})
 }
 
 // SendError sends an error response
-func (r *Responder) SendError(c interface{}, statusCode int, message string, err error) {
+func (r *Responder) SendError(c *gin.Context, statusCode int, message string, err error) {
 	ginCtx, ok := c.(*gin.Context)
 	if !ok {
 		r.logger.Error("Invalid context type for responder")
@@ -98,14 +98,7 @@ func (r *Responder) SendError(c interface{}, statusCode int, message string, err
 	}
 
 	// Log the error
-	r.logger.Error("HTTP error response",
-		"status_code", statusCode,
-		"message", message,
-		"error", err,
-		"path", ginCtx.Request.URL.Path,
-		"method", ginCtx.Request.Method,
-		"ip", ginCtx.ClientIP(),
-	)
+	r.logger.Error("HTTP error response")
 
 	ginCtx.JSON(statusCode, response)
 }

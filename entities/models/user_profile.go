@@ -23,9 +23,10 @@ type UserProfile struct {
 	Address Address `json:"address" gorm:"foreignKey:AddressID;references:ID"`
 }
 
+// NewUserProfile creates a new UserProfile instance
 func NewUserProfile(userID string) *UserProfile {
 	return &UserProfile{
-		BaseModel: base.NewBaseModel("usr_prof", hash.TableSizeSmall),
+		BaseModel: base.NewBaseModel("profile", hash.Small),
 		UserID:    userID,
 	}
 }
@@ -35,4 +36,4 @@ func (p *UserProfile) BeforeUpdate() error          { return p.BaseModel.BeforeU
 func (p *UserProfile) BeforeDelete() error          { return p.BaseModel.BeforeDelete() }
 func (p *UserProfile) BeforeSoftDelete() error      { return p.BaseModel.BeforeSoftDelete() }
 func (p *UserProfile) GetTableIdentifier() string   { return "usr_prof" }
-func (p *UserProfile) GetTableSize() hash.TableSize { return hash.TableSizeSmall }
+func (p *UserProfile) GetTableSize() hash.TableSize { return hash.Small }

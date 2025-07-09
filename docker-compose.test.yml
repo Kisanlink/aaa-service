@@ -1,0 +1,90 @@
+# Docker Compose for Testing Environment
+version: '3.8'
+
+services:
+  # Test PostgreSQL Database
+  postgres-test:
+    image: postgres:15-alpine
+    container_name: aaa-test-postgres
+    environment:
+      POSTGRES_DB: aaa_test
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_password
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+      - ./scripts/test-db-init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test_user -d aaa_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - test-network
+
+  # Test Redis Cache
+  redis-test:
+    image: redis:7-alpine
+    container_name: aaa-test-redis
+    ports:
+      - "6380:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_test_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - test-network
+
+  # Test SpiceDB (for permission testing)
+  spicedb-test:
+    image: authzed/spicedb:latest
+    container_name: aaa-test-spicedb
+    command: 
+      - serve
+      - --grpc-preshared-key=test_key
+      - --http-enabled
+      - --datastore-engine=memory
+    ports:
+      - "50052:50051"  # gRPC
+      - "8081:8080"    # HTTP
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/spicedb", "version"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - test-network
+
+  # Test database migration
+  migrate-test:
+    image: migrate/migrate
+    container_name: aaa-test-migrate
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+    volumes:
+      - ./migrations:/migrations
+    command: [
+      "-path", "/migrations",
+      "-database", "postgres://test_user:test_password@postgres-test:5432/aaa_test?sslmode=disable",
+      "up"
+    ]
+    networks:
+      - test-network
+
+volumes:
+  postgres_test_data:
+    name: aaa-test-postgres-data
+  redis_test_data:
+    name: aaa-test-redis-data
+
+networks:
+  test-network:
+    name: aaa-test-network
+    driver: bridge 

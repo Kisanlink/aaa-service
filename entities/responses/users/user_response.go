@@ -3,7 +3,7 @@ package users
 import (
 	"time"
 
-	"aaa-service/entities/models"
+	"github.com/Kisanlink/aaa-service/entities/models"
 )
 
 // UserResponse represents the user data sent in API responses
@@ -47,31 +47,19 @@ func (r *UserResponse) FromModel(user *models.User) {
 	r.IsValidated = user.IsValidated
 	r.CreatedAt = user.CreatedAt
 	r.UpdatedAt = user.UpdatedAt
-	r.AadhaarNumber = user.AadhaarNumber
 	r.Status = user.Status
-	r.Name = user.Name
-	r.CareOf = user.CareOf
-	r.DateOfBirth = user.DateOfBirth
-	r.Photo = user.Photo
-	r.EmailHash = user.EmailHash
-	r.ShareCode = user.ShareCode
-	r.YearOfBirth = user.YearOfBirth
-	r.Message = user.Message
-	r.MobileNumber = user.MobileNumber
-	r.CountryCode = user.CountryCode
 	r.Tokens = user.Tokens
-
-	// Convert address if present
-	if user.Address.ID != "" {
-		addressResp := &AddressResponse{}
-		addressResp.FromModel(&user.Address)
-		r.Address = addressResp
-	}
 
 	// Convert roles
 	r.Roles = make([]RoleDetail, len(user.Roles))
 	for i, userRole := range user.Roles {
-		r.Roles[i] = userRole.ToRoleDetail()
+		r.Roles[i] = RoleDetail{
+			ID:          userRole.RoleID,
+			Name:        userRole.Role.Name,
+			Description: userRole.Role.Description,
+			IsActive:    userRole.IsActive,
+			AssignedAt:  userRole.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		}
 	}
 }
 
@@ -118,15 +106,4 @@ type RoleDetail struct {
 	Description string `json:"description"`
 	IsActive    bool   `json:"is_active"`
 	AssignedAt  string `json:"assigned_at"`
-}
-
-// ToRoleDetail converts a UserRole model to RoleDetail
-func (ur *models.UserRole) ToRoleDetail() RoleDetail {
-	return RoleDetail{
-		ID:          ur.Role.ID,
-		Name:        ur.Role.Name,
-		Description: ur.Role.Description,
-		IsActive:    ur.IsActive,
-		AssignedAt:  ur.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
-	}
 }

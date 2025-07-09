@@ -6,7 +6,7 @@ import (
 
 // CreateUserProfileRequest represents a request to create a user profile
 type CreateUserProfileRequest struct {
-	requests.Request
+	*requests.BaseRequest
 	UserID        string  `json:"user_id" validate:"required"`
 	Name          *string `json:"name" validate:"omitempty,min=2,max=255"`
 	CareOf        *string `json:"care_of" validate:"omitempty,max=255"`
@@ -42,15 +42,16 @@ func NewCreateUserProfileRequest(
 	context map[string]interface{},
 ) *CreateUserProfileRequest {
 	return &CreateUserProfileRequest{
-		Request: requests.Request{
-			Protocol:  protocol,
-			Operation: operation,
-			Version:   version,
-			RequestID: requestID,
-			Headers:   headers,
-			Body:      body,
-			Context:   context,
-		},
+		BaseRequest: requests.NewBaseRequest(
+			protocol,
+			operation,
+			version,
+			requestID,
+			"CreateUserProfile",
+			headers,
+			body,
+			context,
+		),
 		UserID:        userID,
 		Name:          name,
 		CareOf:        careOf,

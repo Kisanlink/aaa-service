@@ -14,10 +14,15 @@ type Role struct {
 	Permissions []Permission `gorm:"many2many:role_permissions;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }
 
-// NewRole creates a new Role instance
-func NewRole(name string, description string) *Role {
+const (
+	RoleTable     = "ROLE"
+	RoleTableSize = hash.Small
+)
+
+// NewRole creates a new Role instance with specified name and description
+func NewRole(name, description string) *Role {
 	return &Role{
-		BaseModel:   base.NewBaseModel("rol", hash.TableSizeSmall),
+		BaseModel:   base.NewBaseModel("role", hash.Small),
 		Name:        name,
 		Description: description,
 	}
@@ -49,9 +54,7 @@ func (r *Role) GetTableIdentifier() string {
 }
 
 // GetTableSize returns the table size for Role
-func (r *Role) GetTableSize() hash.TableSize {
-	return hash.TableSizeSmall
-}
+func (r *Role) GetTableSize() hash.TableSize { return hash.Small }
 
 // HasPermission checks if the role has a specific permission
 func (r *Role) HasPermission(resource, action string) bool {
@@ -93,7 +96,7 @@ type Permission struct {
 // NewPermission creates a new Permission instance
 func NewPermission(resource string, effect string, actions []string) *Permission {
 	return &Permission{
-		BaseModel: base.NewBaseModel("perm", hash.TableSizeSmall),
+		BaseModel: base.NewBaseModel("perm", hash.Small),
 		Resource:  resource,
 		Effect:    effect,
 		Actions:   actions,
@@ -127,7 +130,7 @@ func (p *Permission) GetTableIdentifier() string {
 
 // GetTableSize returns the table size for Permission
 func (p *Permission) GetTableSize() hash.TableSize {
-	return hash.TableSizeSmall
+	return hash.Small
 }
 
 // HasAction checks if the permission has a specific action

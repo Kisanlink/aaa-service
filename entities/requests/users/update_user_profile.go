@@ -6,7 +6,7 @@ import (
 
 // UpdateUserProfileRequest represents a request to update a user profile
 type UpdateUserProfileRequest struct {
-	requests.Request
+	*requests.BaseRequest
 	UserID        string  `json:"user_id" validate:"required"`
 	Name          *string `json:"name" validate:"omitempty,min=2,max=255"`
 	CareOf        *string `json:"care_of" validate:"omitempty,max=255"`
@@ -42,15 +42,16 @@ func NewUpdateUserProfileRequest(
 	context map[string]interface{},
 ) *UpdateUserProfileRequest {
 	return &UpdateUserProfileRequest{
-		Request: requests.Request{
-			Protocol:  protocol,
-			Operation: operation,
-			Version:   version,
-			RequestID: requestID,
-			Headers:   headers,
-			Body:      body,
-			Context:   context,
-		},
+		BaseRequest: requests.NewBaseRequest(
+			protocol,
+			operation,
+			version,
+			requestID,
+			"UpdateUserProfile",
+			headers,
+			body,
+			context,
+		),
 		UserID:        userID,
 		Name:          name,
 		CareOf:        careOf,

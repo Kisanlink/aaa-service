@@ -6,7 +6,7 @@ import (
 
 // CreateRoleRequest represents a request to create a role
 type CreateRoleRequest struct {
-	requests.Request
+	*requests.BaseRequest
 	Name        string   `json:"name" validate:"required,min=2,max=100"`
 	Description *string  `json:"description" validate:"omitempty,max=500"`
 	Permissions []string `json:"permissions" validate:"omitempty"`
@@ -26,15 +26,16 @@ func NewCreateRoleRequest(
 	context map[string]interface{},
 ) *CreateRoleRequest {
 	return &CreateRoleRequest{
-		Request: requests.Request{
-			Protocol:  protocol,
-			Operation: operation,
-			Version:   version,
-			RequestID: requestID,
-			Headers:   headers,
-			Body:      body,
-			Context:   context,
-		},
+		BaseRequest: requests.NewBaseRequest(
+			protocol,
+			operation,
+			version,
+			requestID,
+			"CreateRole",
+			headers,
+			body,
+			context,
+		),
 		Name:        name,
 		Description: description,
 		Permissions: permissions,

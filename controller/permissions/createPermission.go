@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/Kisanlink/aaa-service/model"
-	"github.com/Kisanlink/aaa-service/pb"
 	"google.golang.org/grpc/codes"
 	"gorm.io/gorm"
 )

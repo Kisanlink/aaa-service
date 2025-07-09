@@ -6,7 +6,7 @@ import (
 
 // UpdateContactRequest represents a request to update a contact
 type UpdateContactRequest struct {
-	requests.Request
+	*requests.BaseRequest
 	ContactID    string  `json:"contact_id" validate:"required"`
 	UserID       string  `json:"user_id" validate:"required"`
 	MobileNumber *uint64 `json:"mobile_number" validate:"omitempty"`
@@ -34,15 +34,16 @@ func NewUpdateContactRequest(
 	context map[string]interface{},
 ) *UpdateContactRequest {
 	return &UpdateContactRequest{
-		Request: requests.Request{
-			Protocol:  protocol,
-			Operation: operation,
-			Version:   version,
-			RequestID: requestID,
-			Headers:   headers,
-			Body:      body,
-			Context:   context,
-		},
+		BaseRequest: requests.NewBaseRequest(
+			protocol,
+			operation,
+			version,
+			requestID,
+			"UpdateContact",
+			headers,
+			body,
+			context,
+		),
 		ContactID:    contactID,
 		UserID:       userID,
 		MobileNumber: mobileNumber,

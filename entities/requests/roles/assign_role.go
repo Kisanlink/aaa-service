@@ -6,7 +6,7 @@ import (
 
 // AssignRoleRequest represents a request to assign a role to a user
 type AssignRoleRequest struct {
-	requests.Request
+	*requests.BaseRequest
 	UserID string `json:"user_id" validate:"required"`
 	RoleID string `json:"role_id" validate:"required"`
 }
@@ -24,15 +24,16 @@ func NewAssignRoleRequest(
 	context map[string]interface{},
 ) *AssignRoleRequest {
 	return &AssignRoleRequest{
-		Request: requests.Request{
-			Protocol:  protocol,
-			Operation: operation,
-			Version:   version,
-			RequestID: requestID,
-			Headers:   headers,
-			Body:      body,
-			Context:   context,
-		},
+		BaseRequest: requests.NewBaseRequest(
+			protocol,
+			operation,
+			version,
+			requestID,
+			"AssignRole",
+			headers,
+			body,
+			context,
+		),
 		UserID: userID,
 		RoleID: roleID,
 	}

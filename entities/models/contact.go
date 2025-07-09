@@ -5,6 +5,11 @@ import (
 	"github.com/Kisanlink/kisanlink-db/pkg/core/hash"
 )
 
+const (
+	ContactTable     = "contact"
+	ContactTableSize = hash.Small
+)
+
 type Contact struct {
 	*base.BaseModel
 	UserID       string  `json:"user_id" gorm:"type:varchar(255);not null;index"`
@@ -20,7 +25,7 @@ type Contact struct {
 
 func NewContact(userID string, mobileNumber uint64) *Contact {
 	return &Contact{
-		BaseModel:    base.NewBaseModel("contact", hash.TableSizeSmall),
+		BaseModel:    base.NewBaseModel(ContactTable, ContactTableSize),
 		UserID:       userID,
 		MobileNumber: mobileNumber,
 	}
@@ -30,5 +35,5 @@ func (c *Contact) BeforeCreate() error          { return c.BaseModel.BeforeCreat
 func (c *Contact) BeforeUpdate() error          { return c.BaseModel.BeforeUpdate() }
 func (c *Contact) BeforeDelete() error          { return c.BaseModel.BeforeDelete() }
 func (c *Contact) BeforeSoftDelete() error      { return c.BaseModel.BeforeSoftDelete() }
-func (c *Contact) GetTableIdentifier() string   { return "contact" }
-func (c *Contact) GetTableSize() hash.TableSize { return hash.TableSizeSmall }
+func (c *Contact) GetTableIdentifier() string   { return ContactTable }
+func (c *Contact) GetTableSize() hash.TableSize { return ContactTableSize }

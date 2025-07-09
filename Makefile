@@ -1,244 +1,163 @@
-# AAA Service Makefile
-# Common development tasks for the refactored AAA service
+# Makefile for AAA Service
+.PHONY: help install-tools lint test test-unit test-integration test-coverage build clean fmt imports security tidy docker pre-commit setup-hooks
 
-.PHONY: help build test clean run docker-build docker-run lint format check-deps install-deps
+# Variables
+GO_FILES := $(shell find . -name '*.go' -not -path './vendor/*' -not -path './docs/*')
+BINARY_NAME := aaa-service
+BUILD_DIR := bin
+COVERAGE_DIR := coverage
+DOCKER_IMAGE := aaa-service:latest
 
-# Default target
+# Colors for output
+RED := \033[0;31m
+GREEN := \033[0;32m
+YELLOW := \033[0;33m
+BLUE := \033[0;34m
+NC := \033[0m # No Color
+
+## help: Show this help message
 help:
-	@echo "AAA Service - Available Commands:"
+	@echo "$(BLUE)AAA Service Makefile Commands:$(NC)"
 	@echo ""
-	@echo "Development:"
-	@echo "  build         - Build the application"
-	@echo "  run           - Run the application locally"
-	@echo "  test          - Run all tests"
-	@echo "  test-coverage - Run tests with coverage report"
-	@echo "  lint          - Run linter"
-	@echo "  format        - Format code"
-	@echo ""
-	@echo "Dependencies:"
-	@echo "  install-deps  - Install dependencies"
-	@echo "  check-deps    - Check for dependency updates"
-	@echo "  tidy          - Tidy go.mod and go.sum"
-	@echo ""
-	@echo "Docker:"
-	@echo "  docker-build  - Build Docker image"
-	@echo "  docker-run    - Run with Docker Compose"
-	@echo "  docker-stop   - Stop Docker containers"
-	@echo ""
-	@echo "Database:"
-	@echo "  db-migrate    - Run database migrations"
-	@echo "  db-seed       - Seed database with test data"
-	@echo ""
-	@echo "Utilities:"
-	@echo "  clean         - Clean build artifacts"
-	@echo "  proto-gen     - Generate protobuf files"
-	@echo "  swagger-gen   - Generate Swagger documentation"
+	@grep -E '^## [a-zA-Z_-]+:' $(MAKEFILE_LIST) | \
+		sed 's/## //' | \
+		awk -F: '{printf "$(GREEN)%-20s$(NC) %s\n", $$1, $$2}'
 
-# Build the application
-build:
-	@echo "Building AAA Service..."
-	go build -o bin/aaa-service main.go
-	@echo "Build complete: bin/aaa-service"
+## install-tools: Install required development tools
+install-tools:
+	@echo "$(BLUE)Installing development tools...$(NC)"
+	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+	@go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest
+	@go install golang.org/x/tools/cmd/goimports@latest
+	@go install github.com/fzipp/gocyclo/cmd/gocyclo@latest
+	@which pre-commit > /dev/null || (echo "$(RED)Please install pre-commit: pip install pre-commit$(NC)" && exit 1)
+	@echo "$(GREEN)Tools installed successfully$(NC)"
 
-# Run the application locally
-run:
-	@echo "Starting AAA Service..."
-	go run main.go
+## setup-hooks: Install pre-commit hooks
+setup-hooks: install-tools
+	@echo "$(BLUE)Setting up pre-commit hooks...$(NC)"
+	@pre-commit install
+	@pre-commit install --hook-type commit-msg
+	@echo "$(GREEN)Pre-commit hooks installed$(NC)"
 
-# Run all tests
-test:
-	@echo "Running tests..."
-	go test -v ./...
+## fmt: Format Go code
+fmt:
+	@echo "$(BLUE)Formatting Go code...$(NC)"
+	@gofmt -s -w $(GO_FILES)
+	@echo "$(GREEN)Code formatted$(NC)"
 
-# Run tests with coverage
-test-coverage:
-	@echo "Running tests with coverage..."
-	go test -v -coverprofile=coverage.out ./...
-	go tool cover -html=coverage.out -o coverage.html
-	@echo "Coverage report generated: coverage.html"
+## imports: Fix and organize imports
+imports:
+	@echo "$(BLUE)Fixing imports...$(NC)"
+	@goimports -w $(GO_FILES)
+	@echo "$(GREEN)Imports fixed$(NC)"
 
-# Run specific test package
-test-package:
-	@echo "Running tests for package: $(PACKAGE)"
-	go test -v ./$(PACKAGE)/...
-
-# Run integration tests
-test-integration:
-	@echo "Running integration tests..."
-	go test -v -tags=integration ./...
-
-# Run linter
-lint:
-	@echo "Running linter..."
-	golangci-lint run
-
-# Format code
-format:
-	@echo "Formatting code..."
-	go fmt ./...
-	goimports -w .
-
-# Install dependencies
-install-deps:
-	@echo "Installing dependencies..."
-	go mod download
-	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-	go install golang.org/x/tools/cmd/goimports@latest
-	go install github.com/swaggo/swag/cmd/swag@latest
-
-# Check for dependency updates
-check-deps:
-	@echo "Checking for dependency updates..."
-	go list -u -m all
-
-# Tidy go.mod and go.sum
+## tidy: Tidy Go modules
 tidy:
-	@echo "Tidying dependencies..."
-	go mod tidy
-	go mod verify
+	@echo "$(BLUE)Tidying Go modules...$(NC)"
+	@go mod tidy
+	@go mod verify
+	@echo "$(GREEN)Modules tidied$(NC)"
 
-# Clean build artifacts
+## lint: Run all linters
+lint:
+	@echo "$(BLUE)Running linters...$(NC)"
+	@golangci-lint run --timeout=5m
+	@echo "$(GREEN)Linting completed$(NC)"
+
+## security: Run security analysis
+security:
+	@echo "$(BLUE)Running security analysis...$(NC)"
+	@gosec -quiet ./...
+	@echo "$(GREEN)Security analysis completed$(NC)"
+
+## build: Build the application
+build:
+	@echo "$(BLUE)Building application...$(NC)"
+	@mkdir -p $(BUILD_DIR)
+	@go build -ldflags="-s -w" -o $(BUILD_DIR)/$(BINARY_NAME) ./cmd/server
+	@echo "$(GREEN)Build completed: $(BUILD_DIR)/$(BINARY_NAME)$(NC)"
+
+## test-unit: Run unit tests
+test-unit:
+	@echo "$(BLUE)Running unit tests...$(NC)"
+	@mkdir -p $(COVERAGE_DIR)
+	@go test -race -short -coverprofile=$(COVERAGE_DIR)/unit.out -covermode=atomic ./...
+	@go tool cover -html=$(COVERAGE_DIR)/unit.out -o $(COVERAGE_DIR)/unit.html
+	@echo "$(GREEN)Unit tests completed$(NC)"
+	@echo "$(YELLOW)Coverage report: $(COVERAGE_DIR)/unit.html$(NC)"
+
+## test-integration: Run integration tests
+test-integration:
+	@echo "$(BLUE)Running integration tests...$(NC)"
+	@echo "$(YELLOW)Starting test database...$(NC)"
+	@docker-compose -f docker-compose.test.yml up -d --wait
+	@sleep 5
+	@mkdir -p $(COVERAGE_DIR)
+	@go test -race -tags=integration -coverprofile=$(COVERAGE_DIR)/integration.out -covermode=atomic ./test/integration/...
+	@go tool cover -html=$(COVERAGE_DIR)/integration.out -o $(COVERAGE_DIR)/integration.html
+	@echo "$(GREEN)Integration tests completed$(NC)"
+	@echo "$(YELLOW)Coverage report: $(COVERAGE_DIR)/integration.html$(NC)"
+	@echo "$(YELLOW)Stopping test database...$(NC)"
+	@docker-compose -f docker-compose.test.yml down
+
+## test-coverage: Run all tests and generate combined coverage
+test-coverage: test-unit test-integration
+	@echo "$(BLUE)Generating combined coverage report...$(NC)"
+	@echo 'mode: atomic' > $(COVERAGE_DIR)/combined.out
+	@tail -n +2 $(COVERAGE_DIR)/unit.out >> $(COVERAGE_DIR)/combined.out
+	@tail -n +2 $(COVERAGE_DIR)/integration.out >> $(COVERAGE_DIR)/combined.out
+	@go tool cover -html=$(COVERAGE_DIR)/combined.out -o $(COVERAGE_DIR)/combined.html
+	@go tool cover -func=$(COVERAGE_DIR)/combined.out | tail -1
+	@echo "$(GREEN)Combined coverage report: $(COVERAGE_DIR)/combined.html$(NC)"
+
+## test: Run all tests (unit only for pre-commit)
+test: test-unit
+
+## benchmark: Run benchmarks
+benchmark:
+	@echo "$(BLUE)Running benchmarks...$(NC)"
+	@go test -bench=. -benchmem ./...
+	@echo "$(GREEN)Benchmarks completed$(NC)"
+
+## docker: Build Docker image
+docker:
+	@echo "$(BLUE)Building Docker image...$(NC)"
+	@docker build -t $(DOCKER_IMAGE) .
+	@echo "$(GREEN)Docker image built: $(DOCKER_IMAGE)$(NC)"
+
+## clean: Clean build artifacts and coverage reports
 clean:
-	@echo "Cleaning build artifacts..."
-	rm -rf bin/
-	rm -rf coverage.out
-	rm -rf coverage.html
-	rm -rf tmp/
-	go clean -cache
+	@echo "$(BLUE)Cleaning build artifacts...$(NC)"
+	@rm -rf $(BUILD_DIR) $(COVERAGE_DIR)
+	@go clean -cache -testcache -modcache
+	@echo "$(GREEN)Clean completed$(NC)"
 
-# Build Docker image
-docker-build:
-	@echo "Building Docker image..."
-	docker build -t aaa-service:latest .
+## pre-commit: Run all pre-commit checks manually
+pre-commit: fmt imports tidy lint security test-unit build
+	@echo "$(GREEN)All pre-commit checks passed!$(NC)"
 
-# Run with Docker Compose
-docker-run:
-	@echo "Starting services with Docker Compose..."
-	docker-compose up -d
+## ci: Run all CI checks (includes integration tests)
+ci: fmt imports tidy lint security test-coverage build
+	@echo "$(GREEN)All CI checks passed!$(NC)"
 
-# Stop Docker containers
-docker-stop:
-	@echo "Stopping Docker containers..."
-	docker-compose down
+## dev-setup: Complete development environment setup
+dev-setup: install-tools setup-hooks
+	@echo "$(BLUE)Setting up development environment...$(NC)"
+	@cp .env.example .env 2>/dev/null || echo "No .env.example found"
+	@echo "$(GREEN)Development environment setup completed!$(NC)"
+	@echo "$(YELLOW)Next steps:$(NC)"
+	@echo "  1. Update .env file with your configuration"
+	@echo "  2. Run 'make test' to verify everything works"
+	@echo "  3. Start coding!"
 
-# Run database migrations
-db-migrate:
-	@echo "Running database migrations..."
-	# Add migration commands here
-	@echo "Migrations complete"
+## run: Run the application locally
+run: build
+	@echo "$(BLUE)Starting AAA service...$(NC)"
+	@./$(BUILD_DIR)/$(BINARY_NAME)
 
-# Seed database with test data
-db-seed:
-	@echo "Seeding database with test data..."
-	# Add seeding commands here
-	@echo "Database seeded"
-
-# Generate protobuf files
-proto-gen:
-	@echo "Generating protobuf files..."
-	protoc --go_out=. --go_opt=paths=source_relative \
-		--go-grpc_out=. --go-grpc_opt=paths=source_relative \
-		proto/*.proto
-
-# Generate Swagger documentation
-swagger-gen:
-	@echo "Generating Swagger documentation..."
-	swag init -g main.go -o docs
-
-# Development setup
-dev-setup: install-deps tidy
-	@echo "Development setup complete"
-
-# Pre-commit checks
-pre-commit: format lint test
-	@echo "Pre-commit checks passed"
-
-# CI/CD pipeline
-ci: clean install-deps test-coverage lint
-	@echo "CI pipeline completed"
-
-# Production build
-prod-build:
-	@echo "Building for production..."
-	CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o bin/aaa-service main.go
-
-# Health check
-health-check:
-	@echo "Checking service health..."
-	curl -f http://localhost:8080/health || echo "Service is not healthy"
-
-# Performance test
-perf-test:
-	@echo "Running performance tests..."
-	# Add performance testing commands here
-	@echo "Performance tests complete"
-
-# Security scan
-security-scan:
-	@echo "Running security scan..."
-	gosec ./...
-	@echo "Security scan complete"
-
-# Update dependencies
-update-deps:
-	@echo "Updating dependencies..."
-	go get -u ./...
-	go mod tidy
-
-# Show application info
-info:
-	@echo "AAA Service Information:"
-	@echo "Version: $(shell git describe --tags --always --dirty)"
-	@echo "Commit: $(shell git rev-parse HEAD)"
-	@echo "Branch: $(shell git branch --show-current)"
-	@echo "Go Version: $(shell go version)"
-	@echo "Build Time: $(shell date)"
-
-# Create release
-release:
-	@echo "Creating release..."
-	# Add release creation commands here
-	@echo "Release created"
-
-# Backup database
-db-backup:
-	@echo "Creating database backup..."
-	# Add backup commands here
-	@echo "Database backup created"
-
-# Restore database
-db-restore:
-	@echo "Restoring database..."
-	# Add restore commands here
-	@echo "Database restored"
-
-# Monitor logs
-logs:
-	@echo "Monitoring application logs..."
-	docker-compose logs -f aaa-service
-
-# Scale services
-scale:
-	@echo "Scaling services..."
-	docker-compose up -d --scale aaa-service=$(REPLICAS)
-
-# Environment setup
-env-setup:
-	@echo "Setting up environment..."
-	cp .env.example .env
-	@echo "Environment file created. Please update .env with your configuration."
-
-# Database reset
-db-reset:
-	@echo "Resetting database..."
-	docker-compose down -v
-	docker-compose up -d postgres redis
-	@echo "Database reset complete"
-
-# Full development cycle
-dev-cycle: clean install-deps build test run
-	@echo "Development cycle complete"
-
-# Quick start for new developers
-quick-start: env-setup dev-setup docker-run
-	@echo "Quick start complete. Service should be running at http://localhost:8080"
+## docs: Generate documentation
+docs:
+	@echo "$(BLUE)Generating documentation...$(NC)"
+	@go doc -all ./... > docs/API.md
+	@echo "$(GREEN)Documentation generated$(NC)"

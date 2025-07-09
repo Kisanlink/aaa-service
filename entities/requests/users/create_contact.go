@@ -6,7 +6,7 @@ import (
 
 // CreateContactRequest represents a request to create a contact
 type CreateContactRequest struct {
-	requests.Request
+	*requests.BaseRequest
 	UserID       string  `json:"user_id" validate:"required"`
 	MobileNumber uint64  `json:"mobile_number" validate:"required"`
 	CountryCode  *string `json:"country_code" validate:"omitempty,max=10"`
@@ -32,15 +32,16 @@ func NewCreateContactRequest(
 	context map[string]interface{},
 ) *CreateContactRequest {
 	return &CreateContactRequest{
-		Request: requests.Request{
-			Protocol:  protocol,
-			Operation: operation,
-			Version:   version,
-			RequestID: requestID,
-			Headers:   headers,
-			Body:      body,
-			Context:   context,
-		},
+		BaseRequest: requests.NewBaseRequest(
+			protocol,
+			operation,
+			version,
+			requestID,
+			"CreateContact",
+			headers,
+			body,
+			context,
+		),
 		UserID:       userID,
 		MobileNumber: mobileNumber,
 		CountryCode:  countryCode,

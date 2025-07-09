@@ -48,7 +48,9 @@ func NewUserProfileResponse(profile *models.UserProfile) *UserProfileResponse {
 
 	// Include address if available
 	if profile.Address.ID != "" {
-		response.Address = NewAddressResponse(&profile.Address)
+		addressResp := &AddressResponse{}
+		addressResp.FromModel(&profile.Address)
+		response.Address = addressResp
 	}
 
 	return response

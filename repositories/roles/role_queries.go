@@ -2,50 +2,36 @@ package roles
 
 import (
 	"context"
-	"fmt"
+	"strings"
 
-	"aaa-service/entities/models"
-
-	"github.com/Kisanlink/kisanlink-db/pkg/db"
+	"github.com/Kisanlink/aaa-service/entities/models"
 )
 
-// GetByName retrieves a role by name
-func (r *RoleRepository) GetByName(ctx context.Context, name string) (*models.Role, error) {
-	filters := []db.Filter{
-		r.dbManager.BuildFilter("name", db.FilterOpEqual, name),
-	}
-
-	var roles []models.Role
-	if err := r.dbManager.List(ctx, filters, &roles); err != nil {
-		return nil, fmt.Errorf("failed to get role by name: %w", err)
-	}
-
-	if len(roles) == 0 {
-		return nil, fmt.Errorf("role not found with name: %s", name)
-	}
-
-	return &roles[0], nil
-}
+// GetByName is implemented in role_repository.go
 
 // ListAll retrieves all roles
-func (r *RoleRepository) ListAll(ctx context.Context, limit, offset int) ([]models.Role, error) {
-	return r.List(ctx, []db.Filter{}, limit, offset)
+func (r *RoleRepository) ListAll(ctx context.Context, limit, offset int) ([]*models.Role, error) {
+	return r.List(ctx, limit, offset)
 }
 
 // SearchByName searches roles by name
-func (r *RoleRepository) SearchByName(ctx context.Context, name string, limit, offset int) ([]models.Role, error) {
-	filters := []db.Filter{
-		r.dbManager.BuildFilter("name", db.FilterOpContains, name),
-	}
-
-	return r.List(ctx, filters, limit, offset)
-}
-
-// ExistsByName checks if a role exists by name
-func (r *RoleRepository) ExistsByName(ctx context.Context, name string) (bool, error) {
-	_, err := r.GetByName(ctx, name)
+func (r *RoleRepository) SearchByName(ctx context.Context, name string, limit, offset int) ([]*models.Role, error) {
+	// For now, we'll use the basic List method and filter in-memory
+	// In production, this should be implemented with proper database filtering
+	allRoles, err := r.List(ctx, limit, offset)
 	if err != nil {
-		return false, nil // Role doesn't exist
+		return nil, err
 	}
-	return true, nil
+
+	// Filter roles by name
+	var filteredRoles []*models.Role
+	for _, role := range allRoles {
+		if role != nil && strings.Contains(strings.ToLower(role.Name), strings.ToLower(name)) {
+			filteredRoles = append(filteredRoles, role)
+		}
+	}
+
+	return filteredRoles, nil
 }
+
+// ExistsByName is implemented in role_repository.go

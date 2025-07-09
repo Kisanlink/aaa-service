@@ -131,31 +131,20 @@ func (s *AddressService) UpdateAddress(ctx context.Context, req interface{}) (in
 }
 
 // DeleteAddress soft deletes an address
-func (s *AddressService) DeleteAddress(ctx context.Context, addressID string) (interface{}, error) {
-	s.logger.Info("Deleting address", "addressID", addressID)
-
-	// Check if address exists
-	exists, err := s.addressRepo.Exists(ctx, addressID)
-	if err != nil {
-		s.logger.Error("Failed to check address existence", "addressID", addressID, "error", err)
-		return nil, fmt.Errorf("failed to check address existence: %w", err)
-	}
-
-	if !exists {
-		return nil, errors.NewNotFoundError("address not found")
-	}
+func (s *AddressService) DeleteAddress(ctx context.Context, addressID string) error {
+	s.logger.Info("Deleting address")
 
 	// Delete address
 	if err := s.addressRepo.Delete(ctx, addressID); err != nil {
-		s.logger.Error("Failed to delete address", "addressID", addressID, "error", err)
-		return nil, fmt.Errorf("failed to delete address: %w", err)
+		s.logger.Error("Failed to delete address")
+		return fmt.Errorf("failed to delete address: %w", err)
 	}
 
 	// Clear cache
 	s.cacheService.Delete(fmt.Sprintf("address:%s", addressID))
 
-	s.logger.Info("Address deleted successfully", "addressID", addressID)
-	return map[string]string{"message": "Address deleted successfully"}, nil
+	s.logger.Info("Address deleted successfully")
+	return nil
 }
 
 // SearchAddresses searches addresses by keyword

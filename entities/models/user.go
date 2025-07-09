@@ -8,17 +8,17 @@ import (
 // User represents a user in the AAA service
 type User struct {
 	*base.BaseModel
-	Username    string  `json:"username" gorm:"unique;not null;size:100" validate:"required,username"`
-	Password    string  `json:"password" gorm:"not null;size:255" validate:"required,min=8,max=128"`
-	IsValidated bool    `json:"is_validated" gorm:"default:false"`
+	Username    string `json:"username" gorm:"unique;not null;size:100" validate:"required,username"`
+	Password    string `json:"password" gorm:"not null;size:255" validate:"required,min=8,max=128"`
+	IsValidated bool   `json:"is_validated" gorm:"default:false"`
 	// Status represents the current state of the user account
 	// Possible values:
 	// - "pending": Initial state when user is created but not validated
 	// - "active": User is validated and can access all features
 	// - "suspended": User access is temporarily suspended
 	// - "blocked": User access is permanently blocked
-	Status      *string `json:"status" gorm:"type:varchar(50);default:'pending'"`
-	Tokens      int     `json:"tokens" gorm:"default:1000"`
+	Status *string `json:"status" gorm:"type:varchar(50);default:'pending'"`
+	Tokens int     `json:"tokens" gorm:"default:1000"`
 
 	// Relationships
 	Profile  UserProfile `json:"profile" gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
@@ -33,7 +33,7 @@ type User struct {
 // - Sets validation status to false
 func NewUser(username string, password string) *User {
 	return &User{
-		BaseModel:   base.NewBaseModel("usr", hash.TableSizeMedium),
+		BaseModel:   base.NewBaseModel("usr", hash.Medium),
 		Username:    username,
 		Password:    password,
 		IsValidated: false,
@@ -59,10 +59,10 @@ func (u *User) BeforeDelete() error     { return u.BaseModel.BeforeDelete() }
 func (u *User) BeforeSoftDelete() error { return u.BaseModel.BeforeSoftDelete() }
 
 func (u *User) GetTableIdentifier() string   { return "usr" }
-func (u *User) GetTableSize() hash.TableSize { return hash.TableSizeMedium }
+func (u *User) GetTableSize() hash.TableSize { return hash.Medium }
 
 // IsActive checks if the user account status is "active"
-func (u *User) IsActive() bool                    { return u.Status != nil && *u.Status == "active" }
+func (u *User) IsActive() bool { return u.Status != nil && *u.Status == "active" }
 
 // HasEnoughTokens checks if user has sufficient tokens for an operation
 func (u *User) HasEnoughTokens(required int) bool { return u.Tokens >= required }
@@ -82,4 +82,4 @@ func (u *User) AddTokens(amount int) { u.Tokens += amount }
 
 // ValidateAadhaar marks the user as validated and sets status to "active"
 // This is called after successful Aadhaar verification
-func (u *User) ValidateAadhaar()     { u.IsValidated = true; status := "active"; u.Status = &status }
+func (u *User) ValidateAadhaar() { u.IsValidated = true; status := "active"; u.Status = &status }

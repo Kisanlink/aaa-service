@@ -6,7 +6,7 @@ import (
 
 // UpdateRoleRequest represents a request to update a role
 type UpdateRoleRequest struct {
-	requests.Request
+	*requests.BaseRequest
 	RoleID      string   `json:"role_id" validate:"required"`
 	Name        *string  `json:"name" validate:"omitempty,min=2,max=100"`
 	Description *string  `json:"description" validate:"omitempty,max=500"`
@@ -28,15 +28,16 @@ func NewUpdateRoleRequest(
 	context map[string]interface{},
 ) *UpdateRoleRequest {
 	return &UpdateRoleRequest{
-		Request: requests.Request{
-			Protocol:  protocol,
-			Operation: operation,
-			Version:   version,
-			RequestID: requestID,
-			Headers:   headers,
-			Body:      body,
-			Context:   context,
-		},
+		BaseRequest: requests.NewBaseRequest(
+			protocol,
+			operation,
+			version,
+			requestID,
+			"UpdateRole",
+			headers,
+			body,
+			context,
+		),
 		RoleID:      roleID,
 		Name:        name,
 		Description: description,

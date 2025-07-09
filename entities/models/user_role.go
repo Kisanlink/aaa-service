@@ -17,10 +17,10 @@ type UserRole struct {
 	Role Role `json:"role" gorm:"foreignKey:RoleID;references:ID"`
 }
 
-// NewUserRole creates a new UserRole instance
-func NewUserRole(userID string, roleID string) *UserRole {
+// NewUserRole creates a new UserRole instance linking a user to a role
+func NewUserRole(userID, roleID string) *UserRole {
 	return &UserRole{
-		BaseModel: base.NewBaseModel("usr_rol", hash.TableSizeSmall),
+		BaseModel: base.NewBaseModel("ur", hash.Small),
 		UserID:    userID,
 		RoleID:    roleID,
 		IsActive:  true,
@@ -53,6 +53,4 @@ func (ur *UserRole) GetTableIdentifier() string {
 }
 
 // GetTableSize returns the table size for UserRole
-func (ur *UserRole) GetTableSize() hash.TableSize {
-	return hash.TableSizeSmall
-}
+func (ur *UserRole) GetTableSize() hash.TableSize { return hash.Small }
