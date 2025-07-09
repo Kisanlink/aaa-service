@@ -13,6 +13,7 @@ import (
 	"github.com/Kisanlink/aaa-service/server"
 	"github.com/Kisanlink/kisanlink-db/pkg/db"
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"go.uber.org/zap"
 )
