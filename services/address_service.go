@@ -8,6 +8,7 @@ import (
 	"github.com/Kisanlink/aaa-service/entities/models"
 	"github.com/Kisanlink/aaa-service/interfaces"
 	"github.com/Kisanlink/aaa-service/pkg/errors"
+	"go.uber.org/zap"
 )
 
 // AddressService implements the AddressService interface
@@ -53,14 +54,14 @@ func (s *AddressService) CreateAddress(ctx context.Context, req interface{}) (in
 
 	// Create address in database
 	if err := s.addressRepo.Create(ctx, createReq); err != nil {
-		s.logger.Error("Failed to create address", "error", err)
+		s.logger.Error("Failed to create address", zap.Error(err))
 		return nil, fmt.Errorf("failed to create address: %w", err)
 	}
 
 	// Clear cache
 	s.cacheService.Delete(fmt.Sprintf("address:%s", createReq.ID))
 
-	s.logger.Info("Address created successfully", "addressID", createReq.ID)
+	s.logger.Info("Address created successfully", zap.String("addressID", createReq.ID))
 	return createReq, nil
 }
 
@@ -70,7 +71,7 @@ func (s *AddressService) GetAddressByID(ctx context.Context, addressID string) (
 	cacheKey := fmt.Sprintf("address:%s", addressID)
 	if cached, exists := s.cacheService.Get(cacheKey); exists {
 		if address, ok := cached.(*models.Address); ok {
-			s.logger.Debug("Address retrieved from cache", "addressID", addressID)
+			s.logger.Debug("Address retrieved from cache", zap.String("addressID", addressID))
 			return address, nil
 		}
 	}
@@ -78,7 +79,7 @@ func (s *AddressService) GetAddressByID(ctx context.Context, addressID string) (
 	// Get from database
 	address, err := s.addressRepo.GetByID(ctx, addressID)
 	if err != nil {
-		s.logger.Error("Failed to get address by ID", "addressID", addressID, "error", err)
+		s.logger.Error("Failed to get address by ID", zap.String("addressID", addressID), zap.Error(err))
 		return nil, fmt.Errorf("failed to get address: %w", err)
 	}
 
@@ -86,6 +87,19 @@ func (s *AddressService) GetAddressByID(ctx context.Context, addressID string) (
 	s.cacheService.Set(cacheKey, address, 300) // Cache for 5 minutes
 
 	return address, nil
+}
+
+// GetAddressByUserID retrieves addresses by user ID
+func (s *AddressService) GetAddressByUserID(ctx context.Context, userID string) (interface{}, error) {
+	s.logger.Info("Getting addresses by user ID", zap.String("userID", userID))
+
+	addresses, err := s.addressRepo.GetByUserID(ctx, userID)
+	if err != nil {
+		s.logger.Error("Failed to get addresses by user ID", zap.String("userID", userID), zap.Error(err))
+		return nil, fmt.Errorf("failed to get addresses: %w", err)
+	}
+
+	return addresses, nil
 }
 
 // UpdateAddress updates an existing address
@@ -103,14 +117,10 @@ func (s *AddressService) UpdateAddress(ctx context.Context, req interface{}) (in
 		return nil, fmt.Errorf("validation failed: %w", err)
 	}
 
-	// Check if address exists
-	exists, err := s.addressRepo.Exists(ctx, updateReq.ID)
+	// Check if address exists by trying to get it
+	_, err := s.addressRepo.GetByID(ctx, updateReq.ID)
 	if err != nil {
-		s.logger.Error("Failed to check address existence", "addressID", updateReq.ID, "error", err)
-		return nil, fmt.Errorf("failed to check address existence: %w", err)
-	}
-
-	if !exists {
+		s.logger.Error("Failed to check address existence", zap.String("addressID", updateReq.ID), zap.Error(err))
 		return nil, errors.NewNotFoundError("address not found")
 	}
 
@@ -119,14 +129,14 @@ func (s *AddressService) UpdateAddress(ctx context.Context, req interface{}) (in
 
 	// Update address in database
 	if err := s.addressRepo.Update(ctx, updateReq); err != nil {
-		s.logger.Error("Failed to update address", "addressID", updateReq.ID, "error", err)
+		s.logger.Error("Failed to update address", zap.String("addressID", updateReq.ID), zap.Error(err))
 		return nil, fmt.Errorf("failed to update address: %w", err)
 	}
 
 	// Clear cache
 	s.cacheService.Delete(fmt.Sprintf("address:%s", updateReq.ID))
 
-	s.logger.Info("Address updated successfully", "addressID", updateReq.ID)
+	s.logger.Info("Address updated successfully", zap.String("addressID", updateReq.ID))
 	return updateReq, nil
 }
 
@@ -147,23 +157,87 @@ func (s *AddressService) DeleteAddress(ctx context.Context, addressID string) er
 	return nil
 }
 
+// ListAddresses lists addresses with filters
+func (s *AddressService) ListAddresses(ctx context.Context, filters interface{}) (interface{}, error) {
+	s.logger.Info("Listing addresses")
+
+	// Default pagination
+	limit, offset := 10, 0
+
+	// Extract limit and offset from filters if available
+	if filterMap, ok := filters.(map[string]interface{}); ok {
+		if l, exists := filterMap["limit"]; exists {
+			if limitInt, ok := l.(int); ok {
+				limit = limitInt
+			}
+		}
+		if o, exists := filterMap["offset"]; exists {
+			if offsetInt, ok := o.(int); ok {
+				offset = offsetInt
+			}
+		}
+	}
+
+	addresses, err := s.addressRepo.List(ctx, limit, offset)
+	if err != nil {
+		s.logger.Error("Failed to list addresses", zap.Error(err))
+		return nil, fmt.Errorf("failed to list addresses: %w", err)
+	}
+
+	s.logger.Info("Address listing completed", zap.Int("count", len(addresses)))
+	return addresses, nil
+}
+
 // SearchAddresses searches addresses by keyword
 func (s *AddressService) SearchAddresses(ctx context.Context, keyword string, limit, offset int) (interface{}, error) {
-	s.logger.Info("Searching addresses", "keyword", keyword, "limit", limit, "offset", offset)
+	s.logger.Info("Searching addresses", zap.String("keyword", keyword), zap.Int("limit", limit), zap.Int("offset", offset))
 
 	if strings.TrimSpace(keyword) == "" {
 		return nil, fmt.Errorf("search keyword cannot be empty")
 	}
 
-	// Search addresses
-	addresses, err := s.addressRepo.SearchByKeyword(ctx, keyword, limit, offset)
+	// Search addresses using the correct repository method
+	addresses, err := s.addressRepo.Search(ctx, keyword, limit, offset)
 	if err != nil {
-		s.logger.Error("Failed to search addresses", "error", err)
+		s.logger.Error("Failed to search addresses", zap.Error(err))
 		return nil, fmt.Errorf("failed to search addresses: %w", err)
 	}
 
-	s.logger.Info("Address search completed", "count", len(addresses))
+	s.logger.Info("Address search completed", zap.Int("count", len(addresses)))
 	return addresses, nil
+}
+
+// ValidateAddress validates an address
+func (s *AddressService) ValidateAddress(ctx context.Context, address interface{}) error {
+	s.logger.Info("Validating address")
+
+	addr, ok := address.(*models.Address)
+	if !ok {
+		return fmt.Errorf("invalid address type")
+	}
+
+	return s.validateAddress(addr)
+}
+
+// GeocodingAddress performs geocoding on an address
+func (s *AddressService) GeocodingAddress(ctx context.Context, address interface{}) (interface{}, error) {
+	s.logger.Info("Geocoding address")
+
+	addr, ok := address.(*models.Address)
+	if !ok {
+		return nil, fmt.Errorf("invalid address type")
+	}
+
+	// Placeholder implementation - integrate with actual geocoding service
+	result := map[string]interface{}{
+		"address":   addr,
+		"latitude":  0.0,
+		"longitude": 0.0,
+		"accuracy":  "placeholder",
+	}
+
+	s.logger.Info("Address geocoding completed", zap.String("addressID", addr.ID))
+	return result, nil
 }
 
 // Helper methods

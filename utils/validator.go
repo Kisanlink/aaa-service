@@ -3,148 +3,64 @@ package utils
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/Kisanlink/aaa-service/interfaces"
+	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 )
 
 // Validator implements the Validator interface
 type Validator struct {
 	validate *validator.Validate
-	logger   interfaces.Logger
 }
 
 // NewValidator creates a new Validator instance
-func NewValidator(logger interfaces.Logger) interfaces.Validator {
-	v := validator.New()
+func NewValidator() interfaces.Validator {
+	validate := validator.New()
 
-	// Register custom validations
-	v.RegisterValidation("username", validateUsername)
-	v.RegisterValidation("password", validatePassword)
-	v.RegisterValidation("mobile", validateMobile)
-	v.RegisterValidation("aadhaar", validateAadhaar)
-	v.RegisterValidation("pincode", validatePincode)
+	// Register custom validators
+	validate.RegisterValidation("phone", validatePhoneNumber)
+	validate.RegisterValidation("aadhaar", validateAadhaarNumber)
 
 	return &Validator{
-		validate: v,
-		logger:   logger,
+		validate: validate,
 	}
 }
 
-// ValidateUserID validates user ID format
+// ValidateStruct validates a struct using the validator tags
+func (v *Validator) ValidateStruct(s interface{}) error {
+	return v.validate.Struct(s)
+}
+
+// ValidateUserID validates a user ID format
 func (v *Validator) ValidateUserID(userID string) error {
 	if userID == "" {
 		return fmt.Errorf("user ID cannot be empty")
 	}
 
-	// Check if it starts with "usr_" prefix
-	if !strings.HasPrefix(userID, "usr_") {
-		return fmt.Errorf("user ID must start with 'usr_' prefix")
-	}
-
-	// Check length (usr_ + 22 characters = 26 total)
-	if len(userID) != 26 {
-		return fmt.Errorf("user ID must be exactly 26 characters long")
-	}
-
-	// Check if it contains only alphanumeric characters and underscores
-	matched, err := regexp.MatchString(`^usr_[a-zA-Z0-9_]+$`, userID)
+	// Check if it's a valid UUID-like format (alphanumeric with optional hyphens)
+	matched, err := regexp.MatchString(`^[a-zA-Z0-9\-_]{1,50}$`, userID)
 	if err != nil {
-		return fmt.Errorf("failed to validate user ID format: %w", err)
+		return fmt.Errorf("invalid user ID format: %w", err)
 	}
-
 	if !matched {
-		return fmt.Errorf("user ID contains invalid characters")
+		return fmt.Errorf("user ID must be alphanumeric with optional hyphens/underscores")
 	}
 
 	return nil
 }
 
-// ValidateEmail validates email format
+// ValidateEmail validates an email address format
 func (v *Validator) ValidateEmail(email string) error {
 	if email == "" {
 		return fmt.Errorf("email cannot be empty")
 	}
 
-	// Use regex for email validation
 	emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
 	if !emailRegex.MatchString(email) {
 		return fmt.Errorf("invalid email format")
-	}
-
-	// Check length
-	if len(email) > 254 {
-		return fmt.Errorf("email cannot exceed 254 characters")
-	}
-
-	return nil
-}
-
-// ValidatePhone validates phone number format
-func (v *Validator) ValidatePhone(phone string) error {
-	if phone == "" {
-		return fmt.Errorf("phone number cannot be empty")
-	}
-
-	// Remove any non-digit characters
-	phone = regexp.MustCompile(`[^\d]`).ReplaceAllString(phone, "")
-
-	// Check if it's a valid Indian mobile number (10 digits)
-	if len(phone) != 10 {
-		return fmt.Errorf("phone number must be exactly 10 digits")
-	}
-
-	// Check if it starts with valid Indian mobile prefixes
-	validPrefixes := []string{"6", "7", "8", "9"}
-	firstDigit := string(phone[0])
-	isValidPrefix := false
-	for _, prefix := range validPrefixes {
-		if firstDigit == prefix {
-			isValidPrefix = true
-			break
-		}
-	}
-
-	if !isValidPrefix {
-		return fmt.Errorf("phone number must start with 6, 7, 8, or 9")
-	}
-
-	return nil
-}
-
-// ValidateUsername validates username format
-func (v *Validator) ValidateUsername(username string) error {
-	if username == "" {
-		return fmt.Errorf("username cannot be empty")
-	}
-
-	// Check length
-	if len(username) < 3 {
-		return fmt.Errorf("username must be at least 3 characters long")
-	}
-	if len(username) > 50 {
-		return fmt.Errorf("username cannot exceed 50 characters")
-	}
-
-	// Check if it contains only alphanumeric characters, underscores, and hyphens
-	matched, err := regexp.MatchString(`^[a-zA-Z0-9_-]+$`, username)
-	if err != nil {
-		return fmt.Errorf("failed to validate username format: %w", err)
-	}
-
-	if !matched {
-		return fmt.Errorf("username can only contain letters, numbers, underscores, and hyphens")
-	}
-
-	// Check if it starts with a letter or number
-	if !regexp.MustCompile(`^[a-zA-Z0-9]`).MatchString(username) {
-		return fmt.Errorf("username must start with a letter or number")
-	}
-
-	// Check if it ends with a letter or number
-	if !regexp.MustCompile(`[a-zA-Z0-9]$`).MatchString(username) {
-		return fmt.Errorf("username must end with a letter or number")
 	}
 
 	return nil
@@ -152,185 +68,199 @@ func (v *Validator) ValidateUsername(username string) error {
 
 // ValidatePassword validates password strength
 func (v *Validator) ValidatePassword(password string) error {
-	if password == "" {
-		return fmt.Errorf("password cannot be empty")
-	}
-
-	// Check length
 	if len(password) < 8 {
 		return fmt.Errorf("password must be at least 8 characters long")
 	}
-	if len(password) > 128 {
-		return fmt.Errorf("password cannot exceed 128 characters")
-	}
 
 	// Check for at least one uppercase letter
-	if !regexp.MustCompile(`[A-Z]`).MatchString(password) {
+	hasUpper := regexp.MustCompile(`[A-Z]`).MatchString(password)
+	// Check for at least one lowercase letter
+	hasLower := regexp.MustCompile(`[a-z]`).MatchString(password)
+	// Check for at least one digit
+	hasDigit := regexp.MustCompile(`\d`).MatchString(password)
+	// Check for at least one special character
+	hasSpecial := regexp.MustCompile(`[!@#$%^&*()_+\-=\[\]{}|;':"\\|,.<>?~]`).MatchString(password)
+
+	if !hasUpper {
 		return fmt.Errorf("password must contain at least one uppercase letter")
 	}
-
-	// Check for at least one lowercase letter
-	if !regexp.MustCompile(`[a-z]`).MatchString(password) {
+	if !hasLower {
 		return fmt.Errorf("password must contain at least one lowercase letter")
 	}
-
-	// Check for at least one digit
-	if !regexp.MustCompile(`\d`).MatchString(password) {
+	if !hasDigit {
 		return fmt.Errorf("password must contain at least one digit")
 	}
-
-	// Check for at least one special character
-	if !regexp.MustCompile(`[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]`).MatchString(password) {
+	if !hasSpecial {
 		return fmt.Errorf("password must contain at least one special character")
 	}
 
 	return nil
 }
 
-// ValidateStruct validates a struct using tags
-func (v *Validator) ValidateStruct(s interface{}) error {
-	if s == nil {
-		return fmt.Errorf("struct cannot be nil")
+// ValidatePhoneNumber validates a phone number format
+func (v *Validator) ValidatePhoneNumber(phone string) error {
+	if phone == "" {
+		return fmt.Errorf("phone number cannot be empty")
 	}
 
-	if err := v.validate.Struct(s); err != nil {
-		if validationErrors, ok := err.(validator.ValidationErrors); ok {
-			var errors []string
-			for _, e := range validationErrors {
-				errors = append(errors, formatValidationError(e))
-			}
-			return fmt.Errorf("validation failed: %s", strings.Join(errors, "; "))
+	// Remove any non-digit characters for validation
+	digits := regexp.MustCompile(`\D`).ReplaceAllString(phone, "")
+
+	// Indian phone number validation (10 digits, starting with 6-9)
+	if len(digits) == 10 {
+		if regexp.MustCompile(`^[6-9]\d{9}$`).MatchString(digits) {
+			return nil
 		}
-		return fmt.Errorf("validation failed: %w", err)
+		return fmt.Errorf("phone number must start with 6, 7, 8, or 9")
+	}
+
+	// International format with country code (10-15 digits)
+	if len(digits) >= 10 && len(digits) <= 15 {
+		return nil
+	}
+
+	return fmt.Errorf("phone number must be 10 digits (Indian) or 10-15 digits (international)")
+}
+
+// ValidateAadhaarNumber validates an Aadhaar number format
+func (v *Validator) ValidateAadhaarNumber(aadhaar string) error {
+	if aadhaar == "" {
+		return fmt.Errorf("Aadhaar number cannot be empty")
+	}
+
+	// Remove any non-digit characters
+	digits := regexp.MustCompile(`\D`).ReplaceAllString(aadhaar, "")
+
+	// Aadhaar should be exactly 12 digits
+	if len(digits) != 12 {
+		return fmt.Errorf("Aadhaar number must be exactly 12 digits")
+	}
+
+	// Simple check for all same digits (invalid Aadhaar)
+	firstDigit := digits[0]
+	allSame := true
+	for i := 1; i < len(digits); i++ {
+		if digits[i] != firstDigit {
+			allSame = false
+			break
+		}
+	}
+
+	if allSame {
+		return fmt.Errorf("Aadhaar number cannot have all same digits")
 	}
 
 	return nil
 }
 
-// Helper functions
+// ParseListFilters parses query parameters into filter structure
+func (v *Validator) ParseListFilters(c *gin.Context) (interface{}, error) {
+	filters := make(map[string]interface{})
 
-func validateUsername(fl validator.FieldLevel) bool {
-	username := fl.Field().String()
-
-	// Check length
-	if len(username) < 3 || len(username) > 50 {
-		return false
-	}
-
-	// Check format
-	matched, _ := regexp.MatchString(`^[a-zA-Z0-9_-]+$`, username)
-	if !matched {
-		return false
-	}
-
-	// Check start and end
-	if !regexp.MustCompile(`^[a-zA-Z0-9]`).MatchString(username) {
-		return false
-	}
-	if !regexp.MustCompile(`[a-zA-Z0-9]$`).MatchString(username) {
-		return false
-	}
-
-	return true
-}
-
-func validatePassword(fl validator.FieldLevel) bool {
-	password := fl.Field().String()
-
-	// Check length
-	if len(password) < 8 || len(password) > 128 {
-		return false
-	}
-
-	// Check requirements
-	hasUpper := regexp.MustCompile(`[A-Z]`).MatchString(password)
-	hasLower := regexp.MustCompile(`[a-z]`).MatchString(password)
-	hasDigit := regexp.MustCompile(`\d`).MatchString(password)
-	hasSpecial := regexp.MustCompile(`[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]`).MatchString(password)
-
-	return hasUpper && hasLower && hasDigit && hasSpecial
-}
-
-func validateMobile(fl validator.FieldLevel) bool {
-	mobile := fl.Field().String()
-
-	// Remove non-digits
-	mobile = regexp.MustCompile(`[^\d]`).ReplaceAllString(mobile, "")
-
-	// Check length and prefix
-	if len(mobile) != 10 {
-		return false
-	}
-
-	validPrefixes := []string{"6", "7", "8", "9"}
-	firstDigit := string(mobile[0])
-	for _, prefix := range validPrefixes {
-		if firstDigit == prefix {
-			return true
+	// Parse pagination parameters
+	if limitStr := c.Query("limit"); limitStr != "" {
+		if limit, err := strconv.Atoi(limitStr); err == nil && limit > 0 && limit <= 100 {
+			filters["limit"] = limit
+		} else {
+			return nil, fmt.Errorf("invalid limit parameter: must be between 1 and 100")
 		}
+	} else {
+		filters["limit"] = 10 // default
+	}
+
+	if offsetStr := c.Query("offset"); offsetStr != "" {
+		if offset, err := strconv.Atoi(offsetStr); err == nil && offset >= 0 {
+			filters["offset"] = offset
+		} else {
+			return nil, fmt.Errorf("invalid offset parameter: must be >= 0")
+		}
+	} else {
+		filters["offset"] = 0 // default
+	}
+
+	// Parse search query
+	if query := c.Query("q"); query != "" {
+		filters["search"] = strings.TrimSpace(query)
+	}
+
+	// Parse sort parameters
+	if sortBy := c.Query("sort_by"); sortBy != "" {
+		filters["sort_by"] = sortBy
+
+		// Parse sort order
+		sortOrder := c.Query("sort_order")
+		if sortOrder == "" {
+			sortOrder = "asc"
+		}
+		if sortOrder != "asc" && sortOrder != "desc" {
+			return nil, fmt.Errorf("invalid sort_order: must be 'asc' or 'desc'")
+		}
+		filters["sort_order"] = sortOrder
+	}
+
+	// Parse filter by status
+	if status := c.Query("status"); status != "" {
+		filters["status"] = status
+	}
+
+	// Parse date range filters
+	if createdAfter := c.Query("created_after"); createdAfter != "" {
+		filters["created_after"] = createdAfter
+	}
+	if createdBefore := c.Query("created_before"); createdBefore != "" {
+		filters["created_before"] = createdBefore
+	}
+
+	return filters, nil
+}
+
+// Custom validation functions
+
+func validatePhoneNumber(fl validator.FieldLevel) bool {
+	phone := fl.Field().String()
+	if phone == "" {
+		return false
+	}
+
+	// Remove any non-digit characters for validation
+	digits := regexp.MustCompile(`\D`).ReplaceAllString(phone, "")
+
+	// Indian phone number validation (10 digits, starting with 6-9)
+	if len(digits) == 10 {
+		return regexp.MustCompile(`^[6-9]\d{9}$`).MatchString(digits)
+	}
+
+	// International format with country code (10-15 digits)
+	if len(digits) >= 10 && len(digits) <= 15 {
+		return true
 	}
 
 	return false
 }
 
-func validateAadhaar(fl validator.FieldLevel) bool {
+func validateAadhaarNumber(fl validator.FieldLevel) bool {
 	aadhaar := fl.Field().String()
-
-	// Remove non-digits
-	aadhaar = regexp.MustCompile(`[^\d]`).ReplaceAllString(aadhaar, "")
-
-	// Check length
-	if len(aadhaar) != 12 {
+	if aadhaar == "" {
 		return false
 	}
 
-	// Check if it doesn't start with 0 or 1
-	if strings.HasPrefix(aadhaar, "0") || strings.HasPrefix(aadhaar, "1") {
+	// Remove any non-digit characters
+	digits := regexp.MustCompile(`\D`).ReplaceAllString(aadhaar, "")
+
+	// Aadhaar should be exactly 12 digits
+	if len(digits) != 12 {
 		return false
 	}
 
-	return true
-}
-
-func validatePincode(fl validator.FieldLevel) bool {
-	pincode := fl.Field().String()
-
-	// Remove non-digits
-	pincode = regexp.MustCompile(`[^\d]`).ReplaceAllString(pincode, "")
-
-	// Check length
-	if len(pincode) != 6 {
-		return false
+	// Simple check for all same digits (invalid Aadhaar)
+	firstDigit := digits[0]
+	allSame := true
+	for _, digit := range digits {
+		if digit != firstDigit {
+			allSame = false
+			break
+		}
 	}
 
-	return true
-}
-
-func formatValidationError(e validator.FieldError) string {
-	field := e.Field()
-	tag := e.Tag()
-	param := e.Param()
-
-	switch tag {
-	case "required":
-		return fmt.Sprintf("%s is required", field)
-	case "min":
-		return fmt.Sprintf("%s must be at least %s characters long", field, param)
-	case "max":
-		return fmt.Sprintf("%s cannot exceed %s characters", field, param)
-	case "email":
-		return fmt.Sprintf("%s must be a valid email address", field)
-	case "username":
-		return fmt.Sprintf("%s must be a valid username (3-50 characters, alphanumeric with underscores and hyphens)", field)
-	case "password":
-		return fmt.Sprintf("%s must be a strong password (8-128 characters, with uppercase, lowercase, digit, and special character)", field)
-	case "mobile":
-		return fmt.Sprintf("%s must be a valid 10-digit mobile number", field)
-	case "aadhaar":
-		return fmt.Sprintf("%s must be a valid 12-digit Aadhaar number", field)
-	case "pincode":
-		return fmt.Sprintf("%s must be a valid 6-digit pincode", field)
-	default:
-		return fmt.Sprintf("%s failed validation for tag %s", field, tag)
-	}
+	return !allSame
 }

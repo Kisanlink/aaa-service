@@ -12,7 +12,7 @@ type RoleResponse struct {
 	responses.Response
 	ID          string   `json:"id"`
 	Name        string   `json:"name"`
-	Description *string  `json:"description,omitempty"`
+	Description string   `json:"description,omitempty"`
 	Permissions []string `json:"permissions,omitempty"`
 	CreatedAt   string   `json:"created_at"`
 	UpdatedAt   string   `json:"updated_at"`
@@ -20,11 +20,17 @@ type RoleResponse struct {
 
 // NewRoleResponse creates a new RoleResponse from a Role model
 func NewRoleResponse(role *models.Role) *RoleResponse {
+	// Convert permissions to string array
+	var permissionNames []string
+	for _, permission := range role.Permissions {
+		permissionNames = append(permissionNames, permission.Resource)
+	}
+
 	return &RoleResponse{
 		ID:          role.ID,
 		Name:        role.Name,
 		Description: role.Description,
-		Permissions: role.Permissions,
+		Permissions: permissionNames,
 		CreatedAt:   role.CreatedAt.Format(time.RFC3339),
 		UpdatedAt:   role.UpdatedAt.Format(time.RFC3339),
 	}
@@ -46,7 +52,7 @@ func (r *RoleResponse) GetName() string {
 }
 
 // GetDescription returns the description
-func (r *RoleResponse) GetDescription() *string {
+func (r *RoleResponse) GetDescription() string {
 	return r.Description
 }
 

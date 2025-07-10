@@ -9,6 +9,7 @@ import (
 	"github.com/Kisanlink/aaa-service/interfaces"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 	"golang.org/x/time/rate"
 )
 
@@ -29,13 +30,13 @@ func RequestID() gin.HandlerFunc {
 func Logger(logger interfaces.Logger) gin.HandlerFunc {
 	return gin.LoggerWithFormatter(func(param gin.LogFormatterParams) string {
 		logger.Info("HTTP Request",
-			"method", param.Method,
-			"path", param.Path,
-			"status", param.StatusCode,
-			"latency", param.Latency,
-			"client_ip", param.ClientIP,
-			"user_agent", param.Request.UserAgent(),
-			"request_id", param.Keys["request_id"],
+			zap.String("method", param.Method),
+			zap.String("path", param.Path),
+			zap.Int("status", param.StatusCode),
+			zap.Duration("latency", param.Latency),
+			zap.String("client_ip", param.ClientIP),
+			zap.String("user_agent", param.Request.UserAgent()),
+			zap.Any("request_id", param.Keys["request_id"]),
 		)
 		return ""
 	})
@@ -206,16 +207,16 @@ func Search() gin.HandlerFunc {
 	}
 }
 
-// ErrorHandler handles panics and errors
-func ErrorHandler(logger interfaces.Logger) gin.HandlerFunc {
+// PanicRecoveryHandler handles panics and errors
+func PanicRecoveryHandler(logger interfaces.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		defer func() {
 			if err := recover(); err != nil {
 				logger.Error("Panic recovered",
-					"error", err,
-					"path", c.Request.URL.Path,
-					"method", c.Request.Method,
-					"request_id", c.GetString("request_id"),
+					zap.Any("error", err),
+					zap.String("path", c.Request.URL.Path),
+					zap.String("method", c.Request.Method),
+					zap.String("request_id", c.GetString("request_id")),
 				)
 
 				c.JSON(http.StatusInternalServerError, gin.H{
@@ -267,11 +268,11 @@ func Metrics(logger interfaces.Logger) gin.HandlerFunc {
 
 		duration := time.Since(start)
 		logger.Info("Request metrics",
-			"method", c.Request.Method,
-			"path", c.Request.URL.Path,
-			"status", c.Writer.Status(),
-			"duration", duration,
-			"request_id", c.GetString("request_id"),
+			zap.String("method", c.Request.Method),
+			zap.String("path", c.Request.URL.Path),
+			zap.Int("status", c.Writer.Status()),
+			zap.Duration("duration", duration),
+			zap.String("request_id", c.GetString("request_id")),
 		)
 	}
 }

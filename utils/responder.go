@@ -7,6 +7,7 @@ import (
 	"github.com/Kisanlink/aaa-service/interfaces"
 	"github.com/Kisanlink/aaa-service/pkg/errors"
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
 // Responder implements the Responder interface
@@ -22,13 +23,7 @@ func NewResponder(logger interfaces.Logger) interfaces.Responder {
 }
 
 // SendSuccess sends a successful response
-func (r *Responder) SendSuccess(c interface{}, statusCode int, data interface{}) {
-	ginCtx, ok := c.(*gin.Context)
-	if !ok {
-		r.logger.Error("Invalid context type for responder")
-		return
-	}
-
+func (r *Responder) SendSuccess(c *gin.Context, statusCode int, data interface{}) {
 	response := gin.H{
 		"success":   true,
 		"timestamp": time.Now().UTC().Format(time.RFC3339),
@@ -36,21 +31,15 @@ func (r *Responder) SendSuccess(c interface{}, statusCode int, data interface{})
 	}
 
 	// Add request ID if available
-	if requestID := ginCtx.GetString("request_id"); requestID != "" {
+	if requestID := c.GetString("request_id"); requestID != "" {
 		response["request_id"] = requestID
 	}
 
-	ginCtx.JSON(statusCode, response)
+	c.JSON(statusCode, response)
 }
 
 // SendError sends an error response
 func (r *Responder) SendError(c *gin.Context, statusCode int, message string, err error) {
-	ginCtx, ok := c.(*gin.Context)
-	if !ok {
-		r.logger.Error("Invalid context type for responder")
-		return
-	}
-
 	response := gin.H{
 		"success":   false,
 		"timestamp": time.Now().UTC().Format(time.RFC3339),
@@ -58,7 +47,7 @@ func (r *Responder) SendError(c *gin.Context, statusCode int, message string, er
 	}
 
 	// Add request ID if available
-	if requestID := ginCtx.GetString("request_id"); requestID != "" {
+	if requestID := c.GetString("request_id"); requestID != "" {
 		response["request_id"] = requestID
 	}
 
@@ -98,19 +87,19 @@ func (r *Responder) SendError(c *gin.Context, statusCode int, message string, er
 	}
 
 	// Log the error
-	r.logger.Error("HTTP error response")
+	r.logger.Error("HTTP error response",
+		zap.String("path", c.Request.URL.Path),
+		zap.String("method", c.Request.Method),
+		zap.Int("status", statusCode),
+		zap.String("message", message),
+		zap.Error(err),
+	)
 
-	ginCtx.JSON(statusCode, response)
+	c.JSON(statusCode, response)
 }
 
 // SendValidationError sends a validation error response
-func (r *Responder) SendValidationError(c interface{}, errors []interface{}) {
-	ginCtx, ok := c.(*gin.Context)
-	if !ok {
-		r.logger.Error("Invalid context type for responder")
-		return
-	}
-
+func (r *Responder) SendValidationError(c *gin.Context, errors []string) {
 	response := gin.H{
 		"success":   false,
 		"timestamp": time.Now().UTC().Format(time.RFC3339),
@@ -120,39 +109,41 @@ func (r *Responder) SendValidationError(c interface{}, errors []interface{}) {
 	}
 
 	// Add request ID if available
-	if requestID := ginCtx.GetString("request_id"); requestID != "" {
+	if requestID := c.GetString("request_id"); requestID != "" {
 		response["request_id"] = requestID
 	}
 
 	// Log validation errors
 	r.logger.Warn("Validation error response",
-		"errors", errors,
-		"path", ginCtx.Request.URL.Path,
-		"method", ginCtx.Request.Method,
-		"ip", ginCtx.ClientIP(),
+		zap.Strings("errors", errors),
+		zap.String("path", c.Request.URL.Path),
+		zap.String("method", c.Request.Method),
+		zap.String("ip", c.ClientIP()),
 	)
 
-	ginCtx.JSON(http.StatusBadRequest, response)
+	c.JSON(http.StatusBadRequest, response)
 }
 
+// SendInternalError sends a 500 Internal Server Error response
+func (r *Responder) SendInternalError(c *gin.Context, err error) {
+	message := "Internal server error"
+	r.SendError(c, http.StatusInternalServerError, message, errors.NewInternalError(err))
+}
+
+// Additional utility methods (not part of the interface but useful)
+
 // SendCreated sends a 201 Created response
-func (r *Responder) SendCreated(c interface{}, data interface{}) {
+func (r *Responder) SendCreated(c *gin.Context, data interface{}) {
 	r.SendSuccess(c, http.StatusCreated, data)
 }
 
 // SendNoContent sends a 204 No Content response
-func (r *Responder) SendNoContent(c interface{}) {
-	ginCtx, ok := c.(*gin.Context)
-	if !ok {
-		r.logger.Error("Invalid context type for responder")
-		return
-	}
-
-	ginCtx.Status(http.StatusNoContent)
+func (r *Responder) SendNoContent(c *gin.Context) {
+	c.Status(http.StatusNoContent)
 }
 
 // SendUnauthorized sends a 401 Unauthorized response
-func (r *Responder) SendUnauthorized(c interface{}, message string) {
+func (r *Responder) SendUnauthorized(c *gin.Context, message string) {
 	if message == "" {
 		message = "Unauthorized access"
 	}
@@ -160,7 +151,7 @@ func (r *Responder) SendUnauthorized(c interface{}, message string) {
 }
 
 // SendForbidden sends a 403 Forbidden response
-func (r *Responder) SendForbidden(c interface{}, message string) {
+func (r *Responder) SendForbidden(c *gin.Context, message string) {
 	if message == "" {
 		message = "Access forbidden"
 	}
@@ -168,7 +159,7 @@ func (r *Responder) SendForbidden(c interface{}, message string) {
 }
 
 // SendNotFound sends a 404 Not Found response
-func (r *Responder) SendNotFound(c interface{}, message string) {
+func (r *Responder) SendNotFound(c *gin.Context, message string) {
 	if message == "" {
 		message = "Resource not found"
 	}
@@ -176,23 +167,15 @@ func (r *Responder) SendNotFound(c interface{}, message string) {
 }
 
 // SendConflict sends a 409 Conflict response
-func (r *Responder) SendConflict(c interface{}, message string) {
+func (r *Responder) SendConflict(c *gin.Context, message string) {
 	if message == "" {
 		message = "Resource conflict"
 	}
 	r.SendError(c, http.StatusConflict, message, errors.NewConflictError(message))
 }
 
-// SendInternalError sends a 500 Internal Server Error response
-func (r *Responder) SendInternalError(c interface{}, message string, err error) {
-	if message == "" {
-		message = "Internal server error"
-	}
-	r.SendError(c, http.StatusInternalServerError, message, errors.NewInternalError(err))
-}
-
 // SendBadRequest sends a 400 Bad Request response
-func (r *Responder) SendBadRequest(c interface{}, message string, err error) {
+func (r *Responder) SendBadRequest(c *gin.Context, message string, err error) {
 	if message == "" {
 		message = "Bad request"
 	}
@@ -200,13 +183,7 @@ func (r *Responder) SendBadRequest(c interface{}, message string, err error) {
 }
 
 // SendPaginatedResponse sends a paginated response
-func (r *Responder) SendPaginatedResponse(c interface{}, data interface{}, total, limit, offset int) {
-	ginCtx, ok := c.(*gin.Context)
-	if !ok {
-		r.logger.Error("Invalid context type for responder")
-		return
-	}
-
+func (r *Responder) SendPaginatedResponse(c *gin.Context, data interface{}, total, limit, offset int) {
 	response := gin.H{
 		"success":   true,
 		"timestamp": time.Now().UTC().Format(time.RFC3339),
@@ -220,69 +197,39 @@ func (r *Responder) SendPaginatedResponse(c interface{}, data interface{}, total
 	}
 
 	// Add request ID if available
-	if requestID := ginCtx.GetString("request_id"); requestID != "" {
+	if requestID := c.GetString("request_id"); requestID != "" {
 		response["request_id"] = requestID
 	}
 
-	ginCtx.JSON(http.StatusOK, response)
+	c.JSON(http.StatusOK, response)
 }
 
 // SendFile sends a file response
-func (r *Responder) SendFile(c interface{}, filepath, filename string) {
-	ginCtx, ok := c.(*gin.Context)
-	if !ok {
-		r.logger.Error("Invalid context type for responder")
-		return
-	}
-
-	ginCtx.FileAttachment(filepath, filename)
+func (r *Responder) SendFile(c *gin.Context, filepath, filename string) {
+	c.FileAttachment(filepath, filename)
 }
 
 // SendRedirect sends a redirect response
-func (r *Responder) SendRedirect(c interface{}, location string, permanent bool) {
-	ginCtx, ok := c.(*gin.Context)
-	if !ok {
-		r.logger.Error("Invalid context type for responder")
-		return
-	}
-
+func (r *Responder) SendRedirect(c *gin.Context, location string, permanent bool) {
 	statusCode := http.StatusFound // 302
 	if permanent {
 		statusCode = http.StatusMovedPermanently // 301
 	}
 
-	ginCtx.Redirect(statusCode, location)
+	c.Redirect(statusCode, location)
 }
 
 // SendJSON sends a JSON response with custom status code
-func (r *Responder) SendJSON(c interface{}, statusCode int, data interface{}) {
-	ginCtx, ok := c.(*gin.Context)
-	if !ok {
-		r.logger.Error("Invalid context type for responder")
-		return
-	}
-
-	ginCtx.JSON(statusCode, data)
+func (r *Responder) SendJSON(c *gin.Context, statusCode int, data interface{}) {
+	c.JSON(statusCode, data)
 }
 
 // SendXML sends an XML response
-func (r *Responder) SendXML(c interface{}, statusCode int, data interface{}) {
-	ginCtx, ok := c.(*gin.Context)
-	if !ok {
-		r.logger.Error("Invalid context type for responder")
-		return
-	}
-
-	ginCtx.XML(statusCode, data)
+func (r *Responder) SendXML(c *gin.Context, statusCode int, data interface{}) {
+	c.XML(statusCode, data)
 }
 
 // SendYAML sends a YAML response
-func (r *Responder) SendYAML(c interface{}, statusCode int, data interface{}) {
-	ginCtx, ok := c.(*gin.Context)
-	if !ok {
-		r.logger.Error("Invalid context type for responder")
-		return
-	}
-
-	ginCtx.YAML(statusCode, data)
+func (r *Responder) SendYAML(c *gin.Context, statusCode int, data interface{}) {
+	c.YAML(statusCode, data)
 }
