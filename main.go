@@ -112,9 +112,9 @@ func runExample(ctx context.Context, userRepo *users.UserRepository, addressRepo
 	logger.Info("Starting example usage of refactored AAA service")
 
 	// Create a new user
-	user := models.NewUser("testuser", "password123", 9876543210)
-	user.Name = &[]string{"Test User"}[0]
-	user.CountryCode = &[]string{"+91"}[0]
+	user := models.NewUser("testuser", "password123")
+	user.Profile.Name = &[]string{"Test User"}[0]
+	user.Profile.CountryCode = &[]string{"+91"}[0]
 
 	if err := userRepo.Create(ctx, user); err != nil {
 		return fmt.Errorf("failed to create user: %w", err)

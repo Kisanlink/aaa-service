@@ -10,6 +10,9 @@ import (
 	"github.com/Kisanlink/aaa-service/handlers/roles"
 	"github.com/Kisanlink/aaa-service/handlers/users"
 	"github.com/Kisanlink/aaa-service/middleware"
+	addressRepo "github.com/Kisanlink/aaa-service/repositories/addresses"
+	roleRepo "github.com/Kisanlink/aaa-service/repositories/roles"
+	userRepo "github.com/Kisanlink/aaa-service/repositories/users"
 	"github.com/Kisanlink/aaa-service/routes"
 	"github.com/Kisanlink/aaa-service/services"
 	"github.com/Kisanlink/aaa-service/utils"
@@ -43,18 +46,31 @@ func NewHTTPServer(dbManager *db.DatabaseManager, port string, logger *zap.Logge
 	// Initialize Gin router
 	router := gin.New()
 
-	// Initialize services
-	addressService := services.NewAddressService(logger) // TODO: Fix logger interface issue
-	roleService := services.NewRoleService(logger)       // TODO: Fix logger interface issue
+	// Initialize logger adapter for interfaces.Logger compatibility
+	loggerAdapter := utils.NewLoggerAdapter(logger)
+
+	// Get database manager for repositories
+	pgManager := dbManager.GetPostgresManager()
+	primaryDBManager := dbManager.GetManager(pgManager.GetBackendType())
+
+	// Initialize repositories
+	userRepository := userRepo.NewUserRepository(primaryDBManager)
+	addressRepository := addressRepo.NewAddressRepository(primaryDBManager)
+	roleRepository := roleRepo.NewRoleRepository(primaryDBManager)
+	userRoleRepository := roleRepo.NewUserRoleRepository(primaryDBManager)
+
+	// Initialize cache service
+	cacheService := services.NewCacheService("localhost:6379", "", 0, loggerAdapter)
 
 	// Initialize utils
-	validator := utils.NewValidator(logger) // TODO: Fix logger interface issue
-	responder := utils.NewResponder(logger) // TODO: Fix logger interface issue
+	validator := utils.NewValidator()
+	responder := utils.NewResponder(loggerAdapter)
 
-	// Initialize handlers
-	pgManager := dbManager.GetPostgresManager()
-	db, _ := pgManager.GetDB(context.TODO(), false) // TODO: Handle error properly
-	userService := services.NewUserService(db, db, db, nil, logger, validator)
+	// Initialize services
+	addressService := services.NewAddressService(addressRepository, cacheService, loggerAdapter, validator)
+	roleService := services.NewRoleService(roleRepository, cacheService, loggerAdapter, validator)
+	userService := services.NewUserService(userRepository, roleRepository, userRoleRepository, cacheService, logger, validator)
+
 	userHandler := users.NewUserHandler(userService, validator, responder, logger)
 
 	handlers := &ServerHandlers{
@@ -87,9 +103,9 @@ func (s *HTTPServer) setupMiddleware() {
 	routes.SetupMiddleware(s.router,
 		cors.Default(),
 		middleware.RequestID(),
-		middleware.Logger(s.logger), // TODO: Fix logger interface issue
-		middleware.ErrorHandler(),
-		middleware.Recovery(),
+		middleware.Logger(utils.NewLoggerAdapter(s.logger)),
+		middleware.ErrorHandler,
+		middleware.PanicRecoveryHandler(utils.NewLoggerAdapter(s.logger)),
 	)
 }
 

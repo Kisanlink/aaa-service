@@ -255,8 +255,8 @@ func validateAadhaarNumber(fl validator.FieldLevel) bool {
 	// Simple check for all same digits (invalid Aadhaar)
 	firstDigit := digits[0]
 	allSame := true
-	for _, digit := range digits {
-		if digit != firstDigit {
+	for i := 1; i < len(digits); i++ {
+		if digits[i] != firstDigit {
 			allSame = false
 			break
 		}

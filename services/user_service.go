@@ -43,24 +43,25 @@ func NewUserService(
 }
 
 // CreateUser creates a new user with proper validation and business logic
-func (s *UserService) CreateUser(ctx context.Context, username, password string) (*userResponses.UserResponse, error) {
+func (s *UserService) CreateUser(ctx context.Context, req *users.CreateUserRequest) (*userResponses.UserResponse, error) {
 	s.logger.Info("Creating new user")
 
-	// Basic validation
-	if username == "" {
-		return nil, errors.NewValidationError("username is required")
+	// Validate request
+	if req == nil {
+		return nil, errors.NewValidationError("create user request is required")
 	}
-	if password == "" {
-		return nil, errors.NewValidationError("password is required")
+
+	if err := req.Validate(); err != nil {
+		return nil, errors.NewValidationError(err.Error())
 	}
 
 	// Check if user already exists
-	if existingUser, err := s.userRepo.GetByUsername(ctx, username); err == nil && existingUser != nil {
+	if existingUser, err := s.userRepo.GetByUsername(ctx, req.Username); err == nil && existingUser != nil {
 		return nil, errors.NewConflictError("user already exists with this username")
 	}
 
 	// Create user model
-	user := models.NewUser(username, password)
+	user := models.NewUser(req.Username, req.Password)
 
 	// Hash password before saving
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
@@ -232,10 +233,6 @@ func (s *UserService) UpdateUser(ctx context.Context, req *users.UpdateUserReque
 	if req.Status != nil {
 		existingUser.Status = req.Status
 	}
-	if req.Name != nil {
-		// Note: User model might not have Name field, this would need to be added
-		// For now, we'll skip non-status fields
-	}
 	// Add other field updates as needed
 
 	// Update in database
@@ -274,7 +271,7 @@ func (s *UserService) DeleteUser(ctx context.Context, userID string) (*userRespo
 	// Delete user from database
 	if err := s.userRepo.Delete(ctx, userID); err != nil {
 		s.logger.Error("Failed to delete user", zap.Error(err))
-		return nil, errors.NewInternalError("failed to delete user", err)
+		return nil, errors.NewInternalError(fmt.Errorf("failed to delete user: %w", err))
 	}
 
 	// Clear cache
@@ -319,27 +316,27 @@ func (s *UserService) ListUsers(ctx context.Context, filters interface{}) (inter
 	users, err := s.userRepo.List(ctx, listFilters.Limit, listFilters.Offset)
 	if err != nil {
 		s.logger.Error("Failed to list users", zap.Error(err))
-		return nil, errors.NewInternalError("failed to list users", err)
+		return nil, errors.NewInternalError(fmt.Errorf("failed to list users: %w", err))
 	}
 
 	// Get total count
 	totalCount, err := s.userRepo.Count(ctx)
 	if err != nil {
 		s.logger.Error("Failed to get user count", zap.Error(err))
-		return nil, errors.NewInternalError("failed to get user count", err)
+		return nil, errors.NewInternalError(fmt.Errorf("failed to get user count: %w", err))
 	}
 
 	// Convert to response format
-	userResponses := make([]*userResponses.UserResponse, len(users))
+	userResponseList := make([]*userResponses.UserResponse, len(users))
 	for i, user := range users {
-		userResponses[i] = &userResponses.UserResponse{}
-		userResponses[i].FromModel(user)
+		userResponseList[i] = &userResponses.UserResponse{}
+		userResponseList[i].FromModel(user)
 	}
 
 	s.logger.Info("Users listed successfully", zap.Int("count", len(users)))
 
 	return map[string]interface{}{
-		"users":  userResponses,
+		"users":  userResponseList,
 		"total":  totalCount,
 		"limit":  listFilters.Limit,
 		"offset": listFilters.Offset,
@@ -374,18 +371,18 @@ func (s *UserService) SearchUsers(ctx context.Context, query string, limit, offs
 	users, err := s.userRepo.Search(ctx, query, limit, offset)
 	if err != nil {
 		s.logger.Error("Failed to search users", zap.Error(err))
-		return nil, errors.NewInternalError("failed to search users", err)
+		return nil, errors.NewInternalError(fmt.Errorf("failed to search users: %w", err))
 	}
 
 	// Convert to response format
-	userResponses := make([]*userResponses.UserResponse, len(users))
+	userResponseList := make([]*userResponses.UserResponse, len(users))
 	for i, user := range users {
-		userResponses[i] = &userResponses.UserResponse{}
-		userResponses[i].FromModel(user)
+		userResponseList[i] = &userResponses.UserResponse{}
+		userResponseList[i].FromModel(user)
 	}
 
 	result := map[string]interface{}{
-		"users":  userResponses,
+		"users":  userResponseList,
 		"query":  query,
 		"limit":  limit,
 		"offset": offset,
@@ -429,7 +426,7 @@ func (s *UserService) ValidateUser(ctx context.Context, userID string) (*userRes
 	// Update in database
 	if err := s.userRepo.Update(ctx, user); err != nil {
 		s.logger.Error("Failed to validate user", zap.Error(err))
-		return nil, errors.NewInternalError("failed to validate user", err)
+		return nil, errors.NewInternalError(fmt.Errorf("failed to validate user: %w", err))
 	}
 
 	// Clear cache
@@ -443,7 +440,7 @@ func (s *UserService) ValidateUser(ctx context.Context, userID string) (*userRes
 	return response, nil
 }
 
-// AssignRole assigns a role to a user using kisanlink-db transaction
+// AssignRole assigns a role to a user using a transaction
 func (s *UserService) AssignRole(ctx context.Context, userID, roleID string) (*userResponses.UserResponse, error) {
 	s.logger.Info("Assigning role to user", zap.String("userID", userID), zap.String("roleID", roleID))
 
@@ -454,43 +451,34 @@ func (s *UserService) AssignRole(ctx context.Context, userID, roleID string) (*u
 
 	var user *models.User
 
-	// Execute role assignment within a transaction using kisanlink-db
-	err := s.userRepo.WithTransaction(ctx, func(txCtx context.Context) error {
-		// Check if user exists
-		var err error
-		user, err = s.userRepo.GetByID(txCtx, userID)
-		if err != nil {
-			return errors.NewNotFoundError("user not found")
-		}
-
-		// Check if role exists
-		if _, err := s.roleRepo.GetByID(txCtx, roleID); err != nil {
-			return errors.NewNotFoundError("role not found")
-		}
-
-		// Check if user already has this role
-		if existing, err := s.userRoleRepo.GetByUserAndRole(txCtx, userID, roleID); err == nil && existing != nil {
-			return errors.NewConflictError("user already has this role")
-		}
-
-		// Create user role assignment
-		userRole := &models.UserRole{
-			UserID:   userID,
-			RoleID:   roleID,
-			IsActive: true,
-		}
-
-		// Save the user role assignment
-		if err := s.userRoleRepo.Create(txCtx, userRole); err != nil {
-			return fmt.Errorf("failed to assign role: %w", err)
-		}
-
-		return nil
-	})
-
+	// For now, we'll do this without a transaction wrapper since the interface doesn't support it
+	// Check if user exists
+	var err error
+	user, err = s.userRepo.GetByID(ctx, userID)
 	if err != nil {
-		s.logger.Error("Failed to assign role", zap.Error(err))
-		return nil, err
+		return nil, errors.NewNotFoundError("user not found")
+	}
+
+	// Check if role exists
+	if _, err := s.roleRepo.GetByID(ctx, roleID); err != nil {
+		return nil, errors.NewNotFoundError("role not found")
+	}
+
+	// Check if user already has this role
+	if existing, err := s.userRoleRepo.GetByUserAndRole(ctx, userID, roleID); err == nil && existing != nil {
+		return nil, errors.NewConflictError("user already has this role")
+	}
+
+	// Create user role assignment
+	userRole := &models.UserRole{
+		UserID:   userID,
+		RoleID:   roleID,
+		IsActive: true,
+	}
+
+	// Save the user role assignment
+	if err := s.userRoleRepo.Create(ctx, userRole); err != nil {
+		return nil, errors.NewInternalError(fmt.Errorf("failed to assign role: %w", err))
 	}
 
 	// Clear cache
@@ -520,16 +508,10 @@ func (s *UserService) RemoveRole(ctx context.Context, userID, roleID string) (*u
 		return nil, errors.NewNotFoundError("user not found")
 	}
 
-	// Check if user role assignment exists
-	userRole, err := s.userRoleRepo.GetByUserAndRole(ctx, userID, roleID)
-	if err != nil || userRole == nil {
-		return nil, errors.NewNotFoundError("user role assignment not found")
-	}
-
-	// Delete user role assignment
-	if err := s.userRoleRepo.Delete(ctx, userRole.ID); err != nil {
-		s.logger.Error("Failed to remove role from user", zap.Error(err))
-		return nil, errors.NewInternalError(err)
+	// Remove the user role assignment
+	if err := s.userRoleRepo.DeleteByUserAndRole(ctx, userID, roleID); err != nil {
+		s.logger.Error("Failed to remove role", zap.Error(err))
+		return nil, errors.NewInternalError(fmt.Errorf("failed to remove role: %w", err))
 	}
 
 	// Clear cache
@@ -544,7 +526,7 @@ func (s *UserService) RemoveRole(ctx context.Context, userID, roleID string) (*u
 	return response, nil
 }
 
-// GetUserRoles gets all roles for a user
+// GetUserRoles retrieves roles for a user
 func (s *UserService) GetUserRoles(ctx context.Context, userID string) (interface{}, error) {
 	s.logger.Info("Getting user roles", zap.String("userID", userID))
 
@@ -564,7 +546,7 @@ func (s *UserService) GetUserRoles(ctx context.Context, userID string) (interfac
 	userRoles, err := s.userRoleRepo.GetByUserID(ctx, userID)
 	if err != nil {
 		s.logger.Error("Failed to get user roles", zap.Error(err))
-		return nil, errors.NewInternalError(err)
+		return nil, errors.NewInternalError(fmt.Errorf("failed to get user roles: %w", err))
 	}
 
 	// Convert to response format

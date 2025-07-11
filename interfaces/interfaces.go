@@ -6,6 +6,7 @@ import (
 	"github.com/Kisanlink/aaa-service/entities/models"
 	userRequests "github.com/Kisanlink/aaa-service/entities/requests/users"
 	userResponses "github.com/Kisanlink/aaa-service/entities/responses/users"
+	"github.com/Kisanlink/kisanlink-db/pkg/base"
 	"github.com/Kisanlink/kisanlink-db/pkg/db"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -68,20 +69,16 @@ type Responder interface {
 	SendInternalError(c *gin.Context, err error)
 }
 
-// Repository interfaces
+// Repository interfaces - now inheriting from kisanlink-db base interfaces
 
 // UserRepository interface for user data operations
 type UserRepository interface {
-	Create(ctx context.Context, user *models.User) error
-	GetByID(ctx context.Context, id string) (*models.User, error)
+	base.FilterableRepository[*models.User]
+	// Additional user-specific methods
 	GetByUsername(ctx context.Context, username string) (*models.User, error)
 	GetByMobileNumber(ctx context.Context, mobileNumber uint64) (*models.User, error)
 	GetByAadhaarNumber(ctx context.Context, aadhaarNumber string) (*models.User, error)
-	Update(ctx context.Context, user *models.User) error
-	Delete(ctx context.Context, id string) error
-	List(ctx context.Context, limit, offset int) ([]*models.User, error)
 	ListActive(ctx context.Context, limit, offset int) ([]*models.User, error)
-	Count(ctx context.Context) (int64, error)
 	CountActive(ctx context.Context) (int64, error)
 	GetWithRoles(ctx context.Context, userID string) (*models.User, error)
 	GetWithAddress(ctx context.Context, userID string) (*models.User, error)
@@ -91,38 +88,29 @@ type UserRepository interface {
 
 // AddressRepository interface for address data operations
 type AddressRepository interface {
-	Create(ctx context.Context, address *models.Address) error
-	GetByID(ctx context.Context, id string) (*models.Address, error)
+	base.FilterableRepository[*models.Address]
+	// Additional address-specific methods
 	GetByUserID(ctx context.Context, userID string) ([]*models.Address, error)
-	Update(ctx context.Context, address *models.Address) error
-	Delete(ctx context.Context, id string) error
-	List(ctx context.Context, limit, offset int) ([]*models.Address, error)
 	Search(ctx context.Context, query string, limit, offset int) ([]*models.Address, error)
 }
 
 // RoleRepository interface for role data operations
 type RoleRepository interface {
-	Create(ctx context.Context, role *models.Role) error
-	GetByID(ctx context.Context, id string) (*models.Role, error)
+	base.FilterableRepository[*models.Role]
+	// Additional role-specific methods
 	GetByName(ctx context.Context, name string) (*models.Role, error)
-	Update(ctx context.Context, role *models.Role) error
-	Delete(ctx context.Context, id string) error
-	List(ctx context.Context, limit, offset int) ([]*models.Role, error)
 	GetActive(ctx context.Context, limit, offset int) ([]*models.Role, error)
 	Search(ctx context.Context, query string, limit, offset int) ([]*models.Role, error)
 }
 
 // UserRoleRepository interface for user-role relationship operations
 type UserRoleRepository interface {
-	Create(ctx context.Context, userRole *models.UserRole) error
-	GetByID(ctx context.Context, id string) (*models.UserRole, error)
+	base.FilterableRepository[*models.UserRole]
+	// Additional user-role specific methods
 	GetByUserID(ctx context.Context, userID string) ([]*models.UserRole, error)
 	GetByRoleID(ctx context.Context, roleID string) ([]*models.UserRole, error)
 	GetByUserAndRole(ctx context.Context, userID, roleID string) (*models.UserRole, error)
-	Update(ctx context.Context, userRole *models.UserRole) error
-	Delete(ctx context.Context, id string) error
 	DeleteByUserAndRole(ctx context.Context, userID, roleID string) error
-	List(ctx context.Context, limit, offset int) ([]*models.UserRole, error)
 	GetActiveByUserID(ctx context.Context, userID string) ([]*models.UserRole, error)
 }
 

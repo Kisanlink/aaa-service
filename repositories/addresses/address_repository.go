@@ -5,18 +5,21 @@ import (
 	"fmt"
 
 	"github.com/Kisanlink/aaa-service/entities/models"
+	"github.com/Kisanlink/kisanlink-db/pkg/base"
 	"github.com/Kisanlink/kisanlink-db/pkg/db"
 )
 
 // AddressRepository handles database operations for Address entities
 type AddressRepository struct {
+	*base.BaseFilterableRepository[*models.Address]
 	dbManager db.DBManager
 }
 
 // NewAddressRepository creates a new AddressRepository instance
 func NewAddressRepository(dbManager db.DBManager) *AddressRepository {
 	return &AddressRepository{
-		dbManager: dbManager,
+		BaseFilterableRepository: base.NewBaseFilterableRepository[*models.Address](),
+		dbManager:                dbManager,
 	}
 }
 
@@ -37,26 +40,6 @@ func (r *AddressRepository) GetByID(ctx context.Context, id string) (*models.Add
 	return &address, nil
 }
 
-// GetByUserID retrieves addresses by user ID
-func (r *AddressRepository) GetByUserID(ctx context.Context, userID string) ([]*models.Address, error) {
-	filters := []db.Filter{
-		r.dbManager.BuildFilter("user_id", db.FilterOpEqual, userID),
-	}
-
-	var addresses []models.Address
-	if err := r.dbManager.List(ctx, filters, &addresses); err != nil {
-		return nil, fmt.Errorf("failed to get addresses by user ID: %w", err)
-	}
-
-	// Convert []models.Address to []*models.Address
-	results := make([]*models.Address, len(addresses))
-	for i, address := range addresses {
-		results[i] = &address
-	}
-
-	return results, nil
-}
-
 // Update updates an existing address
 func (r *AddressRepository) Update(ctx context.Context, address *models.Address) error {
 	if err := address.BeforeUpdate(); err != nil {
@@ -71,44 +54,62 @@ func (r *AddressRepository) Delete(ctx context.Context, id string) error {
 }
 
 // List retrieves a list of addresses with pagination
-func (r *AddressRepository) List(ctx context.Context, filters []db.Filter, limit, offset int) ([]*models.Address, error) {
+func (r *AddressRepository) List(ctx context.Context, limit, offset int) ([]*models.Address, error) {
 	var addresses []models.Address
-	if err := r.dbManager.List(ctx, filters, &addresses); err != nil {
+	if err := r.dbManager.List(ctx, []db.Filter{}, &addresses); err != nil {
 		return nil, fmt.Errorf("failed to list addresses: %w", err)
 	}
 
 	// Convert []models.Address to []*models.Address
-	results := make([]*models.Address, len(addresses))
-	for i, address := range addresses {
-		results[i] = &address
+	result := make([]*models.Address, len(addresses))
+	for i := range addresses {
+		result[i] = &addresses[i]
 	}
 
-	return results, nil
+	return result, nil
 }
 
-// GetByPincode retrieves addresses by pincode
-func (r *AddressRepository) GetByPincode(ctx context.Context, pincode string) ([]*models.Address, error) {
-	filters := []db.Filter{
-		r.dbManager.BuildFilter("pincode", db.FilterOpEqual, pincode),
-	}
-
-	return r.List(ctx, filters, 0, 0)
+// Count returns the total number of addresses
+func (r *AddressRepository) Count(ctx context.Context) (int64, error) {
+	return r.BaseFilterableRepository.Count(ctx)
 }
 
-// GetByState retrieves addresses by state
-func (r *AddressRepository) GetByState(ctx context.Context, state string) ([]*models.Address, error) {
+// GetByUserID retrieves addresses by user ID
+func (r *AddressRepository) GetByUserID(ctx context.Context, userID string) ([]*models.Address, error) {
 	filters := []db.Filter{
-		r.dbManager.BuildFilter("state", db.FilterOpEqual, state),
+		r.dbManager.BuildFilter("user_id", db.FilterOpEqual, userID),
 	}
 
-	return r.List(ctx, filters, 0, 0)
+	var addresses []models.Address
+	if err := r.dbManager.List(ctx, filters, &addresses); err != nil {
+		return nil, fmt.Errorf("failed to get addresses by user ID: %w", err)
+	}
+
+	// Convert []models.Address to []*models.Address
+	result := make([]*models.Address, len(addresses))
+	for i := range addresses {
+		result[i] = &addresses[i]
+	}
+
+	return result, nil
 }
 
-// GetByDistrict retrieves addresses by district
-func (r *AddressRepository) GetByDistrict(ctx context.Context, district string) ([]*models.Address, error) {
+// Search searches addresses by keyword
+func (r *AddressRepository) Search(ctx context.Context, query string, limit, offset int) ([]*models.Address, error) {
 	filters := []db.Filter{
-		r.dbManager.BuildFilter("district", db.FilterOpEqual, district),
+		r.dbManager.BuildFilter("full_address", db.FilterOpContains, query),
 	}
 
-	return r.List(ctx, filters, 0, 0)
+	var addresses []models.Address
+	if err := r.dbManager.List(ctx, filters, &addresses); err != nil {
+		return nil, fmt.Errorf("failed to search addresses: %w", err)
+	}
+
+	// Convert []models.Address to []*models.Address
+	result := make([]*models.Address, len(addresses))
+	for i := range addresses {
+		result[i] = &addresses[i]
+	}
+
+	return result, nil
 }
