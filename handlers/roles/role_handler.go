@@ -61,7 +61,7 @@ func (h *RoleHandler) CreateRole(c *gin.Context) {
 	role := models.NewRole(req.Name, description)
 
 	// Create role through service
-	result, err := h.roleService.CreateRole(c.Request.Context(), role)
+	err := h.roleService.CreateRole(c.Request.Context(), role)
 	if err != nil {
 		h.logger.Error("Failed to create role", zap.Error(err))
 		if conflictErr, ok := err.(*errors.ConflictError); ok {
@@ -73,7 +73,7 @@ func (h *RoleHandler) CreateRole(c *gin.Context) {
 	}
 
 	h.logger.Info("Role created successfully", zap.String("roleID", role.ID))
-	h.responder.SendSuccess(c, http.StatusCreated, result)
+	h.responder.SendSuccess(c, http.StatusCreated, role)
 }
 
 // GetRole handles GET /v1/roles/:id
@@ -134,7 +134,7 @@ func (h *RoleHandler) UpdateRole(c *gin.Context) {
 	role.ID = roleID
 
 	// Update role through service
-	result, err := h.roleService.UpdateRole(c.Request.Context(), role)
+	err := h.roleService.UpdateRole(c.Request.Context(), role)
 	if err != nil {
 		h.logger.Error("Failed to update role", zap.Error(err))
 		if notFoundErr, ok := err.(*errors.NotFoundError); ok {
@@ -150,7 +150,7 @@ func (h *RoleHandler) UpdateRole(c *gin.Context) {
 	}
 
 	h.logger.Info("Role updated successfully", zap.String("roleID", roleID))
-	h.responder.SendSuccess(c, http.StatusOK, result)
+	h.responder.SendSuccess(c, http.StatusOK, role)
 }
 
 // DeleteRole handles DELETE /v1/roles/:id
@@ -204,11 +204,7 @@ func (h *RoleHandler) ListRoles(c *gin.Context) {
 	}
 
 	// List roles through service
-	filters := map[string]interface{}{
-		"limit":  limit,
-		"offset": offset,
-	}
-	result, err := h.roleService.ListRoles(c.Request.Context(), filters)
+	result, err := h.roleService.ListRoles(c.Request.Context(), limit, offset)
 	if err != nil {
 		h.logger.Error("Failed to list roles", zap.Error(err))
 		h.responder.SendInternalError(c, err)

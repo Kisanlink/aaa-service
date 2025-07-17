@@ -35,38 +35,32 @@ func NewAddressService(
 }
 
 // CreateAddress creates a new address
-func (s *AddressService) CreateAddress(ctx context.Context, req interface{}) (interface{}, error) {
+func (s *AddressService) CreateAddress(ctx context.Context, address *models.Address) error {
 	s.logger.Info("Creating new address")
 
-	// Type assertion for request
-	createReq, ok := req.(*models.Address)
-	if !ok {
-		return nil, fmt.Errorf("invalid request type")
-	}
-
 	// Validate address
-	if err := s.validateAddress(createReq); err != nil {
-		return nil, fmt.Errorf("validation failed: %w", err)
+	if err := s.validateAddress(address); err != nil {
+		return fmt.Errorf("validation failed: %w", err)
 	}
 
 	// Build full address
-	createReq.BuildFullAddress()
+	address.BuildFullAddress()
 
 	// Create address in database
-	if err := s.addressRepo.Create(ctx, createReq); err != nil {
+	if err := s.addressRepo.Create(ctx, address); err != nil {
 		s.logger.Error("Failed to create address", zap.Error(err))
-		return nil, fmt.Errorf("failed to create address: %w", err)
+		return fmt.Errorf("failed to create address: %w", err)
 	}
 
 	// Clear cache
-	s.cacheService.Delete(fmt.Sprintf("address:%s", createReq.ID))
+	s.cacheService.Delete(fmt.Sprintf("address:%s", address.ID))
 
-	s.logger.Info("Address created successfully", zap.String("addressID", createReq.ID))
-	return createReq, nil
+	s.logger.Info("Address created successfully", zap.String("addressID", address.ID))
+	return nil
 }
 
 // GetAddressByID retrieves an address by ID with caching
-func (s *AddressService) GetAddressByID(ctx context.Context, addressID string) (interface{}, error) {
+func (s *AddressService) GetAddressByID(ctx context.Context, addressID string) (*models.Address, error) {
 	// Try to get from cache first
 	cacheKey := fmt.Sprintf("address:%s", addressID)
 	if cached, exists := s.cacheService.Get(cacheKey); exists {
@@ -89,8 +83,8 @@ func (s *AddressService) GetAddressByID(ctx context.Context, addressID string) (
 	return address, nil
 }
 
-// GetAddressByUserID retrieves addresses by user ID
-func (s *AddressService) GetAddressByUserID(ctx context.Context, userID string) (interface{}, error) {
+// GetAddressesByUserID retrieves addresses by user ID
+func (s *AddressService) GetAddressesByUserID(ctx context.Context, userID string) ([]*models.Address, error) {
 	s.logger.Info("Getting addresses by user ID", zap.String("userID", userID))
 
 	addresses, err := s.addressRepo.GetByUserID(ctx, userID)
@@ -103,41 +97,35 @@ func (s *AddressService) GetAddressByUserID(ctx context.Context, userID string) 
 }
 
 // UpdateAddress updates an existing address
-func (s *AddressService) UpdateAddress(ctx context.Context, req interface{}) (interface{}, error) {
+func (s *AddressService) UpdateAddress(ctx context.Context, address *models.Address) error {
 	s.logger.Info("Updating address")
 
-	// Type assertion for request
-	updateReq, ok := req.(*models.Address)
-	if !ok {
-		return nil, fmt.Errorf("invalid request type")
-	}
-
 	// Validate address
-	if err := s.validateAddress(updateReq); err != nil {
-		return nil, fmt.Errorf("validation failed: %w", err)
+	if err := s.validateAddress(address); err != nil {
+		return fmt.Errorf("validation failed: %w", err)
 	}
 
 	// Check if address exists by trying to get it
-	_, err := s.addressRepo.GetByID(ctx, updateReq.ID)
+	_, err := s.addressRepo.GetByID(ctx, address.ID)
 	if err != nil {
-		s.logger.Error("Failed to check address existence", zap.String("addressID", updateReq.ID), zap.Error(err))
-		return nil, errors.NewNotFoundError("address not found")
+		s.logger.Error("Failed to check address existence", zap.String("addressID", address.ID), zap.Error(err))
+		return errors.NewNotFoundError("address not found")
 	}
 
 	// Build full address
-	updateReq.BuildFullAddress()
+	address.BuildFullAddress()
 
 	// Update address in database
-	if err := s.addressRepo.Update(ctx, updateReq); err != nil {
-		s.logger.Error("Failed to update address", zap.String("addressID", updateReq.ID), zap.Error(err))
-		return nil, fmt.Errorf("failed to update address: %w", err)
+	if err := s.addressRepo.Update(ctx, address); err != nil {
+		s.logger.Error("Failed to update address", zap.String("addressID", address.ID), zap.Error(err))
+		return fmt.Errorf("failed to update address: %w", err)
 	}
 
 	// Clear cache
-	s.cacheService.Delete(fmt.Sprintf("address:%s", updateReq.ID))
+	s.cacheService.Delete(fmt.Sprintf("address:%s", address.ID))
 
-	s.logger.Info("Address updated successfully", zap.String("addressID", updateReq.ID))
-	return updateReq, nil
+	s.logger.Info("Address updated successfully", zap.String("addressID", address.ID))
+	return nil
 }
 
 // DeleteAddress soft deletes an address
@@ -189,21 +177,21 @@ func (s *AddressService) ListAddresses(ctx context.Context, filters interface{})
 }
 
 // SearchAddresses searches addresses by keyword
-func (s *AddressService) SearchAddresses(ctx context.Context, keyword string, limit, offset int) (interface{}, error) {
-	s.logger.Info("Searching addresses", zap.String("keyword", keyword), zap.Int("limit", limit), zap.Int("offset", offset))
+func (s *AddressService) SearchAddresses(ctx context.Context, query string, limit, offset int) ([]*models.Address, error) {
+	s.logger.Info("Searching addresses", zap.String("query", query), zap.Int("limit", limit), zap.Int("offset", offset))
 
-	if strings.TrimSpace(keyword) == "" {
-		return nil, fmt.Errorf("search keyword cannot be empty")
+	if strings.TrimSpace(query) == "" {
+		return nil, fmt.Errorf("search query cannot be empty")
 	}
 
 	// Search addresses using the correct repository method
-	addresses, err := s.addressRepo.Search(ctx, keyword, limit, offset)
+	addresses, err := s.addressRepo.Search(ctx, query, limit, offset)
 	if err != nil {
 		s.logger.Error("Failed to search addresses", zap.Error(err))
 		return nil, fmt.Errorf("failed to search addresses: %w", err)
 	}
 
-	s.logger.Info("Address search completed", zap.Int("count", len(addresses)))
+	s.logger.Info("Address search completed", zap.String("query", query), zap.Int("count", len(addresses)))
 	return addresses, nil
 }
 

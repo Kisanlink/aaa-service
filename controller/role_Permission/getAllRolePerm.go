@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Kisanlink/aaa-service/pb"
+	pb "github.com/Kisanlink/aaa-service/proto"
 )
 
 type Permission struct {

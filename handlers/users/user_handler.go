@@ -12,9 +12,10 @@ import (
 	"go.uber.org/zap"
 )
 
-// UserHandler handles user-related HTTP requests
+// UserHandler handles HTTP requests for user operations
 type UserHandler struct {
 	userService interfaces.UserService
+	roleService interfaces.RoleService
 	validator   interfaces.Validator
 	responder   interfaces.Responder
 	logger      *zap.Logger
@@ -23,12 +24,14 @@ type UserHandler struct {
 // NewUserHandler creates a new UserHandler instance
 func NewUserHandler(
 	userService interfaces.UserService,
+	roleService interfaces.RoleService,
 	validator interfaces.Validator,
 	responder interfaces.Responder,
 	logger *zap.Logger,
 ) *UserHandler {
 	return &UserHandler{
 		userService: userService,
+		roleService: roleService,
 		validator:   validator,
 		responder:   responder,
 		logger:      logger,
@@ -170,7 +173,7 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 	}
 
 	// Delete user through service
-	userResponse, err := h.userService.DeleteUser(c.Request.Context(), userID)
+	err := h.userService.DeleteUser(c.Request.Context(), userID)
 	if err != nil {
 		h.logger.Error("Failed to delete user", zap.Error(err))
 		if notFoundErr, ok := err.(*errors.NotFoundError); ok {
@@ -182,23 +185,31 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 	}
 
 	h.logger.Info("User deleted successfully", zap.String("userID", userID))
-	h.responder.SendSuccess(c, http.StatusOK, userResponse)
+	h.responder.SendSuccess(c, http.StatusOK, map[string]string{"message": "User deleted successfully"})
 }
 
 // ListUsers handles GET /users
 func (h *UserHandler) ListUsers(c *gin.Context) {
 	h.logger.Info("Listing users")
 
-	// Parse filters from query parameters
-	filters, err := h.validator.ParseListFilters(c)
+	// Parse pagination parameters
+	limitStr := c.DefaultQuery("limit", "10")
+	offsetStr := c.DefaultQuery("offset", "0")
+
+	limit, err := strconv.Atoi(limitStr)
 	if err != nil {
-		h.logger.Error("Failed to parse filters", zap.Error(err))
-		h.responder.SendValidationError(c, []string{err.Error()})
+		h.responder.SendValidationError(c, []string{"invalid limit parameter"})
+		return
+	}
+
+	offset, err := strconv.Atoi(offsetStr)
+	if err != nil {
+		h.responder.SendValidationError(c, []string{"invalid offset parameter"})
 		return
 	}
 
 	// Get users through service
-	result, err := h.userService.ListUsers(c.Request.Context(), filters)
+	result, err := h.userService.ListUsers(c.Request.Context(), limit, offset)
 	if err != nil {
 		h.logger.Error("Failed to list users", zap.Error(err))
 		h.responder.SendInternalError(c, err)
@@ -258,7 +269,7 @@ func (h *UserHandler) ValidateUser(c *gin.Context) {
 	}
 
 	// Validate user through service
-	userResponse, err := h.userService.ValidateUser(c.Request.Context(), userID)
+	err := h.userService.ValidateUser(c.Request.Context(), userID)
 	if err != nil {
 		h.logger.Error("Failed to validate user", zap.Error(err))
 		if notFoundErr, ok := err.(*errors.NotFoundError); ok {
@@ -274,7 +285,7 @@ func (h *UserHandler) ValidateUser(c *gin.Context) {
 	}
 
 	h.logger.Info("User validated successfully", zap.String("userID", userID))
-	h.responder.SendSuccess(c, http.StatusOK, userResponse)
+	h.responder.SendSuccess(c, http.StatusOK, map[string]string{"message": "User validated successfully"})
 }
 
 // AssignRole handles POST /users/:id/roles/:roleId
@@ -293,7 +304,7 @@ func (h *UserHandler) AssignRole(c *gin.Context) {
 	}
 
 	// Assign role through service
-	userResponse, err := h.userService.AssignRole(c.Request.Context(), userID, roleID)
+	err := h.roleService.AssignRoleToUser(c.Request.Context(), userID, roleID)
 	if err != nil {
 		h.logger.Error("Failed to assign role", zap.Error(err))
 		if notFoundErr, ok := err.(*errors.NotFoundError); ok {
@@ -309,7 +320,7 @@ func (h *UserHandler) AssignRole(c *gin.Context) {
 	}
 
 	h.logger.Info("Role assigned successfully", zap.String("userID", userID), zap.String("roleID", roleID))
-	h.responder.SendSuccess(c, http.StatusOK, userResponse)
+	h.responder.SendSuccess(c, http.StatusOK, map[string]string{"message": "Role assigned successfully"})
 }
 
 // RemoveRole handles DELETE /users/:id/roles/:roleId
@@ -328,7 +339,7 @@ func (h *UserHandler) RemoveRole(c *gin.Context) {
 	}
 
 	// Remove role through service
-	userResponse, err := h.userService.RemoveRole(c.Request.Context(), userID, roleID)
+	err := h.roleService.RemoveRoleFromUser(c.Request.Context(), userID, roleID)
 	if err != nil {
 		h.logger.Error("Failed to remove role", zap.Error(err))
 		if notFoundErr, ok := err.(*errors.NotFoundError); ok {
@@ -340,5 +351,5 @@ func (h *UserHandler) RemoveRole(c *gin.Context) {
 	}
 
 	h.logger.Info("Role removed successfully", zap.String("userID", userID), zap.String("roleID", roleID))
-	h.responder.SendSuccess(c, http.StatusOK, userResponse)
+	h.responder.SendSuccess(c, http.StatusOK, map[string]string{"message": "Role removed successfully"})
 }

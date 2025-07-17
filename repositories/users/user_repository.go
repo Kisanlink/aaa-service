@@ -3,6 +3,7 @@ package users
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/Kisanlink/aaa-service/entities/models"
 	"github.com/Kisanlink/kisanlink-db/pkg/base"
@@ -74,8 +75,168 @@ func (r *UserRepository) List(ctx context.Context, limit, offset int) ([]*models
 
 // Count returns the total number of users
 func (r *UserRepository) Count(ctx context.Context) (int64, error) {
-	// For now, we'll use the embedded BaseFilterableRepository's Count method
-	return r.BaseFilterableRepository.Count(ctx)
+	var users []models.User
+	if err := r.dbManager.List(ctx, []db.Filter{}, &users); err != nil {
+		return 0, fmt.Errorf("failed to count users: %w", err)
+	}
+	return int64(len(users)), nil
+}
+
+// Exists checks if a user exists by ID
+func (r *UserRepository) Exists(ctx context.Context, id string) (bool, error) {
+	_, err := r.GetByID(ctx, id)
+	if err != nil {
+		return false, nil // User doesn't exist
+	}
+	return true, nil
+}
+
+// SoftDelete soft deletes a user by ID
+func (r *UserRepository) SoftDelete(ctx context.Context, id string, deletedBy string) error {
+	user, err := r.GetByID(ctx, id)
+	if err != nil {
+		return fmt.Errorf("failed to get user for soft delete: %w", err)
+	}
+
+	if err := user.BeforeSoftDelete(); err != nil {
+		return fmt.Errorf("failed to prepare user for soft delete: %w", err)
+	}
+
+	// Set deleted fields
+	now := time.Now()
+	user.DeletedAt = &now
+	user.DeletedBy = &deletedBy
+
+	return r.dbManager.Update(ctx, user)
+}
+
+// Restore restores a soft-deleted user
+func (r *UserRepository) Restore(ctx context.Context, id string) error {
+	user, err := r.GetByID(ctx, id)
+	if err != nil {
+		return fmt.Errorf("failed to get user for restore: %w", err)
+	}
+
+	// Clear deleted fields
+	user.DeletedAt = nil
+	user.DeletedBy = nil
+
+	return r.dbManager.Update(ctx, user)
+}
+
+// ListWithDeleted retrieves users including soft-deleted ones
+func (r *UserRepository) ListWithDeleted(ctx context.Context, limit, offset int) ([]*models.User, error) {
+	// For now, same as List since we don't have soft delete filtering in our mock
+	return r.List(ctx, limit, offset)
+}
+
+// CountWithDeleted returns count including soft-deleted users
+func (r *UserRepository) CountWithDeleted(ctx context.Context) (int64, error) {
+	// For now, same as Count since we don't have soft delete filtering in our mock
+	return r.Count(ctx)
+}
+
+// ExistsWithDeleted checks if user exists including soft-deleted ones
+func (r *UserRepository) ExistsWithDeleted(ctx context.Context, id string) (bool, error) {
+	// For now, same as Exists since we don't have soft delete filtering in our mock
+	return r.Exists(ctx, id)
+}
+
+// GetByCreatedBy gets users by creator
+func (r *UserRepository) GetByCreatedBy(ctx context.Context, createdBy string, limit, offset int) ([]*models.User, error) {
+	filters := []db.Filter{
+		r.dbManager.BuildFilter("created_by", db.FilterOpEqual, createdBy),
+	}
+
+	var users []models.User
+	if err := r.dbManager.List(ctx, filters, &users); err != nil {
+		return nil, fmt.Errorf("failed to get users by created_by: %w", err)
+	}
+
+	result := make([]*models.User, len(users))
+	for i := range users {
+		result[i] = &users[i]
+	}
+
+	return result, nil
+}
+
+// GetByUpdatedBy gets users by updater
+func (r *UserRepository) GetByUpdatedBy(ctx context.Context, updatedBy string, limit, offset int) ([]*models.User, error) {
+	filters := []db.Filter{
+		r.dbManager.BuildFilter("updated_by", db.FilterOpEqual, updatedBy),
+	}
+
+	var users []models.User
+	if err := r.dbManager.List(ctx, filters, &users); err != nil {
+		return nil, fmt.Errorf("failed to get users by updated_by: %w", err)
+	}
+
+	result := make([]*models.User, len(users))
+	for i := range users {
+		result[i] = &users[i]
+	}
+
+	return result, nil
+}
+
+// GetByDeletedBy gets users by deleter
+func (r *UserRepository) GetByDeletedBy(ctx context.Context, deletedBy string, limit, offset int) ([]*models.User, error) {
+	filters := []db.Filter{
+		r.dbManager.BuildFilter("deleted_by", db.FilterOpEqual, deletedBy),
+	}
+
+	var users []models.User
+	if err := r.dbManager.List(ctx, filters, &users); err != nil {
+		return nil, fmt.Errorf("failed to get users by deleted_by: %w", err)
+	}
+
+	result := make([]*models.User, len(users))
+	for i := range users {
+		result[i] = &users[i]
+	}
+
+	return result, nil
+}
+
+// CreateMany creates multiple users
+func (r *UserRepository) CreateMany(ctx context.Context, users []*models.User) error {
+	for _, user := range users {
+		if err := r.Create(ctx, user); err != nil {
+			return fmt.Errorf("failed to create user in batch: %w", err)
+		}
+	}
+	return nil
+}
+
+// UpdateMany updates multiple users
+func (r *UserRepository) UpdateMany(ctx context.Context, users []*models.User) error {
+	for _, user := range users {
+		if err := r.Update(ctx, user); err != nil {
+			return fmt.Errorf("failed to update user in batch: %w", err)
+		}
+	}
+	return nil
+}
+
+// DeleteMany deletes multiple users
+func (r *UserRepository) DeleteMany(ctx context.Context, ids []string) error {
+	for _, id := range ids {
+		if err := r.Delete(ctx, id); err != nil {
+			return fmt.Errorf("failed to delete user in batch: %w", err)
+		}
+	}
+	return nil
+}
+
+// SoftDeleteMany soft deletes multiple users
+func (r *UserRepository) SoftDeleteMany(ctx context.Context, ids []string, deletedBy string) error {
+	for _, id := range ids {
+		if err := r.SoftDelete(ctx, id, deletedBy); err != nil {
+			return fmt.Errorf("failed to soft delete user in batch: %w", err)
+		}
+	}
+	return nil
 }
 
 // GetByUsername retrieves a user by username

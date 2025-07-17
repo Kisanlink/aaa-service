@@ -1,6 +1,8 @@
 package models
 
 import (
+	"fmt"
+
 	"github.com/Kisanlink/kisanlink-db/pkg/base"
 	"github.com/Kisanlink/kisanlink-db/pkg/core/hash"
 )
@@ -43,14 +45,26 @@ func NewUser(username string, password string) *User {
 
 // BeforeCreate is called before creating a new user
 // Sets default status to "pending" if not already set
+// Validates required fields
 func (u *User) BeforeCreate() error {
 	if err := u.BaseModel.BeforeCreate(); err != nil {
 		return err
 	}
+
+	// Validate required fields
+	if u.Username == "" {
+		return fmt.Errorf("username is required")
+	}
+	if u.Password == "" {
+		return fmt.Errorf("password is required")
+	}
+
+	// Set default status ONLY if not already set
 	if u.Status == nil {
 		status := "pending"
 		u.Status = &status
 	}
+
 	return nil
 }
 

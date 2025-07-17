@@ -61,23 +61,15 @@ func (h *AuthHandler) LoginV2(c *gin.Context) {
 		return
 	}
 
-	// Get user by username
-	userResponse, err := h.userService.GetUserByUsername(c.Request.Context(), req.Username)
+	// Get user by username and verify password using the service
+	userResponse, err := h.userService.VerifyUserPassword(c.Request.Context(), req.Username, req.Password)
 	if err != nil {
-		h.logger.Error("Failed to get user", zap.Error(err))
+		h.logger.Error("Failed to verify user credentials", zap.Error(err))
 		if notFoundErr, ok := err.(*errors.NotFoundError); ok {
 			h.responder.SendError(c, http.StatusUnauthorized, "Invalid credentials", notFoundErr)
 			return
 		}
 		h.responder.SendInternalError(c, err)
-		return
-	}
-
-	// Verify password (Note: We need to implement password verification in the service)
-	// For now, we'll do a basic check - ideally this should be in the service
-	if !h.verifyPassword(req.Password, userResponse) {
-		h.logger.Warn("Invalid password attempt", zap.String("username", req.Username))
-		h.responder.SendError(c, http.StatusUnauthorized, "Invalid credentials", nil)
 		return
 	}
 
@@ -278,17 +270,6 @@ func (h *AuthHandler) ResetPasswordV2(c *gin.Context) {
 }
 
 // Helper methods
-
-// verifyPassword verifies if the provided password matches the user's stored password
-// Note: This is a temporary implementation. Ideally, password verification should be in the service layer
-func (h *AuthHandler) verifyPassword(password string, user interface{}) bool {
-	// TODO: Implement proper password verification
-	// For now, this is a placeholder that always returns true for development
-	// In production, this should:
-	// 1. Get the hashed password from the user object
-	// 2. Use bcrypt.CompareHashAndPassword to verify
-	return true
-}
 
 // convertToCreateUserRequest converts a RegisterRequest to a CreateUserRequest
 func (h *AuthHandler) convertToCreateUserRequest(req *requests.RegisterRequest) *users.CreateUserRequest {

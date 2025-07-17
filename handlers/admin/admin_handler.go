@@ -11,21 +11,24 @@ import (
 
 // AdminHandler handles admin-related HTTP requests
 type AdminHandler struct {
-	validator interfaces.Validator
-	responder interfaces.Responder
-	logger    *zap.Logger
+	maintenanceService interfaces.MaintenanceService
+	validator          interfaces.Validator
+	responder          interfaces.Responder
+	logger             *zap.Logger
 }
 
 // NewAdminHandler creates a new AdminHandler instance
 func NewAdminHandler(
+	maintenanceService interfaces.MaintenanceService,
 	validator interfaces.Validator,
 	responder interfaces.Responder,
 	logger *zap.Logger,
 ) *AdminHandler {
 	return &AdminHandler{
-		validator: validator,
-		responder: responder,
-		logger:    logger,
+		maintenanceService: maintenanceService,
+		validator:          validator,
+		responder:          responder,
+		logger:             logger,
 	}
 }
 
@@ -212,9 +215,12 @@ func (h *AdminHandler) MaintenanceModeV2(c *gin.Context) {
 	h.logger.Info("Processing maintenance mode request")
 
 	var req struct {
-		Enabled  bool   `json:"enabled"`
-		Message  string `json:"message,omitempty"`
-		Duration string `json:"duration,omitempty"`
+		Enabled    bool    `json:"enabled"`
+		Message    string  `json:"message,omitempty"`
+		Reason     string  `json:"reason,omitempty"`
+		EndTime    *string `json:"end_time,omitempty"`
+		AllowAdmin bool    `json:"allow_admin,omitempty"`
+		AllowRead  bool    `json:"allow_read,omitempty"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		h.logger.Error("Failed to bind maintenance request", zap.Error(err))
@@ -222,29 +228,130 @@ func (h *AdminHandler) MaintenanceModeV2(c *gin.Context) {
 		return
 	}
 
-	// TODO: Implement actual maintenance mode logic
-	// This would typically involve:
-	// 1. Setting a maintenance flag in cache/database
-	// 2. Configuring load balancer to show maintenance page
-	// 3. Gracefully draining existing connections
-	// 4. Stopping non-critical background tasks
-
-	response := map[string]interface{}{
-		"maintenance_enabled": req.Enabled,
-		"message":             req.Message,
-		"duration":            req.Duration,
-		"timestamp":           time.Now().UTC().Format(time.RFC3339),
-		"status":              "Maintenance mode configuration updated",
+	// Get user info from context
+	userID := h.getUserID(c)
+	if userID == "" {
+		h.responder.SendError(c, http.StatusUnauthorized, "User authentication required", nil)
+		return
 	}
 
 	if req.Enabled {
-		response["warning"] = "Service will enter maintenance mode. All non-admin requests will be blocked."
-		h.logger.Warn("Maintenance mode enabled",
+		// Enable maintenance mode
+		maintenanceConfig := map[string]interface{}{
+			"enabled":     true,
+			"message":     req.Message,
+			"reason":      req.Reason,
+			"enabled_by":  userID,
+			"allow_admin": req.AllowAdmin,
+			"allow_read":  req.AllowRead,
+		}
+
+		if req.EndTime != nil && *req.EndTime != "" {
+			// Parse end time if provided
+			endTime, err := time.Parse(time.RFC3339, *req.EndTime)
+			if err != nil {
+				h.responder.SendValidationError(c, []string{"invalid end_time format, use RFC3339"})
+				return
+			}
+			maintenanceConfig["end_time"] = endTime
+		}
+
+		if err := h.maintenanceService.EnableMaintenanceMode(c.Request.Context(), maintenanceConfig); err != nil {
+			h.logger.Error("Failed to enable maintenance mode", zap.Error(err))
+			h.responder.SendInternalError(c, err)
+			return
+		}
+
+		h.logger.Warn("Maintenance mode enabled via admin API",
+			zap.String("enabled_by", userID),
 			zap.String("message", req.Message),
-			zap.String("duration", req.Duration))
+			zap.String("reason", req.Reason))
+
+		response := map[string]interface{}{
+			"status":              "success",
+			"maintenance_enabled": true,
+			"message":             "Maintenance mode has been enabled",
+			"config":              maintenanceConfig,
+			"timestamp":           time.Now().UTC().Format(time.RFC3339),
+		}
+
+		h.responder.SendSuccess(c, http.StatusOK, response)
 	} else {
-		response["info"] = "Service maintenance mode disabled. Normal operations resumed."
-		h.logger.Info("Maintenance mode disabled")
+		// Disable maintenance mode
+		if err := h.maintenanceService.DisableMaintenanceMode(c.Request.Context(), userID); err != nil {
+			h.logger.Error("Failed to disable maintenance mode", zap.Error(err))
+			h.responder.SendInternalError(c, err)
+			return
+		}
+
+		h.logger.Info("Maintenance mode disabled via admin API", zap.String("disabled_by", userID))
+
+		response := map[string]interface{}{
+			"status":              "success",
+			"maintenance_enabled": false,
+			"message":             "Maintenance mode has been disabled",
+			"timestamp":           time.Now().UTC().Format(time.RFC3339),
+		}
+
+		h.responder.SendSuccess(c, http.StatusOK, response)
+	}
+}
+
+// GetMaintenanceStatus handles GET /v2/admin/maintenance
+func (h *AdminHandler) GetMaintenanceStatus(c *gin.Context) {
+	h.logger.Info("Getting maintenance status")
+
+	status, err := h.maintenanceService.GetMaintenanceStatus(c.Request.Context())
+	if err != nil {
+		h.logger.Error("Failed to get maintenance status", zap.Error(err))
+		h.responder.SendInternalError(c, err)
+		return
+	}
+
+	response := map[string]interface{}{
+		"status":      "success",
+		"maintenance": status,
+		"timestamp":   time.Now().UTC().Format(time.RFC3339),
+	}
+
+	h.responder.SendSuccess(c, http.StatusOK, response)
+}
+
+// UpdateMaintenanceMessage handles PATCH /v2/admin/maintenance/message
+func (h *AdminHandler) UpdateMaintenanceMessage(c *gin.Context) {
+	h.logger.Info("Updating maintenance message")
+
+	var req struct {
+		Message string `json:"message" validate:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		h.logger.Error("Failed to bind message update request", zap.Error(err))
+		h.responder.SendValidationError(c, []string{err.Error()})
+		return
+	}
+
+	// Get user info from context
+	userID := h.getUserID(c)
+	if userID == "" {
+		h.responder.SendError(c, http.StatusUnauthorized, "User authentication required", nil)
+		return
+	}
+
+	if err := h.maintenanceService.UpdateMaintenanceMessage(c.Request.Context(), req.Message, userID); err != nil {
+		h.logger.Error("Failed to update maintenance message", zap.Error(err))
+		h.responder.SendInternalError(c, err)
+		return
+	}
+
+	h.logger.Info("Maintenance message updated",
+		zap.String("updated_by", userID),
+		zap.String("new_message", req.Message))
+
+	response := map[string]interface{}{
+		"status":      "success",
+		"message":     "Maintenance message updated successfully",
+		"new_message": req.Message,
+		"timestamp":   time.Now().UTC().Format(time.RFC3339),
 	}
 
 	h.responder.SendSuccess(c, http.StatusOK, response)
@@ -287,4 +394,14 @@ func (h *AdminHandler) GetSystemInfo(c *gin.Context) {
 
 	h.logger.Info("System information retrieved")
 	h.responder.SendSuccess(c, http.StatusOK, systemInfo)
+}
+
+// Helper method to extract user ID from context
+func (h *AdminHandler) getUserID(c *gin.Context) string {
+	if userID, exists := c.Get("userID"); exists {
+		if id, ok := userID.(string); ok {
+			return id
+		}
+	}
+	return ""
 }

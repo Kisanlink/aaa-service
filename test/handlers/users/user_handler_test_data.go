@@ -10,7 +10,7 @@ import (
 var UserHandlerCreateUserTests = []struct {
 	name            string
 	requestBody     map[string]interface{}
-	mockResponse    *responses.UserResponse
+	mockResponse    *users.UserResponse
 	mockError       error
 	expectedStatus  int
 	expectedSuccess bool
@@ -18,15 +18,13 @@ var UserHandlerCreateUserTests = []struct {
 	{
 		name: "Valid user creation",
 		requestBody: map[string]interface{}{
-			"name":  "John Doe",
-			"email": "john@example.com",
-			"phone": "+1234567890",
+			"username": "johndoe",
+			"password": "password123",
 		},
-		mockResponse: &responses.UserResponse{
-			ID:    "USER123456789",
-			Name:  "John Doe",
-			Email: "john@example.com",
-			Phone: "+1234567890",
+		mockResponse: &users.UserResponse{
+			ID:       "usr123456789",
+			Username: "johndoe",
+			Name:     stringPtr("John Doe"),
 		},
 		mockError:       nil,
 		expectedStatus:  201,
@@ -35,8 +33,8 @@ var UserHandlerCreateUserTests = []struct {
 	{
 		name: "Invalid request body",
 		requestBody: map[string]interface{}{
-			"name":  "",
-			"email": "invalid-email",
+			"username": "",
+			"password": "short",
 		},
 		mockResponse:    nil,
 		mockError:       nil,
@@ -46,8 +44,8 @@ var UserHandlerCreateUserTests = []struct {
 	{
 		name: "Service error",
 		requestBody: map[string]interface{}{
-			"name":  "John Doe",
-			"email": "john@example.com",
+			"username": "johndoe",
+			"password": "password123",
 		},
 		mockResponse:    nil,
 		mockError:       errors.New("database error"),
@@ -60,18 +58,18 @@ var UserHandlerCreateUserTests = []struct {
 var UserHandlerGetUserByIDTests = []struct {
 	name            string
 	userID          string
-	mockResponse    *responses.UserResponse
+	mockResponse    *users.UserResponse
 	mockError       error
 	expectedStatus  int
 	expectedSuccess bool
 }{
 	{
 		name:   "Valid user ID",
-		userID: "USER123456789",
-		mockResponse: &responses.UserResponse{
-			ID:    "USER123456789",
-			Name:  "John Doe",
-			Email: "john@example.com",
+		userID: "usr123456789",
+		mockResponse: &users.UserResponse{
+			ID:       "usr123456789",
+			Username: "johndoe",
+			Name:     stringPtr("John Doe"),
 		},
 		mockError:       nil,
 		expectedStatus:  200,
@@ -95,7 +93,7 @@ var UserHandlerGetUserByIDTests = []struct {
 	},
 	{
 		name:            "User not found",
-		userID:          "USER999999999",
+		userID:          "usr999999999",
 		mockResponse:    nil,
 		mockError:       errors.New("user not found"),
 		expectedStatus:  500,
@@ -108,24 +106,22 @@ var UserHandlerUpdateUserTests = []struct {
 	name            string
 	userID          string
 	requestBody     map[string]interface{}
-	mockResponse    *responses.UserResponse
+	mockResponse    *users.UserResponse
 	mockError       error
 	expectedStatus  int
 	expectedSuccess bool
 }{
 	{
 		name:   "Valid user update",
-		userID: "USER123456789",
+		userID: "usr123456789",
 		requestBody: map[string]interface{}{
-			"name":  "Updated Name",
-			"email": "updated@example.com",
-			"phone": "+9876543210",
+			"username": "updateduser",
+			"name":     "Updated Name",
 		},
-		mockResponse: &responses.UserResponse{
-			ID:    "USER123456789",
-			Name:  "Updated Name",
-			Email: "updated@example.com",
-			Phone: "+9876543210",
+		mockResponse: &users.UserResponse{
+			ID:       "usr123456789",
+			Username: "updateduser",
+			Name:     stringPtr("Updated Name"),
 		},
 		mockError:       nil,
 		expectedStatus:  200,
@@ -133,10 +129,10 @@ var UserHandlerUpdateUserTests = []struct {
 	},
 	{
 		name:   "Invalid request body",
-		userID: "USER123456789",
+		userID: "usr123456789",
 		requestBody: map[string]interface{}{
-			"name":  "",
-			"email": "invalid-email",
+			"username": "",
+			"password": "short",
 		},
 		mockResponse:    nil,
 		mockError:       nil,
@@ -147,8 +143,8 @@ var UserHandlerUpdateUserTests = []struct {
 		name:   "Empty user ID",
 		userID: "",
 		requestBody: map[string]interface{}{
-			"name":  "Updated Name",
-			"email": "updated@example.com",
+			"username": "updateduser",
+			"name":     "Updated Name",
 		},
 		mockResponse:    nil,
 		mockError:       nil,
@@ -161,19 +157,19 @@ var UserHandlerUpdateUserTests = []struct {
 var UserHandlerDeleteUserTests = []struct {
 	name            string
 	userID          string
-	mockResponse    *responses.UserResponse
+	mockResponse    *users.UserResponse
 	mockError       error
 	expectedStatus  int
 	expectedSuccess bool
 }{
 	{
 		name:   "Valid user deletion",
-		userID: "USER123456789",
-		mockResponse: &responses.UserResponse{
-			ID:     "USER123456789",
-			Name:   "John Doe",
-			Email:  "john@example.com",
-			Status: "deleted",
+		userID: "usr123456789",
+		mockResponse: &users.UserResponse{
+			ID:       "usr123456789",
+			Username: "johndoe",
+			Name:     stringPtr("John Doe"),
+			Status:   stringPtr("deleted"),
 		},
 		mockError:       nil,
 		expectedStatus:  200,
@@ -197,7 +193,7 @@ var UserHandlerDeleteUserTests = []struct {
 	},
 	{
 		name:            "User not found",
-		userID:          "USER999999999",
+		userID:          "usr999999999",
 		mockResponse:    nil,
 		mockError:       errors.New("user not found"),
 		expectedStatus:  500,
@@ -205,77 +201,7 @@ var UserHandlerDeleteUserTests = []struct {
 	},
 }
 
-// Test data for TestUserHandler_ListUsers
-var UserHandlerListUsersTests = []struct {
-	name            string
-	queryParams     map[string]string
-	mockResponse    *responses.UsersListResponse
-	mockError       error
-	expectedStatus  int
-	expectedSuccess bool
-}{
-	{
-		name:        "List all users",
-		queryParams: map[string]string{},
-		mockResponse: &responses.UsersListResponse{
-			Users: []responses.UserResponse{
-				{ID: "USER123456789", Name: "John Doe", Email: "john@example.com"},
-				{ID: "USER987654321", Name: "Jane Smith", Email: "jane@example.com"},
-			},
-			Total: 2,
-		},
-		mockError:       nil,
-		expectedStatus:  200,
-		expectedSuccess: true,
-	},
-	{
-		name: "List with pagination",
-		queryParams: map[string]string{
-			"page":  "1",
-			"limit": "10",
-		},
-		mockResponse: &responses.UsersListResponse{
-			Users: []responses.UserResponse{
-				{ID: "USER123456789", Name: "John Doe", Email: "john@example.com"},
-			},
-			Total: 1,
-		},
-		mockError:       nil,
-		expectedStatus:  200,
-		expectedSuccess: true,
-	},
-	{
-		name: "List with status filter",
-		queryParams: map[string]string{
-			"status": "active",
-		},
-		mockResponse: &responses.UsersListResponse{
-			Users: []responses.UserResponse{
-				{ID: "USER123456789", Name: "John Doe", Email: "john@example.com", Status: "active"},
-			},
-			Total: 1,
-		},
-		mockError:       nil,
-		expectedStatus:  200,
-		expectedSuccess: true,
-	},
-	{
-		name: "Invalid pagination parameters",
-		queryParams: map[string]string{
-			"page":  "0",
-			"limit": "101",
-		},
-		mockResponse:    nil,
-		mockError:       nil,
-		expectedStatus:  400,
-		expectedSuccess: false,
-	},
-	{
-		name:            "Service error",
-		queryParams:     map[string]string{},
-		mockResponse:    nil,
-		mockError:       errors.New("database error"),
-		expectedStatus:  500,
-		expectedSuccess: false,
-	},
+// Helper function to create string pointers
+func stringPtr(s string) *string {
+	return &s
 }

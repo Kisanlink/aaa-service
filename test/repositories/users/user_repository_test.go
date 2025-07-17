@@ -2,73 +2,38 @@ package users
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/Kisanlink/aaa-service/entities/models"
+	"github.com/Kisanlink/aaa-service/repositories/users"
 	"github.com/Kisanlink/kisanlink-db/pkg/db"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestUserRepository_Create(t *testing.T) {
 	for _, tt := range UserRepositoryCreateTests {
-		t.Run(tt.name, func(t *testing.T) {
-			// Setup test database
+		t.Run(tt.testName, func(t *testing.T) {
+			// Setup test database and user repository
 			dbManager := setupTestDatabase(t)
 			defer cleanupTestDatabase(t, dbManager)
 
-			repo := NewUserRepository(dbManager)
-			ctx := context.Background()
+			userRepo := users.NewUserRepository(dbManager)
+
+			// Create test user
+			user := models.NewUser(tt.userName, "password123")
+			status := tt.status
+			user.Status = &status
 
 			// Create user
-			user := models.NewUser(tt.name, tt.email)
-			user.Phone = tt.phone
-			user.Status = tt.status
+			err := userRepo.Create(context.Background(), user)
 
-			createdUser, err := repo.Create(ctx, user)
-
-			if tt.shouldError && err == nil {
-				t.Error("Expected error but got none")
-				return
-			}
-
-			if !tt.shouldError && err != nil {
-				t.Errorf("Expected no error but got: %v", err)
-				return
-			}
-
-			if !tt.shouldError {
-				// Verify user was created
-				if createdUser == nil {
-					t.Fatal("Created user is nil")
-				}
-
-				if createdUser.ID == "" {
-					t.Error("User ID should not be empty")
-				}
-
-				if createdUser.Name != tt.name {
-					t.Errorf("Expected name %s, got %s", tt.name, createdUser.Name)
-				}
-
-				if createdUser.Email != tt.email {
-					t.Errorf("Expected email %s, got %s", tt.email, createdUser.Email)
-				}
-
-				if createdUser.Phone != tt.phone {
-					t.Errorf("Expected phone %s, got %s", tt.phone, createdUser.Phone)
-				}
-
-				if createdUser.Status != tt.status {
-					t.Errorf("Expected status %s, got %s", tt.status, createdUser.Status)
-				}
-
-				// Verify timestamps
-				if createdUser.CreatedAt.IsZero() {
-					t.Error("CreatedAt should not be zero")
-				}
-
-				if createdUser.UpdatedAt.IsZero() {
-					t.Error("UpdatedAt should not be zero")
-				}
+			// Verify result
+			if tt.shouldError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -76,253 +41,449 @@ func TestUserRepository_Create(t *testing.T) {
 
 func TestUserRepository_GetByID(t *testing.T) {
 	for _, tt := range UserRepositoryGetByIDTests {
-		t.Run(tt.name, func(t *testing.T) {
-			// Setup test database
+		t.Run(tt.testName, func(t *testing.T) {
+			// Setup test database and user repository
 			dbManager := setupTestDatabase(t)
 			defer cleanupTestDatabase(t, dbManager)
 
-			repo := NewUserRepository(dbManager)
-			ctx := context.Background()
+			userRepo := users.NewUserRepository(dbManager)
 
-			// Create a test user first
-			user := models.NewUser("Test User", "test@example.com")
-			createdUser, err := repo.Create(ctx, user)
-			if err != nil {
-				t.Fatalf("Failed to create test user: %v", err)
+			var userID string
+			// Create test user if needed
+			if tt.testName == "Valid user ID" {
+				user := models.NewUser("testuser", "password123")
+				err := userRepo.Create(context.Background(), user)
+				assert.NoError(t, err)
+				userID = user.ID // Use the actual created user ID
+			} else {
+				userID = tt.userID // Use the test data ID for invalid cases
 			}
 
-			// Test GetByID
-			foundUser, err := repo.GetByID(ctx, tt.userID)
+			// Get user by ID
+			_, err := userRepo.GetByID(context.Background(), userID)
 
-			if tt.shouldError && err == nil {
-				t.Error("Expected error but got none")
-				return
-			}
-
-			if !tt.shouldError && err != nil {
-				t.Errorf("Expected no error but got: %v", err)
-				return
-			}
-
-			if !tt.shouldError {
-				if foundUser == nil {
-					t.Fatal("Found user is nil")
-				}
-
-				if foundUser.ID != tt.userID {
-					t.Errorf("Expected user ID %s, got %s", tt.userID, foundUser.ID)
-				}
+			// Verify result
+			if tt.shouldError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
 			}
 		})
 	}
 }
 
-func TestUserRepository_GetByEmail(t *testing.T) {
-	for _, tt := range UserRepositoryGetByEmailTests {
-		t.Run(tt.name, func(t *testing.T) {
-			// Setup test database
+func TestUserRepository_GetByUsername(t *testing.T) {
+	for _, tt := range UserRepositoryGetByUsernameTests {
+		t.Run(tt.testName, func(t *testing.T) {
+			// Setup test database and user repository
 			dbManager := setupTestDatabase(t)
 			defer cleanupTestDatabase(t, dbManager)
 
-			repo := NewUserRepository(dbManager)
-			ctx := context.Background()
+			userRepo := users.NewUserRepository(dbManager)
 
-			// Create a test user first
-			user := models.NewUser("Test User", tt.email)
-			_, err := repo.Create(ctx, user)
-			if err != nil {
-				t.Fatalf("Failed to create test user: %v", err)
+			// Create test user if needed
+			if tt.testName == "Valid username" {
+				user := models.NewUser(tt.userName, "password123")
+				err := userRepo.Create(context.Background(), user)
+				assert.NoError(t, err)
 			}
 
-			// Test GetByEmail
-			foundUser, err := repo.GetByEmail(ctx, tt.searchEmail)
+			// Get user by username
+			_, err := userRepo.GetByUsername(context.Background(), tt.userName)
 
-			if tt.shouldError && err == nil {
-				t.Error("Expected error but got none")
-				return
-			}
-
-			if !tt.shouldError && err != nil {
-				t.Errorf("Expected no error but got: %v", err)
-				return
-			}
-
-			if !tt.shouldError {
-				if foundUser == nil {
-					t.Fatal("Found user is nil")
-				}
-
-				if foundUser.Email != tt.searchEmail {
-					t.Errorf("Expected email %s, got %s", tt.searchEmail, foundUser.Email)
-				}
+			// Verify result
+			if tt.shouldError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
 			}
 		})
 	}
 }
 
 func TestUserRepository_Update(t *testing.T) {
-	for _, tt := range UserRepositoryUpdateTests {
-		t.Run(tt.name, func(t *testing.T) {
-			// Setup test database
-			dbManager := setupTestDatabase(t)
-			defer cleanupTestDatabase(t, dbManager)
+	// Setup test database
+	dbManager := setupTestDatabase(t)
+	defer cleanupTestDatabase(t, dbManager)
 
-			repo := NewUserRepository(dbManager)
-			ctx := context.Background()
+	userRepo := users.NewUserRepository(dbManager)
 
-			// Create a test user first
-			user := models.NewUser("Original Name", "original@example.com")
-			createdUser, err := repo.Create(ctx, user)
-			if err != nil {
-				t.Fatalf("Failed to create test user: %v", err)
-			}
+	// Create test user
+	user := models.NewUser("testuser", "password123")
+	err := userRepo.Create(context.Background(), user)
+	assert.NoError(t, err)
 
-			// Update user
-			createdUser.Name = tt.newName
-			createdUser.Email = tt.newEmail
-			createdUser.Phone = tt.newPhone
-			createdUser.Status = tt.newStatus
+	// Update user
+	newStatus := "active"
+	user.Status = &newStatus
+	err = userRepo.Update(context.Background(), user)
+	assert.NoError(t, err)
 
-			updatedUser, err := repo.Update(ctx, createdUser)
-
-			if tt.shouldError && err == nil {
-				t.Error("Expected error but got none")
-				return
-			}
-
-			if !tt.shouldError && err != nil {
-				t.Errorf("Expected no error but got: %v", err)
-				return
-			}
-
-			if !tt.shouldError {
-				if updatedUser == nil {
-					t.Fatal("Updated user is nil")
-				}
-
-				if updatedUser.Name != tt.newName {
-					t.Errorf("Expected name %s, got %s", tt.newName, updatedUser.Name)
-				}
-
-				if updatedUser.Email != tt.newEmail {
-					t.Errorf("Expected email %s, got %s", tt.newEmail, updatedUser.Email)
-				}
-
-				if updatedUser.Phone != tt.newPhone {
-					t.Errorf("Expected phone %s, got %s", tt.newPhone, updatedUser.Phone)
-				}
-
-				if updatedUser.Status != tt.newStatus {
-					t.Errorf("Expected status %s, got %s", tt.newStatus, updatedUser.Status)
-				}
-
-				// Verify UpdatedAt was changed
-				if updatedUser.UpdatedAt.Equal(createdUser.UpdatedAt) {
-					t.Error("UpdatedAt should be different after update")
-				}
-			}
-		})
-	}
+	// Verify update
+	updatedUser, err := userRepo.GetByID(context.Background(), user.ID)
+	assert.NoError(t, err)
+	assert.Equal(t, "active", *updatedUser.Status)
 }
 
 func TestUserRepository_Delete(t *testing.T) {
-	for _, tt := range UserRepositoryDeleteTests {
-		t.Run(tt.name, func(t *testing.T) {
-			// Setup test database
-			dbManager := setupTestDatabase(t)
-			defer cleanupTestDatabase(t, dbManager)
+	// Setup test database
+	dbManager := setupTestDatabase(t)
+	defer cleanupTestDatabase(t, dbManager)
 
-			repo := NewUserRepository(dbManager)
-			ctx := context.Background()
+	userRepo := users.NewUserRepository(dbManager)
 
-			// Create a test user first
-			user := models.NewUser("Test User", "test@example.com")
-			createdUser, err := repo.Create(ctx, user)
-			if err != nil {
-				t.Fatalf("Failed to create test user: %v", err)
-			}
+	// Create test user
+	user := models.NewUser("testuser", "password123")
+	err := userRepo.Create(context.Background(), user)
+	assert.NoError(t, err)
 
-			// Test Delete
-			err = repo.Delete(ctx, tt.userID)
+	// Delete user
+	err = userRepo.Delete(context.Background(), user.ID)
+	assert.NoError(t, err)
 
-			if tt.shouldError && err == nil {
-				t.Error("Expected error but got none")
-				return
-			}
-
-			if !tt.shouldError && err != nil {
-				t.Errorf("Expected no error but got: %v", err)
-				return
-			}
-
-			if !tt.shouldError {
-				// Verify user is soft deleted
-				foundUser, err := repo.GetByID(ctx, tt.userID)
-				if err == nil && foundUser != nil && !foundUser.IsDeleted() {
-					t.Error("User should be soft deleted")
-				}
-			}
-		})
-	}
+	// Verify deletion
+	_, err = userRepo.GetByID(context.Background(), user.ID)
+	assert.Error(t, err)
 }
 
 func TestUserRepository_List(t *testing.T) {
-	for _, tt := range UserRepositoryListTests {
-		t.Run(tt.name, func(t *testing.T) {
-			// Setup test database
-			dbManager := setupTestDatabase(t)
-			defer cleanupTestDatabase(t, dbManager)
+	// Setup test database
+	dbManager := setupTestDatabase(t)
+	defer cleanupTestDatabase(t, dbManager)
 
-			repo := NewUserRepository(dbManager)
-			ctx := context.Background()
+	userRepo := users.NewUserRepository(dbManager)
 
-			// Create test users
-			for _, userData := range tt.testUsers {
-				user := models.NewUser(userData.name, userData.email)
-				user.Status = userData.status
-				_, err := repo.Create(ctx, user)
-				if err != nil {
-					t.Fatalf("Failed to create test user: %v", err)
-				}
-			}
+	// Create test users
+	user1 := models.NewUser("user1", "password123")
+	user2 := models.NewUser("user2", "password123")
 
-			// Test List
-			users, err := repo.List(ctx, tt.filters)
+	err := userRepo.Create(context.Background(), user1)
+	assert.NoError(t, err)
+	t.Logf("Created user1 with ID: %s", user1.ID)
 
-			if tt.shouldError && err == nil {
-				t.Error("Expected error but got none")
-				return
-			}
+	err = userRepo.Create(context.Background(), user2)
+	assert.NoError(t, err)
+	t.Logf("Created user2 with ID: %s", user2.ID)
 
-			if !tt.shouldError && err != nil {
-				t.Errorf("Expected no error but got: %v", err)
-				return
-			}
-
-			if !tt.shouldError {
-				if users == nil {
-					t.Fatal("Users list is nil")
-				}
-
-				if len(users) != tt.expectedCount {
-					t.Errorf("Expected %d users, got %d", tt.expectedCount, len(users))
-				}
-			}
-		})
+	// List users
+	usersList, err := userRepo.List(context.Background(), 10, 0)
+	assert.NoError(t, err)
+	t.Logf("Retrieved %d users", len(usersList))
+	for i, user := range usersList {
+		t.Logf("User %d: ID=%s, Username=%s", i, user.ID, user.Username)
 	}
+	assert.Len(t, usersList, 2)
+}
+
+func TestUserRepository_Count(t *testing.T) {
+	// Setup test database
+	dbManager := setupTestDatabase(t)
+	defer cleanupTestDatabase(t, dbManager)
+
+	userRepo := users.NewUserRepository(dbManager)
+
+	// Create test users
+	user1 := models.NewUser("user1", "password123")
+	user2 := models.NewUser("user2", "password123")
+
+	err := userRepo.Create(context.Background(), user1)
+	assert.NoError(t, err)
+	err = userRepo.Create(context.Background(), user2)
+	assert.NoError(t, err)
+
+	// Count users
+	count, err := userRepo.Count(context.Background())
+	assert.NoError(t, err)
+	assert.Equal(t, int64(2), count)
+}
+
+func TestUserRepository_Exists(t *testing.T) {
+	// Setup test database
+	dbManager := setupTestDatabase(t)
+	defer cleanupTestDatabase(t, dbManager)
+
+	userRepo := users.NewUserRepository(dbManager)
+
+	// Create test user
+	user := models.NewUser("testuser", "password123")
+	err := userRepo.Create(context.Background(), user)
+	assert.NoError(t, err)
+
+	// Check if user exists
+	exists, err := userRepo.Exists(context.Background(), user.ID)
+	assert.NoError(t, err)
+	assert.True(t, exists)
+
+	// Check if non-existent user exists
+	exists, err = userRepo.Exists(context.Background(), "nonexistent")
+	assert.NoError(t, err)
+	assert.False(t, exists)
+}
+
+func TestUserRepository_ListActive(t *testing.T) {
+	// Setup test database
+	dbManager := setupTestDatabase(t)
+	defer cleanupTestDatabase(t, dbManager)
+
+	userRepo := users.NewUserRepository(dbManager)
+
+	// Create test users
+	user1 := models.NewUser("user1", "password123")
+	activeStatus := "active"
+	user1.Status = &activeStatus
+	t.Logf("User1 status before create: %s", *user1.Status)
+
+	user2 := models.NewUser("user2", "password123")
+	inactiveStatus := "inactive"
+	user2.Status = &inactiveStatus
+	t.Logf("User2 status before create: %s", *user2.Status)
+
+	err := userRepo.Create(context.Background(), user1)
+	assert.NoError(t, err)
+	t.Logf("User1 status after create: %s, ID: %s", *user1.Status, user1.ID)
+
+	err = userRepo.Create(context.Background(), user2)
+	assert.NoError(t, err)
+	t.Logf("User2 status after create: %s, ID: %s", *user2.Status, user2.ID)
+
+	// List active users
+	activeUsers, err := userRepo.ListActive(context.Background(), 10, 0)
+	assert.NoError(t, err)
+	t.Logf("Retrieved %d active users", len(activeUsers))
+	for i, user := range activeUsers {
+		status := ""
+		if user.Status != nil {
+			status = *user.Status
+		}
+		t.Logf("Active User %d: ID=%s, Username=%s, Status=%s", i, user.ID, user.Username, status)
+	}
+	assert.Len(t, activeUsers, 1)
+	if len(activeUsers) > 0 {
+		assert.Equal(t, "active", *activeUsers[0].Status)
+	}
+}
+
+func TestUserRepository_CountActive(t *testing.T) {
+	// Setup test database
+	dbManager := setupTestDatabase(t)
+	defer cleanupTestDatabase(t, dbManager)
+
+	userRepo := users.NewUserRepository(dbManager)
+
+	// Create test users
+	user1 := models.NewUser("user1", "password123")
+	activeStatus := "active"
+	user1.Status = &activeStatus
+
+	user2 := models.NewUser("user2", "password123")
+	inactiveStatus := "inactive"
+	user2.Status = &inactiveStatus
+
+	err := userRepo.Create(context.Background(), user1)
+	assert.NoError(t, err)
+	err = userRepo.Create(context.Background(), user2)
+	assert.NoError(t, err)
+
+	// Print statuses for debugging
+	t.Logf("User1 status: %v", user1.Status)
+	t.Logf("User2 status: %v", user2.Status)
+
+	// Count active users
+	count, err := userRepo.CountActive(context.Background())
+	assert.NoError(t, err)
+	t.Logf("CountActive returned: %d", count)
+	assert.Equal(t, int64(1), count)
+}
+
+func TestUserRepository_Search(t *testing.T) {
+	// Setup test database
+	dbManager := setupTestDatabase(t)
+	defer cleanupTestDatabase(t, dbManager)
+
+	userRepo := users.NewUserRepository(dbManager)
+
+	// Create test users
+	user1 := models.NewUser("john_doe", "password123")
+	user2 := models.NewUser("jane_smith", "password123")
+
+	err := userRepo.Create(context.Background(), user1)
+	assert.NoError(t, err)
+	err = userRepo.Create(context.Background(), user2)
+	assert.NoError(t, err)
+
+	// Search users
+	users, err := userRepo.Search(context.Background(), "john", 10, 0)
+	assert.NoError(t, err)
+	assert.Len(t, users, 1)
+	assert.Equal(t, "john_doe", users[0].Username)
 }
 
 // Helper functions for test setup
-func setupTestDatabase(t *testing.T) *db.Manager {
-	// This would set up a test database (e.g., in-memory SQLite or test PostgreSQL)
-	// For now, we'll return nil and skip tests that require database
-	t.Skip("Database setup not implemented yet")
+func setupTestDatabase(t *testing.T) db.DBManager {
+	// Return a new mock database manager for each test to prevent interference
+	return &MockDBManager{
+		users:  make(map[string]*models.User),
+		nextID: 0,
+	}
+}
+
+func cleanupTestDatabase(t *testing.T, dbManager db.DBManager) {
+	// Clean up test database
+	if err := dbManager.Close(); err != nil {
+		t.Logf("Failed to close database: %v", err)
+	}
+}
+
+// MockDBManager is a mock implementation of db.DBManager for testing
+type MockDBManager struct {
+	users  map[string]*models.User
+	nextID int
+}
+
+func (m *MockDBManager) Connect(ctx context.Context) error { return nil }
+func (m *MockDBManager) Close() error                      { return nil }
+func (m *MockDBManager) IsConnected() bool                 { return true }
+func (m *MockDBManager) GetBackendType() db.BackendType    { return db.BackendInMemory }
+
+func (m *MockDBManager) Create(ctx context.Context, model interface{}) error {
+	if m.users == nil {
+		m.users = make(map[string]*models.User)
+	}
+
+	switch v := model.(type) {
+	case *models.User:
+		// Ensure unique ID - if ID is empty or already exists, generate a new one
+		if v.ID == "" {
+			m.nextID++
+			v.ID = fmt.Sprintf("usr%d", m.nextID)
+		}
+
+		// If ID already exists, generate a new one
+		for m.users[v.ID] != nil {
+			m.nextID++
+			v.ID = fmt.Sprintf("usr%d", m.nextID)
+		}
+
+		m.users[v.ID] = v
+		return nil
+	default:
+		return fmt.Errorf("unsupported model type")
+	}
+}
+
+func (m *MockDBManager) GetByID(ctx context.Context, id interface{}, model interface{}) error {
+	if m.users == nil {
+		m.users = make(map[string]*models.User)
+	}
+
+	idStr, ok := id.(string)
+	if !ok {
+		return fmt.Errorf("invalid ID type")
+	}
+
+	user, exists := m.users[idStr]
+	if !exists {
+		return fmt.Errorf("user not found")
+	}
+
+	switch v := model.(type) {
+	case *models.User:
+		*v = *user
+		return nil
+	default:
+		return fmt.Errorf("unsupported model type")
+	}
+}
+
+func (m *MockDBManager) Update(ctx context.Context, model interface{}) error {
+	if m.users == nil {
+		m.users = make(map[string]*models.User)
+	}
+
+	switch v := model.(type) {
+	case *models.User:
+		if _, exists := m.users[v.ID]; !exists {
+			return fmt.Errorf("user not found")
+		}
+		m.users[v.ID] = v
+		return nil
+	default:
+		return fmt.Errorf("unsupported model type")
+	}
+}
+
+func (m *MockDBManager) Delete(ctx context.Context, id interface{}) error {
+	if m.users == nil {
+		m.users = make(map[string]*models.User)
+	}
+
+	idStr, ok := id.(string)
+	if !ok {
+		return fmt.Errorf("invalid ID type")
+	}
+
+	if _, exists := m.users[idStr]; !exists {
+		return fmt.Errorf("user not found")
+	}
+
+	delete(m.users, idStr)
 	return nil
 }
 
-func cleanupTestDatabase(t *testing.T, dbManager *db.Manager) {
-	// Clean up test database
-	if dbManager != nil {
-		// Cleanup logic here
+func (m *MockDBManager) List(ctx context.Context, filters []db.Filter, model interface{}) error {
+	if m.users == nil {
+		m.users = make(map[string]*models.User)
 	}
+
+	switch v := model.(type) {
+	case *[]models.User:
+		var result []models.User
+		for _, user := range m.users {
+			// Apply filters
+			match := true
+			for _, filter := range filters {
+				switch filter.Field {
+				case "status":
+					if user.Status == nil || *user.Status != filter.Value {
+						match = false
+						break
+					}
+				case "username":
+					if filter.Operator == db.FilterOpContains {
+						keyword, ok := filter.Value.(string)
+						if !ok {
+							match = false
+							break
+						}
+						if !strings.Contains(strings.ToLower(user.Username), strings.ToLower(keyword)) {
+							match = false
+							break
+						}
+					} else if user.Username != filter.Value {
+						match = false
+						break
+					}
+				}
+				// If no match found for this filter, break out of filter loop
+				if !match {
+					break
+				}
+			}
+			if match {
+				result = append(result, *user)
+			}
+		}
+		*v = result
+		return nil
+	default:
+		return fmt.Errorf("unsupported model type")
+	}
+}
+
+func (m *MockDBManager) ApplyFilters(query interface{}, filters []db.Filter) (interface{}, error) {
+	return query, nil
+}
+
+func (m *MockDBManager) BuildFilter(field string, operator db.FilterOperator, value interface{}) db.Filter {
+	return db.Filter{Field: field, Operator: operator, Value: value}
 }

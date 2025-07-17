@@ -7,7 +7,6 @@ import (
 	userRequests "github.com/Kisanlink/aaa-service/entities/requests/users"
 	userResponses "github.com/Kisanlink/aaa-service/entities/responses/users"
 	"github.com/Kisanlink/kisanlink-db/pkg/base"
-	"github.com/Kisanlink/kisanlink-db/pkg/db"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
@@ -22,19 +21,6 @@ type Logger interface {
 	With(fields ...zap.Field) Logger
 	Named(name string) Logger
 	Sync() error
-}
-
-// DatabaseManager interface for database operations
-type DatabaseManager interface {
-	Connect(ctx context.Context) error
-	Close() error
-	HealthCheck(ctx context.Context) error
-	GetPostgresManager() *db.PostgresManager
-	GetDynamoManager() *db.DynamoManager
-	GetSpiceManager() *db.SpiceManager
-	GetManager(backend db.BackendType) db.DBManager
-	GetAllManagers() []db.DBManager
-	IsConnected(backend db.BackendType) bool
 }
 
 // CacheService interface for caching operations
@@ -69,222 +55,103 @@ type Responder interface {
 	SendInternalError(c *gin.Context, err error)
 }
 
-// Repository interfaces - now inheriting from kisanlink-db base interfaces
+// UserService interface for user-related business operations
+type UserService interface {
+	CreateUser(ctx context.Context, req *userRequests.CreateUserRequest) (*userResponses.UserResponse, error)
+	GetUserByID(ctx context.Context, userID string) (*userResponses.UserResponse, error)
+	GetUserByUsername(ctx context.Context, username string) (*userResponses.UserResponse, error)
+	GetUserByMobileNumber(ctx context.Context, mobileNumber uint64) (*userResponses.UserResponse, error)
+	GetUserByAadhaarNumber(ctx context.Context, aadhaarNumber string) (*userResponses.UserResponse, error)
+	UpdateUser(ctx context.Context, req *userRequests.UpdateUserRequest) (*userResponses.UserResponse, error)
+	DeleteUser(ctx context.Context, userID string) error
+	ListUsers(ctx context.Context, limit, offset int) (interface{}, error)
+	ListActiveUsers(ctx context.Context, limit, offset int) (interface{}, error)
+	SearchUsers(ctx context.Context, keyword string, limit, offset int) (interface{}, error)
+	ValidateUser(ctx context.Context, userID string) error
+	DeductTokens(ctx context.Context, userID string, amount int) error
+	AddTokens(ctx context.Context, userID string, amount int) error
+	GetUserWithProfile(ctx context.Context, userID string) (*userResponses.UserResponse, error)
+	GetUserWithRoles(ctx context.Context, userID string) (*userResponses.UserResponse, error)
+	VerifyUserPassword(ctx context.Context, username, password string) (*userResponses.UserResponse, error)
+}
+
+// AddressService interface for address-related operations
+type AddressService interface {
+	CreateAddress(ctx context.Context, address *models.Address) error
+	GetAddressByID(ctx context.Context, addressID string) (*models.Address, error)
+	UpdateAddress(ctx context.Context, address *models.Address) error
+	DeleteAddress(ctx context.Context, addressID string) error
+	GetAddressesByUserID(ctx context.Context, userID string) ([]*models.Address, error)
+	SearchAddresses(ctx context.Context, query string, limit, offset int) ([]*models.Address, error)
+}
+
+// RoleService interface for role management operations
+type RoleService interface {
+	CreateRole(ctx context.Context, role *models.Role) error
+	GetRoleByID(ctx context.Context, roleID string) (*models.Role, error)
+	GetRoleByName(ctx context.Context, name string) (*models.Role, error)
+	UpdateRole(ctx context.Context, role *models.Role) error
+	DeleteRole(ctx context.Context, roleID string) error
+	ListRoles(ctx context.Context, limit, offset int) ([]*models.Role, error)
+	SearchRoles(ctx context.Context, query string, limit, offset int) ([]*models.Role, error)
+	AssignRoleToUser(ctx context.Context, userID, roleID string) error
+	RemoveRoleFromUser(ctx context.Context, userID, roleID string) error
+	GetUserRoles(ctx context.Context, userID string) ([]*models.UserRole, error)
+}
+
+// AuthService interface for authentication operations
+type AuthService interface {
+	Login(ctx context.Context, username, password string) (interface{}, error)
+	Logout(ctx context.Context, token string) error
+	RefreshToken(ctx context.Context, refreshToken string) (interface{}, error)
+	ValidateToken(ctx context.Context, token string) (interface{}, error)
+	ChangePassword(ctx context.Context, userID, oldPassword, newPassword string) error
+	ResetPassword(ctx context.Context, username string) error
+	VerifyEmail(ctx context.Context, userID, verificationCode string) error
+	ResendVerificationEmail(ctx context.Context, userID string) error
+}
 
 // UserRepository interface for user data operations
 type UserRepository interface {
-	base.FilterableRepository[*models.User]
-	// Additional user-specific methods
+	base.Repository[*models.User]
 	GetByUsername(ctx context.Context, username string) (*models.User, error)
 	GetByMobileNumber(ctx context.Context, mobileNumber uint64) (*models.User, error)
 	GetByAadhaarNumber(ctx context.Context, aadhaarNumber string) (*models.User, error)
 	ListActive(ctx context.Context, limit, offset int) ([]*models.User, error)
 	CountActive(ctx context.Context) (int64, error)
+	Search(ctx context.Context, keyword string, limit, offset int) ([]*models.User, error)
 	GetWithRoles(ctx context.Context, userID string) (*models.User, error)
 	GetWithAddress(ctx context.Context, userID string) (*models.User, error)
 	GetWithProfile(ctx context.Context, userID string) (*models.User, error)
-	Search(ctx context.Context, query string, limit, offset int) ([]*models.User, error)
 }
 
 // AddressRepository interface for address data operations
 type AddressRepository interface {
-	base.FilterableRepository[*models.Address]
-	// Additional address-specific methods
+	base.Repository[*models.Address]
 	GetByUserID(ctx context.Context, userID string) ([]*models.Address, error)
 	Search(ctx context.Context, query string, limit, offset int) ([]*models.Address, error)
 }
 
 // RoleRepository interface for role data operations
 type RoleRepository interface {
-	base.FilterableRepository[*models.Role]
-	// Additional role-specific methods
+	base.Repository[*models.Role]
 	GetByName(ctx context.Context, name string) (*models.Role, error)
 	GetActive(ctx context.Context, limit, offset int) ([]*models.Role, error)
 	Search(ctx context.Context, query string, limit, offset int) ([]*models.Role, error)
+	ExistsByName(ctx context.Context, name string) (bool, error)
 }
 
 // UserRoleRepository interface for user-role relationship operations
 type UserRoleRepository interface {
-	base.FilterableRepository[*models.UserRole]
-	// Additional user-role specific methods
+	base.Repository[*models.UserRole]
 	GetByUserID(ctx context.Context, userID string) ([]*models.UserRole, error)
 	GetByRoleID(ctx context.Context, roleID string) ([]*models.UserRole, error)
 	GetByUserAndRole(ctx context.Context, userID, roleID string) (*models.UserRole, error)
 	DeleteByUserAndRole(ctx context.Context, userID, roleID string) error
-	GetActiveByUserID(ctx context.Context, userID string) ([]*models.UserRole, error)
+	ExistsByUserAndRole(ctx context.Context, userID, roleID string) (bool, error)
 }
 
-// Service interfaces
-
-// UserService interface for user business logic
-type UserService interface {
-	CreateUser(ctx context.Context, req *userRequests.CreateUserRequest) (*userResponses.UserResponse, error)
-	GetUserByID(ctx context.Context, userID string) (*userResponses.UserResponse, error)
-	GetUserByUsername(ctx context.Context, username string) (*userResponses.UserResponse, error)
-	GetUserByMobileNumber(ctx context.Context, mobileNumber uint64) (*userResponses.UserResponse, error)
-	UpdateUser(ctx context.Context, req *userRequests.UpdateUserRequest) (*userResponses.UserResponse, error)
-	DeleteUser(ctx context.Context, userID string) (*userResponses.UserResponse, error)
-	ListUsers(ctx context.Context, filters interface{}) (interface{}, error)
-	SearchUsers(ctx context.Context, query string, limit, offset int) (interface{}, error)
-	ValidateUser(ctx context.Context, userID string) (*userResponses.UserResponse, error)
-	AssignRole(ctx context.Context, userID, roleID string) (*userResponses.UserResponse, error)
-	RemoveRole(ctx context.Context, userID, roleID string) (*userResponses.UserResponse, error)
-	GetUserRoles(ctx context.Context, userID string) (interface{}, error)
-	GetUserProfile(ctx context.Context, userID string) (interface{}, error)
-	UpdateUserProfile(ctx context.Context, userID string, req interface{}) (interface{}, error)
-	LockAccount(ctx context.Context, userID string) (*userResponses.UserResponse, error)
-	UnlockAccount(ctx context.Context, userID string) (*userResponses.UserResponse, error)
-	GetUserActivity(ctx context.Context, userID string) (interface{}, error)
-	GetUserAuditTrail(ctx context.Context, userID string) (interface{}, error)
-	BulkOperations(ctx context.Context, req interface{}) (interface{}, error)
-}
-
-// AddressService interface for address business logic
-type AddressService interface {
-	CreateAddress(ctx context.Context, req interface{}) (interface{}, error)
-	GetAddressByID(ctx context.Context, addressID string) (interface{}, error)
-	GetAddressByUserID(ctx context.Context, userID string) (interface{}, error)
-	UpdateAddress(ctx context.Context, req interface{}) (interface{}, error)
-	DeleteAddress(ctx context.Context, addressID string) error
-	ListAddresses(ctx context.Context, filters interface{}) (interface{}, error)
-	SearchAddresses(ctx context.Context, query string, limit, offset int) (interface{}, error)
-	ValidateAddress(ctx context.Context, address interface{}) error
-	GeocodingAddress(ctx context.Context, address interface{}) (interface{}, error)
-}
-
-// RoleService interface for role business logic
-type RoleService interface {
-	CreateRole(ctx context.Context, req interface{}) (interface{}, error)
-	GetRoleByID(ctx context.Context, roleID string) (interface{}, error)
-	GetRoleByName(ctx context.Context, name string) (interface{}, error)
-	UpdateRole(ctx context.Context, req interface{}) (interface{}, error)
-	DeleteRole(ctx context.Context, roleID string) error
-	ListRoles(ctx context.Context, filters interface{}) (interface{}, error)
-	SearchRoles(ctx context.Context, query string, limit, offset int) (interface{}, error)
-	GetActiveRoles(ctx context.Context, limit, offset int) (interface{}, error)
-	AssignPermission(ctx context.Context, roleID, permissionID string) (interface{}, error)
-	RemovePermission(ctx context.Context, roleID, permissionID string) error
-	GetRolePermissions(ctx context.Context, roleID string) (interface{}, error)
-	GetRoleHierarchy(ctx context.Context) (interface{}, error)
-	AddChildRole(ctx context.Context, parentRoleID, childRoleID string) (interface{}, error)
-	ValidateRoleHierarchy(ctx context.Context, roleID string) error
-}
-
-// AuthService interface for authentication operations
-type AuthService interface {
-	Login(ctx context.Context, req interface{}) (interface{}, error)
-	Register(ctx context.Context, req interface{}) (interface{}, error)
-	RefreshToken(ctx context.Context, req interface{}) (interface{}, error)
-	Logout(ctx context.Context, req interface{}) error
-	ForgotPassword(ctx context.Context, req interface{}) (interface{}, error)
-	ResetPassword(ctx context.Context, req interface{}) (interface{}, error)
-	ValidateToken(ctx context.Context, token string) (interface{}, error)
-	GenerateTokens(ctx context.Context, userID string) (interface{}, error)
-	RevokeToken(ctx context.Context, token string) error
-	GetCurrentUser(ctx context.Context, token string) (interface{}, error)
-}
-
-// MFAService interface for multi-factor authentication
-type MFAService interface {
-	SetupMFA(ctx context.Context, userID string, req interface{}) (interface{}, error)
-	VerifyMFA(ctx context.Context, userID string, req interface{}) (interface{}, error)
-	DisableMFA(ctx context.Context, userID string) error
-	GetMFAStatus(ctx context.Context, userID string) (interface{}, error)
-	GenerateBackupCodes(ctx context.Context, userID string) (interface{}, error)
-	ValidateBackupCode(ctx context.Context, userID, code string) (interface{}, error)
-}
-
-// PermissionService interface for permission management
-type PermissionService interface {
-	CreatePermission(ctx context.Context, req interface{}) (interface{}, error)
-	GetPermissionByID(ctx context.Context, permissionID string) (interface{}, error)
-	UpdatePermission(ctx context.Context, req interface{}) (interface{}, error)
-	DeletePermission(ctx context.Context, permissionID string) error
-	ListPermissions(ctx context.Context, filters interface{}) (interface{}, error)
-	EvaluatePermission(ctx context.Context, userID, resource, action string) (bool, error)
-	GrantTemporaryPermission(ctx context.Context, req interface{}) (interface{}, error)
-	RevokeTemporaryPermission(ctx context.Context, permissionID string) error
-	GetUserPermissions(ctx context.Context, userID string) (interface{}, error)
-	CheckPermission(ctx context.Context, userID, resource, action string) (bool, error)
-}
-
-// AuditService interface for audit logging
-type AuditService interface {
-	LogEvent(ctx context.Context, event interface{}) error
-	GetAuditTrail(ctx context.Context, userID string) (interface{}, error)
-	GetSystemAuditTrail(ctx context.Context, filters interface{}) (interface{}, error)
-	GetUserActivity(ctx context.Context, userID string) (interface{}, error)
-	LogSecurityEvent(ctx context.Context, event interface{}) error
-	GenerateAuditReport(ctx context.Context, req interface{}) (interface{}, error)
-}
-
-// HealthService interface for health checking
-type HealthService interface {
-	CheckHealth(ctx context.Context) error
-	CheckReadiness(ctx context.Context) error
-	GetDetailedHealth(ctx context.Context) (interface{}, error)
-	GetMetrics(ctx context.Context) (interface{}, error)
-	GetSystemInfo(ctx context.Context) (interface{}, error)
-}
-
-// Handler interfaces
-
-// UserHandler interface for user HTTP handlers
-type UserHandler interface {
-	CreateUser(c *gin.Context)
-	GetUserByID(c *gin.Context)
-	UpdateUser(c *gin.Context)
-	DeleteUser(c *gin.Context)
-	ListUsers(c *gin.Context)
-	SearchUsers(c *gin.Context)
-	ValidateUser(c *gin.Context)
-	AssignRole(c *gin.Context)
-	RemoveRole(c *gin.Context)
-	GetUserRoles(c *gin.Context)
-	GetUserProfile(c *gin.Context)
-	UpdateUserProfile(c *gin.Context)
-	LockAccount(c *gin.Context)
-	UnlockAccount(c *gin.Context)
-	GetUserActivity(c *gin.Context)
-	GetUserAuditTrail(c *gin.Context)
-	BulkOperations(c *gin.Context)
-}
-
-// Middleware interfaces
-
-// AuthMiddleware interface for authentication middleware
-type AuthMiddleware interface {
-	Authenticate() gin.HandlerFunc
-	RequireRole(roles ...string) gin.HandlerFunc
-	RequirePermission(resource, action string) gin.HandlerFunc
-	OptionalAuth() gin.HandlerFunc
-}
-
-// LoggingMiddleware interface for logging middleware
-type LoggingMiddleware interface {
-	RequestLogger() gin.HandlerFunc
-	ErrorLogger() gin.HandlerFunc
-}
-
-// RateLimitMiddleware interface for rate limiting
-type RateLimitMiddleware interface {
-	RateLimit(requests int, duration int) gin.HandlerFunc
-	UserRateLimit(requests int, duration int) gin.HandlerFunc
-	IPRateLimit(requests int, duration int) gin.HandlerFunc
-}
-
-// ErrorHandler interface for error handling
-type ErrorHandler interface {
-	HandleError(c *gin.Context, err error)
-	HandleValidationError(c *gin.Context, err error)
-	HandleAuthError(c *gin.Context, err error)
-	HandleNotFoundError(c *gin.Context)
-	HandleInternalError(c *gin.Context, err error)
-}
-
-// Utility interfaces
-
-// TokenManager interface for token management
+// TokenManager interface for token operations
 type TokenManager interface {
 	GenerateAccessToken(userID string, claims map[string]interface{}) (string, error)
 	GenerateRefreshToken(userID string) (string, error)
@@ -328,54 +195,20 @@ type NotificationService interface {
 	GetUnreadCount(ctx context.Context, userID string) (int, error)
 }
 
-// FileService interface for file operations
-type FileService interface {
-	UploadFile(ctx context.Context, file interface{}) (string, error)
-	DownloadFile(ctx context.Context, fileID string) ([]byte, error)
-	DeleteFile(ctx context.Context, fileID string) error
-	GetFileMetadata(ctx context.Context, fileID string) (interface{}, error)
-	GeneratePresignedURL(ctx context.Context, fileID string) (string, error)
+// MaintenanceService interface for maintenance mode management
+type MaintenanceService interface {
+	IsMaintenanceMode(ctx context.Context) (bool, interface{}, error)
+	EnableMaintenanceMode(ctx context.Context, config interface{}) error
+	DisableMaintenanceMode(ctx context.Context, disabledBy string) error
+	GetMaintenanceStatus(ctx context.Context) (interface{}, error)
+	IsUserAllowedDuringMaintenance(ctx context.Context, userID string, isAdmin bool, isReadOperation bool) (bool, error)
+	UpdateMaintenanceMessage(ctx context.Context, message string, updatedBy string) error
 }
 
-// ConfigService interface for configuration management
-type ConfigService interface {
-	GetConfig(key string) (interface{}, error)
-	SetConfig(key string, value interface{}) error
-	GetAllConfigs() (map[string]interface{}, error)
-	ReloadConfig() error
-}
-
-// MetricsService interface for metrics collection
-type MetricsService interface {
-	IncrementCounter(metric string, tags map[string]string)
-	RecordHistogram(metric string, value float64, tags map[string]string)
-	RecordGauge(metric string, value float64, tags map[string]string)
-	GetMetrics() (interface{}, error)
-}
-
-// Server interfaces
-
-// HTTPServer interface for HTTP server operations
-type HTTPServer interface {
-	Start() error
-	Stop(ctx context.Context) error
-	GetRouter() *gin.Engine
-	RegisterRoutes()
-	RegisterMiddleware()
-}
-
-// GRPCServer interface for gRPC server operations
-type GRPCServer interface {
-	Start(addr string) error
-	Stop() error
-	RegisterServices()
-}
-
-// WebSocketServer interface for WebSocket server operations
-type WebSocketServer interface {
-	Start() error
-	Stop() error
-	HandleConnection(c *gin.Context)
-	BroadcastMessage(message interface{}) error
-	SendMessageToUser(userID string, message interface{}) error
+// HealthService interface for health check operations
+type HealthService interface {
+	CheckDatabaseHealth(ctx context.Context) error
+	CheckCacheHealth(ctx context.Context) error
+	CheckExternalServiceHealth(ctx context.Context) error
+	GetOverallHealth(ctx context.Context) (interface{}, error)
 }

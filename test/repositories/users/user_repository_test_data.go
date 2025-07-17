@@ -6,41 +6,33 @@ import (
 
 // Test data for TestUserRepository_Create
 var UserRepositoryCreateTests = []struct {
-	name        string
-	name        string
+	testName    string
+	userName    string
 	email       string
 	phone       string
 	status      string
 	shouldError bool
 }{
 	{
-		name:        "Valid user creation",
-		name:        "John Doe",
+		testName:    "Valid user creation",
+		userName:    "john_doe",
 		email:       "john@example.com",
 		phone:       "+1234567890",
 		status:      "active",
 		shouldError: false,
 	},
 	{
-		name:        "User without phone",
-		name:        "Jane Smith",
+		testName:    "User without phone",
+		userName:    "jane_smith",
 		email:       "jane@example.com",
 		phone:       "",
 		status:      "active",
 		shouldError: false,
 	},
 	{
-		name:        "User with invalid email",
-		name:        "Invalid User",
-		email:       "invalid-email",
-		phone:       "+1234567890",
-		status:      "active",
-		shouldError: true,
-	},
-	{
-		name:        "User with empty name",
-		name:        "",
-		email:       "test@example.com",
+		testName:    "User with empty username",
+		userName:    "",
+		email:       "invalid@example.com",
 		phone:       "+1234567890",
 		status:      "active",
 		shouldError: true,
@@ -49,84 +41,66 @@ var UserRepositoryCreateTests = []struct {
 
 // Test data for TestUserRepository_GetByID
 var UserRepositoryGetByIDTests = []struct {
-	name        string
+	testName    string
 	userID      string
 	shouldError bool
 }{
 	{
-		name:        "Get existing user",
-		userID:      "USER123456789", // This will be replaced with actual created user ID
+		testName:    "Valid user ID",
+		userID:      "user_123",
 		shouldError: false,
 	},
 	{
-		name:        "Get non-existent user",
-		userID:      "USER999999999",
+		testName:    "Empty user ID",
+		userID:      "",
 		shouldError: true,
 	},
 	{
-		name:        "Get with empty ID",
-		userID:      "",
+		testName:    "Non-existent user ID",
+		userID:      "non_existent_id",
 		shouldError: true,
 	},
 }
 
-// Test data for TestUserRepository_GetByEmail
-var UserRepositoryGetByEmailTests = []struct {
-	name        string
-	email       string
-	searchEmail string
+// Test data for TestUserRepository_GetByUsername
+var UserRepositoryGetByUsernameTests = []struct {
+	testName    string
+	userName    string
 	shouldError bool
 }{
 	{
-		name:        "Get existing user by email",
-		email:       "test@example.com",
-		searchEmail: "test@example.com",
+		testName:    "Valid username",
+		userName:    "john_doe",
 		shouldError: false,
 	},
 	{
-		name:        "Get non-existent user by email",
-		email:       "test@example.com",
-		searchEmail: "nonexistent@example.com",
+		testName:    "Empty username",
+		userName:    "",
 		shouldError: true,
 	},
 	{
-		name:        "Get with empty email",
-		email:       "test@example.com",
-		searchEmail: "",
+		testName:    "Non-existent username",
+		userName:    "non_existent_user",
 		shouldError: true,
 	},
 }
 
 // Test data for TestUserRepository_Update
 var UserRepositoryUpdateTests = []struct {
-	name        string
-	newName     string
-	newEmail    string
-	newPhone    string
+	testName    string
+	userID      string
 	newStatus   string
 	shouldError bool
 }{
 	{
-		name:        "Valid user update",
-		newName:     "Updated Name",
-		newEmail:    "updated@example.com",
-		newPhone:    "+9876543210",
-		newStatus:   "inactive",
+		testName:    "Valid user update",
+		userID:      "user_123",
+		newStatus:   "active",
 		shouldError: false,
 	},
 	{
-		name:        "Update with empty name",
-		newName:     "",
-		newEmail:    "updated@example.com",
-		newPhone:    "+9876543210",
-		newStatus:   "active",
-		shouldError: true,
-	},
-	{
-		name:        "Update with invalid email",
-		newName:     "Updated Name",
-		newEmail:    "invalid-email",
-		newPhone:    "+9876543210",
+		testName:    "Update non-existent user",
+		userID:      "non_existent_id",
 		newStatus:   "active",
 		shouldError: true,
 	},
@@ -134,97 +108,117 @@ var UserRepositoryUpdateTests = []struct {
 
 // Test data for TestUserRepository_Delete
 var UserRepositoryDeleteTests = []struct {
-	name        string
+	testName    string
 	userID      string
 	shouldError bool
 }{
 	{
-		name:        "Delete existing user",
-		userID:      "USER123456789", // This will be replaced with actual created user ID
+		testName:    "Valid user deletion",
+		userID:      "user_123",
 		shouldError: false,
 	},
 	{
-		name:        "Delete non-existent user",
-		userID:      "USER999999999",
+		testName:    "Delete non-existent user",
+		userID:      "non_existent_id",
 		shouldError: true,
 	},
 	{
-		name:        "Delete with empty ID",
+		testName:    "Delete with empty ID",
 		userID:      "",
 		shouldError: true,
 	},
 }
 
 // Test data for TestUserRepository_List
-type TestUserData struct {
-	name   string
-	email  string
-	status string
-}
-
 var UserRepositoryListTests = []struct {
-	name          string
-	testUsers     []TestUserData
-	filters       *base.Filters
+	testName      string
+	limit         int
+	offset        int
 	expectedCount int
 	shouldError   bool
 }{
 	{
-		name: "List all users",
-		testUsers: []TestUserData{
-			{name: "User 1", email: "user1@example.com", status: "active"},
-			{name: "User 2", email: "user2@example.com", status: "active"},
-			{name: "User 3", email: "user3@example.com", status: "inactive"},
-		},
-		filters:       &base.Filters{},
-		expectedCount: 3,
-		shouldError:   false,
-	},
-	{
-		name: "List active users only",
-		testUsers: []TestUserData{
-			{name: "User 1", email: "user1@example.com", status: "active"},
-			{name: "User 2", email: "user2@example.com", status: "active"},
-			{name: "User 3", email: "user3@example.com", status: "inactive"},
-		},
-		filters: &base.Filters{
-			Conditions: map[string]interface{}{
-				"status": "active",
-			},
-		},
+		testName:      "Valid list with limit",
+		limit:         10,
+		offset:        0,
 		expectedCount: 2,
 		shouldError:   false,
 	},
 	{
-		name: "List with pagination",
-		testUsers: []TestUserData{
-			{name: "User 1", email: "user1@example.com", status: "active"},
-			{name: "User 2", email: "user2@example.com", status: "active"},
-			{name: "User 3", email: "user3@example.com", status: "active"},
-		},
-		filters: &base.Filters{
-			Limit:  2,
-			Offset: 0,
-		},
-		expectedCount: 2,
+		testName:      "List with offset",
+		limit:         10,
+		offset:        1,
+		expectedCount: 1,
+		shouldError:   false,
+	},
+	{
+		testName:      "List with zero limit",
+		limit:         0,
+		offset:        0,
+		expectedCount: 0,
 		shouldError:   false,
 	},
 }
 
-// Helper function to create test user data
+// Test data for TestUserRepository_Search
+var UserRepositorySearchTests = []struct {
+	testName      string
+	searchTerm    string
+	limit         int
+	offset        int
+	expectedCount int
+	shouldError   bool
+}{
+	{
+		testName:      "Search by name",
+		searchTerm:    "John",
+		limit:         10,
+		offset:        0,
+		expectedCount: 1,
+		shouldError:   false,
+	},
+	{
+		testName:      "Search by email",
+		searchTerm:    "example.com",
+		limit:         10,
+		offset:        0,
+		expectedCount: 2,
+		shouldError:   false,
+	},
+	{
+		testName:      "Search with no results",
+		searchTerm:    "nonexistent",
+		limit:         10,
+		offset:        0,
+		expectedCount: 0,
+		shouldError:   false,
+	},
+}
+
+// TestUserData represents test user data structure
+type TestUserData struct {
+	userName string
+	email    string
+	status   string
+}
+
+// CreateTestUserData creates test user data
 func CreateTestUserData(name, email, status string) TestUserData {
 	return TestUserData{
-		name:   name,
-		email:  email,
-		status: status,
+		userName: name,
+		email:    email,
+		status:   status,
 	}
 }
 
-// Helper function to create test filters
-func CreateTestFilters(conditions map[string]interface{}, limit, offset int) *base.Filters {
-	return &base.Filters{
-		Conditions: conditions,
-		Limit:      limit,
-		Offset:     offset,
+// CreateTestFilters creates test filters for database operations
+func CreateTestFilters(conditions map[string]interface{}, limit, offset int) *base.Filter {
+	return &base.Filter{
+		Group: base.FilterGroup{
+			Conditions: []base.FilterCondition{},
+			Logic:      base.LogicAnd,
+		},
+		Limit:  limit,
+		Offset: offset,
 	}
 }

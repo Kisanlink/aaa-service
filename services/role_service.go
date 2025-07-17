@@ -14,6 +14,7 @@ import (
 // RoleService implements the RoleService interface
 type RoleService struct {
 	roleRepo     interfaces.RoleRepository
+	userRoleRepo interfaces.UserRoleRepository
 	cacheService interfaces.CacheService
 	logger       interfaces.Logger
 	validator    interfaces.Validator
@@ -22,12 +23,14 @@ type RoleService struct {
 // NewRoleService creates a new RoleService instance
 func NewRoleService(
 	roleRepo interfaces.RoleRepository,
+	userRoleRepo interfaces.UserRoleRepository,
 	cacheService interfaces.CacheService,
 	logger interfaces.Logger,
 	validator interfaces.Validator,
 ) interfaces.RoleService {
 	return &RoleService{
 		roleRepo:     roleRepo,
+		userRoleRepo: userRoleRepo,
 		cacheService: cacheService,
 		logger:       logger,
 		validator:    validator,
@@ -35,44 +38,38 @@ func NewRoleService(
 }
 
 // CreateRole creates a new role
-func (s *RoleService) CreateRole(ctx context.Context, req interface{}) (interface{}, error) {
+func (s *RoleService) CreateRole(ctx context.Context, role *models.Role) error {
 	s.logger.Info("Creating new role")
 
-	// Type assertion for request
-	createReq, ok := req.(*models.Role)
-	if !ok {
-		return nil, fmt.Errorf("invalid request type")
-	}
-
 	// Validate role
-	if err := s.validateRole(createReq); err != nil {
-		return nil, fmt.Errorf("validation failed: %w", err)
+	if err := s.validateRole(role); err != nil {
+		return fmt.Errorf("validation failed: %w", err)
 	}
 
 	// Check if role with same name already exists
-	existingRole, err := s.roleRepo.GetByName(ctx, createReq.Name)
+	existingRole, err := s.roleRepo.GetByName(ctx, role.Name)
 	if err == nil && existingRole != nil {
 		s.logger.Error("Role with name already exists", zap.Error(err))
-		return nil, fmt.Errorf("role with name '%s' already exists", createReq.Name)
+		return fmt.Errorf("role with name '%s' already exists", role.Name)
 	}
 
 	// Create role in database
-	if err := s.roleRepo.Create(ctx, createReq); err != nil {
+	if err := s.roleRepo.Create(ctx, role); err != nil {
 		s.logger.Error("Failed to create role", zap.Error(err))
-		return nil, fmt.Errorf("failed to create role: %w", err)
+		return fmt.Errorf("failed to create role: %w", err)
 	}
 
 	// Clear cache
-	s.cacheService.Delete(fmt.Sprintf("role:%s", createReq.ID))
+	s.cacheService.Delete(fmt.Sprintf("role:%s", role.ID))
 
 	s.logger.Info("Role created successfully",
-		zap.String("roleID", createReq.ID),
-		zap.String("roleName", createReq.Name))
-	return createReq, nil
+		zap.String("roleID", role.ID),
+		zap.String("roleName", role.Name))
+	return nil
 }
 
 // GetRoleByID retrieves a role by ID with caching
-func (s *RoleService) GetRoleByID(ctx context.Context, roleID string) (interface{}, error) {
+func (s *RoleService) GetRoleByID(ctx context.Context, roleID string) (*models.Role, error) {
 	// Try to get from cache first
 	cacheKey := fmt.Sprintf("role:%s", roleID)
 	if cached, exists := s.cacheService.Get(cacheKey); exists {
@@ -96,7 +93,7 @@ func (s *RoleService) GetRoleByID(ctx context.Context, roleID string) (interface
 }
 
 // GetRoleByName retrieves a role by name
-func (s *RoleService) GetRoleByName(ctx context.Context, name string) (interface{}, error) {
+func (s *RoleService) GetRoleByName(ctx context.Context, name string) (*models.Role, error) {
 	s.logger.Info("Getting role by name", zap.String("name", name))
 
 	role, err := s.roleRepo.GetByName(ctx, name)
@@ -109,38 +106,32 @@ func (s *RoleService) GetRoleByName(ctx context.Context, name string) (interface
 }
 
 // UpdateRole updates an existing role
-func (s *RoleService) UpdateRole(ctx context.Context, req interface{}) (interface{}, error) {
+func (s *RoleService) UpdateRole(ctx context.Context, role *models.Role) error {
 	s.logger.Info("Updating role")
 
-	// Type assertion for request
-	updateReq, ok := req.(*models.Role)
-	if !ok {
-		return nil, fmt.Errorf("invalid request type")
-	}
-
 	// Validate role
-	if err := s.validateRole(updateReq); err != nil {
-		return nil, fmt.Errorf("validation failed: %w", err)
+	if err := s.validateRole(role); err != nil {
+		return fmt.Errorf("validation failed: %w", err)
 	}
 
 	// Check if role exists
-	_, err := s.roleRepo.GetByID(ctx, updateReq.ID)
+	_, err := s.roleRepo.GetByID(ctx, role.ID)
 	if err != nil {
-		s.logger.Error("Failed to find role for update", zap.String("roleID", updateReq.ID), zap.Error(err))
-		return nil, errors.NewNotFoundError("role not found")
+		s.logger.Error("Failed to find role for update", zap.String("roleID", role.ID), zap.Error(err))
+		return errors.NewNotFoundError("role not found")
 	}
 
 	// Update role in database
-	if err := s.roleRepo.Update(ctx, updateReq); err != nil {
-		s.logger.Error("Failed to update role", zap.String("roleID", updateReq.ID), zap.Error(err))
-		return nil, fmt.Errorf("failed to update role: %w", err)
+	if err := s.roleRepo.Update(ctx, role); err != nil {
+		s.logger.Error("Failed to update role", zap.String("roleID", role.ID), zap.Error(err))
+		return fmt.Errorf("failed to update role: %w", err)
 	}
 
 	// Clear cache
-	s.cacheService.Delete(fmt.Sprintf("role:%s", updateReq.ID))
+	s.cacheService.Delete(fmt.Sprintf("role:%s", role.ID))
 
-	s.logger.Info("Role updated successfully", zap.String("roleID", updateReq.ID))
-	return updateReq, nil
+	s.logger.Info("Role updated successfully", zap.String("roleID", role.ID))
+	return nil
 }
 
 // DeleteRole soft deletes a role
@@ -160,26 +151,9 @@ func (s *RoleService) DeleteRole(ctx context.Context, roleID string) error {
 	return nil
 }
 
-// ListRoles lists roles with filters
-func (s *RoleService) ListRoles(ctx context.Context, filters interface{}) (interface{}, error) {
-	s.logger.Info("Listing roles")
-
-	// Default pagination
-	limit, offset := 10, 0
-
-	// Extract limit and offset from filters if available
-	if filterMap, ok := filters.(map[string]interface{}); ok {
-		if l, exists := filterMap["limit"]; exists {
-			if limitInt, ok := l.(int); ok {
-				limit = limitInt
-			}
-		}
-		if o, exists := filterMap["offset"]; exists {
-			if offsetInt, ok := o.(int); ok {
-				offset = offsetInt
-			}
-		}
-	}
+// ListRoles lists roles with pagination
+func (s *RoleService) ListRoles(ctx context.Context, limit, offset int) ([]*models.Role, error) {
+	s.logger.Info("Listing roles", zap.Int("limit", limit), zap.Int("offset", offset))
 
 	roles, err := s.roleRepo.List(ctx, limit, offset)
 	if err != nil {
@@ -192,14 +166,14 @@ func (s *RoleService) ListRoles(ctx context.Context, filters interface{}) (inter
 }
 
 // SearchRoles searches roles by keyword
-func (s *RoleService) SearchRoles(ctx context.Context, keyword string, limit, offset int) (interface{}, error) {
-	s.logger.Info("Searching roles", zap.String("keyword", keyword), zap.Int("limit", limit), zap.Int("offset", offset))
+func (s *RoleService) SearchRoles(ctx context.Context, query string, limit, offset int) ([]*models.Role, error) {
+	s.logger.Info("Searching roles", zap.String("query", query), zap.Int("limit", limit), zap.Int("offset", offset))
 
-	if strings.TrimSpace(keyword) == "" {
-		return nil, fmt.Errorf("search keyword cannot be empty")
+	if strings.TrimSpace(query) == "" {
+		return nil, fmt.Errorf("search query cannot be empty")
 	}
 
-	roles, err := s.roleRepo.Search(ctx, keyword, limit, offset)
+	roles, err := s.roleRepo.Search(ctx, query, limit, offset)
 	if err != nil {
 		s.logger.Error("Failed to search roles", zap.Error(err))
 		return nil, fmt.Errorf("failed to search roles: %w", err)
@@ -209,90 +183,80 @@ func (s *RoleService) SearchRoles(ctx context.Context, keyword string, limit, of
 	return roles, nil
 }
 
-// GetActiveRoles retrieves active roles
-func (s *RoleService) GetActiveRoles(ctx context.Context, limit, offset int) (interface{}, error) {
-	s.logger.Info("Getting active roles", zap.Int("limit", limit), zap.Int("offset", offset))
+// AssignRoleToUser assigns a role to a user
+func (s *RoleService) AssignRoleToUser(ctx context.Context, userID, roleID string) error {
+	s.logger.Info("Assigning role to user", zap.String("userID", userID), zap.String("roleID", roleID))
 
-	roles, err := s.roleRepo.GetActive(ctx, limit, offset)
+	// Check if role exists
+	role, err := s.roleRepo.GetByID(ctx, roleID)
 	if err != nil {
-		s.logger.Error("Failed to get active roles", zap.Error(err))
-		return nil, fmt.Errorf("failed to get active roles: %w", err)
+		s.logger.Error("Role not found", zap.String("roleID", roleID), zap.Error(err))
+		return errors.NewNotFoundError("role not found")
 	}
 
-	s.logger.Info("Active roles retrieved", zap.Int("count", len(roles)))
-	return roles, nil
-}
-
-// AssignPermission assigns a permission to a role
-func (s *RoleService) AssignPermission(ctx context.Context, roleID, permissionID string) (interface{}, error) {
-	s.logger.Info("Assigning permission to role", zap.String("roleID", roleID), zap.String("permissionID", permissionID))
-
-	// Placeholder implementation - this would involve updating the role's permissions
-	result := map[string]interface{}{
-		"roleID":       roleID,
-		"permissionID": permissionID,
-		"assigned":     true,
+	// Check if assignment already exists
+	exists, err := s.userRoleRepo.ExistsByUserAndRole(ctx, userID, roleID)
+	if err != nil {
+		s.logger.Error("Failed to check existing role assignment", zap.Error(err))
+		return fmt.Errorf("failed to check role assignment: %w", err)
 	}
 
-	s.logger.Info("Permission assigned to role successfully")
-	return result, nil
-}
+	if exists {
+		s.logger.Warn("Role already assigned to user", zap.String("userID", userID), zap.String("roleID", roleID))
+		return fmt.Errorf("role already assigned to user")
+	}
 
-// RemovePermission removes a permission from a role
-func (s *RoleService) RemovePermission(ctx context.Context, roleID, permissionID string) error {
-	s.logger.Info("Removing permission from role", zap.String("roleID", roleID), zap.String("permissionID", permissionID))
+	// Create user-role assignment
+	userRole := &models.UserRole{
+		UserID: userID,
+		RoleID: roleID,
+	}
 
-	// Placeholder implementation - this would involve updating the role's permissions
-	s.logger.Info("Permission removed from role successfully")
+	if err := s.userRoleRepo.Create(ctx, userRole); err != nil {
+		s.logger.Error("Failed to assign role to user", zap.Error(err))
+		return fmt.Errorf("failed to assign role: %w", err)
+	}
+
+	s.logger.Info("Role assigned to user successfully",
+		zap.String("userID", userID),
+		zap.String("roleID", roleID),
+		zap.String("roleName", role.Name))
 	return nil
 }
 
-// GetRolePermissions retrieves permissions for a role
-func (s *RoleService) GetRolePermissions(ctx context.Context, roleID string) (interface{}, error) {
-	s.logger.Info("Getting role permissions", zap.String("roleID", roleID))
+// RemoveRoleFromUser removes a role from a user
+func (s *RoleService) RemoveRoleFromUser(ctx context.Context, userID, roleID string) error {
+	s.logger.Info("Removing role from user", zap.String("userID", userID), zap.String("roleID", roleID))
 
-	// Placeholder implementation - return empty permissions
-	permissions := []interface{}{}
-
-	s.logger.Info("Role permissions retrieved", zap.Int("count", len(permissions)))
-	return permissions, nil
-}
-
-// GetRoleHierarchy retrieves role hierarchy
-func (s *RoleService) GetRoleHierarchy(ctx context.Context) (interface{}, error) {
-	s.logger.Info("Getting role hierarchy")
-
-	// Placeholder implementation
-	hierarchy := map[string]interface{}{
-		"hierarchy": []interface{}{},
+	// Check if assignment exists
+	userRole, err := s.userRoleRepo.GetByUserAndRole(ctx, userID, roleID)
+	if err != nil {
+		s.logger.Error("Role assignment not found", zap.Error(err))
+		return errors.NewNotFoundError("role assignment not found")
 	}
 
-	s.logger.Info("Role hierarchy retrieved")
-	return hierarchy, nil
-}
-
-// AddChildRole adds a child role to a parent role
-func (s *RoleService) AddChildRole(ctx context.Context, parentRoleID, childRoleID string) (interface{}, error) {
-	s.logger.Info("Adding child role", zap.String("parentRoleID", parentRoleID), zap.String("childRoleID", childRoleID))
-
-	// Placeholder implementation
-	result := map[string]interface{}{
-		"parentRoleID": parentRoleID,
-		"childRoleID":  childRoleID,
-		"added":        true,
+	// Delete the assignment
+	if err := s.userRoleRepo.Delete(ctx, userRole.ID); err != nil {
+		s.logger.Error("Failed to remove role from user", zap.Error(err))
+		return fmt.Errorf("failed to remove role: %w", err)
 	}
 
-	s.logger.Info("Child role added successfully")
-	return result, nil
-}
-
-// ValidateRoleHierarchy validates role hierarchy
-func (s *RoleService) ValidateRoleHierarchy(ctx context.Context, roleID string) error {
-	s.logger.Info("Validating role hierarchy", zap.String("roleID", roleID))
-
-	// Placeholder implementation
-	s.logger.Info("Role hierarchy validation completed")
+	s.logger.Info("Role removed from user successfully", zap.String("userID", userID), zap.String("roleID", roleID))
 	return nil
+}
+
+// GetUserRoles retrieves all roles for a user
+func (s *RoleService) GetUserRoles(ctx context.Context, userID string) ([]*models.UserRole, error) {
+	s.logger.Info("Getting user roles", zap.String("userID", userID))
+
+	userRoles, err := s.userRoleRepo.GetByUserID(ctx, userID)
+	if err != nil {
+		s.logger.Error("Failed to get user roles", zap.String("userID", userID), zap.Error(err))
+		return nil, fmt.Errorf("failed to get user roles: %w", err)
+	}
+
+	s.logger.Info("User roles retrieved", zap.String("userID", userID), zap.Int("count", len(userRoles)))
+	return userRoles, nil
 }
 
 // Helper methods

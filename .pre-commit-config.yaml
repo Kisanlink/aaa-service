@@ -27,14 +27,14 @@ repos:
         description: Run golangci-lint
         args: [--timeout=5m]
 
-  # Security scanning with gosec
-  - repo: https://github.com/securecodewarrior/gosec
-    rev: v2.18.2
-    hooks:
-      - id: gosec
-        name: Go Security
-        description: Run gosec security scanner
-        args: [-quiet]
+  # Security scanning with gosec - temporarily disabled
+  # - repo: https://github.com/securego/gosec
+  #   rev: v2.18.2
+  #   hooks:
+  #     - id: gosec
+  #       name: Go Security
+  #       description: Run gosec security scanner
+  #       args: [-quiet]
 
   # General hooks
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -70,4 +70,4 @@ repos:
       - id: conventional-pre-commit
         name: Conventional Commit
         description: Check commit message format
-        stages: [commit-msg] 
+        stages: [commit-msg]

@@ -1,44 +1,24 @@
 package routes
 
 import (
-	"net/http"
-
+	"github.com/Kisanlink/aaa-service/handlers/health"
 	"github.com/gin-gonic/gin"
 )
 
 // SetupHealthRoutes configures health check and utility routes
-func SetupHealthRoutes(router *gin.Engine) {
+func SetupHealthRoutes(router *gin.Engine, healthHandler *health.HealthHandler) {
 	// Basic health check
-	router.GET("/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"status":  "healthy",
-			"service": "aaa-service",
-			"version": "2.0.0",
-		})
-	})
+	router.GET("/health", healthHandler.BasicHealth)
 
 	// Ready check (for Kubernetes readiness probe)
-	router.GET("/ready", func(c *gin.Context) {
-		// TODO: Add actual readiness checks (database connectivity, dependencies, etc.)
-		c.JSON(http.StatusOK, gin.H{
-			"status": "ready",
-			"checks": gin.H{
-				"database": "connected",
-				"cache":    "connected",
-			},
-		})
-	})
+	router.GET("/ready", healthHandler.ReadinessCheck)
 
 	// Live check (for Kubernetes liveness probe)
-	router.GET("/live", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"status": "alive",
-		})
-	})
+	router.GET("/live", healthHandler.LivenessCheck)
 
 	// API information
 	router.GET("/info", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
+		c.JSON(200, gin.H{
 			"service":      "aaa-service",
 			"description":  "Authentication, Authorization, and Accounting Service",
 			"version":      "2.0.0",
@@ -56,7 +36,7 @@ func SetupHealthRoutes(router *gin.Engine) {
 
 	// API version discovery
 	router.GET("/api", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
+		c.JSON(200, gin.H{
 			"available_versions": []gin.H{
 				{
 					"version": "v1",

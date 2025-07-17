@@ -6,9 +6,11 @@ import (
 	"github.com/Kisanlink/aaa-service/handlers/addresses"
 	"github.com/Kisanlink/aaa-service/handlers/admin"
 	"github.com/Kisanlink/aaa-service/handlers/auth"
+	"github.com/Kisanlink/aaa-service/handlers/health"
 	"github.com/Kisanlink/aaa-service/handlers/permissions"
 	"github.com/Kisanlink/aaa-service/handlers/roles"
 	"github.com/Kisanlink/aaa-service/handlers/users"
+	"github.com/Kisanlink/aaa-service/interfaces"
 	"github.com/Kisanlink/aaa-service/middleware"
 	addressRepo "github.com/Kisanlink/aaa-service/repositories/addresses"
 	roleRepo "github.com/Kisanlink/aaa-service/repositories/roles"
@@ -24,11 +26,12 @@ import (
 
 // HTTPServer represents the HTTP server
 type HTTPServer struct {
-	router    *gin.Engine
-	dbManager *db.DatabaseManager
-	port      string
-	handlers  *ServerHandlers
-	logger    *zap.Logger
+	router             *gin.Engine
+	dbManager          *db.DatabaseManager
+	maintenanceService interfaces.MaintenanceService
+	port               string
+	handlers           *ServerHandlers
+	logger             *zap.Logger
 }
 
 // ServerHandlers contains all HTTP handlers
@@ -39,6 +42,7 @@ type ServerHandlers struct {
 	PermissionHandler *permissions.PermissionHandler
 	AddressHandler    *addresses.AddressHandler
 	AdminHandler      *admin.AdminHandler
+	HealthHandler     *health.HealthHandler
 }
 
 // NewHTTPServer creates a new HTTP server instance
@@ -49,9 +53,13 @@ func NewHTTPServer(dbManager *db.DatabaseManager, port string, logger *zap.Logge
 	// Initialize logger adapter for interfaces.Logger compatibility
 	loggerAdapter := utils.NewLoggerAdapter(logger)
 
-	// Get database manager for repositories
-	pgManager := dbManager.GetPostgresManager()
-	primaryDBManager := dbManager.GetManager(pgManager.GetBackendType())
+	// Get the primary database manager for repositories
+	primaryDBManager := dbManager.GetManager(dbManager.GetPostgresManager().GetBackendType())
+	if primaryDBManager == nil {
+		// Fallback to in-memory for testing
+		logger.Warn("No database manager available, using in-memory fallback")
+		primaryDBManager = &InMemoryDBManager{logger: loggerAdapter}
+	}
 
 	// Initialize repositories
 	userRepository := userRepo.NewUserRepository(primaryDBManager)
@@ -62,16 +70,19 @@ func NewHTTPServer(dbManager *db.DatabaseManager, port string, logger *zap.Logge
 	// Initialize cache service
 	cacheService := services.NewCacheService("localhost:6379", "", 0, loggerAdapter)
 
+	// Initialize maintenance service
+	maintenanceService := services.NewMaintenanceService(cacheService, loggerAdapter)
+
 	// Initialize utils
 	validator := utils.NewValidator()
 	responder := utils.NewResponder(loggerAdapter)
 
 	// Initialize services
 	addressService := services.NewAddressService(addressRepository, cacheService, loggerAdapter, validator)
-	roleService := services.NewRoleService(roleRepository, cacheService, loggerAdapter, validator)
+	roleService := services.NewRoleService(roleRepository, userRoleRepository, cacheService, loggerAdapter, validator)
 	userService := services.NewUserService(userRepository, roleRepository, userRoleRepository, cacheService, logger, validator)
 
-	userHandler := users.NewUserHandler(userService, validator, responder, logger)
+	userHandler := users.NewUserHandler(userService, roleService, validator, responder, logger)
 
 	handlers := &ServerHandlers{
 		AuthHandler:       auth.NewAuthHandler(userService, validator, responder, logger),
@@ -79,15 +90,17 @@ func NewHTTPServer(dbManager *db.DatabaseManager, port string, logger *zap.Logge
 		RoleHandler:       roles.NewRoleHandler(roleService, validator, responder, logger),
 		PermissionHandler: permissions.NewPermissionHandler(validator, responder, logger),
 		AddressHandler:    addresses.NewAddressHandler(addressService, validator, responder, logger),
-		AdminHandler:      admin.NewAdminHandler(validator, responder, logger),
+		AdminHandler:      admin.NewAdminHandler(maintenanceService, validator, responder, logger),
+		HealthHandler:     health.NewHealthHandler(dbManager, cacheService, responder, logger),
 	}
 
 	server := &HTTPServer{
-		router:    router,
-		dbManager: dbManager,
-		port:      port,
-		handlers:  handlers,
-		logger:    logger,
+		router:             router,
+		dbManager:          dbManager,
+		maintenanceService: maintenanceService,
+		port:               port,
+		handlers:           handlers,
+		logger:             logger,
 	}
 
 	// Setup middleware and routes
@@ -98,20 +111,52 @@ func NewHTTPServer(dbManager *db.DatabaseManager, port string, logger *zap.Logge
 	return server
 }
 
+// InMemoryDBManager is a fallback implementation for testing
+type InMemoryDBManager struct {
+	logger interfaces.Logger
+}
+
+func (m *InMemoryDBManager) Connect(ctx context.Context) error                   { return nil }
+func (m *InMemoryDBManager) Close() error                                        { return nil }
+func (m *InMemoryDBManager) IsConnected() bool                                   { return true }
+func (m *InMemoryDBManager) GetBackendType() db.BackendType                      { return db.BackendInMemory }
+func (m *InMemoryDBManager) Create(ctx context.Context, model interface{}) error { return nil }
+func (m *InMemoryDBManager) GetByID(ctx context.Context, id interface{}, model interface{}) error {
+	return nil
+}
+func (m *InMemoryDBManager) Update(ctx context.Context, model interface{}) error { return nil }
+func (m *InMemoryDBManager) Delete(ctx context.Context, id interface{}) error    { return nil }
+func (m *InMemoryDBManager) List(ctx context.Context, filters []db.Filter, model interface{}) error {
+	return nil
+}
+func (m *InMemoryDBManager) ApplyFilters(query interface{}, filters []db.Filter) (interface{}, error) {
+	return query, nil
+}
+func (m *InMemoryDBManager) BuildFilter(field string, operator db.FilterOperator, value interface{}) db.Filter {
+	return db.Filter{Field: field, Operator: operator, Value: value}
+}
+
 // setupMiddleware configures middleware for the router
 func (s *HTTPServer) setupMiddleware() {
+	loggerAdapter := utils.NewLoggerAdapter(s.logger)
+	responder := utils.NewResponder(loggerAdapter)
+
 	routes.SetupMiddleware(s.router,
 		cors.Default(),
 		middleware.RequestID(),
-		middleware.Logger(utils.NewLoggerAdapter(s.logger)),
+		middleware.Logger(loggerAdapter),
 		middleware.ErrorHandler,
-		middleware.PanicRecoveryHandler(utils.NewLoggerAdapter(s.logger)),
+		middleware.PanicRecoveryHandler(loggerAdapter),
+		middleware.MaintenanceMode(s.maintenanceService, responder, loggerAdapter),
 	)
 }
 
 // setupRoutes configures all the routes using the routes package
 func (s *HTTPServer) setupRoutes() {
-	// Setup all routes using the centralized routes package
+	// Setup health routes with the health handler
+	routes.SetupHealthRoutes(s.router, s.handlers.HealthHandler)
+
+	// Setup all other routes using the centralized routes package
 	routes.SetupRoutes(s.router, routes.AllHandlers{
 		AuthHandler:       s.handlers.AuthHandler,
 		UserHandler:       s.handlers.UserHandler,

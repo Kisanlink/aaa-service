@@ -1,10 +1,10 @@
 package addresses
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 
+	"github.com/Kisanlink/aaa-service/entities/requests/addresses"
 	"github.com/Kisanlink/aaa-service/interfaces"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -33,39 +33,11 @@ func NewAddressHandler(
 	}
 }
 
-// CreateAddressRequest represents a request to create an address
-type CreateAddressRequest struct {
-	House       *string `json:"house,omitempty"`
-	Street      *string `json:"street,omitempty"`
-	Landmark    *string `json:"landmark,omitempty"`
-	PostOffice  *string `json:"post_office,omitempty"`
-	Subdistrict *string `json:"subdistrict,omitempty"`
-	District    *string `json:"district,omitempty"`
-	VTC         *string `json:"vtc,omitempty"`
-	State       *string `json:"state,omitempty"`
-	Country     *string `json:"country,omitempty"`
-	Pincode     *string `json:"pincode,omitempty"`
-	FullAddress *string `json:"full_address,omitempty"`
-	UserID      string  `json:"user_id" validate:"required"`
-}
-
-// Validate validates the CreateAddressRequest
-func (r *CreateAddressRequest) Validate() error {
-	if r.UserID == "" {
-		return fmt.Errorf("user ID is required")
-	}
-	// At least one address field should be provided
-	if r.House == nil && r.Street == nil && r.FullAddress == nil {
-		return fmt.Errorf("at least one address field is required")
-	}
-	return nil
-}
-
 // CreateAddress handles POST /addresses
 func (h *AddressHandler) CreateAddress(c *gin.Context) {
 	h.logger.Info("Creating address")
 
-	var req CreateAddressRequest
+	var req addresses.CreateAddressRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		h.logger.Error("Failed to bind request", zap.Error(err))
 		h.responder.SendValidationError(c, []string{err.Error()})
@@ -79,16 +51,19 @@ func (h *AddressHandler) CreateAddress(c *gin.Context) {
 		return
 	}
 
-	// TODO: Create address through service when fully implemented
-	// For now, return mock response
-	result := map[string]interface{}{
-		"id":      "addr_" + req.UserID,
-		"user_id": req.UserID,
-		"message": "Address created successfully",
+	// Convert request to model
+	addressModel := req.ToModel()
+
+	// Create address through service
+	err := h.addressService.CreateAddress(c.Request.Context(), addressModel)
+	if err != nil {
+		h.logger.Error("Failed to create address", zap.Error(err))
+		h.responder.SendInternalError(c, err)
+		return
 	}
 
 	h.logger.Info("Address created successfully", zap.String("userID", req.UserID))
-	h.responder.SendSuccess(c, http.StatusCreated, result)
+	h.responder.SendSuccess(c, http.StatusCreated, map[string]string{"message": "Address created successfully"})
 }
 
 // GetAddress handles GET /addresses/:id
@@ -101,15 +76,12 @@ func (h *AddressHandler) GetAddress(c *gin.Context) {
 		return
 	}
 
-	// TODO: Get address through service when fully implemented
-	result := map[string]interface{}{
-		"id":       addressID,
-		"house":    "123",
-		"street":   "Main Street",
-		"district": "Example District",
-		"state":    "Example State",
-		"pincode":  "123456",
-		"message":  "Address retrieved successfully",
+	// Get address through service
+	result, err := h.addressService.GetAddressByID(c.Request.Context(), addressID)
+	if err != nil {
+		h.logger.Error("Failed to get address", zap.String("addressID", addressID), zap.Error(err))
+		h.responder.SendInternalError(c, err)
+		return
 	}
 
 	h.logger.Info("Address retrieved successfully", zap.String("addressID", addressID))
@@ -126,21 +98,36 @@ func (h *AddressHandler) UpdateAddress(c *gin.Context) {
 		return
 	}
 
-	var req CreateAddressRequest
+	var req addresses.UpdateAddressRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		h.logger.Error("Failed to bind request", zap.Error(err))
 		h.responder.SendValidationError(c, []string{err.Error()})
 		return
 	}
 
-	// TODO: Update address through service when fully implemented
-	result := map[string]interface{}{
-		"id":      addressID,
-		"message": "Address updated successfully",
+	// Set the ID from the URL parameter
+	req.ID = addressID
+
+	// Validate request
+	if err := req.Validate(); err != nil {
+		h.logger.Error("Request validation failed", zap.Error(err))
+		h.responder.SendValidationError(c, []string{err.Error()})
+		return
+	}
+
+	// Convert request to model
+	addressModel := req.ToModel()
+
+	// Update address through service
+	err := h.addressService.UpdateAddress(c.Request.Context(), addressModel)
+	if err != nil {
+		h.logger.Error("Failed to update address", zap.String("addressID", addressID), zap.Error(err))
+		h.responder.SendInternalError(c, err)
+		return
 	}
 
 	h.logger.Info("Address updated successfully", zap.String("addressID", addressID))
-	h.responder.SendSuccess(c, http.StatusOK, result)
+	h.responder.SendSuccess(c, http.StatusOK, map[string]string{"message": "Address updated successfully"})
 }
 
 // DeleteAddress handles DELETE /addresses/:id
@@ -153,7 +140,13 @@ func (h *AddressHandler) DeleteAddress(c *gin.Context) {
 		return
 	}
 
-	// TODO: Delete address through service when fully implemented
+	// Delete address through service
+	if err := h.addressService.DeleteAddress(c.Request.Context(), addressID); err != nil {
+		h.logger.Error("Failed to delete address", zap.String("addressID", addressID), zap.Error(err))
+		h.responder.SendInternalError(c, err)
+		return
+	}
+
 	result := map[string]interface{}{
 		"message": "Address deleted successfully",
 	}
@@ -188,14 +181,12 @@ func (h *AddressHandler) SearchAddresses(c *gin.Context) {
 		return
 	}
 
-	// TODO: Search addresses through service when fully implemented
-	result := map[string]interface{}{
-		"addresses": []interface{}{},
-		"total":     0,
-		"limit":     limit,
-		"offset":    offset,
-		"query":     query,
-		"message":   "Address search completed",
+	// Search addresses through service
+	result, err := h.addressService.SearchAddresses(c.Request.Context(), query, limit, offset)
+	if err != nil {
+		h.logger.Error("Failed to search addresses", zap.String("query", query), zap.Error(err))
+		h.responder.SendInternalError(c, err)
+		return
 	}
 
 	h.logger.Info("Address search completed", zap.String("query", query))
