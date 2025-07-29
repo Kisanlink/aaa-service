@@ -161,3 +161,7 @@ docs:
 	@echo "$(BLUE)Generating documentation...$(NC)"
 	@go doc -all ./... > docs/API.md
 	@echo "$(GREEN)Documentation generated$(NC)"
+
+integration-test:
+	docker compose -f ../kisanlink-db/pkg/db/docker-compose.test.yml up -d
+	go test -v -tags=integration -count=1 ./test/integration/postgres_integration_test.go

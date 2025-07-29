@@ -11,14 +11,21 @@ import (
 	"github.com/Kisanlink/kisanlink-db/pkg/db"
 )
 
+func getEnv(key, fallback string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
+	}
+	return fallback
+}
+
 func TestPostgres_Connection(t *testing.T) {
 	cfg := &db.Config{
-		PostgresHost:     os.Getenv("DB_POSTGRES_HOST"),
-		PostgresPort:     os.Getenv("DB_POSTGRES_PORT"),
-		PostgresUser:     os.Getenv("DB_POSTGRES_USER"),
-		PostgresPassword: os.Getenv("DB_POSTGRES_PASSWORD"),
-		PostgresDBName:   os.Getenv("DB_POSTGRES_DBNAME"),
-		PostgresSSLMode:  os.Getenv("DB_POSTGRES_SSLMODE"),
+		PostgresHost:     getEnv("DB_POSTGRES_HOST", "localhost"),
+		PostgresPort:     getEnv("DB_POSTGRES_PORT", "5432"),
+		PostgresUser:     getEnv("DB_POSTGRES_USER", "postgres"),
+		PostgresPassword: getEnv("DB_POSTGRES_PASSWORD", "password"),
+		PostgresDBName:   getEnv("DB_POSTGRES_DBNAME", "kisanlink_test"),
+		PostgresSSLMode:  getEnv("DB_POSTGRES_SSLMODE", "disable"),
 	}
 
 	manager := db.NewDatabaseManagerWithConfig(cfg)
@@ -27,19 +34,19 @@ func TestPostgres_Connection(t *testing.T) {
 	}
 	defer manager.Close()
 
-	if !manager.IsConnected() {
+	if !manager.IsConnected(db.BackendGorm) {
 		t.Fatal("Database manager should be connected")
 	}
 }
 
 func TestPostgres_UserCRUD(t *testing.T) {
 	cfg := &db.Config{
-		PostgresHost:     os.Getenv("DB_POSTGRES_HOST"),
-		PostgresPort:     os.Getenv("DB_POSTGRES_PORT"),
-		PostgresUser:     os.Getenv("DB_POSTGRES_USER"),
-		PostgresPassword: os.Getenv("DB_POSTGRES_PASSWORD"),
-		PostgresDBName:   os.Getenv("DB_POSTGRES_DBNAME"),
-		PostgresSSLMode:  os.Getenv("DB_POSTGRES_SSLMODE"),
+		PostgresHost:     getEnv("DB_POSTGRES_HOST", "localhost"),
+		PostgresPort:     getEnv("DB_POSTGRES_PORT", "5432"),
+		PostgresUser:     getEnv("DB_POSTGRES_USER", "postgres"),
+		PostgresPassword: getEnv("DB_POSTGRES_PASSWORD", "password"),
+		PostgresDBName:   getEnv("DB_POSTGRES_DBNAME", "kisanlink_test"),
+		PostgresSSLMode:  getEnv("DB_POSTGRES_SSLMODE", "disable"),
 	}
 
 	manager := db.NewDatabaseManagerWithConfig(cfg)
@@ -48,15 +55,20 @@ func TestPostgres_UserCRUD(t *testing.T) {
 	}
 	defer manager.Close()
 
+	postgresManager := manager.GetManager(db.BackendGorm)
+	if postgresManager == nil {
+		t.Fatal("Postgres manager is not available")
+	}
+
 	// Test Create
 	user := models.NewUser("integration_test_user", "password123")
-	if err := manager.Create(context.Background(), user); err != nil {
+	if err := postgresManager.Create(context.Background(), user); err != nil {
 		t.Fatalf("Failed to create user: %v", err)
 	}
 
 	// Test GetByID
 	retrievedUser := &models.User{}
-	if err := manager.GetByID(context.Background(), user.ID, retrievedUser); err != nil {
+	if err := postgresManager.GetByID(context.Background(), user.ID, retrievedUser); err != nil {
 		t.Fatalf("Failed to get user by ID: %v", err)
 	}
 
@@ -66,12 +78,12 @@ func TestPostgres_UserCRUD(t *testing.T) {
 
 	// Test Update
 	retrievedUser.Username = "updated_integration_user"
-	if err := manager.Update(context.Background(), retrievedUser); err != nil {
+	if err := postgresManager.Update(context.Background(), retrievedUser); err != nil {
 		t.Fatalf("Failed to update user: %v", err)
 	}
 
 	// Test Delete
-	if err := manager.Delete(context.Background(), user.ID); err != nil {
+	if err := postgresManager.Delete(context.Background(), user.ID); err != nil {
 		t.Fatalf("Failed to delete user: %v", err)
 	}
 }
