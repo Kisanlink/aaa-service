@@ -168,6 +168,31 @@ spicedb:
 	@echo "$(BLUE)Starting SpiceDB locally...$(NC)"
 	@./scripts/start-spicedb.sh
 
+## spicedb-separate: Start SpiceDB with separate database
+spicedb-separate:
+	@echo "$(BLUE)Starting SpiceDB with separate database...$(NC)"
+	@./scripts/start-spicedb-ec2.sh
+
+## setup-spicedb-db: Setup SpiceDB database
+setup-spicedb-db:
+	@echo "$(BLUE)Setting up SpiceDB database...$(NC)"
+	@./scripts/setup-spicedb-db.sh
+
+## migrate: Run database migrations
+migrate:
+	@echo "$(BLUE)Running database migrations...$(NC)"
+	@migrate -path ./migrations -database "postgres://${DB_POSTGRES_USER:-aaa_user}:${DB_POSTGRES_PASSWORD:-aaa_password}@${DB_POSTGRES_HOST:-localhost}:${DB_POSTGRES_PORT:-5432}/${DB_POSTGRES_DBNAME:-aaa_service}?sslmode=${DB_SSL_MODE:-disable}" up
+
+## migrate-down: Rollback database migrations
+migrate-down:
+	@echo "$(BLUE)Rolling back database migrations...$(NC)"
+	@migrate -path ./migrations -database "postgres://${DB_POSTGRES_USER:-aaa_user}:${DB_POSTGRES_PASSWORD:-aaa_password}@${DB_POSTGRES_HOST:-localhost}:${DB_POSTGRES_PORT:-5432}/${DB_POSTGRES_DBNAME:-aaa_service}?sslmode=${DB_SSL_MODE:-disable}" down
+
+## migrate-all: Run migrations and setup SpiceDB database
+migrate-all:
+	@echo "$(BLUE)Running migrations and setting up SpiceDB database...$(NC)"
+	@./scripts/migrate-with-spicedb.sh
+
 ## spicedb-stop: Stop SpiceDB
 spicedb-stop:
 	@echo "$(BLUE)Stopping SpiceDB...$(NC)"
