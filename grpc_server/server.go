@@ -32,6 +32,7 @@ func StartGRPCServer(db *gorm.DB) (*grpc.Server, error) {
 
 	s := grpc.NewServer()
 
+	// Register v1 services
 	pb.RegisterGreeterServer(s, &GreeterServer{})
 	userServer := &user.Server{DB: db}
 	pb.RegisterUserServiceServer(s, userServer)
@@ -41,6 +42,17 @@ func StartGRPCServer(db *gorm.DB) (*grpc.Server, error) {
 	pb.RegisterPermissionServiceServer(s, permissionServer)
 	connectRolePermissionServer := rolepermission.NewConnectRolePermissionServer(db)
 	pb.RegisterConnectRolePermissionServiceServer(s, connectRolePermissionServer)
+
+	// Register v2 services
+	userServerV2 := user.NewUserServerV2(db)
+	pb.RegisterUserServiceV2Server(s, userServerV2)
+
+	// TODO: Add v2 role and permission services when implemented
+	// roleServerV2 := roles.NewRoleServerV2(db)
+	// pb.RegisterRoleServiceV2Server(s, roleServerV2)
+	// permissionServerV2 := permissions.NewPermissionServerV2(db)
+	// pb.RegisterPermissionServiceV2Server(s, permissionServerV2)
+
 	conn, err := grpc.Dial("localhost:50051",
 		grpc.WithInsecure(),
 		grpc.WithDefaultCallOptions(),

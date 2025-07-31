@@ -1,0 +1,166 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "github.com/Kisanlink/aaa-service/pb";
+
+// V2 User model with enhanced fields
+message UserV2 {
+    string id = 1;
+    string username = 2;
+    string email = 3;
+    string full_name = 4;
+    bool is_validated = 5;
+    string status = 6;
+    string created_at = 7;
+    string updated_at = 8;
+    repeated UserRoleV2 user_roles = 9;
+    repeated string permissions = 10;
+}
+
+// V2 UserRole model
+message UserRoleV2 {
+    string id = 1;
+    string user_id = 2;
+    string role_id = 3;
+    string role_name = 4;
+    string role_description = 5;
+    string created_at = 6;
+    string updated_at = 7;
+}
+
+// V2 Login Request
+message LoginRequestV2 {
+    string username = 1;
+    string password = 2;
+    string mfa_code = 3; // Optional MFA code
+}
+
+// V2 Login Response
+message LoginResponseV2 {
+    int32 status_code = 1;
+    string message = 2;
+    string access_token = 3;
+    string refresh_token = 4;
+    string token_type = 5;
+    int32 expires_in = 6;
+    UserV2 user = 7;
+    repeated string permissions = 8;
+}
+
+// V2 Register Request
+message RegisterRequestV2 {
+    string username = 1;
+    string email = 2;
+    string full_name = 3;
+    string password = 4;
+    repeated string role_ids = 5;
+}
+
+// V2 Register Response
+message RegisterResponseV2 {
+    int32 status_code = 1;
+    string message = 2;
+    UserV2 user = 3;
+    string access_token = 4;
+    string refresh_token = 5;
+}
+
+// V2 Get User Request
+message GetUserRequestV2 {
+    string id = 1;
+    bool include_roles = 2;
+    bool include_permissions = 3;
+}
+
+// V2 Get User Response
+message GetUserResponseV2 {
+    int32 status_code = 1;
+    string message = 2;
+    UserV2 user = 3;
+}
+
+// V2 Get All Users Request
+message GetAllUsersRequestV2 {
+    int32 page = 1;
+    int32 per_page = 2;
+    string search = 3;
+    string status = 4;
+    repeated string role_ids = 5;
+}
+
+// V2 Get All Users Response
+message GetAllUsersResponseV2 {
+    int32 status_code = 1;
+    string message = 2;
+    repeated UserV2 users = 3;
+    int32 total_count = 4;
+    int32 page = 5;
+    int32 per_page = 6;
+}
+
+// V2 Update User Request
+message UpdateUserRequestV2 {
+    string id = 1;
+    string username = 2;
+    string email = 3;
+    string full_name = 4;
+    bool is_validated = 5;
+    string status = 6;
+    repeated string role_ids = 7;
+}
+
+// V2 Update User Response
+message UpdateUserResponseV2 {
+    int32 status_code = 1;
+    string message = 2;
+    UserV2 user = 3;
+}
+
+// V2 Delete User Request
+message DeleteUserRequestV2 {
+    string id = 1;
+}
+
+// V2 Delete User Response
+message DeleteUserResponseV2 {
+    int32 status_code = 1;
+    string message = 2;
+}
+
+// V2 Refresh Token Request
+message RefreshTokenRequestV2 {
+    string refresh_token = 1;
+}
+
+// V2 Refresh Token Response
+message RefreshTokenResponseV2 {
+    int32 status_code = 1;
+    string message = 2;
+    string access_token = 3;
+    string refresh_token = 4;
+    int32 expires_in = 5;
+}
+
+// V2 Logout Request
+message LogoutRequestV2 {
+    string access_token = 1;
+}
+
+// V2 Logout Response
+message LogoutResponseV2 {
+    int32 status_code = 1;
+    string message = 2;
+}
+
+// V2 User Service
+service UserServiceV2 {
+    rpc Login(LoginRequestV2) returns (LoginResponseV2);
+    rpc Register(RegisterRequestV2) returns (RegisterResponseV2);
+    rpc GetUser(GetUserRequestV2) returns (GetUserResponseV2);
+    rpc GetAllUsers(GetAllUsersRequestV2) returns (GetAllUsersResponseV2);
+    rpc UpdateUser(UpdateUserRequestV2) returns (UpdateUserResponseV2);
+    rpc DeleteUser(DeleteUserRequestV2) returns (DeleteUserResponseV2);
+    rpc RefreshToken(RefreshTokenRequestV2) returns (RefreshTokenResponseV2);
+    rpc Logout(LogoutRequestV2) returns (LogoutResponseV2);
+}
