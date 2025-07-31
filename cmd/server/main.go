@@ -9,9 +9,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/Kisanlink/aaa-service/config"
 	_ "github.com/Kisanlink/aaa-service/docs"
 	"github.com/Kisanlink/aaa-service/server"
-	"github.com/Kisanlink/kisanlink-db/pkg/db"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -29,19 +29,27 @@ func main() {
 	if err != nil {
 		log.Fatal("Failed to initialize logger:", err)
 	}
-	defer logger.Sync()
+	defer func() {
+		if err := logger.Sync(); err != nil {
+			log.Printf("Failed to sync logger: %v", err)
+		}
+	}()
 
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
 
-	dbManager := db.NewDatabaseManager()
-	ctx := context.Background()
-	if err := dbManager.Connect(ctx); err != nil {
-		logger.Fatal("Failed to connect to database", zap.Error(err))
+	// Initialize database manager with proper configuration
+	dbManager, err := config.NewDatabaseManager(logger)
+	if err != nil {
+		logger.Fatal("Failed to initialize database manager", zap.Error(err))
 	}
-	defer dbManager.Close()
+	defer func() {
+		if err := dbManager.Close(); err != nil {
+			log.Printf("Failed to close database manager: %v", err)
+		}
+	}()
 
 	httpServer := server.NewHTTPServer(dbManager, port, logger)
 	router := httpServer.GetRouter()

@@ -53,7 +53,9 @@ func (s *AddressService) CreateAddress(ctx context.Context, address *models.Addr
 	}
 
 	// Clear cache
-	s.cacheService.Delete(fmt.Sprintf("address:%s", address.ID))
+	if err := s.cacheService.Delete(fmt.Sprintf("address:%s", address.ID)); err != nil {
+		s.logger.Error("Failed to delete address from cache", zap.Error(err))
+	}
 
 	s.logger.Info("Address created successfully", zap.String("addressID", address.ID))
 	return nil
@@ -78,7 +80,9 @@ func (s *AddressService) GetAddressByID(ctx context.Context, addressID string) (
 	}
 
 	// Cache the result
-	s.cacheService.Set(cacheKey, address, 300) // Cache for 5 minutes
+	if err := s.cacheService.Set(cacheKey, address, 300); err != nil {
+		s.logger.Error("Failed to cache address", zap.Error(err))
+	} // Cache for 5 minutes
 
 	return address, nil
 }
@@ -122,7 +126,9 @@ func (s *AddressService) UpdateAddress(ctx context.Context, address *models.Addr
 	}
 
 	// Clear cache
-	s.cacheService.Delete(fmt.Sprintf("address:%s", address.ID))
+	if err := s.cacheService.Delete(fmt.Sprintf("address:%s", address.ID)); err != nil {
+		s.logger.Error("Failed to delete address from cache", zap.Error(err))
+	}
 
 	s.logger.Info("Address updated successfully", zap.String("addressID", address.ID))
 	return nil
@@ -139,7 +145,9 @@ func (s *AddressService) DeleteAddress(ctx context.Context, addressID string) er
 	}
 
 	// Clear cache
-	s.cacheService.Delete(fmt.Sprintf("address:%s", addressID))
+	if err := s.cacheService.Delete(fmt.Sprintf("address:%s", addressID)); err != nil {
+		s.logger.Error("Failed to delete address from cache", zap.Error(err))
+	}
 
 	s.logger.Info("Address deleted successfully")
 	return nil

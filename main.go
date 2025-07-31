@@ -19,7 +19,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to initialize logger: %v", err)
 	}
-	defer logger.Sync()
+	defer func() {
+		if err := logger.Sync(); err != nil {
+			log.Printf("Failed to sync logger: %v", err)
+		}
+	}()
 
 	logger.Info("Starting AAA Service")
 
@@ -28,7 +32,11 @@ func main() {
 	if err != nil {
 		logger.Fatal("Failed to initialize database manager", zap.Error(err))
 	}
-	defer dbManager.Close()
+	defer func() {
+		if err := dbManager.Close(); err != nil {
+			log.Printf("Failed to close database manager: %v", err)
+		}
+	}()
 
 	// Initialize HTTP server
 	port := os.Getenv("PORT")

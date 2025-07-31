@@ -154,7 +154,14 @@ dev-setup: install-tools setup-hooks
 ## run: Run the application locally
 run: build
 	@echo "$(BLUE)Starting AAA service...$(NC)"
+	@echo "$(YELLOW)Make sure you have set up your environment variables!$(NC)"
+	@echo "$(YELLOW)Required variables: DB_POSTGRES_HOST, DB_POSTGRES_PORT, DB_POSTGRES_USER, DB_POSTGRES_PASSWORD, DB_POSTGRES_DBNAME$(NC)"
 	@./$(BUILD_DIR)/$(BINARY_NAME)
+
+## run-dev: Run the application in development mode
+run-dev:
+	@echo "$(BLUE)Starting AAA service in development mode...$(NC)"
+	@go run ./cmd/server
 
 ## docs: Generate documentation
 docs:

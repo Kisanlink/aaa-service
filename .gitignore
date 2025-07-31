@@ -101,6 +101,15 @@ pids
 *.seed
 *.pid.lock
 
+# Security and sensitive files
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+*.pem.key
+*.pem.crt
+
 # Optional npm cache directory
 .npm
 

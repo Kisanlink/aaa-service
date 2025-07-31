@@ -60,7 +60,11 @@ func StartGRPCServer(db *gorm.DB) (*grpc.Server, error) {
 	if err != nil {
 		log.Fatalf("Failed to connect to gRPC server: %v", err)
 	}
-	defer conn.Close()
+	defer func() {
+		if err := conn.Close(); err != nil {
+			log.Printf("Failed to close gRPC connection: %v", err)
+		}
+	}()
 
 	go func() {
 		if err := s.Serve(lis); err != nil {

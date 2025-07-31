@@ -60,7 +60,9 @@ func (s *RoleService) CreateRole(ctx context.Context, role *models.Role) error {
 	}
 
 	// Clear cache
-	s.cacheService.Delete(fmt.Sprintf("role:%s", role.ID))
+	if err := s.cacheService.Delete(fmt.Sprintf("role:%s", role.ID)); err != nil {
+		s.logger.Error("Failed to delete role from cache", zap.Error(err))
+	}
 
 	s.logger.Info("Role created successfully",
 		zap.String("roleID", role.ID),
@@ -87,7 +89,9 @@ func (s *RoleService) GetRoleByID(ctx context.Context, roleID string) (*models.R
 	}
 
 	// Cache the result
-	s.cacheService.Set(cacheKey, role, 300) // Cache for 5 minutes
+	if err := s.cacheService.Set(cacheKey, role, 300); err != nil {
+		s.logger.Error("Failed to cache role", zap.Error(err))
+	} // Cache for 5 minutes
 
 	return role, nil
 }
@@ -128,7 +132,9 @@ func (s *RoleService) UpdateRole(ctx context.Context, role *models.Role) error {
 	}
 
 	// Clear cache
-	s.cacheService.Delete(fmt.Sprintf("role:%s", role.ID))
+	if err := s.cacheService.Delete(fmt.Sprintf("role:%s", role.ID)); err != nil {
+		s.logger.Error("Failed to delete role from cache", zap.Error(err))
+	}
 
 	s.logger.Info("Role updated successfully", zap.String("roleID", role.ID))
 	return nil
@@ -145,7 +151,9 @@ func (s *RoleService) DeleteRole(ctx context.Context, roleID string) error {
 	}
 
 	// Clear cache
-	s.cacheService.Delete(fmt.Sprintf("role:%s", roleID))
+	if err := s.cacheService.Delete(fmt.Sprintf("role:%s", roleID)); err != nil {
+		s.logger.Error("Failed to delete role from cache", zap.Error(err))
+	}
 
 	s.logger.Info("Role deleted successfully", zap.String("roleID", roleID))
 	return nil

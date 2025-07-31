@@ -21,8 +21,12 @@ func NewValidator() interfaces.Validator {
 	validate := validator.New()
 
 	// Register custom validators
-	validate.RegisterValidation("phone", validatePhoneNumber)
-	validate.RegisterValidation("aadhaar", validateAadhaarNumber)
+	if err := validate.RegisterValidation("phone", validatePhoneNumber); err != nil {
+		panic(fmt.Sprintf("failed to register phone validation: %v", err))
+	}
+	if err := validate.RegisterValidation("aadhaar", validateAadhaarNumber); err != nil {
+		panic(fmt.Sprintf("failed to register aadhaar validation: %v", err))
+	}
 
 	return &Validator{
 		validate: validate,
@@ -125,7 +129,7 @@ func (v *Validator) ValidatePhoneNumber(phone string) error {
 // ValidateAadhaarNumber validates an Aadhaar number format
 func (v *Validator) ValidateAadhaarNumber(aadhaar string) error {
 	if aadhaar == "" {
-		return fmt.Errorf("Aadhaar number cannot be empty")
+		return fmt.Errorf("aadhaar number cannot be empty")
 	}
 
 	// Remove any non-digit characters
@@ -133,7 +137,7 @@ func (v *Validator) ValidateAadhaarNumber(aadhaar string) error {
 
 	// Aadhaar should be exactly 12 digits
 	if len(digits) != 12 {
-		return fmt.Errorf("Aadhaar number must be exactly 12 digits")
+		return fmt.Errorf("aadhaar number must be exactly 12 digits")
 	}
 
 	// Simple check for all same digits (invalid Aadhaar)
@@ -147,7 +151,7 @@ func (v *Validator) ValidateAadhaarNumber(aadhaar string) error {
 	}
 
 	if allSame {
-		return fmt.Errorf("Aadhaar number cannot have all same digits")
+		return fmt.Errorf("aadhaar number cannot have all same digits")
 	}
 
 	return nil

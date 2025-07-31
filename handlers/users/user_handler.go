@@ -142,7 +142,8 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 
 	// Update user through service
 	// Note: Setting userID in context since current service implementation expects it there
-	ctx := context.WithValue(c.Request.Context(), "userID", userID)
+	type userIDKey struct{}
+	ctx := context.WithValue(c.Request.Context(), userIDKey{}, userID)
 	userResponse, err := h.userService.UpdateUser(ctx, &req)
 	if err != nil {
 		h.logger.Error("Failed to update user", zap.Error(err))

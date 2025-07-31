@@ -55,11 +55,11 @@ func (r *CreateUserRequest) Validate() error {
 	// Validate Aadhaar number if provided
 	if r.AadhaarNumber != nil && *r.AadhaarNumber != "" {
 		if len(*r.AadhaarNumber) != 12 {
-			return fmt.Errorf("Aadhaar number must be exactly 12 digits")
+			return fmt.Errorf("aadhaar number must be exactly 12 digits")
 		}
 		aadhaarRegex := regexp.MustCompile(`^[0-9]{12}$`)
 		if !aadhaarRegex.MatchString(*r.AadhaarNumber) {
-			return fmt.Errorf("Aadhaar number must contain only digits")
+			return fmt.Errorf("aadhaar number must contain only digits")
 		}
 	}
 

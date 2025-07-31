@@ -1,0 +1,104 @@
+version: '3.8'
+
+services:
+  aaa-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: aaa-service-v2
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - DB_PRIMARY_BACKEND=gorm
+      - DB_POSTGRES_HOST=postgres
+      - DB_POSTGRES_PORT=5432
+      - DB_POSTGRES_USER=aaa_user
+      - DB_POSTGRES_PASSWORD=aaa_password
+      - DB_POSTGRES_DBNAME=aaa_service
+      - DB_POSTGRES_SSLMODE=disable
+      - DB_POSTGRES_MAX_CONNS=10
+      - DB_POSTGRES_IDLE_CONNS=5
+      - DB_SPICEDB_ENDPOINT=spicedb:50051
+      - DB_SPICEDB_TOKEN=your-secret-key-here
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - LOG_LEVEL=info
+    depends_on:
+      - postgres
+      - redis
+      - spicedb
+    networks:
+      - aaa-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: aaa-postgres
+    environment:
+      - POSTGRES_USER=aaa_user
+      - POSTGRES_PASSWORD=aaa_password
+      - POSTGRES_DB=aaa_service
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d
+    networks:
+      - aaa-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aaa_user -d aaa_service"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: aaa-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - aaa-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  spicedb:
+    image: authzed/spicedb:latest
+    container_name: aaa-spicedb
+    ports:
+      - "50051:50051"
+      - "50052:50052"
+    environment:
+      - SPICEDB_LOG_LEVEL=info
+      - SPICEDB_GRPC_PRESHARED_KEY=your-secret-key-here
+      - SPICEDB_DATABASE_ENGINE=memory
+    networks:
+      - aaa-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "grpc_health_probe", "-addr=localhost:50051"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  aaa-network:
+    driver: bridge

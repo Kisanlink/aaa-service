@@ -54,15 +54,31 @@ The service follows a clean, layered architecture with the following components:
    ```
 
 3. **Set up environment variables**
+
+   Create a `.env` file in the root directory with the following variables:
    ```bash
-   export POSTGRES_HOST=localhost
-   export POSTGRES_PORT=5432
-   export POSTGRES_USER=postgres
-   export POSTGRES_PASSWORD=password
-   export POSTGRES_DB=aaa_service
-   export REDIS_ADDR=localhost:6379
-   export REDIS_PASSWORD=
-   export REDIS_DB=0
+   # Database Configuration
+   DB_PRIMARY_BACKEND=gorm
+   DB_POSTGRES_HOST=localhost
+   DB_POSTGRES_PORT=5432
+   DB_POSTGRES_USER=aaa_user
+   DB_POSTGRES_PASSWORD=aaa_password
+   DB_POSTGRES_DBNAME=aaa_service
+   DB_POSTGRES_SSLMODE=disable
+   DB_POSTGRES_MAX_CONNS=10
+   DB_POSTGRES_IDLE_CONNS=5
+
+   # SpiceDB Configuration (optional)
+   DB_SPICEDB_ENDPOINT=localhost:50051
+   DB_SPICEDB_TOKEN=your-secret-key-here
+
+   # Redis Configuration
+   REDIS_HOST=localhost
+   REDIS_PORT=6379
+
+   # Server Configuration
+   PORT=8080
+   LOG_LEVEL=info
    ```
 
 4. **Run the service**
@@ -353,4 +369,4 @@ The refactored service maintains backward compatibility while providing:
 - [API Documentation](docs/api.md)
 - [Architecture Guide](docs/architecture.md)
 - [Deployment Guide](docs/deployment.md)
-- [Troubleshooting](docs/troubleshooting.md) 
+- [Troubleshooting](docs/troubleshooting.md)

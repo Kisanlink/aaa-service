@@ -186,7 +186,9 @@ func (h *HealthHandler) checkCacheHealth(ctx context.Context) (map[string]interf
 	}
 
 	// Clean up test key
-	h.cacheService.Delete(testKey)
+	if err := h.cacheService.Delete(testKey); err != nil {
+		h.logger.Error("Failed to delete test key from cache", zap.Error(err))
+	}
 
 	responseTime := time.Since(startTime)
 	return map[string]interface{}{

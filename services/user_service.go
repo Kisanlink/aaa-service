@@ -123,7 +123,9 @@ func (s *UserService) GetUserByID(ctx context.Context, userID string) (*userResp
 	response.FromModel(user)
 
 	// Cache the response
-	s.cacheService.Set(cacheKey, response, 300) // 5 minutes TTL
+	if err := s.cacheService.Set(cacheKey, response, 300); err != nil {
+		s.logger.Error("Failed to cache user", zap.Error(err))
+	} // 5 minutes TTL
 
 	s.logger.Info("User retrieved successfully", zap.String("userID", userID))
 	return response, nil
@@ -159,7 +161,9 @@ func (s *UserService) GetUserByUsername(ctx context.Context, username string) (*
 	response.FromModel(user)
 
 	// Cache the response
-	s.cacheService.Set(cacheKey, response, 300) // 5 minutes TTL
+	if err := s.cacheService.Set(cacheKey, response, 300); err != nil {
+		s.logger.Error("Failed to cache user", zap.Error(err))
+	} // 5 minutes TTL
 
 	s.logger.Info("User retrieved successfully", zap.String("username", username))
 	return response, nil
@@ -195,7 +199,9 @@ func (s *UserService) GetUserByMobileNumber(ctx context.Context, mobileNumber ui
 	response.FromModel(user)
 
 	// Cache the response
-	s.cacheService.Set(cacheKey, response, 300) // 5 minutes TTL
+	if err := s.cacheService.Set(cacheKey, response, 300); err != nil {
+		s.logger.Error("Failed to cache user", zap.Error(err))
+	} // 5 minutes TTL
 
 	s.logger.Info("User retrieved successfully", zap.Uint64("mobileNumber", mobileNumber))
 	return response, nil
@@ -231,7 +237,9 @@ func (s *UserService) GetUserByAadhaarNumber(ctx context.Context, aadhaarNumber 
 	response.FromModel(user)
 
 	// Cache the response
-	s.cacheService.Set(cacheKey, response, 300) // 5 minutes TTL
+	if err := s.cacheService.Set(cacheKey, response, 300); err != nil {
+		s.logger.Error("Failed to cache user", zap.Error(err))
+	} // 5 minutes TTL
 
 	s.logger.Info("User retrieved successfully", zap.String("aadhaarNumber", aadhaarNumber))
 	return response, nil
