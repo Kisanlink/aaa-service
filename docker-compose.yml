@@ -21,12 +21,15 @@ services:
       - DB_POSTGRES_IDLE_CONNS=5
       - DB_SPICEDB_ENDPOINT=spicedb:50051
       - DB_SPICEDB_TOKEN=${DB_SPICEDB_TOKEN:-your-secret-key-here}
+      - SPICEDB_DB_NAME=${SPICEDB_DB_NAME:-spicedb}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - LOG_LEVEL=info
     depends_on:
-      - redis
-      - spicedb
+      redis:
+        condition: service_healthy
+      spicedb:
+        condition: service_healthy
     networks:
       - aaa-network
     restart: unless-stopped
@@ -65,6 +68,7 @@ services:
       --datastore-engine postgres
       --datastore-conn-uri postgres://${DB_POSTGRES_USER:-aaa_user}:${DB_POSTGRES_PASSWORD:-aaa_password}@${DB_POSTGRES_HOST:-localhost}:${DB_POSTGRES_PORT:-5432}/${SPICEDB_DB_NAME:-spicedb}?sslmode=${DB_SSL_MODE:-disable}
       --log-level info
+      --http-enabled
     networks:
       - aaa-network
     restart: unless-stopped
@@ -73,7 +77,10 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 10s
+      start_period: 30s
+    depends_on:
+      redis:
+        condition: service_healthy
 
 volumes:
   redis_data:
