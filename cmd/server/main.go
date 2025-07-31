@@ -13,6 +13,7 @@ import (
 	_ "github.com/Kisanlink/aaa-service/docs"
 	"github.com/Kisanlink/aaa-service/server"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"go.uber.org/zap"
@@ -25,6 +26,11 @@ import (
 // @BasePath /api
 
 func main() {
+	// Load .env file
+	if err := godotenv.Load(); err != nil {
+		log.Printf("Warning: Error loading .env file: %v", err)
+	}
+
 	logger, err := zap.NewProduction()
 	if err != nil {
 		log.Fatal("Failed to initialize logger:", err)
