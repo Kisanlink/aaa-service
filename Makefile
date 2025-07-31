@@ -163,6 +163,30 @@ run-dev:
 	@echo "$(BLUE)Starting AAA service in development mode...$(NC)"
 	@go run ./cmd/server
 
+## spicedb: Start SpiceDB locally with PostgreSQL backend
+spicedb:
+	@echo "$(BLUE)Starting SpiceDB locally...$(NC)"
+	@./scripts/start-spicedb.sh
+
+## spicedb-stop: Stop SpiceDB
+spicedb-stop:
+	@echo "$(BLUE)Stopping SpiceDB...$(NC)"
+	@./scripts/stop-spicedb.sh
+
+## docker-down: Stop all Docker services
+docker-down:
+	@echo "$(BLUE)Stopping all Docker services...$(NC)"
+	@docker-compose down
+
+## docker-cleanup: Comprehensive Docker cleanup
+docker-cleanup:
+	@echo "$(BLUE)Running comprehensive Docker cleanup...$(NC)"
+	@./scripts/docker-cleanup.sh
+
+## docker-reset: Stop services and cleanup
+docker-reset: docker-down docker-cleanup
+	@echo "$(GREEN)Docker reset completed$(NC)"
+
 ## docs: Generate documentation
 docs:
 	@echo "$(BLUE)Generating documentation...$(NC)"

@@ -83,8 +83,11 @@ services:
       - "50052:50052"
     environment:
       - SPICEDB_LOG_LEVEL=info
-      - SPICEDB_GRPC_PRESHARED_KEY=your-secret-key-here
-      - SPICEDB_DATABASE_ENGINE=memory
+      - SPICEDB_GRPC_PRESHARED_KEY=${DB_SPICEDB_TOKEN:-your-secret-key-here}
+      - SPICEDB_DATABASE_ENGINE=postgres
+      - SPICEDB_DATABASE_CONN_URI=postgres://${DB_POSTGRES_USER:-aaa_user}:${DB_POSTGRES_PASSWORD:-aaa_password}@postgres:5432/${DB_POSTGRES_DBNAME:-aaa_service}?sslmode=disable
+    depends_on:
+      - postgres
     networks:
       - aaa-network
     restart: unless-stopped
