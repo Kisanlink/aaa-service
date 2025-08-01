@@ -60,16 +60,17 @@ services:
     image: authzed/spicedb:latest
     container_name: aaa-spicedb
     ports:
-      - "50051:50051"
-      - "50052:50052"
+      - "0.0.0.0:50051:50051"
+    volumes:
+      - ./spicedb_schema.zed:/schema.zed:ro
     command: >
       serve
       --grpc-preshared-key ${DB_SPICEDB_TOKEN:-your-secret-key-here}
       --datastore-engine postgres
       --datastore-conn-uri postgres://${DB_POSTGRES_USER:-aaa_user}:${DB_POSTGRES_PASSWORD:-aaa_password}@${DB_POSTGRES_HOST:-localhost}:${DB_POSTGRES_PORT:-5432}/${SPICEDB_DB_NAME:-spicedb}?sslmode=${DB_SSL_MODE:-disable}
       --datastore-migrate
+      --schema-file=/schema.zed
       --log-level info
-      --http-enabled
     networks:
       - aaa-network
     restart: unless-stopped
