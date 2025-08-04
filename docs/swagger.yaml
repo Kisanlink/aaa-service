@@ -1,1058 +1,2152 @@
+basePath: /api
 definitions:
-  helper.ErrorResponse:
-    description: Standard API error response structure with multiple error messages
+  github_com_Kisanlink_aaa-service_entities_models.Action:
     properties:
-      data:
-        description: |-
-          The actual data payload (nil for error responses)
-          @example null
-      errors:
-        description: |-
-          List of error messages describing what went wrong
-          @example ["Invalid email format", "Password must be at least 8 characters"]
-        items:
-          type: string
-        type: array
-      message:
-        description: |-
-          Human-readable summary message about the error
-          @example "Validation failed"
+      category:
+        description: e.g., "user", "role", "system", "api", "database"
         type: string
-      status_code:
-        description: |-
-          HTTP status code
-          @example 400
-        type: integer
-      success:
-        description: |-
-          Indicates if the request was successfully processed (always false for error responses)
-          @example false
-        type: boolean
-      timestamp:
-        description: |-
-          Timestamp of when the response was generated
-          @example "2023-05-15T10:00:00Z"
-        type: string
-    type: object
-  helper.Response:
-    description: Standard API response structure
-    properties:
-      data:
-        description: |-
-          The actual data payload (can be any type)
-          @example {"id": 1, "name": "John Doe"}
-      error:
-        description: |-
-          List of error messages (if any)
-          @example null
-        items:
-          type: string
-        type: array
-      message:
-        description: |-
-          Human-readable message about the response
-          @example "Request processed successfully"
-        type: string
-      status_code:
-        description: |-
-          HTTP status code
-          @example 200
-        type: integer
-      success:
-        description: |-
-          Indicates if the request was successfully processed
-          @example true
-        type: boolean
-      timestamp:
-        description: |-
-          Timestamp of when the response was generated
-          @example "2023-05-15T10:00:00Z"
-        type: string
-    type: object
-  model.AadhaarOTPResponse:
-    properties:
-      entity:
-        example: aadhaar
-        type: string
-      otp_message:
-        example: OTP sent successfully
-        type: string
-      reference_id:
-        example: REF987654321
-        type: string
-      status_code:
-        example: 200
-        type: integer
-      timestamp:
-        example: 1672531200
-        type: integer
-      transaction_id:
-        example: TXN123456789
-        type: string
-    type: object
-  model.Action:
-    properties:
       created_at:
         type: string
-      id:
-        description: Use string for ID
+      created_by:
         type: string
+      deleted_at:
+        type: string
+      deleted_by:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
       name:
         type: string
       updated_at:
         type: string
+      updated_by:
+        type: string
     type: object
-  model.AddressRes:
+  github_com_Kisanlink_aaa-service_entities_models.Address:
     properties:
       country:
-        example: USA
         type: string
       created_at:
-        example: "2023-01-01T12:00:00Z"
+        type: string
+      created_by:
+        type: string
+      deleted_at:
+        type: string
+      deleted_by:
         type: string
       district:
-        example: Central District
         type: string
       full_address:
-        example: 123 Main Street, Near Central Park, Metro City, California, USA -
-          123456
         type: string
       house:
-        example: "123"
         type: string
       id:
-        example: 123e4567-e89b-12d3-a456-426614174000
         type: string
       landmark:
-        example: Near Central Park
         type: string
       pincode:
-        example: "123456"
         type: string
       post_office:
-        example: Main Post Office
         type: string
       state:
-        example: California
         type: string
       street:
-        example: Main Street
         type: string
       subdistrict:
-        example: Downtown
         type: string
       updated_at:
-        example: "2023-01-02T10:30:00Z"
+        type: string
+      updated_by:
         type: string
       vtc:
-        example: Metro City
+        description: Village/Town/City
         type: string
     type: object
-  model.AssignRolePermission:
+  github_com_Kisanlink_aaa-service_entities_models.AuditLog:
     properties:
+      action:
+        type: string
       created_at:
-        example: "2023-01-01T12:00:00Z"
         type: string
+      created_by:
+        type: string
+      deleted_at:
+        type: string
+      deleted_by:
+        type: string
+      details:
+        additionalProperties: true
+        type: object
       id:
-        example: 123e4567-e89b-12d3-a456-426614174000
         type: string
-      is_validated:
-        example: true
-        type: boolean
-      roles:
-        items:
-          $ref: '#/definitions/model.RoleDetail'
-        type: array
-      updated_at:
-        example: "2023-01-02T10:30:00Z"
+      ip_address:
         type: string
-      username:
-        example: johndoe
-        type: string
-    type: object
-  model.AssignRoleRequest:
-    properties:
-      role:
-        example: admin
-        type: string
-      user_id:
-        example: 123e4567-e89b-12d3-a456-426614174000
-        type: string
-    required:
-    - role
-    - user_id
-    type: object
-  model.CreateActionRequest:
-    properties:
-      name:
-        example: read
-        type: string
-    required:
-    - name
-    type: object
-  model.CreatePermissionRequest:
-    properties:
-      actions:
-        items:
-          type: string
-        type: array
-      effect:
+      message:
         type: string
       resource:
+        $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_models.Resource'
+      resource_id:
         type: string
-    type: object
-  model.CreateResourceRequest:
-    properties:
-      name:
-        example: document
+      resource_type:
+        description: e.g., "aaa/user", "aaa/role"
         type: string
-    required:
-    - name
-    type: object
-  model.CreateRoleRequest:
-    properties:
-      description:
-        example: Administrator role with full access
+      status:
+        description: success, failure, warning
         type: string
-      name:
-        example: admin
-        type: string
-    required:
-    - name
-    type: object
-  model.CreateUserRequest:
-    properties:
-      aadhaar_number:
-        example: "123456789012"
-        type: string
-      country_code:
-        example: "+91"
-        type: string
-      mobile_number:
-        example: 9876543210
-        type: integer
-      password:
-        example: securePassword123
-        type: string
-      username:
-        example: johndoe
-        type: string
-    required:
-    - mobile_number
-    type: object
-  model.CreditUsageRequest:
-    properties:
-      tokens:
-        example: 100
-        type: integer
-      transaction_type:
-        example: debit
-        type: string
-      user_id:
-        example: 123e4567-e89b-12d3-a456-426614174000
-        type: string
-    required:
-    - user_id
-    type: object
-  model.GetRolePermissionResponse:
-    properties:
-      Permission:
-        $ref: '#/definitions/model.Permission'
-      Role:
-        $ref: '#/definitions/model.Role'
-      created_at:
-        type: string
-      id:
+      timestamp:
         type: string
       updated_at:
         type: string
+      updated_by:
+        type: string
+      user:
+        allOf:
+        - $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_models.User'
+        description: Relationships
+      user_agent:
+        type: string
+      user_id:
+        type: string
     type: object
-  model.LoginRequest:
+  github_com_Kisanlink_aaa-service_entities_models.Contact:
     properties:
+      address:
+        allOf:
+        - $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_models.Address'
+        description: Relationships
+      address_id:
+        type: string
+      country_code:
+        type: string
+      created_at:
+        type: string
+      created_by:
+        type: string
+      deleted_at:
+        type: string
+      deleted_by:
+        type: string
+      email_hash:
+        type: string
+      id:
+        type: string
+      mobile_number:
+        type: integer
+      share_code:
+        type: string
+      updated_at:
+        type: string
+      updated_by:
+        type: string
+      user_id:
+        type: string
+    type: object
+  github_com_Kisanlink_aaa-service_entities_models.Permission:
+    properties:
+      action:
+        $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_models.Action'
+      action_id:
+        description: Which action this permission allows
+        type: string
+      created_at:
+        type: string
+      created_by:
+        type: string
+      deleted_at:
+        type: string
+      deleted_by:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      name:
+        type: string
+      resource:
+        allOf:
+        - $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_models.Resource'
+        description: Relationships
+      resource_id:
+        description: Which resource this permission applies to
+        type: string
+      updated_at:
+        type: string
+      updated_by:
+        type: string
+    type: object
+  github_com_Kisanlink_aaa-service_entities_models.Resource:
+    properties:
+      children:
+        items:
+          $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_models.Resource'
+        type: array
+      created_at:
+        type: string
+      created_by:
+        type: string
+      deleted_at:
+        type: string
+      deleted_by:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      name:
+        type: string
+      owner:
+        $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_models.User'
+      owner_id:
+        description: Owner user ID
+        type: string
+      parent:
+        allOf:
+        - $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_models.Resource'
+        description: Relationships
+      parent_id:
+        description: For hierarchical resources
+        type: string
+      type:
+        description: e.g., "aaa/user", "aaa/role", "aaa/permission", etc.
+        type: string
+      updated_at:
+        type: string
+      updated_by:
+        type: string
+    type: object
+  github_com_Kisanlink_aaa-service_entities_models.Role:
+    properties:
+      children:
+        items:
+          $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_models.Role'
+        type: array
+      created_at:
+        type: string
+      created_by:
+        type: string
+      deleted_at:
+        type: string
+      deleted_by:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      name:
+        type: string
+      parent:
+        allOf:
+        - $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_models.Role'
+        description: Relationships
+      parent_id:
+        description: For hierarchical roles
+        type: string
+      permissions:
+        items:
+          $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_models.Permission'
+        type: array
+      updated_at:
+        type: string
+      updated_by:
+        type: string
+    type: object
+  github_com_Kisanlink_aaa-service_entities_models.User:
+    properties:
+      contacts:
+        items:
+          $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_models.Contact'
+        type: array
+      created_at:
+        type: string
+      created_by:
+        type: string
+      deleted_at:
+        type: string
+      deleted_by:
+        type: string
+      id:
+        type: string
+      is_validated:
+        type: boolean
       password:
-        example: securePassword123
+        maxLength: 128
+        minLength: 8
+        type: string
+      profile:
+        allOf:
+        - $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_models.UserProfile'
+        description: Relationships
+      roles:
+        items:
+          $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_models.UserRole'
+        type: array
+      status:
+        description: |-
+          Status represents the current state of the user account
+          Possible values:
+          - "pending": Initial state when user is created but not validated
+          - "active": User is validated and can access all features
+          - "suspended": User access is temporarily suspended
+          - "blocked": User access is permanently blocked
+        type: string
+      tokens:
+        type: integer
+      updated_at:
+        type: string
+      updated_by:
         type: string
       username:
-        example: johndoe
         type: string
     required:
     - password
     - username
     type: object
-  model.MinimalUser:
+  github_com_Kisanlink_aaa-service_entities_models.UserProfile:
     properties:
-      country_code:
-        example: "+91"
+      aadhaar_number:
+        type: string
+      address:
+        allOf:
+        - $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_models.Address'
+        description: Relationships
+      address_id:
+        type: string
+      care_of:
         type: string
       created_at:
-        example: "2023-01-01T12:00:00Z"
+        type: string
+      created_by:
+        type: string
+      date_of_birth:
+        type: string
+      deleted_at:
+        type: string
+      deleted_by:
+        type: string
+      email_hash:
         type: string
       id:
-        example: 123e4567-e89b-12d3-a456-426614174000
         type: string
-      is_validated:
-        example: true
+      message:
+        type: string
+      name:
+        type: string
+      photo:
+        type: string
+      share_code:
+        type: string
+      updated_at:
+        type: string
+      updated_by:
+        type: string
+      user_id:
+        type: string
+      year_of_birth:
+        type: string
+    type: object
+  github_com_Kisanlink_aaa-service_entities_models.UserRole:
+    properties:
+      created_at:
+        type: string
+      created_by:
+        type: string
+      deleted_at:
+        type: string
+      deleted_by:
+        type: string
+      id:
+        type: string
+      is_active:
         type: boolean
-      mobile_number:
-        example: 9876543210
-        type: integer
-      otp_response:
-        $ref: '#/definitions/model.AadhaarOTPResponse'
-      updated_at:
-        example: "2023-01-02T10:30:00Z"
-        type: string
-      username:
-        example: johndoe
-        type: string
-    type: object
-  model.PasswordResetFlowRequest:
-    properties:
-      new_password:
-        example: newSecurePassword123
-        type: string
-      otp:
-        example: "123456"
-        type: string
-      username:
-        example: johndoe
-        type: string
-    required:
-    - username
-    type: object
-  model.Permission:
-    properties:
-      actions:
-        description: Actions  pq.StringArray `json:"actions" gorm:"type:text[]"`
-        items:
-          type: string
-        type: array
-      created_at:
-        type: string
-      effect:
-        type: string
-      id:
-        description: Use string for ID
-        type: string
-      resource:
-        type: string
-      updated_at:
-        type: string
-    type: object
-  model.Resource:
-    properties:
-      created_at:
-        type: string
-      id:
-        description: Use string for ID
-        type: string
-      name:
-        type: string
-      updated_at:
-        type: string
-    type: object
-  model.Role:
-    properties:
-      created_at:
-        type: string
-      description:
-        type: string
-      id:
-        description: Use string for ID
-        type: string
-      name:
-        type: string
-      permissions:
-        items:
-          $ref: '#/definitions/model.Permission'
-        type: array
-      updated_at:
-        type: string
-    type: object
-  model.RoleDetail:
-    properties:
-      permissions:
-        items:
-          $ref: '#/definitions/model.RolePermissionRes'
-        type: array
-      role_name:
-        example: admin
-        type: string
-    type: object
-  model.RolePermission:
-    properties:
-      created_at:
-        type: string
-      id:
-        description: Use string for ID
-        type: string
-      permissionID:
-        type: string
+      role:
+        $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_models.Role'
       roleID:
         type: string
       updated_at:
         type: string
+      updated_by:
+        type: string
+      user:
+        allOf:
+        - $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_models.User'
+        description: Relationships
+      userID:
+        type: string
     type: object
-  model.RolePermissionRequest:
+  github_com_Kisanlink_aaa-service_entities_requests_addresses.CreateAddressRequest:
     properties:
-      permissionId:
-        items:
-          type: string
-        type: array
-      roleId:
+      body: {}
+      context:
+        additionalProperties: {}
+        type: object
+      country:
+        maxLength: 255
+        type: string
+      district:
+        maxLength: 255
+        type: string
+      full_address:
+        maxLength: 1000
+        type: string
+      headers:
+        additionalProperties:
+          items:
+            type: string
+          type: array
+        type: object
+      house:
+        maxLength: 255
+        type: string
+      landmark:
+        maxLength: 255
+        type: string
+      operation:
+        type: string
+      pincode:
+        type: string
+      post_office:
+        maxLength: 255
+        type: string
+      protocol:
+        type: string
+      request_id:
+        type: string
+      state:
+        maxLength: 255
+        type: string
+      street:
+        maxLength: 255
+        type: string
+      subdistrict:
+        maxLength: 255
+        type: string
+      type:
+        type: string
+      user_id:
+        minLength: 1
+        type: string
+      version:
+        type: string
+      vtc:
+        maxLength: 255
         type: string
     required:
-    - permissionId
-    - roleId
+    - user_id
     type: object
-  model.RolePermissionRes:
+  github_com_Kisanlink_aaa-service_entities_requests_addresses.UpdateAddressRequest:
     properties:
-      actions:
-        example:
-        - read
-        - write
-        - delete
+      body: {}
+      context:
+        additionalProperties: {}
+        type: object
+      country:
+        maxLength: 255
+        type: string
+      district:
+        maxLength: 255
+        type: string
+      full_address:
+        maxLength: 1000
+        type: string
+      headers:
+        additionalProperties:
+          items:
+            type: string
+          type: array
+        type: object
+      house:
+        maxLength: 255
+        type: string
+      id:
+        minLength: 1
+        type: string
+      landmark:
+        maxLength: 255
+        type: string
+      operation:
+        type: string
+      pincode:
+        type: string
+      post_office:
+        maxLength: 255
+        type: string
+      protocol:
+        type: string
+      request_id:
+        type: string
+      state:
+        maxLength: 255
+        type: string
+      street:
+        maxLength: 255
+        type: string
+      subdistrict:
+        maxLength: 255
+        type: string
+      type:
+        type: string
+      version:
+        type: string
+      vtc:
+        maxLength: 255
+        type: string
+    required:
+    - id
+    type: object
+  github_com_Kisanlink_aaa-service_entities_requests_roles.CreateRoleRequest:
+    properties:
+      body: {}
+      context:
+        additionalProperties: {}
+        type: object
+      description:
+        maxLength: 500
+        type: string
+      headers:
+        additionalProperties:
+          items:
+            type: string
+          type: array
+        type: object
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+      operation:
+        type: string
+      permissions:
         items:
           type: string
         type: array
-      resource:
-        example: document
+      protocol:
         type: string
+      request_id:
+        type: string
+      type:
+        type: string
+      version:
+        type: string
+    required:
+    - name
     type: object
-  model.UpdateUserRequest:
+  github_com_Kisanlink_aaa-service_entities_requests_roles.UpdateRoleRequest:
     properties:
-      care_of:
-        example: Father
+      body: {}
+      context:
+        additionalProperties: {}
+        type: object
+      description:
+        maxLength: 500
         type: string
-      date_of_birth:
-        example: "1990-01-01"
-        type: string
-      email_hash:
-        example: a1b2c3d4e5f6
-        type: string
-      message:
-        example: Profile updated
-        type: string
-      mobile_number:
-        example: 9876543210
-        type: integer
+      headers:
+        additionalProperties:
+          items:
+            type: string
+          type: array
+        type: object
       name:
-        example: John Doe
+        maxLength: 100
+        minLength: 2
         type: string
-      photo:
-        example: base64encodedimage
+      operation:
         type: string
-      status:
-        example: active
+      permissions:
+        items:
+          type: string
+        type: array
+      protocol:
         type: string
-      username:
-        example: johndoe
+      request_id:
         type: string
-      year_of_birth:
-        example: "1990"
+      role_id:
         type: string
+      type:
+        type: string
+      version:
+        type: string
+    required:
+    - role_id
     type: object
-  model.UserRes:
+  github_com_Kisanlink_aaa-service_entities_requests_users.CreateUserRequest:
     properties:
       aadhaar_number:
-        example: "123456789012"
         type: string
-      address:
-        $ref: '#/definitions/model.AddressRes'
       care_of:
-        example: Father
         type: string
       country_code:
-        example: "+91"
-        type: string
-      created_at:
-        example: "2023-01-01T12:00:00Z"
         type: string
       date_of_birth:
-        example: "1990-01-01"
-        type: string
-      email_hash:
-        example: a1b2c3d4e5f6
-        type: string
-      id:
-        example: 123e4567-e89b-12d3-a456-426614174000
-        type: string
-      is_validated:
-        example: true
-        type: boolean
-      message:
-        example: Welcome
         type: string
       mobile_number:
-        example: 9876543210
         type: integer
       name:
-        example: John Doe
         type: string
       password:
-        example: hashedpassword
-        type: string
-      photo:
-        example: base64encodedimage
-        type: string
-      roles:
-        items:
-          $ref: '#/definitions/model.RoleDetail'
-        type: array
-      share_code:
-        example: SHARE123
-        type: string
-      status:
-        example: active
-        type: string
-      updated_at:
-        example: "2023-01-02T10:30:00Z"
+        maxLength: 128
+        minLength: 8
         type: string
       username:
-        example: johndoe
         type: string
       year_of_birth:
-        example: "1990"
         type: string
+    required:
+    - mobile_number
+    - password
+    - username
     type: object
-  model.UserResponse:
+  github_com_Kisanlink_aaa-service_entities_requests_users.UpdateUserRequest:
     properties:
-      aadhaar_number:
-        example: "123456789012"
-        type: string
-      address:
-        $ref: '#/definitions/model.AddressRes'
       care_of:
-        example: Father
         type: string
       country_code:
-        example: "+91"
-        type: string
-      created_at:
-        example: "2023-01-01T12:00:00Z"
         type: string
       date_of_birth:
-        example: "1990-01-01"
         type: string
       email_hash:
-        example: a1b2c3d4e5f6
         type: string
-      id:
-        example: 123e4567-e89b-12d3-a456-426614174000
-        type: string
-      is_validated:
-        example: true
-        type: boolean
       message:
-        example: Welcome
         type: string
       mobile_number:
-        example: 9876543210
         type: integer
       name:
-        example: John Doe
         type: string
       photo:
-        example: base64encodedimage
+        type: string
+      share_code:
+        type: string
+      status:
+        type: string
+      tokens:
+        type: integer
+      year_of_birth:
+        type: string
+    type: object
+  github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse:
+    properties:
+      code:
+        type: integer
+      details:
+        additionalProperties: true
+        type: object
+      error:
+        type: string
+      message:
+        type: string
+      request_id:
+        type: string
+      timestamp:
+        type: string
+    type: object
+  github_com_Kisanlink_aaa-service_entities_responses_users.AddressResponse:
+    properties:
+      country:
+        type: string
+      created_at:
+        type: string
+      district:
+        type: string
+      full_address:
+        type: string
+      house:
+        type: string
+      id:
+        type: string
+      landmark:
+        type: string
+      pincode:
+        type: string
+      post_office:
+        type: string
+      state:
+        type: string
+      street:
+        type: string
+      subdistrict:
+        type: string
+      updated_at:
+        type: string
+      vtc:
+        type: string
+    type: object
+  github_com_Kisanlink_aaa-service_entities_responses_users.RoleDetail:
+    properties:
+      assigned_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      name:
+        type: string
+    type: object
+  github_com_Kisanlink_aaa-service_entities_responses_users.UserResponse:
+    properties:
+      aadhaar_number:
+        type: string
+      address:
+        $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses_users.AddressResponse'
+      care_of:
+        type: string
+      country_code:
+        type: string
+      created_at:
+        type: string
+      date_of_birth:
+        type: string
+      email_hash:
+        type: string
+      id:
+        type: string
+      is_validated:
+        type: boolean
+      message:
+        type: string
+      mobile_number:
+        type: integer
+      name:
+        type: string
+      photo:
         type: string
       roles:
         items:
-          $ref: '#/definitions/model.RoleDetail'
+          $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses_users.RoleDetail'
         type: array
       share_code:
-        example: SHARE123
         type: string
       status:
-        example: active
         type: string
+      tokens:
+        type: integer
       updated_at:
-        example: "2023-01-02T10:30:00Z"
         type: string
       username:
-        example: johndoe
         type: string
       year_of_birth:
-        example: "1990"
         type: string
     type: object
+  handlers_permissions.CreatePermissionRequest:
+    properties:
+      actions:
+        items:
+          type: string
+        type: array
+      effect:
+        type: string
+      resource:
+        type: string
+    required:
+    - actions
+    - effect
+    - resource
+    type: object
+  handlers_permissions.UpdatePermissionRequest:
+    properties:
+      actions:
+        items:
+          type: string
+        type: array
+      effect:
+        type: string
+      id:
+        type: string
+      resource:
+        type: string
+    required:
+    - id
+    type: object
+  services.AuditQueryResult:
+    properties:
+      logs:
+        items:
+          $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_models.AuditLog'
+        type: array
+      page:
+        type: integer
+      per_page:
+        type: integer
+      total_count:
+        type: integer
+    type: object
+  services.LoginRequest:
+    properties:
+      mfa_code:
+        type: string
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  services.LoginResponse:
+    properties:
+      access_token:
+        type: string
+      expires_in:
+        type: integer
+      permissions:
+        items:
+          type: string
+        type: array
+      refresh_token:
+        type: string
+      token_type:
+        type: string
+      user:
+        $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_models.User'
+    type: object
+  services.Permission:
+    properties:
+      action:
+        type: string
+      resource:
+        type: string
+      resource_id:
+        type: string
+      user_id:
+        type: string
+    type: object
+  services.PermissionResult:
+    properties:
+      allowed:
+        type: boolean
+      permissions:
+        items:
+          type: string
+        type: array
+      reason:
+        type: string
+    type: object
+  services.RegisterRequest:
+    properties:
+      email:
+        type: string
+      full_name:
+        maxLength: 100
+        minLength: 1
+        type: string
+      password:
+        minLength: 8
+        type: string
+      role_ids:
+        items:
+          type: string
+        type: array
+      username:
+        maxLength: 50
+        minLength: 3
+        type: string
+    required:
+    - email
+    - full_name
+    - password
+    - username
+    type: object
+host: localhost:8080
 info:
   contact: {}
-  description: Authentication, Authorization, and Accounting (AAA) service providing
-    RBAC-based access control. Supports both gRPC and REST API interfaces for seamless
-    integration with client applications. Offers comprehensive user management, role-based
-    permission control, and session accounting capabilities for secure system access.
-  title: AAA-Service API
-  version: "1.0"
+  description: Authentication, Authorization, and Accounting Service with SpiceDB
+    integration
+  title: AAA Service API
+  version: "2.0"
 paths:
-  /actions:
-    get:
-      consumes:
-      - application/json
-      description: Retrieves actions with optional filtering by ID or name and pagination
-        support
-      parameters:
-      - description: Filter by action ID
-        in: query
-        name: id
-        type: string
-      - description: Filter by action name
-        in: query
-        name: name
-        type: string
-      - description: Page number (starts from 1)
-        in: query
-        name: page
-        type: integer
-      - description: Number of items per page
-        in: query
-        name: limit
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: List of actions retrieved successfully
-          schema:
-            allOf:
-            - $ref: '#/definitions/helper.Response'
-            - properties:
-                data:
-                  items:
-                    $ref: '#/definitions/model.Action'
-                  type: array
-              type: object
-        "500":
-          description: Failed to retrieve actions
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-      summary: Get actions with pagination
-      tags:
-      - Actions
+  /api/v1/addresses:
     post:
       consumes:
       - application/json
-      description: Creates a new action with the provided details
+      description: Create a new address for a user
       parameters:
-      - description: Action creation data
+      - description: Address creation data
         in: body
-        name: request
+        name: address
         required: true
         schema:
-          $ref: '#/definitions/model.CreateActionRequest'
+          $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_requests_addresses.CreateAddressRequest'
       produces:
       - application/json
       responses:
         "201":
-          description: Action created successfully
+          description: Created
           schema:
-            allOf:
-            - $ref: '#/definitions/helper.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/model.Action'
-              type: object
-        "400":
-          description: Invalid request or missing required fields
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-        "409":
-          description: Action already exists
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-        "500":
-          description: Failed to create action
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-      summary: Create a new action
-      tags:
-      - Actions
-  /actions/{id}:
-    delete:
-      consumes:
-      - application/json
-      description: Deletes an existing action by ID
-      parameters:
-      - description: Action ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Action deleted successfully
-          schema:
-            $ref: '#/definitions/helper.Response'
-        "400":
-          description: Invalid action ID
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-        "404":
-          description: Action not found
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-        "500":
-          description: Failed to delete action
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-      summary: Delete an action
-      tags:
-      - Actions
-    put:
-      consumes:
-      - application/json
-      description: Updates an existing action with the provided details
-      parameters:
-      - description: Action ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Action update data
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/model.CreateActionRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Action updated successfully
-          schema:
-            allOf:
-            - $ref: '#/definitions/helper.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/model.Action'
-              type: object
-        "400":
-          description: Invalid request body
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-        "404":
-          description: Action not found
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-        "500":
-          description: Failed to update action
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-      summary: Update an action
-      tags:
-      - Actions
-  /assign-role:
-    delete:
-      consumes:
-      - application/json
-      description: API to delete a specific role assigned to a user
-      parameters:
-      - description: Assign Role Request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/model.AssignRoleRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: delete assigned Role successfully
-          schema:
-            allOf:
-            - $ref: '#/definitions/helper.Response'
-            - properties:
-                data:
-                  type: object
-              type: object
-        "400":
-          description: Invalid request body
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-        "404":
-          description: User or Role not found
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-        "500":
-          description: Internal server error
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-      summary: delete a role to a user
-      tags:
-      - Users
-    post:
-      consumes:
-      - application/json
-      description: Assigns a specified role to a user and returns the updated user
-        details with roles and permissions
-      parameters:
-      - description: Assign Role Request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/model.AssignRoleRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Role assigned successfully
-          schema:
-            allOf:
-            - $ref: '#/definitions/helper.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/model.AssignRolePermission'
-              type: object
-        "400":
-          description: Invalid request body
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-        "404":
-          description: User or Role not found
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-        "409":
-          description: Role already assigned to user
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-        "500":
-          description: Internal server error
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-      summary: Assign a role to a user
-      tags:
-      - Users
-  /forgot-password:
-    post:
-      consumes:
-      - application/json
-      description: 'Handles the complete password reset flow in three steps: 1) Request
-        OTP, 2) Verify OTP, 3) Reset password. Each step requires different request
-        parameters.'
-      parameters:
-      - description: Password reset request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/model.PasswordResetFlowRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 'Success responses vary by step: 1) ''OTP sent successfully'',
-            2) ''OTP verified. Proceed to reset password.'', 3) ''Password reset successfully'''
-          schema:
+            additionalProperties: true
             type: object
         "400":
-          description: Invalid request body or parameters
+          description: Bad Request
           schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-        "401":
-          description: Invalid or expired OTP
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-        "404":
-          description: User not found
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
+            additionalProperties: true
+            type: object
         "500":
-          description: Internal server error
+          description: Internal Server Error
           schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-      summary: Password reset flow
+            additionalProperties: true
+            type: object
+      summary: Create a new address
       tags:
-      - Authentication
-  /login:
-    post:
+      - addresses
+  /api/v1/addresses/{id}:
+    delete:
       consumes:
       - application/json
-      description: 'Authenticates a user with username and password, returns JWT tokens
-        in response headers and optional user details in body. If ''source: admin/panel''
-        header is provided, only users with ADMIN, SUPER_ADMIN, or CUSTOMER_SUPPORT
-        roles can login.'
+      description: Delete an address by its unique identifier
       parameters:
-      - description: Login credentials
-        in: body
-        name: request
+      - description: Address ID
+        in: path
+        name: id
         required: true
-        schema:
-          $ref: '#/definitions/model.LoginRequest'
-      - default: false
-        description: Include full user details
-        in: query
-        name: user_details
-        type: boolean
-      - description: Access source (e.g., 'admin/panel' for admin panel access)
-        in: header
-        name: source
         type: string
       produces:
       - application/json
       responses:
         "200":
-          description: Login successful
-          headers:
-            Authorization:
-              description: Bearer access token
-              type: string
-            Refresh-Token:
-              description: Refresh token
-              type: string
+          description: OK
           schema:
-            allOf:
-            - $ref: '#/definitions/helper.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/model.UserResponse'
-              type: object
+            additionalProperties: true
+            type: object
         "400":
-          description: Invalid request body or missing credentials
+          description: Bad Request
           schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-        "401":
-          description: Invalid credentials
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
           schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-        "403":
-          description: 'Access Denied: Insufficient permission (when source=admin/panel
-            but user lacks required role)'
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
+            additionalProperties: true
+            type: object
         "500":
-          description: Internal server error
+          description: Internal Server Error
           schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-      summary: User login
+            additionalProperties: true
+            type: object
+      summary: Delete address
       tags:
-      - Authentication
-  /permissions:
+      - addresses
     get:
       consumes:
       - application/json
-      description: Retrieves all permissions with optional filtering
+      description: Retrieve an address by its unique identifier
       parameters:
-      - description: Filter by role ID
-        in: query
-        name: roleId
+      - description: Address ID
+        in: path
+        name: id
+        required: true
         type: string
-      - description: Filter by resource
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get address by ID
+      tags:
+      - addresses
+    put:
+      consumes:
+      - application/json
+      description: Update an existing address
+      parameters:
+      - description: Address ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Address update data
+        in: body
+        name: address
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_requests_addresses.UpdateAddressRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Update address
+      tags:
+      - addresses
+  /api/v1/addresses/search:
+    get:
+      consumes:
+      - application/json
+      description: Search for addresses based on query parameters
+      parameters:
+      - description: Search query
+        in: query
+        name: q
+        required: true
+        type: string
+      - default: 10
+        description: Number of addresses to return
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Number of addresses to skip
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Search addresses
+      tags:
+      - addresses
+  /api/v1/roles:
+    get:
+      consumes:
+      - application/json
+      description: Get a paginated list of roles
+      parameters:
+      - default: 10
+        description: Number of roles to return
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Number of roles to skip
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List roles
+      tags:
+      - roles
+    post:
+      consumes:
+      - application/json
+      description: Create a new role with the provided information
+      parameters:
+      - description: Role creation data
+        in: body
+        name: role
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_requests_roles.CreateRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+      summary: Create a new role
+      tags:
+      - roles
+  /api/v1/roles/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a role by its unique identifier
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+      summary: Delete role
+      tags:
+      - roles
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a role by its unique identifier
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+      summary: Get role by ID
+      tags:
+      - roles
+    put:
+      consumes:
+      - application/json
+      description: Update an existing role's information
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Role update data
+        in: body
+        name: role
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_requests_roles.UpdateRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+      summary: Update role
+      tags:
+      - roles
+  /api/v1/users:
+    get:
+      consumes:
+      - application/json
+      description: Get a paginated list of users
+      parameters:
+      - default: 10
+        description: Number of users to return
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Number of users to skip
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List users
+      tags:
+      - users
+    post:
+      consumes:
+      - application/json
+      description: Create a new user with the provided information
+      parameters:
+      - description: User creation data
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_requests_users.CreateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses_users.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+      summary: Create a new user
+      tags:
+      - users
+  /api/v1/users/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a user by their unique identifier
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+      summary: Delete user
+      tags:
+      - users
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a user by their unique identifier
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses_users.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+      summary: Get user by ID
+      tags:
+      - users
+    put:
+      consumes:
+      - application/json
+      description: Update an existing user's information
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: User update data
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_requests_users.UpdateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+      summary: Update user
+      tags:
+      - users
+  /api/v1/users/{id}/roles/{roleId}:
+    delete:
+      consumes:
+      - application/json
+      description: Remove a role from a specific user
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Role ID
+        in: path
+        name: roleId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+      summary: Remove role from user
+      tags:
+      - users
+    post:
+      consumes:
+      - application/json
+      description: Assign a role to a specific user
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Role ID
+        in: path
+        name: roleId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Assign role to user
+      tags:
+      - users
+  /api/v1/users/{id}/validate:
+    post:
+      consumes:
+      - application/json
+      description: Validate a user account
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Validate user
+      tags:
+      - users
+  /api/v1/users/search:
+    get:
+      consumes:
+      - application/json
+      description: Search for users based on query parameters
+      parameters:
+      - description: Search query
+        in: query
+        name: q
+        required: true
+        type: string
+      - default: 10
+        description: Number of users to return
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Number of users to skip
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Search users
+      tags:
+      - users
+  /api/v2/admin/audit:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve audit logs with optional filtering
+      parameters:
+      - description: Filter by user ID
+        in: query
+        name: user_id
+        type: string
+      - description: Filter by action type
+        in: query
+        name: action
+        type: string
+      - description: Filter by resource type
         in: query
         name: resource
+        type: string
+      - description: Filter by start date (RFC3339)
+        in: query
+        name: start_date
+        type: string
+      - description: Filter by end date (RFC3339)
+        in: query
+        name: end_date
+        type: string
+      - default: 100
+        description: Number of logs to return
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Number of logs to skip
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Audit logs
+      tags:
+      - admin
+  /api/v2/admin/health/detailed:
+    get:
+      consumes:
+      - application/json
+      description: Get detailed health status of all system components
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Detailed health check
+      tags:
+      - admin
+  /api/v2/admin/maintenance:
+    get:
+      consumes:
+      - application/json
+      description: Get current maintenance mode status and configuration
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get maintenance status
+      tags:
+      - admin
+    post:
+      consumes:
+      - application/json
+      description: Enable or disable system maintenance mode
+      parameters:
+      - description: Maintenance mode configuration
+        in: body
+        name: maintenance
+        required: true
+        schema:
+          properties:
+            allow_admin:
+              type: boolean
+            allow_read:
+              type: boolean
+            enabled:
+              type: boolean
+            end_time:
+              type: string
+            message:
+              type: string
+            reason:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Toggle maintenance mode
+      tags:
+      - admin
+  /api/v2/admin/maintenance/message:
+    patch:
+      consumes:
+      - application/json
+      description: Update the maintenance mode message
+      parameters:
+      - description: New maintenance message
+        in: body
+        name: message
+        required: true
+        schema:
+          properties:
+            message:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Update maintenance message
+      tags:
+      - admin
+  /api/v2/admin/metrics:
+    get:
+      consumes:
+      - application/json
+      description: Get comprehensive system and application metrics
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: System metrics
+      tags:
+      - admin
+  /api/v2/admin/system:
+    get:
+      consumes:
+      - application/json
+      description: Get comprehensive system information including service details,
+        runtime info, and configuration
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: System information
+      tags:
+      - admin
+  /api/v2/audit/logs:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve audit logs with filtering and pagination
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 50
+        description: Items per page
+        in: query
+        name: per_page
+        type: integer
+      - description: Filter by user ID
+        in: query
+        name: user_id
         type: string
       - description: Filter by action
         in: query
         name: action
         type: string
-      - description: Page number
+      - description: Filter by resource type
         in: query
-        name: page
-        type: integer
-      - description: Items per page
-        in: query
-        name: limit
-        type: integer
+        name: resource
+        type: string
       produces:
       - application/json
       responses:
         "200":
-          description: Permissions retrieved successfully
+          description: OK
           schema:
-            allOf:
-            - $ref: '#/definitions/helper.Response'
-            - properties:
-                data:
-                  items:
-                    $ref: '#/definitions/model.Permission'
-                  type: array
-              type: object
-        "400":
-          description: Invalid filter parameters
+            $ref: '#/definitions/services.AuditQueryResult'
+        "401":
+          description: Unauthorized
           schema:
-            $ref: '#/definitions/helper.ErrorResponse'
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
         "500":
-          description: Failed to retrieve permissions
+          description: Internal Server Error
           schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-      summary: Get all permissions
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get audit logs (V2)
       tags:
-      - Permissions
+      - audit
+  /api/v2/auth/login:
     post:
       consumes:
       - application/json
-      description: Creates a new permission with the provided details
+      description: Authenticate user with username and password and MFA
       parameters:
-      - description: Permission creation data
+      - description: Login credentials
         in: body
-        name: request
+        name: credentials
         required: true
         schema:
-          $ref: '#/definitions/model.CreatePermissionRequest'
+          $ref: '#/definitions/services.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/services.LoginResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: User login (V2)
+      tags:
+      - authentication
+  /api/v2/auth/logout:
+    post:
+      consumes:
+      - application/json
+      description: Logout user and invalidate tokens
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: User logout (V2)
+      tags:
+      - authentication
+  /api/v2/auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Refresh access token using refresh token
+      parameters:
+      - description: Refresh token
+        in: body
+        name: token
+        required: true
+        schema:
+          properties:
+            refresh_token:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/services.LoginResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Refresh access token (V2)
+      tags:
+      - authentication
+  /api/v2/auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user account with enhanced validation
+      parameters:
+      - description: Registration data
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/services.RegisterRequest'
       produces:
       - application/json
       responses:
         "201":
-          description: Permission created successfully
+          description: Created
           schema:
-            allOf:
-            - $ref: '#/definitions/helper.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/model.Permission'
-              type: object
+            additionalProperties: true
+            type: object
         "400":
-          description: Invalid request or missing required fields
+          description: Bad Request
           schema:
-            $ref: '#/definitions/helper.ErrorResponse'
+            additionalProperties: true
+            type: object
         "409":
-          description: Permission already exists for this role+resource
+          description: Conflict
           schema:
-            $ref: '#/definitions/helper.ErrorResponse'
+            additionalProperties: true
+            type: object
         "500":
-          description: Failed to create permission
+          description: Internal Server Error
           schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-      summary: Create a new permission
+            additionalProperties: true
+            type: object
+      summary: User registration (V2)
       tags:
-      - Permissions
-  /permissions/{id}:
-    delete:
+      - authentication
+  /api/v2/authz/check:
+    post:
       consumes:
       - application/json
-      description: Deletes an existing permission by its ID
+      description: Check if a user has permission to perform an action on a resource
       parameters:
-      - description: Permission ID
-        in: path
-        name: id
+      - description: Permission check data
+        in: body
+        name: permission
         required: true
-        type: string
+        schema:
+          $ref: '#/definitions/services.Permission'
       produces:
       - application/json
       responses:
         "200":
-          description: Permission deleted successfully
+          description: OK
           schema:
-            $ref: '#/definitions/helper.Response'
+            $ref: '#/definitions/services.PermissionResult'
         "400":
-          description: Invalid permission ID
+          description: Bad Request
           schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-        "404":
-          description: Permission not found
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
           schema:
-            $ref: '#/definitions/helper.ErrorResponse'
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
         "500":
-          description: Failed to delete permission
+          description: Internal Server Error
           schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-      summary: Delete a permission
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Check user permission (V2)
       tags:
-      - Permissions
+      - authorization
+  /api/v2/health:
     get:
       consumes:
       - application/json
-      description: Retrieves a permission by its ID
+      description: Basic health check for the AAA service
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Health check (V2)
+      tags:
+      - health
+  /api/v2/permissions:
+    get:
+      consumes:
+      - application/json
+      description: Get a paginated list of permissions
+      parameters:
+      - default: 10
+        description: Number of permissions to return
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Number of permissions to skip
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List permissions
+      tags:
+      - permissions
+    post:
+      consumes:
+      - application/json
+      description: Create a new permission with resource, effect, and actions
+      parameters:
+      - description: Permission creation data
+        in: body
+        name: permission
+        required: true
+        schema:
+          $ref: '#/definitions/handlers_permissions.CreatePermissionRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Create a new permission
+      tags:
+      - permissions
+  /api/v2/permissions/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a permission by its unique identifier
       parameters:
       - description: Permission ID
         in: path
@@ -1063,33 +2157,68 @@ paths:
       - application/json
       responses:
         "200":
-          description: Permission retrieved successfully
+          description: OK
           schema:
-            allOf:
-            - $ref: '#/definitions/helper.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/model.Permission'
-              type: object
+            additionalProperties: true
+            type: object
         "400":
-          description: Invalid permission ID
+          description: Bad Request
           schema:
-            $ref: '#/definitions/helper.ErrorResponse'
+            additionalProperties: true
+            type: object
         "404":
-          description: Permission not found
+          description: Not Found
           schema:
-            $ref: '#/definitions/helper.ErrorResponse'
+            additionalProperties: true
+            type: object
         "500":
-          description: Failed to retrieve permission
+          description: Internal Server Error
           schema:
-            $ref: '#/definitions/helper.ErrorResponse'
+            additionalProperties: true
+            type: object
+      summary: Delete permission
+      tags:
+      - permissions
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a permission by its unique identifier
+      parameters:
+      - description: Permission ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
       summary: Get permission by ID
       tags:
-      - Permissions
+      - permissions
     put:
       consumes:
       - application/json
-      description: Updates an existing permission with the provided details
+      description: Update an existing permission
       parameters:
       - description: Permission ID
         in: path
@@ -1098,607 +2227,134 @@ paths:
         type: string
       - description: Permission update data
         in: body
-        name: request
+        name: permission
         required: true
         schema:
-          $ref: '#/definitions/model.CreatePermissionRequest'
+          $ref: '#/definitions/handlers_permissions.UpdatePermissionRequest'
       produces:
       - application/json
-      responses:
-        "200":
-          description: Permission updated successfully
-          schema:
-            allOf:
-            - $ref: '#/definitions/helper.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/model.Permission'
-              type: object
-        "400":
-          description: Invalid request or missing required fields
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-        "404":
-          description: Permission not found
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-        "409":
-          description: Permission already exists for this role+resource
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-        "500":
-          description: Failed to update permission
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-      summary: Update a permission
-      tags:
-      - Permissions
-  /register:
-    post:
-      consumes:
-      - application/json
-      description: Creates a new user account with the provided details. Optionally
-        sends OTP for Aadhaar verification if Aadhaar number is provided.
-      parameters:
-      - description: User creation request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/model.CreateUserRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: User created successfully
-          schema:
-            allOf:
-            - $ref: '#/definitions/helper.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/model.MinimalUser'
-              type: object
-        "400":
-          description: Invalid request body or validation failed
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-        "409":
-          description: Username, mobile number or Aadhaar already exists
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-        "500":
-          description: Internal server error
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-      summary: Create a new user
-      tags:
-      - Users
-  /resources:
-    get:
-      description: Get resources with optional filtering by ID or name and pagination
-      parameters:
-      - description: Filter by resource ID
-        in: query
-        name: id
-        type: string
-      - description: Filter by resource name
-        in: query
-        name: name
-        type: string
-      - description: Page number (starts from 1)
-        in: query
-        name: page
-        type: integer
-      - description: Number of items per page
-        in: query
-        name: limit
-        type: integer
       responses:
         "200":
           description: OK
           schema:
-            allOf:
-            - $ref: '#/definitions/helper.Response'
-            - properties:
-                data:
-                  items:
-                    $ref: '#/definitions/model.Resource'
-                  type: array
-              type: object
-      summary: Get resources
-      tags:
-      - Resources
-    post:
-      consumes:
-      - application/json
-      description: Creates a new resource with the provided details
-      parameters:
-      - description: Resource creation data
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/model.CreateResourceRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Resource created successfully
-          schema:
-            allOf:
-            - $ref: '#/definitions/helper.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/model.Resource'
-              type: object
-        "400":
-          description: Invalid request body
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-        "409":
-          description: Resource already exists
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-        "500":
-          description: Failed to create resource
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-      summary: Create a new resource
-      tags:
-      - Resources
-  /resources/{id}:
-    delete:
-      consumes:
-      - application/json
-      description: Deletes an existing resource by ID
-      parameters:
-      - description: Resource ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Resource deleted successfully
-          schema:
-            $ref: '#/definitions/helper.Response'
-        "400":
-          description: Invalid resource ID
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-        "500":
-          description: Failed to delete resource
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-      summary: Delete a resource
-      tags:
-      - Resources
-    put:
-      consumes:
-      - application/json
-      description: Updates an existing resource with the provided details
-      parameters:
-      - description: Resource ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Resource update data
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/model.CreateResourceRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Resource updated successfully
-          schema:
-            allOf:
-            - $ref: '#/definitions/helper.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/model.Resource'
-              type: object
-        "400":
-          description: Invalid request body
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-        "404":
-          description: Resource not found
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-        "500":
-          description: Failed to update resource
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-      summary: Update a resource
-      tags:
-      - Resources
-  /role-permissions:
-    get:
-      consumes:
-      - application/json
-      description: Retrieves roles with their associated permissions, with optional
-        filtering and pagination
-      parameters:
-      - description: Filter by role ID
-        in: query
-        name: role_id
-        type: string
-      - description: Filter by role name (case-insensitive partial match)
-        in: query
-        name: role_name
-        type: string
-      - description: Filter by permission ID
-        in: query
-        name: permission_id
-        type: string
-      - description: Page number (starts from 1)
-        in: query
-        name: page
-        type: integer
-      - description: Number of items per page
-        in: query
-        name: limit
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: List of roles with permissions retrieved successfully
-          schema:
-            allOf:
-            - $ref: '#/definitions/helper.Response'
-            - properties:
-                data:
-                  items:
-                    $ref: '#/definitions/model.GetRolePermissionResponse'
-                  type: array
-              type: object
-        "400":
-          description: Invalid request parameters
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-        "500":
-          description: Failed to retrieve roles with permissions
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-      summary: Get roles with permissions
-      tags:
-      - RolePermissions
-    post:
-      consumes:
-      - application/json
-      description: Creates an association between a role and permission
-      parameters:
-      - description: Assignment data
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/model.RolePermissionRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Permission assigned successfully
-          schema:
-            allOf:
-            - $ref: '#/definitions/helper.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/model.RolePermission'
-              type: object
-        "400":
-          description: Invalid request or missing required fields
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-        "404":
-          description: Role or permission not found
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-        "409":
-          description: Association already exists
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-        "500":
-          description: Failed to assign permission
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-      summary: Assign permission to role
-      tags:
-      - RolePermissions
-  /role-permissions/{id}:
-    delete:
-      consumes:
-      - application/json
-      description: Deletes a role-permission relationship by its ID
-      parameters:
-      - description: Role-Permission ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Role-permission deleted successfully
-          schema:
-            $ref: '#/definitions/helper.Response'
-        "404":
-          description: Role-permission not found
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-        "500":
-          description: Failed to delete role-permission
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-      summary: Delete role-permission
-      tags:
-      - RolePermissions
-    get:
-      consumes:
-      - application/json
-      description: Retrieves a single role-permission relationship by its ID
-      parameters:
-      - description: Role-Permission ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Role-permission retrieved successfully
-          schema:
-            allOf:
-            - $ref: '#/definitions/helper.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/model.GetRolePermissionResponse'
-              type: object
-        "404":
-          description: Role-permission not found
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-        "500":
-          description: Failed to retrieve role-permission
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-      summary: Get role-permission by ID
-      tags:
-      - RolePermissions
-  /roles:
-    get:
-      consumes:
-      - application/json
-      description: Retrieves roles with optional filtering by ID or name and pagination
-        support
-      parameters:
-      - description: Filter by role ID
-        in: query
-        name: id
-        type: string
-      - description: Filter by role name
-        in: query
-        name: name
-        type: string
-      - description: Page number (starts from 1)
-        in: query
-        name: page
-        type: integer
-      - description: Number of items per page
-        in: query
-        name: limit
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Roles retrieved successfully
-          schema:
-            allOf:
-            - $ref: '#/definitions/helper.Response'
-            - properties:
-                data:
-                  items:
-                    $ref: '#/definitions/model.Role'
-                  type: array
-              type: object
-        "500":
-          description: Failed to retrieve roles
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-      summary: Get roles with pagination
-      tags:
-      - Roles
-    post:
-      consumes:
-      - application/json
-      description: Creates a new role with associated permissions
-      parameters:
-      - description: Role and permissions data
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/model.CreateRoleRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Role created successfully
-          schema:
-            allOf:
-            - $ref: '#/definitions/helper.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/model.Role'
-              type: object
-        "400":
-          description: Invalid request
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-        "409":
-          description: Role already exists
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-        "500":
-          description: Failed to create role
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-      summary: Create a new role with permissions
-      tags:
-      - Roles
-  /roles/{id}:
-    delete:
-      consumes:
-      - application/json
-      description: Deletes a role and all its associated permissions
-      parameters:
-      - description: Role ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Role deleted successfully
-          schema:
-            $ref: '#/definitions/helper.Response'
-        "400":
-          description: Invalid role ID
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-        "500":
-          description: Failed to delete role
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-      summary: Delete a role
-      tags:
-      - Roles
-    put:
-      consumes:
-      - application/json
-      description: Updates an existing role and its permissions
-      parameters:
-      - description: Role ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Role and permissions data
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/model.CreateRoleRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Role updated successfully
-          schema:
-            allOf:
-            - $ref: '#/definitions/helper.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/model.Role'
-              type: object
-        "400":
-          description: Invalid request
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-        "404":
-          description: Role not found
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-        "500":
-          description: Failed to update role
-          schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-      summary: Update a role with permissions
-      tags:
-      - Roles
-  /token-transaction:
-    post:
-      consumes:
-      - application/json
-      description: Handles token transactions (credit/debit) or fetches token balance
-        when no transaction type is specified
-      parameters:
-      - description: Token transaction request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/model.CreditUsageRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 'Returns remaining tokens in all cases" example({"remaining_tokens":
-            100})'
-          schema:
+            additionalProperties: true
             type: object
         "400":
-          description: Invalid request, insufficient tokens, or invalid transaction
-            type
+          description: Bad Request
           schema:
-            $ref: '#/definitions/helper.ErrorResponse'
+            additionalProperties: true
+            type: object
         "404":
-          description: User not found
+          description: Not Found
           schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-      summary: Manage user tokens
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Update permission
       tags:
-      - Users
-  /update/schema:
-    get:
+      - permissions
+  /api/v2/permissions/evaluate:
+    post:
       consumes:
       - application/json
-      description: update schema by Retrieves all roles
+      description: Check if a user has permission to perform an action on a resource
+      parameters:
+      - description: Permission evaluation data
+        in: body
+        name: evaluation
+        required: true
+        schema:
+          properties:
+            action:
+              type: string
+            resource:
+              type: string
+            user_id:
+              type: string
+          type: object
       produces:
       - application/json
       responses:
         "200":
-          description: Roles retrieved successfully
+          description: OK
           schema:
-            allOf:
-            - $ref: '#/definitions/helper.Response'
-            - properties:
-                data:
-                  items:
-                    $ref: '#/definitions/model.Role'
-                  type: array
-              type: object
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
         "500":
-          description: Failed to retrieve roles
+          description: Internal Server Error
           schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-      summary: update spice db schema
+            additionalProperties: true
+            type: object
+      summary: Evaluate permission
       tags:
-      - SpiceDB
-  /users:
+      - permissions
+  /api/v2/permissions/temporary:
+    post:
+      consumes:
+      - application/json
+      description: Grant temporary permission to a user for specific actions on a
+        resource
+      parameters:
+      - description: Temporary permission data
+        in: body
+        name: permission
+        required: true
+        schema:
+          properties:
+            actions:
+              items:
+                type: string
+              type: array
+            expires_at:
+              type: string
+            resource:
+              type: string
+            user_id:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Grant temporary permission
+      tags:
+      - permissions
+  /api/v2/users:
     get:
       consumes:
       - application/json
-      description: Retrieves a list of users including their roles, permissions, and
-        address information with optional pagination
+      description: Get a list of all users with pagination
       parameters:
-      - description: Page number (starts from 1)
+      - default: 1
+        description: Page number
         in: query
         name: page
         type: integer
-      - description: Number of items per page
+      - default: 10
+        description: Items per page
         in: query
         name: limit
         type: integer
@@ -1706,32 +2362,37 @@ paths:
       - application/json
       responses:
         "200":
-          description: Users fetched successfully
+          description: OK
           schema:
-            allOf:
-            - $ref: '#/definitions/helper.Response'
-            - properties:
-                data:
-                  items:
-                    $ref: '#/definitions/model.UserRes'
-                  type: array
-              type: object
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
         "500":
-          description: Internal server error when fetching users or their details
+          description: Internal Server Error
           schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-      summary: Get users with pagination
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List all users (V2)
       tags:
-      - Users
-  /users/{id}:
+      - users
+  /api/v2/users/{id}:
     get:
       consumes:
       - application/json
-      description: Retrieves a single user's details including roles, permissions,
-        and address information by their unique ID
+      description: Get detailed information about a specific user
       parameters:
       - description: User ID
-        example: '"123e4567-e89b-12d3-a456-426614174000"'
         in: path
         name: id
         required: true
@@ -1740,72 +2401,147 @@ paths:
       - application/json
       responses:
         "200":
-          description: User fetched successfully
+          description: OK
           schema:
-            allOf:
-            - $ref: '#/definitions/helper.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/model.UserRes'
-              type: object
-        "400":
-          description: ID is required
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
           schema:
-            $ref: '#/definitions/helper.ErrorResponse'
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
         "404":
-          description: User not found
+          description: Not Found
           schema:
-            $ref: '#/definitions/helper.ErrorResponse'
+            additionalProperties: true
+            type: object
         "500":
-          description: Internal server error when fetching user or related data
+          description: Internal Server Error
           schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-      summary: Get user by ID
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get user by ID (V2)
       tags:
-      - Users
+      - users
     put:
       consumes:
       - application/json
-      description: Updates user information by ID. Only provided fields will be updated
-        (partial update supported).
+      description: Update user information
       parameters:
       - description: User ID
-        example: '"123e4567-e89b-12d3-a456-426614174000"'
         in: path
         name: id
         required: true
         type: string
-      - description: User update data (partial updates allowed)
+      - description: User update data
         in: body
-        name: request
+        name: user
         required: true
         schema:
-          $ref: '#/definitions/model.UpdateUserRequest'
+          additionalProperties: true
+          type: object
       produces:
       - application/json
       responses:
         "200":
-          description: User updated successfully
+          description: OK
           schema:
-            allOf:
-            - $ref: '#/definitions/helper.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/model.UserRes'
-              type: object
+            additionalProperties: true
+            type: object
         "400":
-          description: Invalid ID or request body
+          description: Bad Request
           schema:
-            $ref: '#/definitions/helper.ErrorResponse'
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
         "404":
-          description: User not found
+          description: Not Found
           schema:
-            $ref: '#/definitions/helper.ErrorResponse'
+            additionalProperties: true
+            type: object
         "500":
-          description: Failed to update user or fetch related data
+          description: Internal Server Error
           schema:
-            $ref: '#/definitions/helper.ErrorResponse'
-      summary: Update user
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update user (V2)
       tags:
-      - Users
+      - users
+  /health:
+    get:
+      consumes:
+      - application/json
+      description: Get basic service health status
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Basic health check
+      tags:
+      - health
+  /live:
+    get:
+      consumes:
+      - application/json
+      description: Check if service is alive
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Liveness check
+      tags:
+      - health
+  /ready:
+    get:
+      consumes:
+      - application/json
+      description: Check if service is ready to accept requests
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "503":
+          description: Service Unavailable
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Readiness check
+      tags:
+      - health
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

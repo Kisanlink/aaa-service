@@ -37,17 +37,7 @@ func NewAuthHandler(
 }
 
 // LoginV2 handles POST /v2/auth/login
-// @Summary User login
-// @Description Authenticate user with username and password
-// @Tags auth
-// @Accept json
-// @Produce json
-// @Param credentials body requests.LoginRequest true "Login credentials"
-// @Success 200 {object} responses.LoginResponse
-// @Failure 400 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
-// @Failure 401 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
-// @Failure 500 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
-// @Router /api/v2/auth/login [post]
+
 func (h *AuthHandler) LoginV2(c *gin.Context) {
 	h.logger.Info("Processing login request")
 
@@ -120,17 +110,6 @@ func (h *AuthHandler) LoginV2(c *gin.Context) {
 }
 
 // RegisterV2 handles POST /v2/auth/register
-// @Summary User registration
-// @Description Register a new user account
-// @Tags auth
-// @Accept json
-// @Produce json
-// @Param user body requests.RegisterRequest true "Registration data"
-// @Success 201 {object} responses.RegisterResponse
-// @Failure 400 {object} map[string]interface{}
-// @Failure 409 {object} map[string]interface{}
-// @Failure 500 {object} map[string]interface{}
-// @Router /api/v2/auth/register [post]
 func (h *AuthHandler) RegisterV2(c *gin.Context) {
 	h.logger.Info("Processing registration request")
 
@@ -188,17 +167,6 @@ func (h *AuthHandler) RegisterV2(c *gin.Context) {
 }
 
 // RefreshTokenV2 handles POST /v2/auth/refresh
-// @Summary Refresh access token
-// @Description Refresh an expired access token using refresh token
-// @Tags auth
-// @Accept json
-// @Produce json
-// @Param token body requests.RefreshTokenRequest true "Refresh token data"
-// @Success 200 {object} responses.RefreshTokenResponse
-// @Failure 400 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
-// @Failure 401 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
-// @Failure 500 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
-// @Router /api/v2/auth/refresh [post]
 func (h *AuthHandler) RefreshTokenV2(c *gin.Context) {
 	h.logger.Info("Processing token refresh request")
 
@@ -231,14 +199,6 @@ func (h *AuthHandler) RefreshTokenV2(c *gin.Context) {
 }
 
 // LogoutV2 handles POST /v2/auth/logout
-// @Summary User logout
-// @Description Logout user and invalidate tokens
-// @Tags auth
-// @Accept json
-// @Produce json
-// @Success 200 {object} map[string]interface{}
-// @Failure 500 {object} map[string]interface{}
-// @Router /api/v2/auth/logout [post]
 func (h *AuthHandler) LogoutV2(c *gin.Context) {
 	h.logger.Info("Processing logout request")
 
@@ -255,16 +215,6 @@ func (h *AuthHandler) LogoutV2(c *gin.Context) {
 }
 
 // ForgotPasswordV2 handles POST /v2/auth/forgot-password
-// @Summary Forgot password
-// @Description Request password reset for user account
-// @Tags auth
-// @Accept json
-// @Produce json
-// @Param request body requests.ForgotPasswordRequest true "Forgot password data"
-// @Success 200 {object} map[string]interface{}
-// @Failure 400 {object} map[string]interface{}
-// @Failure 500 {object} map[string]interface{}
-// @Router /api/v2/auth/forgot-password [post]
 func (h *AuthHandler) ForgotPasswordV2(c *gin.Context) {
 	h.logger.Info("Processing forgot password request")
 
@@ -293,16 +243,6 @@ func (h *AuthHandler) ForgotPasswordV2(c *gin.Context) {
 }
 
 // ResetPasswordV2 handles POST /v2/auth/reset-password
-// @Summary Reset password
-// @Description Reset user password using reset token
-// @Tags auth
-// @Accept json
-// @Produce json
-// @Param request body requests.ResetPasswordRequest true "Reset password data"
-// @Success 200 {object} map[string]interface{}
-// @Failure 400 {object} map[string]interface{}
-// @Failure 500 {object} map[string]interface{}
-// @Router /api/v2/auth/reset-password [post]
 func (h *AuthHandler) ResetPasswordV2(c *gin.Context) {
 	h.logger.Info("Processing reset password request")
 

@@ -144,7 +144,7 @@ func createLoginHandler(authService *services.AuthService, logger *zap.Logger) g
 // @Accept json
 // @Produce json
 // @Param user body services.RegisterRequest true "Registration data"
-// @Success 201 {object} services.RegisterResponse
+// @Success 201 {object} map[string]interface{}
 // @Failure 400 {object} map[string]interface{}
 // @Failure 409 {object} map[string]interface{}
 // @Failure 500 {object} map[string]interface{}
