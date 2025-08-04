@@ -166,15 +166,29 @@ run-dev:
 
 
 
+## install-migrate: Install migrate tool
+install-migrate:
+	@echo "$(BLUE)Installing migrate tool...$(NC)"
+	@go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+	@echo "$(GREEN)Migrate tool installed$(NC)"
+
 ## migrate: Run database migrations
-migrate:
+migrate: install-migrate
 	@echo "$(BLUE)Running database migrations...$(NC)"
-	@migrate -path ./migrations -database "postgres://${DB_POSTGRES_USER:-aaa_user}:${DB_POSTGRES_PASSWORD:-aaa_password}@${DB_POSTGRES_HOST:-localhost}:${DB_POSTGRES_PORT:-5432}/${DB_POSTGRES_DBNAME:-aaa_service}?sslmode=${DB_SSL_MODE:-disable}" up
+	@if [ -z "$(DATABASE_URL)" ]; then \
+		echo "$(YELLOW)DATABASE_URL not set, constructing from individual variables...$(NC)"; \
+		export DATABASE_URL="postgres://$${DB_POSTGRES_USER:-aaa_user}:$${DB_POSTGRES_PASSWORD:-aaa_password}@$${DB_POSTGRES_HOST:-localhost}:$${DB_POSTGRES_PORT:-5432}/$${DB_POSTGRES_DBNAME:-aaa_service}?sslmode=$${DB_SSL_MODE:-disable}"; \
+	fi
+	@$(shell go env GOPATH)/bin/migrate -path ./migrations -database "$(DATABASE_URL)" up
 
 ## migrate-down: Rollback database migrations
 migrate-down:
 	@echo "$(BLUE)Rolling back database migrations...$(NC)"
-	@migrate -path ./migrations -database "postgres://${DB_POSTGRES_USER:-aaa_user}:${DB_POSTGRES_PASSWORD:-aaa_password}@${DB_POSTGRES_HOST:-localhost}:${DB_POSTGRES_PORT:-5432}/${DB_POSTGRES_DBNAME:-aaa_service}?sslmode=${DB_SSL_MODE:-disable}" down
+	@if [ -z "$(DATABASE_URL)" ]; then \
+		echo "$(YELLOW)DATABASE_URL not set, constructing from individual variables...$(NC)"; \
+		export DATABASE_URL="postgres://$${DB_POSTGRES_USER:-aaa_user}:$${DB_POSTGRES_PASSWORD:-aaa_password}@$${DB_POSTGRES_HOST:-localhost}:$${DB_POSTGRES_PORT:-5432}/$${DB_POSTGRES_DBNAME:-aaa_service}?sslmode=$${DB_SSL_MODE:-disable}"; \
+	fi
+	@$(shell go env GOPATH)/bin/migrate -path ./migrations -database "$(DATABASE_URL)" down
 
 
 

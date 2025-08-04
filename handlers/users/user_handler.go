@@ -45,10 +45,10 @@ func NewUserHandler(
 // @Accept json
 // @Produce json
 // @Param user body users.CreateUserRequest true "User creation data"
-// @Success 201 {object} github_com_Kisanlink_aaa-service_entities_responses_users.UserResponse
-// @Failure 400 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
-// @Failure 409 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
-// @Failure 500 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
+// @Success 201 {object} users.UserResponse
+// @Failure 400 {object} responses.ErrorResponse
+// @Failure 409 {object} responses.ErrorResponse
+// @Failure 500 {object} responses.ErrorResponse
 // @Router /api/v1/users [post]
 func (h *UserHandler) CreateUser(c *gin.Context) {
 	h.logger.Info("Creating user")
@@ -101,10 +101,10 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path string true "User ID"
-// @Success 200 {object} github_com_Kisanlink_aaa-service_entities_responses_users.UserResponse
-// @Failure 400 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
-// @Failure 404 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
-// @Failure 500 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
+// @Success 200 {object} users.UserResponse
+// @Failure 400 {object} responses.ErrorResponse
+// @Failure 404 {object} responses.ErrorResponse
+// @Failure 500 {object} responses.ErrorResponse
 // @Router /api/v1/users/{id} [get]
 func (h *UserHandler) GetUserByID(c *gin.Context) {
 	userID := c.Param("id")
@@ -140,9 +140,9 @@ func (h *UserHandler) GetUserByID(c *gin.Context) {
 // @Param id path string true "User ID"
 // @Param user body users.UpdateUserRequest true "User update data"
 // @Success 200 {object} map[string]interface{}
-// @Failure 400 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
-// @Failure 404 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
-// @Failure 500 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
+// @Failure 400 {object} responses.ErrorResponse
+// @Failure 404 {object} responses.ErrorResponse
+// @Failure 500 {object} responses.ErrorResponse
 // @Router /api/v1/users/{id} [put]
 func (h *UserHandler) UpdateUser(c *gin.Context) {
 	userID := c.Param("id")
@@ -205,9 +205,9 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 // @Produce json
 // @Param id path string true "User ID"
 // @Success 200 {object} map[string]interface{}
-// @Failure 400 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
-// @Failure 404 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
-// @Failure 500 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
+// @Failure 400 {object} responses.ErrorResponse
+// @Failure 404 {object} responses.ErrorResponse
+// @Failure 500 {object} responses.ErrorResponse
 // @Router /api/v1/users/{id} [delete]
 func (h *UserHandler) DeleteUser(c *gin.Context) {
 	userID := c.Param("id")
@@ -426,9 +426,9 @@ func (h *UserHandler) AssignRole(c *gin.Context) {
 // @Param id path string true "User ID"
 // @Param roleId path string true "Role ID"
 // @Success 200 {object} map[string]interface{}
-// @Failure 400 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
-// @Failure 404 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
-// @Failure 500 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
+// @Failure 400 {object} responses.ErrorResponse
+// @Failure 404 {object} responses.ErrorResponse
+// @Failure 500 {object} responses.ErrorResponse
 // @Router /api/v1/users/{id}/roles/{roleId} [delete]
 func (h *UserHandler) RemoveRole(c *gin.Context) {
 	userID := c.Param("id")

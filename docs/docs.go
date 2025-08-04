@@ -35,7 +35,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_requests_addresses.CreateAddressRequest"
+                            "$ref": "#/definitions/addresses.CreateAddressRequest"
                         }
                     }
                 ],
@@ -204,7 +204,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_requests_addresses.UpdateAddressRequest"
+                            "$ref": "#/definitions/addresses.UpdateAddressRequest"
                         }
                     }
                 ],
@@ -364,7 +364,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_requests_roles.CreateRoleRequest"
+                            "$ref": "#/definitions/roles.CreateRoleRequest"
                         }
                     }
                 ],
@@ -379,19 +379,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse"
+                            "$ref": "#/definitions/responses.ErrorResponse"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse"
+                            "$ref": "#/definitions/responses.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse"
+                            "$ref": "#/definitions/responses.ErrorResponse"
                         }
                     }
                 }
@@ -430,19 +430,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse"
+                            "$ref": "#/definitions/responses.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse"
+                            "$ref": "#/definitions/responses.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse"
+                            "$ref": "#/definitions/responses.ErrorResponse"
                         }
                     }
                 }
@@ -473,7 +473,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_requests_roles.UpdateRoleRequest"
+                            "$ref": "#/definitions/roles.UpdateRoleRequest"
                         }
                     }
                 ],
@@ -488,25 +488,25 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse"
+                            "$ref": "#/definitions/responses.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse"
+                            "$ref": "#/definitions/responses.ErrorResponse"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse"
+                            "$ref": "#/definitions/responses.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse"
+                            "$ref": "#/definitions/responses.ErrorResponse"
                         }
                     }
                 }
@@ -543,25 +543,25 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse"
+                            "$ref": "#/definitions/responses.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse"
+                            "$ref": "#/definitions/responses.ErrorResponse"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse"
+                            "$ref": "#/definitions/responses.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse"
+                            "$ref": "#/definitions/responses.ErrorResponse"
                         }
                     }
                 }
@@ -639,7 +639,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_requests_users.CreateUserRequest"
+                            "$ref": "#/definitions/users.CreateUserRequest"
                         }
                     }
                 ],
@@ -647,25 +647,25 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses_users.UserResponse"
+                            "$ref": "#/definitions/users.UserResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse"
+                            "$ref": "#/definitions/responses.ErrorResponse"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse"
+                            "$ref": "#/definitions/responses.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse"
+                            "$ref": "#/definitions/responses.ErrorResponse"
                         }
                     }
                 }
@@ -758,25 +758,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses_users.UserResponse"
+                            "$ref": "#/definitions/users.UserResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse"
+                            "$ref": "#/definitions/responses.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse"
+                            "$ref": "#/definitions/responses.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse"
+                            "$ref": "#/definitions/responses.ErrorResponse"
                         }
                     }
                 }
@@ -807,7 +807,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_requests_users.UpdateUserRequest"
+                            "$ref": "#/definitions/users.UpdateUserRequest"
                         }
                     }
                 ],
@@ -822,19 +822,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse"
+                            "$ref": "#/definitions/responses.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse"
+                            "$ref": "#/definitions/responses.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse"
+                            "$ref": "#/definitions/responses.ErrorResponse"
                         }
                     }
                 }
@@ -871,19 +871,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse"
+                            "$ref": "#/definitions/responses.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse"
+                            "$ref": "#/definitions/responses.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse"
+                            "$ref": "#/definitions/responses.ErrorResponse"
                         }
                     }
                 }
@@ -995,19 +995,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse"
+                            "$ref": "#/definitions/responses.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse"
+                            "$ref": "#/definitions/responses.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse"
+                            "$ref": "#/definitions/responses.ErrorResponse"
                         }
                     }
                 }
@@ -1473,7 +1473,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/services.AuditQueryResult"
+                            "$ref": "#/definitions/routes.SwaggerAuditQueryResult"
                         }
                     },
                     "401": {
@@ -1520,7 +1520,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/services.LoginRequest"
+                            "$ref": "#/definitions/routes.SwaggerLoginRequest"
                         }
                     }
                 ],
@@ -1528,7 +1528,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/services.LoginResponse"
+                            "$ref": "#/definitions/routes.SwaggerLoginResponse"
                         }
                     },
                     "400": {
@@ -1618,12 +1618,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "refresh_token": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/routes.SwaggerRefreshTokenRequest"
                         }
                     }
                 ],
@@ -1631,7 +1626,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/services.LoginResponse"
+                            "$ref": "#/definitions/routes.SwaggerLoginResponse"
                         }
                     },
                     "400": {
@@ -1678,7 +1673,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/services.RegisterRequest"
+                            "$ref": "#/definitions/routes.SwaggerRegisterRequest"
                         }
                     }
                 ],
@@ -1877,7 +1872,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers_permissions.CreatePermissionRequest"
+                            "$ref": "#/definitions/permissions.CreatePermissionRequest"
                         }
                     }
                 ],
@@ -2111,7 +2106,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers_permissions.UpdatePermissionRequest"
+                            "$ref": "#/definitions/permissions.UpdatePermissionRequest"
                         }
                     }
                 ],
@@ -2493,586 +2488,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "github_com_Kisanlink_aaa-service_entities_models.Action": {
-            "type": "object",
-            "properties": {
-                "category": {
-                    "description": "e.g., \"user\", \"role\", \"system\", \"api\", \"database\"",
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "created_by": {
-                    "type": "string"
-                },
-                "deleted_at": {
-                    "type": "string"
-                },
-                "deleted_by": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "is_active": {
-                    "type": "boolean"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "updated_by": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_Kisanlink_aaa-service_entities_models.Address": {
-            "type": "object",
-            "properties": {
-                "country": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "created_by": {
-                    "type": "string"
-                },
-                "deleted_at": {
-                    "type": "string"
-                },
-                "deleted_by": {
-                    "type": "string"
-                },
-                "district": {
-                    "type": "string"
-                },
-                "full_address": {
-                    "type": "string"
-                },
-                "house": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "landmark": {
-                    "type": "string"
-                },
-                "pincode": {
-                    "type": "string"
-                },
-                "post_office": {
-                    "type": "string"
-                },
-                "state": {
-                    "type": "string"
-                },
-                "street": {
-                    "type": "string"
-                },
-                "subdistrict": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "updated_by": {
-                    "type": "string"
-                },
-                "vtc": {
-                    "description": "Village/Town/City",
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_Kisanlink_aaa-service_entities_models.AuditLog": {
-            "type": "object",
-            "properties": {
-                "action": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "created_by": {
-                    "type": "string"
-                },
-                "deleted_at": {
-                    "type": "string"
-                },
-                "deleted_by": {
-                    "type": "string"
-                },
-                "details": {
-                    "type": "object",
-                    "additionalProperties": true
-                },
-                "id": {
-                    "type": "string"
-                },
-                "ip_address": {
-                    "type": "string"
-                },
-                "message": {
-                    "type": "string"
-                },
-                "resource": {
-                    "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_models.Resource"
-                },
-                "resource_id": {
-                    "type": "string"
-                },
-                "resource_type": {
-                    "description": "e.g., \"aaa/user\", \"aaa/role\"",
-                    "type": "string"
-                },
-                "status": {
-                    "description": "success, failure, warning",
-                    "type": "string"
-                },
-                "timestamp": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "updated_by": {
-                    "type": "string"
-                },
-                "user": {
-                    "description": "Relationships",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_models.User"
-                        }
-                    ]
-                },
-                "user_agent": {
-                    "type": "string"
-                },
-                "user_id": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_Kisanlink_aaa-service_entities_models.Contact": {
-            "type": "object",
-            "properties": {
-                "address": {
-                    "description": "Relationships",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_models.Address"
-                        }
-                    ]
-                },
-                "address_id": {
-                    "type": "string"
-                },
-                "country_code": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "created_by": {
-                    "type": "string"
-                },
-                "deleted_at": {
-                    "type": "string"
-                },
-                "deleted_by": {
-                    "type": "string"
-                },
-                "email_hash": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "mobile_number": {
-                    "type": "integer"
-                },
-                "share_code": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "updated_by": {
-                    "type": "string"
-                },
-                "user_id": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_Kisanlink_aaa-service_entities_models.Permission": {
-            "type": "object",
-            "properties": {
-                "action": {
-                    "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_models.Action"
-                },
-                "action_id": {
-                    "description": "Which action this permission allows",
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "created_by": {
-                    "type": "string"
-                },
-                "deleted_at": {
-                    "type": "string"
-                },
-                "deleted_by": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "is_active": {
-                    "type": "boolean"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "resource": {
-                    "description": "Relationships",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_models.Resource"
-                        }
-                    ]
-                },
-                "resource_id": {
-                    "description": "Which resource this permission applies to",
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "updated_by": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_Kisanlink_aaa-service_entities_models.Resource": {
-            "type": "object",
-            "properties": {
-                "children": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_models.Resource"
-                    }
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "created_by": {
-                    "type": "string"
-                },
-                "deleted_at": {
-                    "type": "string"
-                },
-                "deleted_by": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "is_active": {
-                    "type": "boolean"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "owner": {
-                    "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_models.User"
-                },
-                "owner_id": {
-                    "description": "Owner user ID",
-                    "type": "string"
-                },
-                "parent": {
-                    "description": "Relationships",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_models.Resource"
-                        }
-                    ]
-                },
-                "parent_id": {
-                    "description": "For hierarchical resources",
-                    "type": "string"
-                },
-                "type": {
-                    "description": "e.g., \"aaa/user\", \"aaa/role\", \"aaa/permission\", etc.",
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "updated_by": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_Kisanlink_aaa-service_entities_models.Role": {
-            "type": "object",
-            "properties": {
-                "children": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_models.Role"
-                    }
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "created_by": {
-                    "type": "string"
-                },
-                "deleted_at": {
-                    "type": "string"
-                },
-                "deleted_by": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "is_active": {
-                    "type": "boolean"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "parent": {
-                    "description": "Relationships",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_models.Role"
-                        }
-                    ]
-                },
-                "parent_id": {
-                    "description": "For hierarchical roles",
-                    "type": "string"
-                },
-                "permissions": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_models.Permission"
-                    }
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "updated_by": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_Kisanlink_aaa-service_entities_models.User": {
-            "type": "object",
-            "required": [
-                "password",
-                "username"
-            ],
-            "properties": {
-                "contacts": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_models.Contact"
-                    }
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "created_by": {
-                    "type": "string"
-                },
-                "deleted_at": {
-                    "type": "string"
-                },
-                "deleted_by": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "is_validated": {
-                    "type": "boolean"
-                },
-                "password": {
-                    "type": "string",
-                    "maxLength": 128,
-                    "minLength": 8
-                },
-                "profile": {
-                    "description": "Relationships",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_models.UserProfile"
-                        }
-                    ]
-                },
-                "roles": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_models.UserRole"
-                    }
-                },
-                "status": {
-                    "description": "Status represents the current state of the user account\nPossible values:\n- \"pending\": Initial state when user is created but not validated\n- \"active\": User is validated and can access all features\n- \"suspended\": User access is temporarily suspended\n- \"blocked\": User access is permanently blocked",
-                    "type": "string"
-                },
-                "tokens": {
-                    "type": "integer"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "updated_by": {
-                    "type": "string"
-                },
-                "username": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_Kisanlink_aaa-service_entities_models.UserProfile": {
-            "type": "object",
-            "properties": {
-                "aadhaar_number": {
-                    "type": "string"
-                },
-                "address": {
-                    "description": "Relationships",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_models.Address"
-                        }
-                    ]
-                },
-                "address_id": {
-                    "type": "string"
-                },
-                "care_of": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "created_by": {
-                    "type": "string"
-                },
-                "date_of_birth": {
-                    "type": "string"
-                },
-                "deleted_at": {
-                    "type": "string"
-                },
-                "deleted_by": {
-                    "type": "string"
-                },
-                "email_hash": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "message": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "photo": {
-                    "type": "string"
-                },
-                "share_code": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "updated_by": {
-                    "type": "string"
-                },
-                "user_id": {
-                    "type": "string"
-                },
-                "year_of_birth": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_Kisanlink_aaa-service_entities_models.UserRole": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "type": "string"
-                },
-                "created_by": {
-                    "type": "string"
-                },
-                "deleted_at": {
-                    "type": "string"
-                },
-                "deleted_by": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "is_active": {
-                    "type": "boolean"
-                },
-                "role": {
-                    "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_models.Role"
-                },
-                "roleID": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "updated_by": {
-                    "type": "string"
-                },
-                "user": {
-                    "description": "Relationships",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_models.User"
-                        }
-                    ]
-                },
-                "userID": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_Kisanlink_aaa-service_entities_requests_addresses.CreateAddressRequest": {
+        "addresses.CreateAddressRequest": {
             "type": "object",
             "required": [
                 "user_id"
@@ -3156,7 +2572,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_Kisanlink_aaa-service_entities_requests_addresses.UpdateAddressRequest": {
+        "addresses.UpdateAddressRequest": {
             "type": "object",
             "required": [
                 "id"
@@ -3240,7 +2656,76 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_Kisanlink_aaa-service_entities_requests_roles.CreateRoleRequest": {
+        "permissions.CreatePermissionRequest": {
+            "type": "object",
+            "required": [
+                "actions",
+                "effect",
+                "resource"
+            ],
+            "properties": {
+                "actions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "effect": {
+                    "type": "string"
+                },
+                "resource": {
+                    "type": "string"
+                }
+            }
+        },
+        "permissions.UpdatePermissionRequest": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "actions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "effect": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "resource": {
+                    "type": "string"
+                }
+            }
+        },
+        "responses.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "details": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "request_id": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "string"
+                }
+            }
+        },
+        "roles.CreateRoleRequest": {
             "type": "object",
             "required": [
                 "name"
@@ -3292,7 +2777,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_Kisanlink_aaa-service_entities_requests_roles.UpdateRoleRequest": {
+        "roles.UpdateRoleRequest": {
             "type": "object",
             "required": [
                 "role_id"
@@ -3347,74 +2832,177 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_Kisanlink_aaa-service_entities_requests_users.CreateUserRequest": {
-            "type": "object",
-            "required": [
-                "mobile_number",
-                "password",
-                "username"
-            ],
-            "properties": {
-                "aadhaar_number": {
-                    "type": "string"
-                },
-                "care_of": {
-                    "type": "string"
-                },
-                "country_code": {
-                    "type": "string"
-                },
-                "date_of_birth": {
-                    "type": "string"
-                },
-                "mobile_number": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string",
-                    "maxLength": 128,
-                    "minLength": 8
-                },
-                "username": {
-                    "type": "string"
-                },
-                "year_of_birth": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_Kisanlink_aaa-service_entities_requests_users.UpdateUserRequest": {
+        "routes.SwaggerAuditLog": {
             "type": "object",
             "properties": {
-                "care_of": {
+                "action": {
                     "type": "string"
                 },
-                "country_code": {
+                "created_at": {
                     "type": "string"
                 },
-                "date_of_birth": {
+                "details": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "id": {
                     "type": "string"
                 },
-                "email_hash": {
+                "ip_address": {
                     "type": "string"
                 },
                 "message": {
                     "type": "string"
                 },
-                "mobile_number": {
+                "resource_id": {
+                    "type": "string"
+                },
+                "resource_type": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user_agent": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "routes.SwaggerAuditQueryResult": {
+            "type": "object",
+            "properties": {
+                "limit": {
                     "type": "integer"
                 },
-                "name": {
+                "logs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/routes.SwaggerAuditLog"
+                    }
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                },
+                "total_pages": {
+                    "type": "integer"
+                }
+            }
+        },
+        "routes.SwaggerLoginRequest": {
+            "type": "object",
+            "required": [
+                "password",
+                "username"
+            ],
+            "properties": {
+                "mfa_code": {
                     "type": "string"
                 },
-                "photo": {
+                "password": {
                     "type": "string"
                 },
-                "share_code": {
+                "username": {
                     "type": "string"
+                }
+            }
+        },
+        "routes.SwaggerLoginResponse": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "string"
+                },
+                "expires_in": {
+                    "type": "integer"
+                },
+                "permissions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "refresh_token": {
+                    "type": "string"
+                },
+                "token_type": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/routes.SwaggerUser"
+                }
+            }
+        },
+        "routes.SwaggerRefreshTokenRequest": {
+            "type": "object",
+            "required": [
+                "refresh_token"
+            ],
+            "properties": {
+                "refresh_token": {
+                    "type": "string"
+                }
+            }
+        },
+        "routes.SwaggerRegisterRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "full_name",
+                "password",
+                "username"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "full_name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 1
+                },
+                "password": {
+                    "type": "string",
+                    "minLength": 8
+                },
+                "role_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "username": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "minLength": 3
+                }
+            }
+        },
+        "routes.SwaggerUser": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "deleted_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_validated": {
+                    "type": "boolean"
                 },
                 "status": {
                     "type": "string"
@@ -3422,36 +3010,49 @@ const docTemplate = `{
                 "tokens": {
                     "type": "integer"
                 },
-                "year_of_birth": {
+                "updated_at": {
+                    "type": "string"
+                },
+                "username": {
                     "type": "string"
                 }
             }
         },
-        "github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse": {
+        "services.Permission": {
             "type": "object",
             "properties": {
-                "code": {
-                    "type": "integer"
-                },
-                "details": {
-                    "type": "object",
-                    "additionalProperties": true
-                },
-                "error": {
+                "action": {
                     "type": "string"
                 },
-                "message": {
+                "resource": {
                     "type": "string"
                 },
-                "request_id": {
+                "resource_id": {
                     "type": "string"
                 },
-                "timestamp": {
+                "user_id": {
                     "type": "string"
                 }
             }
         },
-        "github_com_Kisanlink_aaa-service_entities_responses_users.AddressResponse": {
+        "services.PermissionResult": {
+            "type": "object",
+            "properties": {
+                "allowed": {
+                    "type": "boolean"
+                },
+                "permissions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "reason": {
+                    "type": "string"
+                }
+            }
+        },
+        "users.AddressResponse": {
             "type": "object",
             "properties": {
                 "country": {
@@ -3498,7 +3099,46 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_Kisanlink_aaa-service_entities_responses_users.RoleDetail": {
+        "users.CreateUserRequest": {
+            "type": "object",
+            "required": [
+                "mobile_number",
+                "password",
+                "username"
+            ],
+            "properties": {
+                "aadhaar_number": {
+                    "type": "string"
+                },
+                "care_of": {
+                    "type": "string"
+                },
+                "country_code": {
+                    "type": "string"
+                },
+                "date_of_birth": {
+                    "type": "string"
+                },
+                "mobile_number": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 8
+                },
+                "username": {
+                    "type": "string"
+                },
+                "year_of_birth": {
+                    "type": "string"
+                }
+            }
+        },
+        "users.RoleDetail": {
             "type": "object",
             "properties": {
                 "assigned_at": {
@@ -3518,14 +3158,55 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_Kisanlink_aaa-service_entities_responses_users.UserResponse": {
+        "users.UpdateUserRequest": {
+            "type": "object",
+            "properties": {
+                "care_of": {
+                    "type": "string"
+                },
+                "country_code": {
+                    "type": "string"
+                },
+                "date_of_birth": {
+                    "type": "string"
+                },
+                "email_hash": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "mobile_number": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "photo": {
+                    "type": "string"
+                },
+                "share_code": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "tokens": {
+                    "type": "integer"
+                },
+                "year_of_birth": {
+                    "type": "string"
+                }
+            }
+        },
+        "users.UserResponse": {
             "type": "object",
             "properties": {
                 "aadhaar_number": {
                     "type": "string"
                 },
                 "address": {
-                    "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses_users.AddressResponse"
+                    "$ref": "#/definitions/users.AddressResponse"
                 },
                 "care_of": {
                     "type": "string"
@@ -3563,7 +3244,7 @@ const docTemplate = `{
                 "roles": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses_users.RoleDetail"
+                        "$ref": "#/definitions/users.RoleDetail"
                     }
                 },
                 "share_code": {
@@ -3585,183 +3266,6 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
-        },
-        "handlers_permissions.CreatePermissionRequest": {
-            "type": "object",
-            "required": [
-                "actions",
-                "effect",
-                "resource"
-            ],
-            "properties": {
-                "actions": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "effect": {
-                    "type": "string"
-                },
-                "resource": {
-                    "type": "string"
-                }
-            }
-        },
-        "handlers_permissions.UpdatePermissionRequest": {
-            "type": "object",
-            "required": [
-                "id"
-            ],
-            "properties": {
-                "actions": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "effect": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "resource": {
-                    "type": "string"
-                }
-            }
-        },
-        "services.AuditQueryResult": {
-            "type": "object",
-            "properties": {
-                "logs": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_models.AuditLog"
-                    }
-                },
-                "page": {
-                    "type": "integer"
-                },
-                "per_page": {
-                    "type": "integer"
-                },
-                "total_count": {
-                    "type": "integer"
-                }
-            }
-        },
-        "services.LoginRequest": {
-            "type": "object",
-            "required": [
-                "password",
-                "username"
-            ],
-            "properties": {
-                "mfa_code": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string"
-                },
-                "username": {
-                    "type": "string"
-                }
-            }
-        },
-        "services.LoginResponse": {
-            "type": "object",
-            "properties": {
-                "access_token": {
-                    "type": "string"
-                },
-                "expires_in": {
-                    "type": "integer"
-                },
-                "permissions": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "refresh_token": {
-                    "type": "string"
-                },
-                "token_type": {
-                    "type": "string"
-                },
-                "user": {
-                    "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_models.User"
-                }
-            }
-        },
-        "services.Permission": {
-            "type": "object",
-            "properties": {
-                "action": {
-                    "type": "string"
-                },
-                "resource": {
-                    "type": "string"
-                },
-                "resource_id": {
-                    "type": "string"
-                },
-                "user_id": {
-                    "type": "string"
-                }
-            }
-        },
-        "services.PermissionResult": {
-            "type": "object",
-            "properties": {
-                "allowed": {
-                    "type": "boolean"
-                },
-                "permissions": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "reason": {
-                    "type": "string"
-                }
-            }
-        },
-        "services.RegisterRequest": {
-            "type": "object",
-            "required": [
-                "email",
-                "full_name",
-                "password",
-                "username"
-            ],
-            "properties": {
-                "email": {
-                    "type": "string"
-                },
-                "full_name": {
-                    "type": "string",
-                    "maxLength": 100,
-                    "minLength": 1
-                },
-                "password": {
-                    "type": "string",
-                    "minLength": 8
-                },
-                "role_ids": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "username": {
-                    "type": "string",
-                    "maxLength": 50,
-                    "minLength": 3
-                }
-            }
         }
     },
     "securityDefinitions": {
@@ -3778,7 +3282,7 @@ const docTemplate = `{
 var SwaggerInfo = &swag.Spec{
 	Version:          "2.0",
 	Host:             "localhost:8080",
-	BasePath:         "/api",
+	BasePath:         "/api/v2",
 	Schemes:          []string{},
 	Title:            "AAA Service API",
 	Description:      "Authentication, Authorization, and Accounting Service with SpiceDB integration",

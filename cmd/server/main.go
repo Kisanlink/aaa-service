@@ -36,7 +36,7 @@ import (
 // @version 2.0
 // @description Authentication, Authorization, and Accounting Service with SpiceDB integration
 // @host localhost:8080
-// @BasePath /api
+// @BasePath /api/v2
 // @securityDefinitions.apikey BearerAuth
 // @in header
 // @name Authorization

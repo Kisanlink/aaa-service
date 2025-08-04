@@ -1,389 +1,6 @@
-basePath: /api
+basePath: /api/v2
 definitions:
-  github_com_Kisanlink_aaa-service_entities_models.Action:
-    properties:
-      category:
-        description: e.g., "user", "role", "system", "api", "database"
-        type: string
-      created_at:
-        type: string
-      created_by:
-        type: string
-      deleted_at:
-        type: string
-      deleted_by:
-        type: string
-      description:
-        type: string
-      id:
-        type: string
-      is_active:
-        type: boolean
-      name:
-        type: string
-      updated_at:
-        type: string
-      updated_by:
-        type: string
-    type: object
-  github_com_Kisanlink_aaa-service_entities_models.Address:
-    properties:
-      country:
-        type: string
-      created_at:
-        type: string
-      created_by:
-        type: string
-      deleted_at:
-        type: string
-      deleted_by:
-        type: string
-      district:
-        type: string
-      full_address:
-        type: string
-      house:
-        type: string
-      id:
-        type: string
-      landmark:
-        type: string
-      pincode:
-        type: string
-      post_office:
-        type: string
-      state:
-        type: string
-      street:
-        type: string
-      subdistrict:
-        type: string
-      updated_at:
-        type: string
-      updated_by:
-        type: string
-      vtc:
-        description: Village/Town/City
-        type: string
-    type: object
-  github_com_Kisanlink_aaa-service_entities_models.AuditLog:
-    properties:
-      action:
-        type: string
-      created_at:
-        type: string
-      created_by:
-        type: string
-      deleted_at:
-        type: string
-      deleted_by:
-        type: string
-      details:
-        additionalProperties: true
-        type: object
-      id:
-        type: string
-      ip_address:
-        type: string
-      message:
-        type: string
-      resource:
-        $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_models.Resource'
-      resource_id:
-        type: string
-      resource_type:
-        description: e.g., "aaa/user", "aaa/role"
-        type: string
-      status:
-        description: success, failure, warning
-        type: string
-      timestamp:
-        type: string
-      updated_at:
-        type: string
-      updated_by:
-        type: string
-      user:
-        allOf:
-        - $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_models.User'
-        description: Relationships
-      user_agent:
-        type: string
-      user_id:
-        type: string
-    type: object
-  github_com_Kisanlink_aaa-service_entities_models.Contact:
-    properties:
-      address:
-        allOf:
-        - $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_models.Address'
-        description: Relationships
-      address_id:
-        type: string
-      country_code:
-        type: string
-      created_at:
-        type: string
-      created_by:
-        type: string
-      deleted_at:
-        type: string
-      deleted_by:
-        type: string
-      email_hash:
-        type: string
-      id:
-        type: string
-      mobile_number:
-        type: integer
-      share_code:
-        type: string
-      updated_at:
-        type: string
-      updated_by:
-        type: string
-      user_id:
-        type: string
-    type: object
-  github_com_Kisanlink_aaa-service_entities_models.Permission:
-    properties:
-      action:
-        $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_models.Action'
-      action_id:
-        description: Which action this permission allows
-        type: string
-      created_at:
-        type: string
-      created_by:
-        type: string
-      deleted_at:
-        type: string
-      deleted_by:
-        type: string
-      description:
-        type: string
-      id:
-        type: string
-      is_active:
-        type: boolean
-      name:
-        type: string
-      resource:
-        allOf:
-        - $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_models.Resource'
-        description: Relationships
-      resource_id:
-        description: Which resource this permission applies to
-        type: string
-      updated_at:
-        type: string
-      updated_by:
-        type: string
-    type: object
-  github_com_Kisanlink_aaa-service_entities_models.Resource:
-    properties:
-      children:
-        items:
-          $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_models.Resource'
-        type: array
-      created_at:
-        type: string
-      created_by:
-        type: string
-      deleted_at:
-        type: string
-      deleted_by:
-        type: string
-      description:
-        type: string
-      id:
-        type: string
-      is_active:
-        type: boolean
-      name:
-        type: string
-      owner:
-        $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_models.User'
-      owner_id:
-        description: Owner user ID
-        type: string
-      parent:
-        allOf:
-        - $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_models.Resource'
-        description: Relationships
-      parent_id:
-        description: For hierarchical resources
-        type: string
-      type:
-        description: e.g., "aaa/user", "aaa/role", "aaa/permission", etc.
-        type: string
-      updated_at:
-        type: string
-      updated_by:
-        type: string
-    type: object
-  github_com_Kisanlink_aaa-service_entities_models.Role:
-    properties:
-      children:
-        items:
-          $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_models.Role'
-        type: array
-      created_at:
-        type: string
-      created_by:
-        type: string
-      deleted_at:
-        type: string
-      deleted_by:
-        type: string
-      description:
-        type: string
-      id:
-        type: string
-      is_active:
-        type: boolean
-      name:
-        type: string
-      parent:
-        allOf:
-        - $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_models.Role'
-        description: Relationships
-      parent_id:
-        description: For hierarchical roles
-        type: string
-      permissions:
-        items:
-          $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_models.Permission'
-        type: array
-      updated_at:
-        type: string
-      updated_by:
-        type: string
-    type: object
-  github_com_Kisanlink_aaa-service_entities_models.User:
-    properties:
-      contacts:
-        items:
-          $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_models.Contact'
-        type: array
-      created_at:
-        type: string
-      created_by:
-        type: string
-      deleted_at:
-        type: string
-      deleted_by:
-        type: string
-      id:
-        type: string
-      is_validated:
-        type: boolean
-      password:
-        maxLength: 128
-        minLength: 8
-        type: string
-      profile:
-        allOf:
-        - $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_models.UserProfile'
-        description: Relationships
-      roles:
-        items:
-          $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_models.UserRole'
-        type: array
-      status:
-        description: |-
-          Status represents the current state of the user account
-          Possible values:
-          - "pending": Initial state when user is created but not validated
-          - "active": User is validated and can access all features
-          - "suspended": User access is temporarily suspended
-          - "blocked": User access is permanently blocked
-        type: string
-      tokens:
-        type: integer
-      updated_at:
-        type: string
-      updated_by:
-        type: string
-      username:
-        type: string
-    required:
-    - password
-    - username
-    type: object
-  github_com_Kisanlink_aaa-service_entities_models.UserProfile:
-    properties:
-      aadhaar_number:
-        type: string
-      address:
-        allOf:
-        - $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_models.Address'
-        description: Relationships
-      address_id:
-        type: string
-      care_of:
-        type: string
-      created_at:
-        type: string
-      created_by:
-        type: string
-      date_of_birth:
-        type: string
-      deleted_at:
-        type: string
-      deleted_by:
-        type: string
-      email_hash:
-        type: string
-      id:
-        type: string
-      message:
-        type: string
-      name:
-        type: string
-      photo:
-        type: string
-      share_code:
-        type: string
-      updated_at:
-        type: string
-      updated_by:
-        type: string
-      user_id:
-        type: string
-      year_of_birth:
-        type: string
-    type: object
-  github_com_Kisanlink_aaa-service_entities_models.UserRole:
-    properties:
-      created_at:
-        type: string
-      created_by:
-        type: string
-      deleted_at:
-        type: string
-      deleted_by:
-        type: string
-      id:
-        type: string
-      is_active:
-        type: boolean
-      role:
-        $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_models.Role'
-      roleID:
-        type: string
-      updated_at:
-        type: string
-      updated_by:
-        type: string
-      user:
-        allOf:
-        - $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_models.User'
-        description: Relationships
-      userID:
-        type: string
-    type: object
-  github_com_Kisanlink_aaa-service_entities_requests_addresses.CreateAddressRequest:
+  addresses.CreateAddressRequest:
     properties:
       body: {}
       context:
@@ -443,7 +60,7 @@ definitions:
     required:
     - user_id
     type: object
-  github_com_Kisanlink_aaa-service_entities_requests_addresses.UpdateAddressRequest:
+  addresses.UpdateAddressRequest:
     properties:
       body: {}
       context:
@@ -503,7 +120,53 @@ definitions:
     required:
     - id
     type: object
-  github_com_Kisanlink_aaa-service_entities_requests_roles.CreateRoleRequest:
+  permissions.CreatePermissionRequest:
+    properties:
+      actions:
+        items:
+          type: string
+        type: array
+      effect:
+        type: string
+      resource:
+        type: string
+    required:
+    - actions
+    - effect
+    - resource
+    type: object
+  permissions.UpdatePermissionRequest:
+    properties:
+      actions:
+        items:
+          type: string
+        type: array
+      effect:
+        type: string
+      id:
+        type: string
+      resource:
+        type: string
+    required:
+    - id
+    type: object
+  responses.ErrorResponse:
+    properties:
+      code:
+        type: integer
+      details:
+        additionalProperties: true
+        type: object
+      error:
+        type: string
+      message:
+        type: string
+      request_id:
+        type: string
+      timestamp:
+        type: string
+    type: object
+  roles.CreateRoleRequest:
     properties:
       body: {}
       context:
@@ -539,7 +202,7 @@ definitions:
     required:
     - name
     type: object
-  github_com_Kisanlink_aaa-service_entities_requests_roles.UpdateRoleRequest:
+  roles.UpdateRoleRequest:
     properties:
       body: {}
       context:
@@ -577,77 +240,154 @@ definitions:
     required:
     - role_id
     type: object
-  github_com_Kisanlink_aaa-service_entities_requests_users.CreateUserRequest:
+  routes.SwaggerAuditLog:
     properties:
-      aadhaar_number:
+      action:
         type: string
-      care_of:
+      created_at:
         type: string
-      country_code:
+      details:
+        additionalProperties: true
+        type: object
+      id:
         type: string
-      date_of_birth:
-        type: string
-      mobile_number:
-        type: integer
-      name:
-        type: string
-      password:
-        maxLength: 128
-        minLength: 8
-        type: string
-      username:
-        type: string
-      year_of_birth:
-        type: string
-    required:
-    - mobile_number
-    - password
-    - username
-    type: object
-  github_com_Kisanlink_aaa-service_entities_requests_users.UpdateUserRequest:
-    properties:
-      care_of:
-        type: string
-      country_code:
-        type: string
-      date_of_birth:
-        type: string
-      email_hash:
+      ip_address:
         type: string
       message:
         type: string
-      mobile_number:
+      resource_id:
+        type: string
+      resource_type:
+        type: string
+      status:
+        type: string
+      timestamp:
+        type: string
+      updated_at:
+        type: string
+      user_agent:
+        type: string
+      user_id:
+        type: string
+    type: object
+  routes.SwaggerAuditQueryResult:
+    properties:
+      limit:
         type: integer
-      name:
+      logs:
+        items:
+          $ref: '#/definitions/routes.SwaggerAuditLog'
+        type: array
+      page:
+        type: integer
+      total:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
+  routes.SwaggerLoginRequest:
+    properties:
+      mfa_code:
         type: string
-      photo:
+      password:
         type: string
-      share_code:
+      username:
         type: string
+    required:
+    - password
+    - username
+    type: object
+  routes.SwaggerLoginResponse:
+    properties:
+      access_token:
+        type: string
+      expires_in:
+        type: integer
+      permissions:
+        items:
+          type: string
+        type: array
+      refresh_token:
+        type: string
+      token_type:
+        type: string
+      user:
+        $ref: '#/definitions/routes.SwaggerUser'
+    type: object
+  routes.SwaggerRefreshTokenRequest:
+    properties:
+      refresh_token:
+        type: string
+    required:
+    - refresh_token
+    type: object
+  routes.SwaggerRegisterRequest:
+    properties:
+      email:
+        type: string
+      full_name:
+        maxLength: 100
+        minLength: 1
+        type: string
+      password:
+        minLength: 8
+        type: string
+      role_ids:
+        items:
+          type: string
+        type: array
+      username:
+        maxLength: 50
+        minLength: 3
+        type: string
+    required:
+    - email
+    - full_name
+    - password
+    - username
+    type: object
+  routes.SwaggerUser:
+    properties:
+      created_at:
+        type: string
+      deleted_at:
+        type: string
+      id:
+        type: string
+      is_validated:
+        type: boolean
       status:
         type: string
       tokens:
         type: integer
-      year_of_birth:
+      updated_at:
+        type: string
+      username:
         type: string
     type: object
-  github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse:
+  services.Permission:
     properties:
-      code:
-        type: integer
-      details:
-        additionalProperties: true
-        type: object
-      error:
+      action:
         type: string
-      message:
+      resource:
         type: string
-      request_id:
+      resource_id:
         type: string
-      timestamp:
+      user_id:
         type: string
     type: object
-  github_com_Kisanlink_aaa-service_entities_responses_users.AddressResponse:
+  services.PermissionResult:
+    properties:
+      allowed:
+        type: boolean
+      permissions:
+        items:
+          type: string
+        type: array
+      reason:
+        type: string
+    type: object
+  users.AddressResponse:
     properties:
       country:
         type: string
@@ -678,7 +418,34 @@ definitions:
       vtc:
         type: string
     type: object
-  github_com_Kisanlink_aaa-service_entities_responses_users.RoleDetail:
+  users.CreateUserRequest:
+    properties:
+      aadhaar_number:
+        type: string
+      care_of:
+        type: string
+      country_code:
+        type: string
+      date_of_birth:
+        type: string
+      mobile_number:
+        type: integer
+      name:
+        type: string
+      password:
+        maxLength: 128
+        minLength: 8
+        type: string
+      username:
+        type: string
+      year_of_birth:
+        type: string
+    required:
+    - mobile_number
+    - password
+    - username
+    type: object
+  users.RoleDetail:
     properties:
       assigned_at:
         type: string
@@ -691,12 +458,39 @@ definitions:
       name:
         type: string
     type: object
-  github_com_Kisanlink_aaa-service_entities_responses_users.UserResponse:
+  users.UpdateUserRequest:
+    properties:
+      care_of:
+        type: string
+      country_code:
+        type: string
+      date_of_birth:
+        type: string
+      email_hash:
+        type: string
+      message:
+        type: string
+      mobile_number:
+        type: integer
+      name:
+        type: string
+      photo:
+        type: string
+      share_code:
+        type: string
+      status:
+        type: string
+      tokens:
+        type: integer
+      year_of_birth:
+        type: string
+    type: object
+  users.UserResponse:
     properties:
       aadhaar_number:
         type: string
       address:
-        $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses_users.AddressResponse'
+        $ref: '#/definitions/users.AddressResponse'
       care_of:
         type: string
       country_code:
@@ -721,7 +515,7 @@ definitions:
         type: string
       roles:
         items:
-          $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses_users.RoleDetail'
+          $ref: '#/definitions/users.RoleDetail'
         type: array
       share_code:
         type: string
@@ -735,125 +529,6 @@ definitions:
         type: string
       year_of_birth:
         type: string
-    type: object
-  handlers_permissions.CreatePermissionRequest:
-    properties:
-      actions:
-        items:
-          type: string
-        type: array
-      effect:
-        type: string
-      resource:
-        type: string
-    required:
-    - actions
-    - effect
-    - resource
-    type: object
-  handlers_permissions.UpdatePermissionRequest:
-    properties:
-      actions:
-        items:
-          type: string
-        type: array
-      effect:
-        type: string
-      id:
-        type: string
-      resource:
-        type: string
-    required:
-    - id
-    type: object
-  services.AuditQueryResult:
-    properties:
-      logs:
-        items:
-          $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_models.AuditLog'
-        type: array
-      page:
-        type: integer
-      per_page:
-        type: integer
-      total_count:
-        type: integer
-    type: object
-  services.LoginRequest:
-    properties:
-      mfa_code:
-        type: string
-      password:
-        type: string
-      username:
-        type: string
-    required:
-    - password
-    - username
-    type: object
-  services.LoginResponse:
-    properties:
-      access_token:
-        type: string
-      expires_in:
-        type: integer
-      permissions:
-        items:
-          type: string
-        type: array
-      refresh_token:
-        type: string
-      token_type:
-        type: string
-      user:
-        $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_models.User'
-    type: object
-  services.Permission:
-    properties:
-      action:
-        type: string
-      resource:
-        type: string
-      resource_id:
-        type: string
-      user_id:
-        type: string
-    type: object
-  services.PermissionResult:
-    properties:
-      allowed:
-        type: boolean
-      permissions:
-        items:
-          type: string
-        type: array
-      reason:
-        type: string
-    type: object
-  services.RegisterRequest:
-    properties:
-      email:
-        type: string
-      full_name:
-        maxLength: 100
-        minLength: 1
-        type: string
-      password:
-        minLength: 8
-        type: string
-      role_ids:
-        items:
-          type: string
-        type: array
-      username:
-        maxLength: 50
-        minLength: 3
-        type: string
-    required:
-    - email
-    - full_name
-    - password
-    - username
     type: object
 host: localhost:8080
 info:
@@ -874,7 +549,7 @@ paths:
         name: address
         required: true
         schema:
-          $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_requests_addresses.CreateAddressRequest'
+          $ref: '#/definitions/addresses.CreateAddressRequest'
       produces:
       - application/json
       responses:
@@ -984,7 +659,7 @@ paths:
         name: address
         required: true
         schema:
-          $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_requests_addresses.UpdateAddressRequest'
+          $ref: '#/definitions/addresses.UpdateAddressRequest'
       produces:
       - application/json
       responses:
@@ -1100,7 +775,7 @@ paths:
         name: role
         required: true
         schema:
-          $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_requests_roles.CreateRoleRequest'
+          $ref: '#/definitions/roles.CreateRoleRequest'
       produces:
       - application/json
       responses:
@@ -1112,15 +787,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
         "409":
           description: Conflict
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
       summary: Create a new role
       tags:
       - roles
@@ -1146,19 +821,19 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
         "409":
           description: Conflict
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
       summary: Delete role
       tags:
       - roles
@@ -1183,15 +858,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
       summary: Get role by ID
       tags:
       - roles
@@ -1210,7 +885,7 @@ paths:
         name: role
         required: true
         schema:
-          $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_requests_roles.UpdateRoleRequest'
+          $ref: '#/definitions/roles.UpdateRoleRequest'
       produces:
       - application/json
       responses:
@@ -1222,19 +897,19 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
         "409":
           description: Conflict
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
       summary: Update role
       tags:
       - roles
@@ -1285,26 +960,26 @@ paths:
         name: user
         required: true
         schema:
-          $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_requests_users.CreateUserRequest'
+          $ref: '#/definitions/users.CreateUserRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses_users.UserResponse'
+            $ref: '#/definitions/users.UserResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
         "409":
           description: Conflict
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
       summary: Create a new user
       tags:
       - users
@@ -1330,15 +1005,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
       summary: Delete user
       tags:
       - users
@@ -1358,19 +1033,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses_users.UserResponse'
+            $ref: '#/definitions/users.UserResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
       summary: Get user by ID
       tags:
       - users
@@ -1389,7 +1064,7 @@ paths:
         name: user
         required: true
         schema:
-          $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_requests_users.UpdateUserRequest'
+          $ref: '#/definitions/users.UpdateUserRequest'
       produces:
       - application/json
       responses:
@@ -1401,15 +1076,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
       summary: Update user
       tags:
       - users
@@ -1440,15 +1115,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
       summary: Remove role from user
       tags:
       - users
@@ -1849,7 +1524,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/services.AuditQueryResult'
+            $ref: '#/definitions/routes.SwaggerAuditQueryResult'
         "401":
           description: Unauthorized
           schema:
@@ -1881,14 +1556,14 @@ paths:
         name: credentials
         required: true
         schema:
-          $ref: '#/definitions/services.LoginRequest'
+          $ref: '#/definitions/routes.SwaggerLoginRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/services.LoginResponse'
+            $ref: '#/definitions/routes.SwaggerLoginResponse'
         "400":
           description: Bad Request
           schema:
@@ -1946,17 +1621,14 @@ paths:
         name: token
         required: true
         schema:
-          properties:
-            refresh_token:
-              type: string
-          type: object
+          $ref: '#/definitions/routes.SwaggerRefreshTokenRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/services.LoginResponse'
+            $ref: '#/definitions/routes.SwaggerLoginResponse'
         "400":
           description: Bad Request
           schema:
@@ -1986,7 +1658,7 @@ paths:
         name: user
         required: true
         schema:
-          $ref: '#/definitions/services.RegisterRequest'
+          $ref: '#/definitions/routes.SwaggerRegisterRequest'
       produces:
       - application/json
       responses:
@@ -2120,7 +1792,7 @@ paths:
         name: permission
         required: true
         schema:
-          $ref: '#/definitions/handlers_permissions.CreatePermissionRequest'
+          $ref: '#/definitions/permissions.CreatePermissionRequest'
       produces:
       - application/json
       responses:
@@ -2230,7 +1902,7 @@ paths:
         name: permission
         required: true
         schema:
-          $ref: '#/definitions/handlers_permissions.UpdatePermissionRequest'
+          $ref: '#/definitions/permissions.UpdatePermissionRequest'
       produces:
       - application/json
       responses:

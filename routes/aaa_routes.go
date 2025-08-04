@@ -112,8 +112,8 @@ func SetupAAA(router *gin.Engine, handlers RouteHandlers) {
 // @Tags authentication
 // @Accept json
 // @Produce json
-// @Param credentials body services.LoginRequest true "Login credentials"
-// @Success 200 {object} services.LoginResponse
+// @Param credentials body SwaggerLoginRequest true "Login credentials"
+// @Success 200 {object} SwaggerLoginResponse
 // @Failure 400 {object} map[string]interface{}
 // @Failure 401 {object} map[string]interface{}
 // @Failure 500 {object} map[string]interface{}
@@ -143,7 +143,7 @@ func createLoginHandler(authService *services.AuthService, logger *zap.Logger) g
 // @Tags authentication
 // @Accept json
 // @Produce json
-// @Param user body services.RegisterRequest true "Registration data"
+// @Param user body SwaggerRegisterRequest true "Registration data"
 // @Success 201 {object} map[string]interface{}
 // @Failure 400 {object} map[string]interface{}
 // @Failure 409 {object} map[string]interface{}
@@ -174,8 +174,8 @@ func createRegisterHandler(authService *services.AuthService, logger *zap.Logger
 // @Tags authentication
 // @Accept json
 // @Produce json
-// @Param token body object{refresh_token=string} true "Refresh token"
-// @Success 200 {object} services.LoginResponse
+// @Param token body SwaggerRefreshTokenRequest true "Refresh token"
+// @Success 200 {object} SwaggerLoginResponse
 // @Failure 400 {object} map[string]interface{}
 // @Failure 401 {object} map[string]interface{}
 // @Failure 500 {object} map[string]interface{}
@@ -463,7 +463,7 @@ func createGetUserPermissionsHandler(authzService *services.AuthorizationService
 // @Param user_id query string false "Filter by user ID"
 // @Param action query string false "Filter by action"
 // @Param resource query string false "Filter by resource type"
-// @Success 200 {object} services.AuditQueryResult
+// @Success 200 {object} SwaggerAuditQueryResult
 // @Failure 401 {object} map[string]interface{}
 // @Failure 403 {object} map[string]interface{}
 // @Failure 500 {object} map[string]interface{}
