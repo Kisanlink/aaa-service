@@ -3,7 +3,6 @@ package models
 import (
 	"github.com/Kisanlink/kisanlink-db/pkg/base"
 	"github.com/Kisanlink/kisanlink-db/pkg/core/hash"
-	"github.com/lib/pq"
 )
 
 // Role represents a role in the AAA service
@@ -57,14 +56,10 @@ func (r *Role) GetTableIdentifier() string {
 func (r *Role) GetTableSize() hash.TableSize { return hash.Small }
 
 // HasPermission checks if the role has a specific permission
-func (r *Role) HasPermission(resource, action string) bool {
+func (r *Role) HasPermission(permissionName string) bool {
 	for _, permission := range r.Permissions {
-		if permission.Resource == resource {
-			for _, permAction := range permission.Actions {
-				if permAction == action {
-					return true
-				}
-			}
+		if permission.Name == permissionName {
+			return true
 		}
 	}
 	return false
@@ -86,20 +81,19 @@ func (r *Role) RemovePermission(permissionID string) {
 }
 
 // Permission represents a permission in the AAA service
+// This model matches the API structure for compatibility
 type Permission struct {
 	*base.BaseModel
-	Resource string         `json:"resource" gorm:"size:100;not null"`
-	Effect   string         `json:"effect" gorm:"type:text"`
-	Actions  pq.StringArray `json:"actions" gorm:"type:text[]"`
+	Name        string `json:"name" gorm:"size:100;not null;unique"`
+	Description string `json:"description" gorm:"type:text"`
 }
 
 // NewPermission creates a new Permission instance
-func NewPermission(resource string, effect string, actions []string) *Permission {
+func NewPermission(name, description string) *Permission {
 	return &Permission{
-		BaseModel: base.NewBaseModel("perm", hash.Small),
-		Resource:  resource,
-		Effect:    effect,
-		Actions:   actions,
+		BaseModel:   base.NewBaseModel("perm", hash.Small),
+		Name:        name,
+		Description: description,
 	}
 }
 
@@ -131,31 +125,4 @@ func (p *Permission) GetTableIdentifier() string {
 // GetTableSize returns the table size for Permission
 func (p *Permission) GetTableSize() hash.TableSize {
 	return hash.Small
-}
-
-// HasAction checks if the permission has a specific action
-func (p *Permission) HasAction(action string) bool {
-	for _, permAction := range p.Actions {
-		if permAction == action {
-			return true
-		}
-	}
-	return false
-}
-
-// AddAction adds an action to the permission
-func (p *Permission) AddAction(action string) {
-	if !p.HasAction(action) {
-		p.Actions = append(p.Actions, action)
-	}
-}
-
-// RemoveAction removes an action from the permission
-func (p *Permission) RemoveAction(action string) {
-	for i, permAction := range p.Actions {
-		if permAction == action {
-			p.Actions = append(p.Actions[:i], p.Actions[i+1:]...)
-			break
-		}
-	}
 }

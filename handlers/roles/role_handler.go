@@ -36,6 +36,17 @@ func NewRoleHandler(
 }
 
 // CreateRole handles POST /v1/roles
+// @Summary Create a new role
+// @Description Create a new role with the provided information
+// @Tags roles
+// @Accept json
+// @Produce json
+// @Param role body roleRequests.CreateRoleRequest true "Role creation data"
+// @Success 201 {object} models.Role
+// @Failure 400 {object} responses.ErrorResponse
+// @Failure 409 {object} responses.ErrorResponse
+// @Failure 500 {object} responses.ErrorResponse
+// @Router /api/v1/roles [post]
 func (h *RoleHandler) CreateRole(c *gin.Context) {
 	h.logger.Info("Creating role")
 
@@ -77,6 +88,17 @@ func (h *RoleHandler) CreateRole(c *gin.Context) {
 }
 
 // GetRole handles GET /v1/roles/:id
+// @Summary Get role by ID
+// @Description Retrieve a role by its unique identifier
+// @Tags roles
+// @Accept json
+// @Produce json
+// @Param id path string true "Role ID"
+// @Success 200 {object} models.Role
+// @Failure 400 {object} responses.ErrorResponse
+// @Failure 404 {object} responses.ErrorResponse
+// @Failure 500 {object} responses.ErrorResponse
+// @Router /api/v1/roles/{id} [get]
 func (h *RoleHandler) GetRole(c *gin.Context) {
 	roleID := c.Param("id")
 	h.logger.Info("Getting role by ID", zap.String("roleID", roleID))
@@ -99,6 +121,19 @@ func (h *RoleHandler) GetRole(c *gin.Context) {
 }
 
 // UpdateRole handles PUT /v1/roles/:id
+// @Summary Update role
+// @Description Update an existing role's information
+// @Tags roles
+// @Accept json
+// @Produce json
+// @Param id path string true "Role ID"
+// @Param role body roleRequests.UpdateRoleRequest true "Role update data"
+// @Success 200 {object} models.Role
+// @Failure 400 {object} responses.ErrorResponse
+// @Failure 404 {object} responses.ErrorResponse
+// @Failure 409 {object} responses.ErrorResponse
+// @Failure 500 {object} responses.ErrorResponse
+// @Router /api/v1/roles/{id} [put]
 func (h *RoleHandler) UpdateRole(c *gin.Context) {
 	roleID := c.Param("id")
 	h.logger.Info("Updating role", zap.String("roleID", roleID))
@@ -154,6 +189,18 @@ func (h *RoleHandler) UpdateRole(c *gin.Context) {
 }
 
 // DeleteRole handles DELETE /v1/roles/:id
+// @Summary Delete role
+// @Description Delete a role by its unique identifier
+// @Tags roles
+// @Accept json
+// @Produce json
+// @Param id path string true "Role ID"
+// @Success 200 {object} responses.SuccessResponse
+// @Failure 400 {object} responses.ErrorResponse
+// @Failure 404 {object} responses.ErrorResponse
+// @Failure 409 {object} responses.ErrorResponse
+// @Failure 500 {object} responses.ErrorResponse
+// @Router /api/v1/roles/{id} [delete]
 func (h *RoleHandler) DeleteRole(c *gin.Context) {
 	roleID := c.Param("id")
 	h.logger.Info("Deleting role", zap.String("roleID", roleID))
@@ -184,6 +231,17 @@ func (h *RoleHandler) DeleteRole(c *gin.Context) {
 }
 
 // ListRoles handles GET /v1/roles
+// @Summary List roles
+// @Description Get a paginated list of roles
+// @Tags roles
+// @Accept json
+// @Produce json
+// @Param limit query int false "Number of roles to return" default(10)
+// @Param offset query int false "Number of roles to skip" default(0)
+// @Success 200 {object} responses.PaginatedResponse
+// @Failure 400 {object} responses.ErrorResponse
+// @Failure 500 {object} responses.ErrorResponse
+// @Router /api/v1/roles [get]
 func (h *RoleHandler) ListRoles(c *gin.Context) {
 	h.logger.Info("Listing roles")
 

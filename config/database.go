@@ -71,6 +71,7 @@ func LoadDatabaseConfig() *DatabaseConfig {
 
 // NewDatabaseManager creates a new database manager with the loaded configuration
 func NewDatabaseManager(logger *zap.Logger) (*db.DatabaseManager, error) {
+	logger.Info("Loading database configuration")
 	config := LoadDatabaseConfig()
 
 	dbConfig := &db.Config{
@@ -95,7 +96,7 @@ func NewDatabaseManager(logger *zap.Logger) (*db.DatabaseManager, error) {
 
 	// Connect to the database
 	if err := dm.Connect(context.Background()); err != nil {
-		return nil, fmt.Errorf("failed to connect to database: %w", err)
+		return nil, fmt.Errorf("failed to connect to database: %s", sanitizeError(err.Error()))
 	}
 
 	return dm, nil
@@ -113,6 +114,8 @@ func getEnvAsInt(key string, defaultValue int) int {
 	if value := os.Getenv(key); value != "" {
 		if intValue, err := parseInt(value); err == nil {
 			return intValue
+		} else {
+			fmt.Printf("Warning: Invalid integer value for %s: %s, using default %d\n", key, value, defaultValue)
 		}
 	}
 	return defaultValue
@@ -129,4 +132,8 @@ func parseInt(s string) (int, error) {
 	var i int
 	_, err := fmt.Sscanf(s, "%d", &i)
 	return i, err
+}
+
+func sanitizeError(errMsg string) string {
+	return strings.ReplaceAll(strings.ReplaceAll(errMsg, "\n", " "), "\r", " ")
 }

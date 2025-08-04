@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Kisanlink/aaa-service/model"
+	"github.com/Kisanlink/aaa-service/entities/models"
 	pb "github.com/Kisanlink/aaa-service/proto"
 	"google.golang.org/grpc/codes"
 	"gorm.io/gorm"
@@ -19,7 +19,7 @@ func (s *PermissionServer) DeletePermission(ctx context.Context, req *pb.DeleteP
 		}, nil
 	}
 
-	permission := model.Permission{}
+	permission := models.Permission{}
 	result := s.DB.Table("permissions").Where("id = ?", id).First(&permission)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
@@ -34,7 +34,7 @@ func (s *PermissionServer) DeletePermission(ctx context.Context, req *pb.DeleteP
 		}, nil
 	}
 
-	if err := s.DB.Table("permissions").Delete(&model.Permission{}, "id = ?", id).Error; err != nil {
+	if err := s.DB.Table("permissions").Delete(&models.Permission{}, "id = ?", id).Error; err != nil {
 		return &pb.DeletePermissionResponse{
 			StatusCode: int32(codes.Internal),
 			Message:    fmt.Sprintf("Failed to delete permission: %v", err),

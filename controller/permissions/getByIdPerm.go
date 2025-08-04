@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Kisanlink/aaa-service/model"
+	"github.com/Kisanlink/aaa-service/entities/models"
 	pb "github.com/Kisanlink/aaa-service/proto"
 	"google.golang.org/grpc/codes"
 	"gorm.io/gorm"
@@ -20,7 +20,7 @@ func (s *PermissionServer) GetPermissionById(ctx context.Context, req *pb.GetPer
 	}
 
 	// Fetch the permission from the database
-	permission := model.Permission{}
+	permission := models.Permission{}
 	result := s.DB.Table("permissions").Where("id = ?", id).First(&permission)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {

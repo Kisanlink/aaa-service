@@ -29,11 +29,13 @@ fi
 
 # Test schema loading
 echo "📋 Testing schema loading..."
-if docker logs aaa-spicedb 2>&1 | grep -q "schema loaded successfully\|schema file loaded"; then
+if docker exec aaa-spicedb spicedb schema read 2>&1 | grep -q "aaa/user\|aaa/role\|aaa/permission"; then
     echo "✅ Schema loaded successfully"
 else
-    echo "⚠️  Schema loading status unclear, check logs:"
-    echo "   docker logs aaa-spicedb"
+    echo "⚠️  Schema not loaded. Load it with:"
+    echo "   ./scripts/load_schema.sh"
+    echo "   or"
+    echo "   zed schema write spicedb_schema.zed"
 fi
 
 # Test database connection

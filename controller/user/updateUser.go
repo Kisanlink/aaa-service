@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Kisanlink/aaa-service/model"
+	"github.com/Kisanlink/aaa-service/entities/models"
 	pb "github.com/Kisanlink/aaa-service/proto"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -16,7 +16,7 @@ func (s *Server) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest) (*pb
 	if id == "" {
 		return nil, status.Error(codes.InvalidArgument, "ID is required")
 	}
-	var existingUser model.User
+	var existingUser models.User
 	err := s.DB.Table("users").Where("id = ?", id).First(&existingUser).Error
 	if err != nil {
 		if err.Error() == "record not found" {
@@ -39,7 +39,7 @@ func (s *Server) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest) (*pb
 		return nil, err
 	}
 
-	var userRoles []model.UserRole
+	var userRoles []models.UserRole
 	if err := s.DB.Table("user_roles").Where("user_id = ?", id).Find(&userRoles).Error; err != nil {
 		return nil, status.Error(codes.Internal, "Failed to fetch updated roles")
 	}
@@ -62,15 +62,15 @@ func (s *Server) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest) (*pb
 }
 
 func (s *Server) updateUserRoles(userID string, rolePermissionIDs []string) error {
-	if err := s.DB.Table("user_roles").Where("user_id = ?", userID).Delete(&model.UserRole{}).Error; err != nil {
+	if err := s.DB.Table("user_roles").Where("user_id = ?", userID).Delete(&models.UserRole{}).Error; err != nil {
 		return status.Error(codes.Internal, "Failed to delete existing UserRole entries")
 	}
 	if len(rolePermissionIDs) == 0 {
 		return nil
 	}
-	var userRoles []model.UserRole
+	var userRoles []models.UserRole
 	for _, rolePermissionID := range rolePermissionIDs {
-		userRole := model.UserRole{
+		userRole := models.UserRole{
 			UserID:           userID,
 			RolePermissionID: rolePermissionID,
 		}

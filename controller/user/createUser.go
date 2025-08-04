@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/Kisanlink/aaa-service/model"
+	"github.com/Kisanlink/aaa-service/entities/models"
 	pb "github.com/Kisanlink/aaa-service/proto"
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc/codes"
@@ -37,7 +37,7 @@ func HashPassword(password string) (string, error) {
 }
 
 func (s *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest) (*pb.CreateUserResponse, error) {
-	existingUser := model.User{}
+	existingUser := models.User{}
 	if err := s.DB.Table("users").Where("username = ?", req.Username).First(&existingUser).Error; err == nil {
 		return nil, status.Error(codes.AlreadyExists, "User Already Exists")
 	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -48,7 +48,7 @@ func (s *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest) (*pb
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, "Failed to hash password")
 	}
-	newUser := model.User{
+	newUser := models.User{
 		Username:    req.Username,
 		Password:    hashedPassword,
 		IsValidated: false,
@@ -60,7 +60,7 @@ func (s *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest) (*pb
 	if err := s.createUserRoles(newUser.ID, req.UserRoleIds); err != nil {
 		return nil, err
 	}
-	var userRoles []model.UserRole
+	var userRoles []models.UserRole
 	if err := s.DB.Table("user_roles").Where("user_id = ?", newUser.ID).Find(&userRoles).Error; err != nil {
 		return nil, status.Error(codes.Internal, "Failed to fetch user roles")
 	}
@@ -88,9 +88,9 @@ func (s *Server) createUserRoles(userID string, rolePermissionIDs []string) erro
 		return nil
 	}
 
-	var userRoles []model.UserRole
+	var userRoles []models.UserRole
 	for _, rolePermissionID := range rolePermissionIDs {
-		userRole := model.UserRole{
+		userRole := models.UserRole{
 			UserID:           userID,
 			RolePermissionID: rolePermissionID,
 		}
@@ -103,7 +103,7 @@ func (s *Server) createUserRoles(userID string, rolePermissionIDs []string) erro
 	return nil
 }
 
-func ConvertToPBUserRoles(userRoles []model.UserRole) []*pb.UserRole {
+func ConvertToPBUserRoles(userRoles []models.UserRole) []*pb.UserRole {
 	var pbUserRoles []*pb.UserRole
 	for _, userRole := range userRoles {
 		pbUserRole := &pb.UserRole{

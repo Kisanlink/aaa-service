@@ -39,6 +39,17 @@ func NewUserHandler(
 }
 
 // CreateUser handles POST /users
+// @Summary Create a new user
+// @Description Create a new user with the provided information
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param user body users.CreateUserRequest true "User creation data"
+// @Success 201 {object} responses.UserResponse
+// @Failure 400 {object} responses.ErrorResponse
+// @Failure 409 {object} responses.ErrorResponse
+// @Failure 500 {object} responses.ErrorResponse
+// @Router /api/v1/users [post]
 func (h *UserHandler) CreateUser(c *gin.Context) {
 	h.logger.Info("Creating user")
 
@@ -84,6 +95,17 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 }
 
 // GetUserByID handles GET /users/:id
+// @Summary Get user by ID
+// @Description Retrieve a user by their unique identifier
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param id path string true "User ID"
+// @Success 200 {object} responses.UserResponse
+// @Failure 400 {object} responses.ErrorResponse
+// @Failure 404 {object} responses.ErrorResponse
+// @Failure 500 {object} responses.ErrorResponse
+// @Router /api/v1/users/{id} [get]
 func (h *UserHandler) GetUserByID(c *gin.Context) {
 	userID := c.Param("id")
 	h.logger.Info("Getting user by ID", zap.String("userID", userID))
@@ -110,6 +132,18 @@ func (h *UserHandler) GetUserByID(c *gin.Context) {
 }
 
 // UpdateUser handles PUT /users/:id
+// @Summary Update user
+// @Description Update an existing user's information
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param id path string true "User ID"
+// @Param user body users.UpdateUserRequest true "User update data"
+// @Success 200 {object} responses.UserResponse
+// @Failure 400 {object} responses.ErrorResponse
+// @Failure 404 {object} responses.ErrorResponse
+// @Failure 500 {object} responses.ErrorResponse
+// @Router /api/v1/users/{id} [put]
 func (h *UserHandler) UpdateUser(c *gin.Context) {
 	userID := c.Param("id")
 	h.logger.Info("Updating user", zap.String("userID", userID))
@@ -164,6 +198,17 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 }
 
 // DeleteUser handles DELETE /users/:id
+// @Summary Delete user
+// @Description Delete a user by their unique identifier
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param id path string true "User ID"
+// @Success 200 {object} responses.SuccessResponse
+// @Failure 400 {object} responses.ErrorResponse
+// @Failure 404 {object} responses.ErrorResponse
+// @Failure 500 {object} responses.ErrorResponse
+// @Router /api/v1/users/{id} [delete]
 func (h *UserHandler) DeleteUser(c *gin.Context) {
 	userID := c.Param("id")
 	h.logger.Info("Deleting user", zap.String("userID", userID))
@@ -190,6 +235,17 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 }
 
 // ListUsers handles GET /users
+// @Summary List users
+// @Description Get a paginated list of users
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param limit query int false "Number of users to return" default(10)
+// @Param offset query int false "Number of users to skip" default(0)
+// @Success 200 {object} responses.PaginatedResponse
+// @Failure 400 {object} responses.ErrorResponse
+// @Failure 500 {object} responses.ErrorResponse
+// @Router /api/v1/users [get]
 func (h *UserHandler) ListUsers(c *gin.Context) {
 	h.logger.Info("Listing users")
 
@@ -222,6 +278,18 @@ func (h *UserHandler) ListUsers(c *gin.Context) {
 }
 
 // SearchUsers handles GET /users/search
+// @Summary Search users
+// @Description Search for users based on query parameters
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param q query string true "Search query"
+// @Param limit query int false "Number of users to return" default(10)
+// @Param offset query int false "Number of users to skip" default(0)
+// @Success 200 {object} responses.PaginatedResponse
+// @Failure 400 {object} responses.ErrorResponse
+// @Failure 500 {object} responses.ErrorResponse
+// @Router /api/v1/users/search [get]
 func (h *UserHandler) SearchUsers(c *gin.Context) {
 	query := c.Query("q")
 	h.logger.Info("Searching users", zap.String("query", query))
@@ -260,6 +328,18 @@ func (h *UserHandler) SearchUsers(c *gin.Context) {
 }
 
 // ValidateUser handles POST /users/:id/validate
+// @Summary Validate user
+// @Description Validate a user account
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param id path string true "User ID"
+// @Success 200 {object} responses.SuccessResponse
+// @Failure 400 {object} responses.ErrorResponse
+// @Failure 404 {object} responses.ErrorResponse
+// @Failure 409 {object} responses.ErrorResponse
+// @Failure 500 {object} responses.ErrorResponse
+// @Router /api/v1/users/{id}/validate [post]
 func (h *UserHandler) ValidateUser(c *gin.Context) {
 	userID := c.Param("id")
 	h.logger.Info("Validating user", zap.String("userID", userID))
@@ -290,6 +370,19 @@ func (h *UserHandler) ValidateUser(c *gin.Context) {
 }
 
 // AssignRole handles POST /users/:id/roles/:roleId
+// @Summary Assign role to user
+// @Description Assign a role to a specific user
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param id path string true "User ID"
+// @Param roleId path string true "Role ID"
+// @Success 200 {object} responses.SuccessResponse
+// @Failure 400 {object} responses.ErrorResponse
+// @Failure 404 {object} responses.ErrorResponse
+// @Failure 409 {object} responses.ErrorResponse
+// @Failure 500 {object} responses.ErrorResponse
+// @Router /api/v1/users/{id}/roles/{roleId} [post]
 func (h *UserHandler) AssignRole(c *gin.Context) {
 	userID := c.Param("id")
 	roleID := c.Param("roleId")
@@ -325,6 +418,18 @@ func (h *UserHandler) AssignRole(c *gin.Context) {
 }
 
 // RemoveRole handles DELETE /users/:id/roles/:roleId
+// @Summary Remove role from user
+// @Description Remove a role from a specific user
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param id path string true "User ID"
+// @Param roleId path string true "Role ID"
+// @Success 200 {object} responses.SuccessResponse
+// @Failure 400 {object} responses.ErrorResponse
+// @Failure 404 {object} responses.ErrorResponse
+// @Failure 500 {object} responses.ErrorResponse
+// @Router /api/v1/users/{id}/roles/{roleId} [delete]
 func (h *UserHandler) RemoveRole(c *gin.Context) {
 	userID := c.Param("id")
 	roleID := c.Param("roleId")

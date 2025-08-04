@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Kisanlink/aaa-service/model"
+	"github.com/Kisanlink/aaa-service/entities/models"
 	pb "github.com/Kisanlink/aaa-service/proto"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -16,7 +16,7 @@ func (s *Server) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest) (*pb
 		return nil, status.Error(codes.InvalidArgument, "ID is required")
 	}
 
-	var existingUser model.User
+	var existingUser models.User
 	err := s.DB.Table("users").Where("id = ?", id).First(&existingUser).Error
 	if err != nil {
 		if err.Error() == "record not found" {
@@ -24,11 +24,11 @@ func (s *Server) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest) (*pb
 		}
 		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to fetch user: %v", err))
 	}
-	if err := s.DB.Table("user_roles").Where("user_id = ?", id).Delete(&model.UserRole{}).Error; err != nil {
+	if err := s.DB.Table("user_roles").Where("user_id = ?", id).Delete(&models.UserRole{}).Error; err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to delete user roles: %v", err))
 	}
 
-	if err := s.DB.Table("users").Delete(&model.User{}, "id = ?", id).Error; err != nil {
+	if err := s.DB.Table("users").Delete(&models.User{}, "id = ?", id).Error; err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to delete user: %v", err))
 	}
 

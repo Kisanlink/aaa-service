@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/Kisanlink/aaa-service/helper"
-	"github.com/Kisanlink/aaa-service/model"
+	"github.com/Kisanlink/aaa-service/entities/models"
 	pb "github.com/Kisanlink/aaa-service/proto"
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc/codes"
@@ -15,7 +15,7 @@ import (
 )
 
 func (s *Server) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResponse, error) {
-	existingUser := model.User{}
+	existingUser := models.User{}
 	err := s.DB.Table("users").Where("username = ?", req.Username).First(&existingUser).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -36,7 +36,7 @@ func (s *Server) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResp
 
 		return nil, status.Error(codes.Internal, "Failed to generate refresh token")
 	}
-	var userRoles []model.UserRole
+	var userRoles []models.UserRole
 	if err := s.DB.Table("user_roles").Where("user_id = ?", existingUser.ID).Find(&userRoles).Error; err != nil {
 		return nil, status.Error(codes.Internal, "Failed to fetch updated roles")
 	}

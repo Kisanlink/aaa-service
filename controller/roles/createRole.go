@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/Kisanlink/aaa-service/model"
+	"github.com/Kisanlink/aaa-service/entities/models"
 	pb "github.com/Kisanlink/aaa-service/proto"
 	"gorm.io/gorm"
 )
@@ -34,7 +34,7 @@ func (s *RoleServer) CreateRole(ctx context.Context, req *pb.CreateRoleRequest) 
 	}
 
 	// Check if a role with the same name already exists
-	existingRole := model.Role{}
+	existingRole := models.Role{}
 	result := s.DB.Table("roles").Where("name = ?", req.Name).First(&existingRole)
 	if result.Error == nil {
 		return &pb.CreateRoleResponse{
@@ -44,7 +44,7 @@ func (s *RoleServer) CreateRole(ctx context.Context, req *pb.CreateRoleRequest) 
 	}
 
 	// Create a new role
-	newRole := model.Role{
+	newRole := models.Role{
 		Name:        req.Name,
 		Description: req.Description,
 	}

@@ -23,7 +23,7 @@ func NewRoleResponse(role *models.Role) *RoleResponse {
 	// Convert permissions to string array
 	var permissionNames []string
 	for _, permission := range role.Permissions {
-		permissionNames = append(permissionNames, permission.Resource)
+		permissionNames = append(permissionNames, permission.Name)
 	}
 
 	return &RoleResponse{

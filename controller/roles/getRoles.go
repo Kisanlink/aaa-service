@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/Kisanlink/aaa-service/model"
+	"github.com/Kisanlink/aaa-service/entities/models"
 	pb "github.com/Kisanlink/aaa-service/proto"
 	"google.golang.org/grpc/codes"
 )
 
 func (s *RoleServer) GetAllRoles(ctx context.Context, req *pb.GetAllRolesRequest) (*pb.GetAllRolesResponse, error) {
-	var roles []model.Role
+	var roles []models.Role
 	result := s.DB.Table("roles").Find(&roles)
 	if result.Error != nil {
 		return &pb.GetAllRolesResponse{

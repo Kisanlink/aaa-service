@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Kisanlink/aaa-service/model"
+	"github.com/Kisanlink/aaa-service/entities/models"
 	pb "github.com/Kisanlink/aaa-service/proto"
 	"google.golang.org/grpc/codes"
 	"gorm.io/gorm"
@@ -26,7 +26,7 @@ func (s *RoleServer) UpdateRole(ctx context.Context, req *pb.UpdateRoleRequest) 
 		}, nil
 	}
 
-	existingRole := model.Role{}
+	existingRole := models.Role{}
 	result := s.DB.Table("roles").Where("id = ?", role.Id).First(&existingRole)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
@@ -41,11 +41,11 @@ func (s *RoleServer) UpdateRole(ctx context.Context, req *pb.UpdateRoleRequest) 
 		}, nil
 	}
 
-	updatedRole := model.Role{
+	updatedRole := models.Role{
 		Name:        role.Name,
 		Description: role.Description,
 	}
-	if err := s.DB.Table("roles").Model(&model.Role{}).Where("id = ?", role.Id).Updates(updatedRole).Error; err != nil {
+	if err := s.DB.Table("roles").Model(&models.Role{}).Where("id = ?", role.Id).Updates(updatedRole).Error; err != nil {
 		return &pb.UpdateRoleResponse{
 			StatusCode: int32(codes.Internal),
 			Message:    fmt.Sprintf("Failed to update role: %v", err),

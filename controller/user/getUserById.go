@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Kisanlink/aaa-service/model"
+	"github.com/Kisanlink/aaa-service/entities/models"
 	pb "github.com/Kisanlink/aaa-service/proto"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -19,7 +19,7 @@ func (s *Server) GetUserById(ctx context.Context, req *pb.GetUserByIdRequest) (*
 	}
 
 	// Fetch the user from the database
-	var user model.User
+	var user models.User
 	err := s.DB.Table("users").Where("id = ?", id).First(&user).Error
 	if err != nil {
 		if err.Error() == "record not found" {
@@ -29,7 +29,7 @@ func (s *Server) GetUserById(ctx context.Context, req *pb.GetUserByIdRequest) (*
 	}
 
 	// Fetch associated roles for the user
-	var userRoles []model.UserRole
+	var userRoles []models.UserRole
 	err = s.DB.Table("user_roles").Where("user_id = ?", user.ID).Find(&userRoles).Error
 	if err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to fetch roles for user %s: %v", user.ID, err))

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Kisanlink/aaa-service/model"
+	"github.com/Kisanlink/aaa-service/entities/models"
 	pb "github.com/Kisanlink/aaa-service/proto"
 	"google.golang.org/grpc/codes"
 	"gorm.io/gorm"
@@ -25,7 +25,7 @@ func (s *PermissionServer) UpdatePermission(ctx context.Context, req *pb.UpdateP
 		}, nil
 	}
 
-	existingPermission := model.Permission{}
+	existingPermission := models.Permission{}
 	result := s.DB.Table("permissions").Where("id = ?", permission.Id).First(&existingPermission)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
@@ -40,11 +40,11 @@ func (s *PermissionServer) UpdatePermission(ctx context.Context, req *pb.UpdateP
 		}, nil
 	}
 
-	updatedPermission := model.Permission{
+	updatedPermission := models.Permission{
 		Name:        permission.Name,
 		Description: permission.Description,
 	}
-	if err := s.DB.Table("permissions").Model(&model.Permission{}).Where("id = ?", permission.Id).Updates(updatedPermission).Error; err != nil {
+	if err := s.DB.Table("permissions").Model(&models.Permission{}).Where("id = ?", permission.Id).Updates(updatedPermission).Error; err != nil {
 		return &pb.UpdatePermissionResponse{
 			StatusCode: int32(codes.Internal),
 			Message:    fmt.Sprintf("Failed to update permission: %v", err),

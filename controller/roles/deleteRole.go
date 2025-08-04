@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Kisanlink/aaa-service/model"
+	"github.com/Kisanlink/aaa-service/entities/models"
 	pb "github.com/Kisanlink/aaa-service/proto"
 	"google.golang.org/grpc/codes"
 	"gorm.io/gorm"
@@ -19,7 +19,7 @@ func (s *RoleServer) DeleteRole(ctx context.Context, req *pb.DeleteRoleRequest) 
 		}, nil
 	}
 
-	var role model.Role
+	var role models.Role
 	result := s.DB.Table("roles").Where("id = ?", id).First(&role)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
@@ -34,7 +34,7 @@ func (s *RoleServer) DeleteRole(ctx context.Context, req *pb.DeleteRoleRequest) 
 		}, nil
 	}
 
-	if err := s.DB.Table("roles").Delete(&model.Role{}, "id = ?", id).Error; err != nil {
+	if err := s.DB.Table("roles").Delete(&models.Role{}, "id = ?", id).Error; err != nil {
 		return &pb.DeleteRoleResponse{
 			StatusCode: int32(codes.Internal),
 			Message:    fmt.Sprintf("Failed to delete role: %v", err),

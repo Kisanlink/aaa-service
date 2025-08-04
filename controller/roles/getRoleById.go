@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Kisanlink/aaa-service/model"
+	"github.com/Kisanlink/aaa-service/entities/models"
 	pb "github.com/Kisanlink/aaa-service/proto"
 	"google.golang.org/grpc/codes"
 	"gorm.io/gorm"
@@ -19,7 +19,7 @@ func (s *RoleServer) GetRoleById(ctx context.Context, req *pb.GetRoleByIdRequest
 		}, nil
 	}
 
-	role := model.Role{}
+	role := models.Role{}
 	result := s.DB.Table("roles").Where("id = ?", id).First(&role)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {

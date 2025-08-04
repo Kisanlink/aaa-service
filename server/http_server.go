@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/Kisanlink/aaa-service/handlers/addresses"
 	"github.com/Kisanlink/aaa-service/handlers/admin"
@@ -32,6 +33,7 @@ type HTTPServer struct {
 	port               string
 	handlers           *ServerHandlers
 	logger             *zap.Logger
+	server             *http.Server
 }
 
 // ServerHandlers contains all HTTP handlers
@@ -170,14 +172,20 @@ func (s *HTTPServer) setupRoutes() {
 // Start starts the HTTP server
 func (s *HTTPServer) Start() error {
 	s.logger.Info("Starting HTTP server", zap.String("port", s.port))
-	return s.router.Run(":" + s.port)
+	s.server = &http.Server{
+		Addr:    ":" + s.port,
+		Handler: s.router,
+	}
+	return s.server.ListenAndServe()
 }
 
 // Stop gracefully stops the HTTP server
 func (s *HTTPServer) Stop(ctx context.Context) error {
 	s.logger.Info("Stopping HTTP server")
-	// TODO: Implement graceful shutdown
-	return nil
+	if s.server == nil {
+		return nil
+	}
+	return s.server.Shutdown(ctx)
 }
 
 // GetRouter returns the gin router (useful for testing)

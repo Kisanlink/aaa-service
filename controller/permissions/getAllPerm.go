@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Kisanlink/aaa-service/model"
+	"github.com/Kisanlink/aaa-service/entities/models"
 	pb "github.com/Kisanlink/aaa-service/proto"
 	"google.golang.org/grpc/codes"
 )
 
 func (s *PermissionServer) GetAllPermissions(ctx context.Context, req *pb.GetAllPermissionsRequest) (*pb.GetAllPermissionsResponse, error) {
-	var permissions []model.Permission
+	var permissions []models.Permission
 	result := s.DB.Table("permissions").Find(&permissions)
 	if result.Error != nil {
 		return &pb.GetAllPermissionsResponse{

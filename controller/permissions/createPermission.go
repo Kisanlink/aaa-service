@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/Kisanlink/aaa-service/model"
+	"github.com/Kisanlink/aaa-service/entities/models"
 	pb "github.com/Kisanlink/aaa-service/proto"
 	"google.golang.org/grpc/codes"
 	"gorm.io/gorm"
@@ -31,11 +31,11 @@ func (s *PermissionServer) CreatePermission(ctx context.Context, req *pb.CreateP
 	if permission.Name == "" {
 		return &pb.CreatePermissionResponse{
 			StatusCode: int32(codes.InvalidArgument),
-			Message:    "Permission Name are required",
+			Message:    "Permission Name is required",
 		}, nil
 	}
 
-	existingPermission := model.Permission{}
+	existingPermission := models.Permission{}
 	result := s.DB.Table("permissions").Where("name = ?", permission.Name).First(&existingPermission)
 	if result.Error == nil {
 		return &pb.CreatePermissionResponse{
@@ -44,10 +44,7 @@ func (s *PermissionServer) CreatePermission(ctx context.Context, req *pb.CreateP
 		}, nil
 	}
 
-	newPermission := model.Permission{
-		Name:        permission.Name,
-		Description: permission.Description,
-	}
+	newPermission := models.NewPermission(permission.Name, permission.Description)
 	if err := s.DB.Table("permissions").Create(&newPermission).Error; err != nil {
 		return &pb.CreatePermissionResponse{
 			StatusCode: int32(codes.Internal),

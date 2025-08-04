@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Kisanlink/aaa-service/model"
+	"github.com/Kisanlink/aaa-service/entities/models"
 	pb "github.com/Kisanlink/aaa-service/proto"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 func (s *Server) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.GetUserResponse, error) {
-	var users []model.User
+	var users []models.User
 	err := s.DB.Table("users").Find(&users).Error
 	if err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to fetch users: %v", err))
@@ -20,7 +20,7 @@ func (s *Server) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.GetUs
 
 	var pbUsers []*pb.User
 	for _, user := range users {
-		var userRoles []model.UserRole
+		var userRoles []models.UserRole
 		err := s.DB.Table("user_roles").Where("user_id = ?", user.ID).Find(&userRoles).Error
 		if err != nil {
 			return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to fetch roles for user %s: %v", user.ID, err))

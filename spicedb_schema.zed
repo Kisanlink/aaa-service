@@ -1,6 +1,6 @@
 definition aaa/user {
-  relation direct: user:aaa/user
-  relation parent: user:aaa/user
+  relation direct: aaa/user
+  relation parent: aaa/user
   relation role: aaa/role
   relation profile: aaa/user_profile
   relation contact: aaa/contact
@@ -38,9 +38,9 @@ definition aaa/address {
 }
 
 definition aaa/role {
-  relation direct: user:aaa/user
-  relation parent: role:aaa/role
-  relation permission: aaa/permission
+  relation direct: aaa/user
+  relation parent: aaa/role
+  relation perms: aaa/permission
   permission view = direct + parent->view
   permission edit = direct + parent->edit
   permission delete = direct + parent->delete
@@ -61,7 +61,7 @@ definition aaa/permission {
 definition aaa/resource {
   relation owner: aaa/user
   relation role: aaa/role
-  relation parent: resource:aaa/resource
+  relation parent: aaa/resource
   permission view = owner + role->view + parent->view
   permission edit = owner + role->edit + parent->edit
   permission delete = owner + role->delete + parent->delete
@@ -82,7 +82,7 @@ definition aaa/action {
   permission manage = role->manage
 }
 
-// Column-level permissions for granular access control
+# Column-level permissions for granular access control
 definition aaa/column_permission {
   relation user: aaa/user
   relation role: aaa/role
@@ -96,14 +96,14 @@ definition aaa/column_permission {
 
 definition aaa/column {
   relation resource: aaa/resource
-  relation permission: aaa/column_permission
-  permission view = resource->view + permission->view
-  permission edit = resource->edit + permission->edit
-  permission delete = resource->delete + permission->delete
-  permission manage = resource->manage + permission->manage
+  relation perms: aaa/column_permission
+  permission view = resource->view + perms->view
+  permission edit = resource->edit + perms->edit
+  permission delete = resource->delete + perms->delete
+  permission manage = resource->manage + perms->manage
 }
 
-// Resource-specific definitions for different entity types
+# Resource-specific definitions for different entity types
 definition aaa/user_resource {
   relation user: aaa/user
   relation resource: aaa/resource
@@ -151,7 +151,7 @@ definition aaa/permission_resource {
   permission remove_from_roles = user + role->remove_from_roles
 }
 
-// Audit and logging permissions
+# Audit and logging permissions
 definition aaa/audit_log {
   relation user: aaa/user
   relation role: aaa/role
@@ -163,7 +163,7 @@ definition aaa/audit_log {
   permission export = user + role->export
 }
 
-// System-level permissions
+# System-level permissions
 definition aaa/system {
   relation admin: aaa/user
   relation role: aaa/role
@@ -175,13 +175,12 @@ definition aaa/system {
   permission backup_restore = admin + role->backup_restore
 }
 
-// Temporary permissions for time-limited access
+# Temporary permissions for time-limited access
 definition aaa/temporary_permission {
   relation user: aaa/user
   relation role: aaa/role
   relation resource: aaa/resource
   relation granted_by: aaa/user
-  relation expires_at: aaa/timestamp
   permission view = user + role->view
   permission edit = user + role->edit
   permission delete = user + role->delete
@@ -190,11 +189,11 @@ definition aaa/temporary_permission {
   permission revoke = granted_by + role->revoke
 }
 
-// Hierarchical permissions for nested resources
+# Hierarchical permissions for nested resources
 definition aaa/hierarchical_resource {
   relation owner: aaa/user
-  relation parent: hierarchical_resource:aaa/hierarchical_resource
-  relation children: hierarchical_resource:aaa/hierarchical_resource
+  relation parent: aaa/hierarchical_resource
+  relation children: aaa/hierarchical_resource
   relation role: aaa/role
   permission view = owner + parent->view + role->view
   permission edit = owner + parent->edit + role->edit
@@ -204,7 +203,7 @@ definition aaa/hierarchical_resource {
   permission propagate_to_children = owner + role->propagate_to_children
 }
 
-// API endpoint permissions
+# API endpoint permissions
 definition aaa/api_endpoint {
   relation user: aaa/user
   relation role: aaa/role
@@ -218,7 +217,7 @@ definition aaa/api_endpoint {
   permission options = user + role->options
 }
 
-// Database operation permissions
+# Database operation permissions
 definition aaa/database_operation {
   relation user: aaa/user
   relation role: aaa/role
