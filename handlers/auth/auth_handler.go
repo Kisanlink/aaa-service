@@ -44,9 +44,9 @@ func NewAuthHandler(
 // @Produce json
 // @Param credentials body requests.LoginRequest true "Login credentials"
 // @Success 200 {object} responses.LoginResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 401 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
+// @Failure 400 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
+// @Failure 401 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
+// @Failure 500 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
 // @Router /api/v2/auth/login [post]
 func (h *AuthHandler) LoginV2(c *gin.Context) {
 	h.logger.Info("Processing login request")
@@ -127,9 +127,9 @@ func (h *AuthHandler) LoginV2(c *gin.Context) {
 // @Produce json
 // @Param user body requests.RegisterRequest true "Registration data"
 // @Success 201 {object} responses.RegisterResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 409 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
+// @Failure 400 {object} map[string]interface{}
+// @Failure 409 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
 // @Router /api/v2/auth/register [post]
 func (h *AuthHandler) RegisterV2(c *gin.Context) {
 	h.logger.Info("Processing registration request")
@@ -195,9 +195,9 @@ func (h *AuthHandler) RegisterV2(c *gin.Context) {
 // @Produce json
 // @Param token body requests.RefreshTokenRequest true "Refresh token data"
 // @Success 200 {object} responses.RefreshTokenResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 401 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
+// @Failure 400 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
+// @Failure 401 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
+// @Failure 500 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
 // @Router /api/v2/auth/refresh [post]
 func (h *AuthHandler) RefreshTokenV2(c *gin.Context) {
 	h.logger.Info("Processing token refresh request")
@@ -236,8 +236,8 @@ func (h *AuthHandler) RefreshTokenV2(c *gin.Context) {
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Success 200 {object} responses.LogoutResponse
-// @Failure 500 {object} responses.ErrorResponse
+// @Success 200 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
 // @Router /api/v2/auth/logout [post]
 func (h *AuthHandler) LogoutV2(c *gin.Context) {
 	h.logger.Info("Processing logout request")
@@ -245,9 +245,9 @@ func (h *AuthHandler) LogoutV2(c *gin.Context) {
 	// TODO: Implement token revocation logic
 	// For now, return a simple success response
 
-	logoutResponse := &responses.LogoutResponse{
-		Success: true,
-		Message: "Logged out successfully",
+	logoutResponse := map[string]interface{}{
+		"success": true,
+		"message": "Logged out successfully",
 	}
 
 	h.logger.Info("User logged out successfully")
@@ -261,9 +261,9 @@ func (h *AuthHandler) LogoutV2(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param request body requests.ForgotPasswordRequest true "Forgot password data"
-// @Success 200 {object} responses.ForgotPasswordResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
 // @Router /api/v2/auth/forgot-password [post]
 func (h *AuthHandler) ForgotPasswordV2(c *gin.Context) {
 	h.logger.Info("Processing forgot password request")
@@ -283,9 +283,9 @@ func (h *AuthHandler) ForgotPasswordV2(c *gin.Context) {
 	}
 
 	// TODO: Implement forgot password logic
-	forgotResponse := &responses.ForgotPasswordResponse{
-		Message: "If the account exists, a password reset link has been sent",
-		SentTo:  "***@***.com", // Masked for security
+	forgotResponse := map[string]interface{}{
+		"message": "If the account exists, a password reset link has been sent",
+		"sent_to": "***@***.com", // Masked for security
 	}
 
 	h.logger.Info("Forgot password request processed")
@@ -299,9 +299,9 @@ func (h *AuthHandler) ForgotPasswordV2(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param request body requests.ResetPasswordRequest true "Reset password data"
-// @Success 200 {object} responses.ResetPasswordResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
 // @Router /api/v2/auth/reset-password [post]
 func (h *AuthHandler) ResetPasswordV2(c *gin.Context) {
 	h.logger.Info("Processing reset password request")
@@ -321,9 +321,9 @@ func (h *AuthHandler) ResetPasswordV2(c *gin.Context) {
 	}
 
 	// TODO: Implement password reset logic
-	resetResponse := &responses.ResetPasswordResponse{
-		Success: true,
-		Message: "Password reset successfully",
+	resetResponse := map[string]interface{}{
+		"success": true,
+		"message": "Password reset successfully",
 	}
 
 	h.logger.Info("Password reset completed")

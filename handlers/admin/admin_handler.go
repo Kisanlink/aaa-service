@@ -38,8 +38,8 @@ func NewAdminHandler(
 // @Tags admin
 // @Accept json
 // @Produce json
-// @Success 200 {object} responses.DetailedHealthResponse
-// @Failure 500 {object} responses.ErrorResponse
+// @Success 200 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
 // @Router /api/v2/admin/health/detailed [get]
 func (h *AdminHandler) DetailedHealthCheckV2(c *gin.Context) {
 	h.logger.Info("Performing detailed health check")
@@ -93,8 +93,8 @@ func (h *AdminHandler) DetailedHealthCheckV2(c *gin.Context) {
 // @Tags admin
 // @Accept json
 // @Produce json
-// @Success 200 {object} responses.MetricsResponse
-// @Failure 500 {object} responses.ErrorResponse
+// @Success 200 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
 // @Router /api/v2/admin/metrics [get]
 func (h *AdminHandler) MetricsV2(c *gin.Context) {
 	h.logger.Info("Retrieving system metrics")
@@ -163,9 +163,9 @@ func (h *AdminHandler) MetricsV2(c *gin.Context) {
 // @Param end_date query string false "Filter by end date (RFC3339)"
 // @Param limit query int false "Number of logs to return" default(100)
 // @Param offset query int false "Number of logs to skip" default(0)
-// @Success 200 {object} responses.AuditLogsResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
 // @Router /api/v2/admin/audit [get]
 func (h *AdminHandler) AuditLogsV2(c *gin.Context) {
 	h.logger.Info("Retrieving audit logs")
@@ -249,10 +249,10 @@ func (h *AdminHandler) AuditLogsV2(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param maintenance body object{enabled=bool,message=string,reason=string,end_time=string,allow_admin=bool,allow_read=bool} true "Maintenance mode configuration"
-// @Success 200 {object} responses.MaintenanceResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 401 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
 // @Router /api/v2/admin/maintenance [post]
 func (h *AdminHandler) MaintenanceModeV2(c *gin.Context) {
 	h.logger.Info("Processing maintenance mode request")
@@ -346,8 +346,8 @@ func (h *AdminHandler) MaintenanceModeV2(c *gin.Context) {
 // @Tags admin
 // @Accept json
 // @Produce json
-// @Success 200 {object} responses.MaintenanceStatusResponse
-// @Failure 500 {object} responses.ErrorResponse
+// @Success 200 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
 // @Router /api/v2/admin/maintenance [get]
 func (h *AdminHandler) GetMaintenanceStatus(c *gin.Context) {
 	h.logger.Info("Getting maintenance status")
@@ -375,10 +375,10 @@ func (h *AdminHandler) GetMaintenanceStatus(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param message body object{message=string} true "New maintenance message"
-// @Success 200 {object} responses.SuccessResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 401 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
 // @Router /api/v2/admin/maintenance/message [patch]
 func (h *AdminHandler) UpdateMaintenanceMessage(c *gin.Context) {
 	h.logger.Info("Updating maintenance message")
@@ -425,8 +425,8 @@ func (h *AdminHandler) UpdateMaintenanceMessage(c *gin.Context) {
 // @Tags admin
 // @Accept json
 // @Produce json
-// @Success 200 {object} responses.SystemInfoResponse
-// @Failure 500 {object} responses.ErrorResponse
+// @Success 200 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
 // @Router /api/v2/admin/system [get]
 func (h *AdminHandler) GetSystemInfo(c *gin.Context) {
 	h.logger.Info("Retrieving system information")

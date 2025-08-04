@@ -40,9 +40,9 @@ func NewAddressHandler(
 // @Accept json
 // @Produce json
 // @Param address body addresses.CreateAddressRequest true "Address creation data"
-// @Success 201 {object} responses.SuccessResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
+// @Success 201 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
 // @Router /api/v1/addresses [post]
 func (h *AddressHandler) CreateAddress(c *gin.Context) {
 	h.logger.Info("Creating address")
@@ -83,10 +83,10 @@ func (h *AddressHandler) CreateAddress(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Address ID"
-// @Success 200 {object} responses.AddressResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 404 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
 // @Router /api/v1/addresses/{id} [get]
 func (h *AddressHandler) GetAddress(c *gin.Context) {
 	addressID := c.Param("id")
@@ -117,10 +117,10 @@ func (h *AddressHandler) GetAddress(c *gin.Context) {
 // @Produce json
 // @Param id path string true "Address ID"
 // @Param address body addresses.UpdateAddressRequest true "Address update data"
-// @Success 200 {object} responses.SuccessResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 404 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
 // @Router /api/v1/addresses/{id} [put]
 func (h *AddressHandler) UpdateAddress(c *gin.Context) {
 	addressID := c.Param("id")
@@ -170,10 +170,10 @@ func (h *AddressHandler) UpdateAddress(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Address ID"
-// @Success 200 {object} responses.SuccessResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 404 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
 // @Router /api/v1/addresses/{id} [delete]
 func (h *AddressHandler) DeleteAddress(c *gin.Context) {
 	addressID := c.Param("id")
@@ -208,9 +208,9 @@ func (h *AddressHandler) DeleteAddress(c *gin.Context) {
 // @Param q query string true "Search query"
 // @Param limit query int false "Number of addresses to return" default(10)
 // @Param offset query int false "Number of addresses to skip" default(0)
-// @Success 200 {object} responses.PaginatedResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
 // @Router /api/v1/addresses/search [get]
 func (h *AddressHandler) SearchAddresses(c *gin.Context) {
 	query := c.Query("q")

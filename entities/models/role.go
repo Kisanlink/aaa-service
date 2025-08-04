@@ -6,10 +6,17 @@ import (
 )
 
 // Role represents a role in the AAA service
+// This aligns with SpiceDB schema supporting hierarchical roles
 type Role struct {
 	*base.BaseModel
-	Name        string       `json:"name" gorm:"size:50;not null;uniqueIndex"`
-	Description string       `json:"description" gorm:"type:text;default:null"`
+	Name        string  `json:"name" gorm:"size:50;not null;uniqueIndex"`
+	Description string  `json:"description" gorm:"type:text;default:null"`
+	ParentID    *string `json:"parent_id" gorm:"type:varchar(255);default:null"` // For hierarchical roles
+	IsActive    bool    `json:"is_active" gorm:"default:true"`
+
+	// Relationships
+	Parent      *Role        `json:"parent" gorm:"foreignKey:ParentID;references:ID"`
+	Children    []Role       `json:"children" gorm:"foreignKey:ParentID;references:ID"`
 	Permissions []Permission `gorm:"many2many:role_permissions;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }
 
@@ -24,7 +31,15 @@ func NewRole(name, description string) *Role {
 		BaseModel:   base.NewBaseModel("role", hash.Small),
 		Name:        name,
 		Description: description,
+		IsActive:    true,
 	}
+}
+
+// NewRoleWithParent creates a new Role instance with a parent role
+func NewRoleWithParent(name, description, parentID string) *Role {
+	role := NewRole(name, description)
+	role.ParentID = &parentID
+	return role
 }
 
 // BeforeCreate is called before creating a new role
@@ -80,12 +95,34 @@ func (r *Role) RemovePermission(permissionID string) {
 	}
 }
 
+// HasParent checks if the role has a parent role
+func (r *Role) HasParent() bool {
+	return r.ParentID != nil
+}
+
+// GetSpiceDBResourceType returns the SpiceDB resource type for roles
+func (r *Role) GetSpiceDBResourceType() string {
+	return ResourceTypeRole
+}
+
+// GetSpiceDBObjectID returns the SpiceDB object ID for this role
+func (r *Role) GetSpiceDBObjectID() string {
+	return r.ID
+}
+
 // Permission represents a permission in the AAA service
-// This model matches the API structure for compatibility
+// This model aligns with SpiceDB schema where permissions are relationships between roles, resources, and actions
 type Permission struct {
 	*base.BaseModel
-	Name        string `json:"name" gorm:"size:100;not null;unique"`
-	Description string `json:"description" gorm:"type:text"`
+	Name        string  `json:"name" gorm:"size:100;not null;unique"`
+	Description string  `json:"description" gorm:"type:text"`
+	ResourceID  *string `json:"resource_id" gorm:"type:varchar(255);default:null"` // Which resource this permission applies to
+	ActionID    *string `json:"action_id" gorm:"type:varchar(255);default:null"`   // Which action this permission allows
+	IsActive    bool    `json:"is_active" gorm:"default:true"`
+
+	// Relationships
+	Resource *Resource `json:"resource" gorm:"foreignKey:ResourceID;references:ID"`
+	Action   *Action   `json:"action" gorm:"foreignKey:ActionID;references:ID"`
 }
 
 // NewPermission creates a new Permission instance
@@ -94,7 +131,30 @@ func NewPermission(name, description string) *Permission {
 		BaseModel:   base.NewBaseModel("perm", hash.Small),
 		Name:        name,
 		Description: description,
+		IsActive:    true,
 	}
+}
+
+// NewPermissionWithResource creates a new Permission instance with a resource
+func NewPermissionWithResource(name, description, resourceID string) *Permission {
+	permission := NewPermission(name, description)
+	permission.ResourceID = &resourceID
+	return permission
+}
+
+// NewPermissionWithAction creates a new Permission instance with an action
+func NewPermissionWithAction(name, description, actionID string) *Permission {
+	permission := NewPermission(name, description)
+	permission.ActionID = &actionID
+	return permission
+}
+
+// NewPermissionWithResourceAndAction creates a new Permission instance with both resource and action
+func NewPermissionWithResourceAndAction(name, description, resourceID, actionID string) *Permission {
+	permission := NewPermission(name, description)
+	permission.ResourceID = &resourceID
+	permission.ActionID = &actionID
+	return permission
 }
 
 // BeforeCreate is called before creating a new permission

@@ -40,7 +40,7 @@ func NewHealthHandler(
 // @Tags health
 // @Accept json
 // @Produce json
-// @Success 200 {object} responses.HealthResponse
+// @Success 200 {object} map[string]interface{}
 // @Router /health [get]
 func (h *HealthHandler) BasicHealth(c *gin.Context) {
 	h.logger.Debug("Processing basic health check")
@@ -61,8 +61,8 @@ func (h *HealthHandler) BasicHealth(c *gin.Context) {
 // @Tags health
 // @Accept json
 // @Produce json
-// @Success 200 {object} responses.ReadinessResponse
-// @Failure 503 {object} responses.ReadinessResponse
+// @Success 200 {object} map[string]interface{}
+// @Failure 503 {object} map[string]interface{}
 // @Router /ready [get]
 func (h *HealthHandler) ReadinessCheck(c *gin.Context) {
 	h.logger.Debug("Processing readiness check")
@@ -112,7 +112,7 @@ func (h *HealthHandler) ReadinessCheck(c *gin.Context) {
 // @Tags health
 // @Accept json
 // @Produce json
-// @Success 200 {object} responses.LivenessResponse
+// @Success 200 {object} map[string]interface{}
 // @Router /live [get]
 func (h *HealthHandler) LivenessCheck(c *gin.Context) {
 	h.logger.Debug("Processing liveness check")

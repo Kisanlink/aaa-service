@@ -71,8 +71,8 @@ func (s *Server) updateUserRoles(userID string, rolePermissionIDs []string) erro
 	var userRoles []models.UserRole
 	for _, rolePermissionID := range rolePermissionIDs {
 		userRole := models.UserRole{
-			UserID:           userID,
-			RolePermissionID: rolePermissionID,
+			UserID: userID,
+			RoleID: rolePermissionID,
 		}
 		userRoles = append(userRoles, userRole)
 	}

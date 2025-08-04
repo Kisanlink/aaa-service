@@ -75,9 +75,9 @@ func (r *UpdatePermissionRequest) Validate() error {
 // @Accept json
 // @Produce json
 // @Param permission body CreatePermissionRequest true "Permission creation data"
-// @Success 201 {object} responses.PermissionResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
+// @Success 201 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
 // @Router /api/v2/permissions [post]
 func (h *PermissionHandler) CreatePermissionV2(c *gin.Context) {
 	h.logger.Info("Creating permission")
@@ -119,10 +119,10 @@ func (h *PermissionHandler) CreatePermissionV2(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Permission ID"
-// @Success 200 {object} responses.PermissionResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 404 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
 // @Router /api/v2/permissions/{id} [get]
 func (h *PermissionHandler) GetPermissionV2(c *gin.Context) {
 	permissionID := c.Param("id")
@@ -155,10 +155,10 @@ func (h *PermissionHandler) GetPermissionV2(c *gin.Context) {
 // @Produce json
 // @Param id path string true "Permission ID"
 // @Param permission body UpdatePermissionRequest true "Permission update data"
-// @Success 200 {object} responses.PermissionResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 404 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
 // @Router /api/v2/permissions/{id} [put]
 func (h *PermissionHandler) UpdatePermissionV2(c *gin.Context) {
 	permissionID := c.Param("id")
@@ -204,10 +204,10 @@ func (h *PermissionHandler) UpdatePermissionV2(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Permission ID"
-// @Success 200 {object} responses.SuccessResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 404 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
 // @Router /api/v2/permissions/{id} [delete]
 func (h *PermissionHandler) DeletePermissionV2(c *gin.Context) {
 	permissionID := c.Param("id")
@@ -236,9 +236,9 @@ func (h *PermissionHandler) DeletePermissionV2(c *gin.Context) {
 // @Produce json
 // @Param limit query int false "Number of permissions to return" default(10)
 // @Param offset query int false "Number of permissions to skip" default(0)
-// @Success 200 {object} responses.PaginatedResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
 // @Router /api/v2/permissions [get]
 func (h *PermissionHandler) ListPermissionsV2(c *gin.Context) {
 	h.logger.Info("Listing permissions")
@@ -280,9 +280,9 @@ func (h *PermissionHandler) ListPermissionsV2(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param evaluation body object{user_id=string,resource=string,action=string} true "Permission evaluation data"
-// @Success 200 {object} responses.PermissionEvaluationResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
 // @Router /api/v2/permissions/evaluate [post]
 func (h *PermissionHandler) EvaluatePermissionV2(c *gin.Context) {
 	h.logger.Info("Evaluating permission")
@@ -328,9 +328,9 @@ func (h *PermissionHandler) EvaluatePermissionV2(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param permission body object{user_id=string,resource=string,actions=[]string,expires_at=string} true "Temporary permission data"
-// @Success 201 {object} responses.TemporaryPermissionResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
+// @Success 201 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
 // @Router /api/v2/permissions/temporary [post]
 func (h *PermissionHandler) GrantTemporaryPermissionV2(c *gin.Context) {
 	h.logger.Info("Granting temporary permission")

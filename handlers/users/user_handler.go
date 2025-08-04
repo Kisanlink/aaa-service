@@ -45,10 +45,10 @@ func NewUserHandler(
 // @Accept json
 // @Produce json
 // @Param user body users.CreateUserRequest true "User creation data"
-// @Success 201 {object} responses.UserResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 409 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
+// @Success 201 {object} github_com_Kisanlink_aaa-service_entities_responses_users.UserResponse
+// @Failure 400 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
+// @Failure 409 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
+// @Failure 500 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
 // @Router /api/v1/users [post]
 func (h *UserHandler) CreateUser(c *gin.Context) {
 	h.logger.Info("Creating user")
@@ -101,10 +101,10 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path string true "User ID"
-// @Success 200 {object} responses.UserResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 404 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
+// @Success 200 {object} github_com_Kisanlink_aaa-service_entities_responses_users.UserResponse
+// @Failure 400 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
+// @Failure 404 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
+// @Failure 500 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
 // @Router /api/v1/users/{id} [get]
 func (h *UserHandler) GetUserByID(c *gin.Context) {
 	userID := c.Param("id")
@@ -139,10 +139,10 @@ func (h *UserHandler) GetUserByID(c *gin.Context) {
 // @Produce json
 // @Param id path string true "User ID"
 // @Param user body users.UpdateUserRequest true "User update data"
-// @Success 200 {object} responses.UserResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 404 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
+// @Failure 404 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
+// @Failure 500 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
 // @Router /api/v1/users/{id} [put]
 func (h *UserHandler) UpdateUser(c *gin.Context) {
 	userID := c.Param("id")
@@ -204,10 +204,10 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path string true "User ID"
-// @Success 200 {object} responses.SuccessResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 404 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
+// @Failure 404 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
+// @Failure 500 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
 // @Router /api/v1/users/{id} [delete]
 func (h *UserHandler) DeleteUser(c *gin.Context) {
 	userID := c.Param("id")
@@ -242,9 +242,9 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 // @Produce json
 // @Param limit query int false "Number of users to return" default(10)
 // @Param offset query int false "Number of users to skip" default(0)
-// @Success 200 {object} responses.PaginatedResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
 // @Router /api/v1/users [get]
 func (h *UserHandler) ListUsers(c *gin.Context) {
 	h.logger.Info("Listing users")
@@ -286,9 +286,9 @@ func (h *UserHandler) ListUsers(c *gin.Context) {
 // @Param q query string true "Search query"
 // @Param limit query int false "Number of users to return" default(10)
 // @Param offset query int false "Number of users to skip" default(0)
-// @Success 200 {object} responses.PaginatedResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
 // @Router /api/v1/users/search [get]
 func (h *UserHandler) SearchUsers(c *gin.Context) {
 	query := c.Query("q")
@@ -334,11 +334,11 @@ func (h *UserHandler) SearchUsers(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path string true "User ID"
-// @Success 200 {object} responses.SuccessResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 404 {object} responses.ErrorResponse
-// @Failure 409 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Failure 409 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
 // @Router /api/v1/users/{id}/validate [post]
 func (h *UserHandler) ValidateUser(c *gin.Context) {
 	userID := c.Param("id")
@@ -377,11 +377,11 @@ func (h *UserHandler) ValidateUser(c *gin.Context) {
 // @Produce json
 // @Param id path string true "User ID"
 // @Param roleId path string true "Role ID"
-// @Success 200 {object} responses.SuccessResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 404 {object} responses.ErrorResponse
-// @Failure 409 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Failure 409 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
 // @Router /api/v1/users/{id}/roles/{roleId} [post]
 func (h *UserHandler) AssignRole(c *gin.Context) {
 	userID := c.Param("id")
@@ -425,10 +425,10 @@ func (h *UserHandler) AssignRole(c *gin.Context) {
 // @Produce json
 // @Param id path string true "User ID"
 // @Param roleId path string true "Role ID"
-// @Success 200 {object} responses.SuccessResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 404 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
+// @Failure 404 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
+// @Failure 500 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
 // @Router /api/v1/users/{id}/roles/{roleId} [delete]
 func (h *UserHandler) RemoveRole(c *gin.Context) {
 	userID := c.Param("id")

@@ -97,3 +97,13 @@ func (u *User) AddTokens(amount int) { u.Tokens += amount }
 // ValidateAadhaar marks the user as validated and sets status to "active"
 // This is called after successful Aadhaar verification
 func (u *User) ValidateAadhaar() { u.IsValidated = true; status := "active"; u.Status = &status }
+
+// GetSpiceDBResourceType returns the SpiceDB resource type for users
+func (u *User) GetSpiceDBResourceType() string {
+	return "aaa/user" // ResourceTypeUser from resource.go
+}
+
+// GetSpiceDBObjectID returns the SpiceDB object ID for this user
+func (u *User) GetSpiceDBObjectID() string {
+	return u.ID
+}

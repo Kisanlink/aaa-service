@@ -5,8 +5,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/Kisanlink/aaa-service/helper"
 	"github.com/Kisanlink/aaa-service/entities/models"
+	"github.com/Kisanlink/aaa-service/helper"
 	pb "github.com/Kisanlink/aaa-service/proto"
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc/codes"
@@ -46,7 +46,7 @@ func (s *Server) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResp
 		pbUserRoles[i] = &pb.UserRole{
 			Id:               role.ID,
 			UserId:           role.UserID,
-			RolePermissionId: role.RolePermissionID,
+			RolePermissionId: role.RoleID,
 			CreatedAt:        role.CreatedAt.Format(time.RFC3339Nano),
 			UpdatedAt:        role.UpdatedAt.Format(time.RFC3339Nano),
 		}

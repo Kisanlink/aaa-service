@@ -31,7 +31,7 @@ func (s *Server) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.GetUs
 			pbUserRoles = append(pbUserRoles, &pb.UserRole{
 				Id:               role.ID,
 				UserId:           role.UserID,
-				RolePermissionId: role.RolePermissionID,
+				RolePermissionId: role.RoleID,
 				CreatedAt:        role.CreatedAt.Format(time.RFC3339Nano),
 				UpdatedAt:        role.UpdatedAt.Format(time.RFC3339Nano),
 			})

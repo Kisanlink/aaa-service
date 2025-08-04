@@ -5,7 +5,7 @@ import (
 	"strconv"
 
 	"github.com/Kisanlink/aaa-service/entities/models"
-	roleRequests "github.com/Kisanlink/aaa-service/entities/requests/roles"
+	"github.com/Kisanlink/aaa-service/entities/requests/roles"
 	"github.com/Kisanlink/aaa-service/interfaces"
 	"github.com/Kisanlink/aaa-service/pkg/errors"
 	"github.com/gin-gonic/gin"
@@ -41,16 +41,16 @@ func NewRoleHandler(
 // @Tags roles
 // @Accept json
 // @Produce json
-// @Param role body roleRequests.CreateRoleRequest true "Role creation data"
-// @Success 201 {object} models.Role
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 409 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
+// @Param role body roles.CreateRoleRequest true "Role creation data"
+// @Success 201 {object} map[string]interface{}
+// @Failure 400 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
+// @Failure 409 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
+// @Failure 500 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
 // @Router /api/v1/roles [post]
 func (h *RoleHandler) CreateRole(c *gin.Context) {
 	h.logger.Info("Creating role")
 
-	var req roleRequests.CreateRoleRequest
+	var req roles.CreateRoleRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		h.logger.Error("Failed to bind request", zap.Error(err))
 		h.responder.SendValidationError(c, []string{err.Error()})
@@ -94,10 +94,10 @@ func (h *RoleHandler) CreateRole(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Role ID"
-// @Success 200 {object} models.Role
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 404 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
+// @Failure 404 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
+// @Failure 500 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
 // @Router /api/v1/roles/{id} [get]
 func (h *RoleHandler) GetRole(c *gin.Context) {
 	roleID := c.Param("id")
@@ -127,12 +127,12 @@ func (h *RoleHandler) GetRole(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Role ID"
-// @Param role body roleRequests.UpdateRoleRequest true "Role update data"
-// @Success 200 {object} models.Role
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 404 {object} responses.ErrorResponse
-// @Failure 409 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
+// @Param role body roles.UpdateRoleRequest true "Role update data"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
+// @Failure 404 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
+// @Failure 409 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
+// @Failure 500 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
 // @Router /api/v1/roles/{id} [put]
 func (h *RoleHandler) UpdateRole(c *gin.Context) {
 	roleID := c.Param("id")
@@ -143,7 +143,7 @@ func (h *RoleHandler) UpdateRole(c *gin.Context) {
 		return
 	}
 
-	var req roleRequests.UpdateRoleRequest
+	var req roles.UpdateRoleRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		h.logger.Error("Failed to bind request", zap.Error(err))
 		h.responder.SendValidationError(c, []string{err.Error()})
@@ -195,11 +195,11 @@ func (h *RoleHandler) UpdateRole(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Role ID"
-// @Success 200 {object} responses.SuccessResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 404 {object} responses.ErrorResponse
-// @Failure 409 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
+// @Failure 404 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
+// @Failure 409 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
+// @Failure 500 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
 // @Router /api/v1/roles/{id} [delete]
 func (h *RoleHandler) DeleteRole(c *gin.Context) {
 	roleID := c.Param("id")
@@ -238,9 +238,9 @@ func (h *RoleHandler) DeleteRole(c *gin.Context) {
 // @Produce json
 // @Param limit query int false "Number of roles to return" default(10)
 // @Param offset query int false "Number of roles to skip" default(0)
-// @Success 200 {object} responses.PaginatedResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
 // @Router /api/v1/roles [get]
 func (h *RoleHandler) ListRoles(c *gin.Context) {
 	h.logger.Info("Listing roles")
@@ -313,7 +313,7 @@ func (h *RoleHandler) AssignPermissionV2(c *gin.Context) {
 	roleID := c.Param("id")
 	h.logger.Info("Assigning permission to role", zap.String("roleID", roleID))
 
-	var req roleRequests.AssignRoleRequest
+	var req roles.AssignRoleRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		h.logger.Error("Failed to bind request", zap.Error(err))
 		h.responder.SendValidationError(c, []string{err.Error()})

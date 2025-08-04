@@ -91,8 +91,8 @@ func (s *Server) createUserRoles(userID string, rolePermissionIDs []string) erro
 	var userRoles []models.UserRole
 	for _, rolePermissionID := range rolePermissionIDs {
 		userRole := models.UserRole{
-			UserID:           userID,
-			RolePermissionID: rolePermissionID,
+			UserID: userID,
+			RoleID: rolePermissionID, // Changed from RolePermissionID to RoleID
 		}
 		userRoles = append(userRoles, userRole)
 	}
@@ -109,7 +109,7 @@ func ConvertToPBUserRoles(userRoles []models.UserRole) []*pb.UserRole {
 		pbUserRole := &pb.UserRole{
 			Id:               userRole.ID,
 			UserId:           userRole.UserID,
-			RolePermissionId: userRole.RolePermissionID,
+			RolePermissionId: userRole.RoleID,
 			CreatedAt:        userRole.CreatedAt.Format(time.RFC3339Nano),
 			UpdatedAt:        userRole.UpdatedAt.Format(time.RFC3339Nano),
 		}

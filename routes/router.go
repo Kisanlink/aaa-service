@@ -7,7 +7,10 @@ import (
 	"github.com/Kisanlink/aaa-service/handlers/permissions"
 	"github.com/Kisanlink/aaa-service/handlers/roles"
 	"github.com/Kisanlink/aaa-service/handlers/users"
+	"github.com/Kisanlink/aaa-service/middleware"
+	"github.com/Kisanlink/aaa-service/services"
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
 // AllHandlers contains all the handlers needed for routing
@@ -43,6 +46,25 @@ func SetupRoutes(router *gin.Engine, handlers AllHandlers) {
 			AdminHandler:      handlers.AdminHandler,
 		})
 	}
+}
+
+// SetupAAAWrapper configures AAA routes for the application
+func SetupAAAWrapper(
+	router *gin.Engine,
+	authService *services.AuthService,
+	authzService *services.AuthorizationService,
+	auditService *services.AuditService,
+	authMiddleware *middleware.AuthMiddleware,
+	logger *zap.Logger,
+) {
+	handlers := RouteHandlers{
+		AuthService:          authService,
+		AuthorizationService: authzService,
+		AuditService:         auditService,
+		AuthMiddleware:       authMiddleware,
+		Logger:               logger,
+	}
+	SetupAAA(router, handlers)
 }
 
 // SetupMiddleware configures middleware for the router
