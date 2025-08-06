@@ -24,8 +24,9 @@ type AuditLog struct {
 	Timestamp    time.Time              `json:"timestamp" gorm:"not null;default:CURRENT_TIMESTAMP"`
 
 	// Relationships
-	User     *User     `json:"user" gorm:"foreignKey:UserID;references:ID"`
-	Resource *Resource `json:"resource" gorm:"foreignKey:ResourceID;references:ID"`
+	User *User `json:"user" gorm:"foreignKey:UserID;references:ID"`
+	// Note: Resource relationship removed to avoid foreign key constraint issues
+	// ResourceID can reference any resource type without requiring a Resource record
 }
 
 // Audit log status constants
