@@ -92,7 +92,7 @@ import "github.com/Kisanlink/kisanlink-db/pkg/db"
 func (s *SomeService) ComplexOperation(ctx context.Context) error {
     // Get database manager (injected)
     dbManager := s.getDBManager()
-    
+
     // Use kisanlink-db transaction directly
     if pgManager, ok := dbManager.(*db.PostgresManager); ok {
         return pgManager.WithTransaction(ctx, func(tx *gorm.DB) error {
@@ -100,7 +100,7 @@ func (s *SomeService) ComplexOperation(ctx context.Context) error {
             return nil
         })
     }
-    
+
     // Fallback for other database types
     return s.executeWithoutTransaction(ctx)
 }
@@ -152,4 +152,4 @@ The AAA service now successfully integrates with kisanlink-db using:
 - ✅ **Clean architecture** with proper separation of concerns
 - ✅ **Build success** for all core components
 
-The integration follows the user's requirement to "only call the imported functions from kisanlink-db" without creating custom transaction services in the AAA service. 
+The integration follows the user's requirement to "only call the imported functions from kisanlink-db" without creating custom transaction services in the AAA service.

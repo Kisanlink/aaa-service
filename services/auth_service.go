@@ -248,7 +248,7 @@ func (s *AuthService) Register(ctx context.Context, req *RegisterRequest) (*Logi
 		user.Username = req.Username
 	}
 	user.IsValidated = false
-	status := "pending"
+	status := "active"
 	user.Status = &status
 
 	if err := s.userRepository.Create(ctx, user); err != nil {

@@ -72,16 +72,41 @@ func NewAuditService(
 	}
 }
 
+// isAnonymousUser checks if the userID represents an anonymous user
+func isAnonymousUser(userID string) bool {
+	return userID == "anonymous" || userID == "unknown" || userID == ""
+}
+
 // LogUserAction logs a user action
 func (s *AuditService) LogUserAction(ctx context.Context, userID, action, resource, resourceID string, details map[string]interface{}) {
-	auditLog := models.NewAuditLogWithUserAndResource(userID, action, resource, resourceID, models.AuditStatusSuccess, "User action completed successfully")
-	s.logEvent(ctx, auditLog, details)
+	if isAnonymousUser(userID) {
+		// For anonymous users, don't set UserID to avoid foreign key constraint
+		auditLog := models.NewAuditLog(action, resource, models.AuditStatusSuccess, "User action completed successfully")
+		if resourceID != "" {
+			auditLog.ResourceID = &resourceID
+		}
+		s.logEvent(ctx, auditLog, details)
+	} else {
+		// For authenticated users, use the normal method
+		auditLog := models.NewAuditLogWithUserAndResource(userID, action, resource, resourceID, models.AuditStatusSuccess, "User action completed successfully")
+		s.logEvent(ctx, auditLog, details)
+	}
 }
 
 // LogUserActionWithError logs a failed user action
 func (s *AuditService) LogUserActionWithError(ctx context.Context, userID, action, resource, resourceID string, err error, details map[string]interface{}) {
-	auditLog := models.NewAuditLogWithUserAndResource(userID, action, resource, resourceID, models.AuditStatusFailure, err.Error())
-	s.logEvent(ctx, auditLog, details)
+	if isAnonymousUser(userID) {
+		// For anonymous users, don't set UserID to avoid foreign key constraint
+		auditLog := models.NewAuditLog(action, resource, models.AuditStatusFailure, err.Error())
+		if resourceID != "" {
+			auditLog.ResourceID = &resourceID
+		}
+		s.logEvent(ctx, auditLog, details)
+	} else {
+		// For authenticated users, use the normal method
+		auditLog := models.NewAuditLogWithUserAndResource(userID, action, resource, resourceID, models.AuditStatusFailure, err.Error())
+		s.logEvent(ctx, auditLog, details)
+	}
 }
 
 // LogAPIAccess logs API access
@@ -93,32 +118,68 @@ func (s *AuditService) LogAPIAccess(ctx context.Context, userID, method, endpoin
 		message = err.Error()
 	}
 
-	auditLog := models.NewAuditLogWithUser(userID, models.AuditActionAPICall, models.ResourceTypeAPIEndpoint, status, message)
-	if endpoint != "" {
-		auditLog.ResourceID = &endpoint
+	if isAnonymousUser(userID) {
+		// For anonymous users, don't set UserID to avoid foreign key constraint
+		auditLog := models.NewAuditLog(models.AuditActionAPICall, models.ResourceTypeAPIEndpoint, status, message)
+		if endpoint != "" {
+			auditLog.ResourceID = &endpoint
+		}
+		auditLog.IPAddress = ipAddress
+		auditLog.UserAgent = userAgent
+		auditLog.AddDetail("http_method", method)
+		auditLog.AddDetail("endpoint", endpoint)
+		s.logEvent(ctx, auditLog, nil)
+	} else {
+		// For authenticated users, use the normal method
+		auditLog := models.NewAuditLogWithUser(userID, models.AuditActionAPICall, models.ResourceTypeAPIEndpoint, status, message)
+		if endpoint != "" {
+			auditLog.ResourceID = &endpoint
+		}
+		auditLog.IPAddress = ipAddress
+		auditLog.UserAgent = userAgent
+		auditLog.AddDetail("http_method", method)
+		auditLog.AddDetail("endpoint", endpoint)
+		s.logEvent(ctx, auditLog, nil)
 	}
-	auditLog.IPAddress = ipAddress
-	auditLog.UserAgent = userAgent
-	auditLog.AddDetail("http_method", method)
-	auditLog.AddDetail("endpoint", endpoint)
-
-	s.logEvent(ctx, auditLog, nil)
 }
 
 // LogAccessDenied logs access denied events
 func (s *AuditService) LogAccessDenied(ctx context.Context, userID, action, resource, resourceID, reason string) {
-	auditLog := models.NewAuditLogWithUserAndResource(userID, models.AuditActionAccessDenied, resource, resourceID, models.AuditStatusFailure, "Access denied")
-	auditLog.AddDetail("reason", reason)
-	auditLog.AddDetail("attempted_action", action)
-
-	s.logEvent(ctx, auditLog, nil)
+	if isAnonymousUser(userID) {
+		// For anonymous users, don't set UserID to avoid foreign key constraint
+		auditLog := models.NewAuditLog(models.AuditActionAccessDenied, resource, models.AuditStatusFailure, "Access denied")
+		if resourceID != "" {
+			auditLog.ResourceID = &resourceID
+		}
+		auditLog.AddDetail("reason", reason)
+		auditLog.AddDetail("attempted_action", action)
+		s.logEvent(ctx, auditLog, nil)
+	} else {
+		// For authenticated users, use the normal method
+		auditLog := models.NewAuditLogWithUserAndResource(userID, models.AuditActionAccessDenied, resource, resourceID, models.AuditStatusFailure, "Access denied")
+		auditLog.AddDetail("reason", reason)
+		auditLog.AddDetail("attempted_action", action)
+		s.logEvent(ctx, auditLog, nil)
+	}
 }
 
 // LogPermissionChange logs permission changes
 func (s *AuditService) LogPermissionChange(ctx context.Context, userID, action, resource, resourceID, permission string, details map[string]interface{}) {
 	actionName := fmt.Sprintf("permission_%s", action)
-	auditLog := models.NewAuditLogWithUserAndResource(userID, actionName, resource, resourceID, models.AuditStatusSuccess, "Permission change completed")
-	auditLog.AddDetail("permission", permission)
+
+	var auditLog *models.AuditLog
+	if isAnonymousUser(userID) {
+		// For anonymous users, don't set UserID to avoid foreign key constraint
+		auditLog = models.NewAuditLog(actionName, resource, models.AuditStatusSuccess, "Permission change completed")
+		if resourceID != "" {
+			auditLog.ResourceID = &resourceID
+		}
+		auditLog.AddDetail("permission", permission)
+	} else {
+		// For authenticated users, use the normal method
+		auditLog = models.NewAuditLogWithUserAndResource(userID, actionName, resource, resourceID, models.AuditStatusSuccess, "Permission change completed")
+		auditLog.AddDetail("permission", permission)
+	}
 
 	// Merge additional details
 	for k, v := range details {
@@ -131,8 +192,20 @@ func (s *AuditService) LogPermissionChange(ctx context.Context, userID, action, 
 // LogRoleChange logs role changes
 func (s *AuditService) LogRoleChange(ctx context.Context, userID, action, roleID string, details map[string]interface{}) {
 	actionName := fmt.Sprintf("role_%s", action)
-	auditLog := models.NewAuditLogWithUserAndResource(userID, actionName, models.ResourceTypeRole, roleID, models.AuditStatusSuccess, "Role change completed")
-	auditLog.AddDetail("role_id", roleID)
+
+	var auditLog *models.AuditLog
+	if isAnonymousUser(userID) {
+		// For anonymous users, don't set UserID to avoid foreign key constraint
+		auditLog = models.NewAuditLog(actionName, models.ResourceTypeRole, models.AuditStatusSuccess, "Role change completed")
+		if roleID != "" {
+			auditLog.ResourceID = &roleID
+		}
+		auditLog.AddDetail("role_id", roleID)
+	} else {
+		// For authenticated users, use the normal method
+		auditLog = models.NewAuditLogWithUserAndResource(userID, actionName, models.ResourceTypeRole, roleID, models.AuditStatusSuccess, "Role change completed")
+		auditLog.AddDetail("role_id", roleID)
+	}
 
 	// Merge additional details
 	for k, v := range details {
@@ -144,7 +217,18 @@ func (s *AuditService) LogRoleChange(ctx context.Context, userID, action, roleID
 
 // LogDataAccess logs data access events
 func (s *AuditService) LogDataAccess(ctx context.Context, userID, action, resource, resourceID string, oldData, newData map[string]interface{}) {
-	auditLog := models.NewAuditLogWithUserAndResource(userID, models.AuditActionDataAccess, resource, resourceID, models.AuditStatusSuccess, "Data access logged")
+	var auditLog *models.AuditLog
+	if isAnonymousUser(userID) {
+		// For anonymous users, don't set UserID to avoid foreign key constraint
+		auditLog = models.NewAuditLog(models.AuditActionDataAccess, resource, models.AuditStatusSuccess, "Data access logged")
+		if resourceID != "" {
+			auditLog.ResourceID = &resourceID
+		}
+	} else {
+		// For authenticated users, use the normal method
+		auditLog = models.NewAuditLogWithUserAndResource(userID, models.AuditActionDataAccess, resource, resourceID, models.AuditStatusSuccess, "Data access logged")
+	}
+
 	auditLog.AddDetail("old_values", oldData)
 	auditLog.AddDetail("new_values", newData)
 
@@ -160,7 +244,14 @@ func (s *AuditService) LogSecurityEvent(ctx context.Context, userID, action, res
 		message = "Security violation detected"
 	}
 
-	auditLog := models.NewAuditLogWithUser(userID, models.AuditActionSecurityEvent, resource, status, message)
+	var auditLog *models.AuditLog
+	if isAnonymousUser(userID) {
+		// For anonymous users, don't set UserID to avoid foreign key constraint
+		auditLog = models.NewAuditLog(models.AuditActionSecurityEvent, resource, status, message)
+	} else {
+		// For authenticated users, use the normal method
+		auditLog = models.NewAuditLogWithUser(userID, models.AuditActionSecurityEvent, resource, status, message)
+	}
 
 	s.logEvent(ctx, auditLog, details)
 }
