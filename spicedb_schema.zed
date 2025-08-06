@@ -81,7 +81,6 @@ definition aaa/permission {
   permission edit = role->edit
   permission delete = role->delete
   permission manage = role->manage
-  permission create_permission = role->create_permission
   permission assign_to_roles = role->assign_to_roles
   permission remove_from_roles = role->remove_from_roles
 }
@@ -95,10 +94,8 @@ definition aaa/resource {
   permission edit = owner + role->edit + parent->edit
   permission delete = owner + role->delete + parent->delete
   permission manage = owner + role->manage + parent->manage
-  permission create = owner + role->create + parent->create
   permission read = owner + role->read + parent->read
-  permission update = owner + role->update + parent->update
-  permission delete_resource = owner + role->delete_resource + parent->delete_resource
+  permission write = owner + role->write + parent->write
 }
 
 definition aaa/user_role {
@@ -119,7 +116,7 @@ definition aaa/audit_log {
   relation resource: aaa/resource
 
   permission view = user->view + role->view
-  permission create = user->create + role->create
+  permission write = user->write + role->write
   permission manage = user->manage + role->manage
   permission read_all = user->read_all + role->read_all
   permission export = user->export + role->export
