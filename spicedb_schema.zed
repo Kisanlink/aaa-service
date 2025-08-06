@@ -73,7 +73,7 @@ definition aaa/role {
   permission remove_users = direct + parent->remove_users
 }
 
-definition aaa/permission {
+definition aaa/perm {
   relation role: aaa/role
   relation resource: aaa/resource
 
