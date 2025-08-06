@@ -1,7 +1,3 @@
-# SpiceDB Schema for AAA Service
-# This schema defines the authorization model for the AAA (Authentication, Authorization, and Accounting) service
-
-# Core User Management
 definition aaa/user {
   relation direct: aaa/user
   relation parent: aaa/user
@@ -10,13 +6,10 @@ definition aaa/user {
   relation contact: aaa/contact
   relation address: aaa/address
 
-  # Basic CRUD permissions
   permission view = direct + parent + role->view
   permission edit = direct + role->edit
   permission delete = direct + role->delete
   permission manage = direct + role->manage
-
-  # User-specific permissions
   permission read_profile = direct + role->read_profile
   permission update_profile = direct + role->update_profile
   permission read_contacts = direct + role->read_contacts
@@ -29,7 +22,6 @@ definition aaa/user {
   permission block_user = direct + role->block_user
 }
 
-# User Profile Management
 definition aaa/user_profile {
   relation user: aaa/user
   relation address: aaa/address
@@ -42,7 +34,6 @@ definition aaa/user_profile {
   permission update_profile = user->update_profile
 }
 
-# Contact Management
 definition aaa/contact {
   relation user: aaa/user
   relation address: aaa/address
@@ -55,7 +46,6 @@ definition aaa/contact {
   permission update_contacts = user->update_contacts
 }
 
-# Address Management
 definition aaa/address {
   relation owner: aaa/user
   relation shared_with: aaa/user
@@ -68,19 +58,15 @@ definition aaa/address {
   permission update_addresses = owner
 }
 
-# Role Management
 definition aaa/role {
   relation direct: aaa/user
   relation parent: aaa/role
   relation perms: aaa/permission
 
-  # Basic CRUD permissions
   permission view = direct + parent->view
   permission edit = direct + parent->edit
   permission delete = direct + parent->delete
   permission manage = direct + parent->manage
-
-  # Role-specific permissions
   permission assign = direct + parent->assign
   permission assign_permissions = direct + parent->assign_permissions
   permission remove_permissions = direct + parent->remove_permissions
@@ -88,7 +74,6 @@ definition aaa/role {
   permission remove_users = direct + parent->remove_users
 }
 
-# Permission Management
 definition aaa/permission {
   relation role: aaa/role
   relation resource: aaa/resource
@@ -103,26 +88,21 @@ definition aaa/permission {
   permission remove_from_roles = role->remove_from_roles
 }
 
-# Resource Management
 definition aaa/resource {
   relation owner: aaa/user
   relation role: aaa/role
   relation parent: aaa/resource
 
-  # Basic CRUD permissions
   permission view = owner + role->view + parent->view
   permission edit = owner + role->edit + parent->edit
   permission delete = owner + role->delete + parent->delete
   permission manage = owner + role->manage + parent->manage
-
-  # Resource-specific permissions
   permission create = owner + role->create + parent->create
   permission read = owner + role->read + parent->read
   permission update = owner + role->update + parent->update
   permission delete_resource = owner + role->delete_resource + parent->delete_resource
 }
 
-# Action Management
 definition aaa/action {
   relation role: aaa/role
   relation resource: aaa/resource
@@ -134,7 +114,6 @@ definition aaa/action {
   permission manage = role->manage
 }
 
-# User-Role Relationship
 definition aaa/user_role {
   relation user: aaa/user
   relation role: aaa/role
@@ -147,7 +126,6 @@ definition aaa/user_role {
   permission remove = user->remove + role->remove
 }
 
-# Audit Log Management
 definition aaa/audit_log {
   relation user: aaa/user
   relation role: aaa/role
@@ -160,7 +138,6 @@ definition aaa/audit_log {
   permission export = user->export + role->export
 }
 
-# System-level Management
 definition aaa/system {
   relation admin: aaa/user
   relation role: aaa/role
@@ -173,7 +150,6 @@ definition aaa/system {
   permission backup_restore = admin + role->backup_restore
 }
 
-# API Endpoint Management
 definition aaa/api_endpoint {
   relation user: aaa/user
   relation role: aaa/role
@@ -188,7 +164,6 @@ definition aaa/api_endpoint {
   permission options = user + role->options
 }
 
-# Database Operation Management
 definition aaa/database_operation {
   relation user: aaa/user
   relation role: aaa/role
@@ -206,7 +181,6 @@ definition aaa/database_operation {
   permission drop_index = user + role->drop_index
 }
 
-# Table Management
 definition aaa/table {
   relation user: aaa/user
   relation role: aaa/role
@@ -223,7 +197,6 @@ definition aaa/table {
   permission delete_rows = user + role->delete_rows
 }
 
-# Database Management
 definition aaa/database {
   relation user: aaa/user
   relation role: aaa/role
@@ -237,7 +210,6 @@ definition aaa/database {
   permission migrate = user + role->migrate
 }
 
-# Column Management
 definition aaa/column {
   relation resource: aaa/resource
   relation perms: aaa/column_permission
@@ -248,7 +220,6 @@ definition aaa/column {
   permission manage = resource->manage + perms->manage
 }
 
-# Column Permission Management
 definition aaa/column_permission {
   relation user: aaa/user
   relation role: aaa/role
@@ -261,7 +232,6 @@ definition aaa/column_permission {
   permission manage = user + role->manage
 }
 
-# Temporary Permission Management
 definition aaa/temporary_permission {
   relation user: aaa/user
   relation role: aaa/role
@@ -276,7 +246,6 @@ definition aaa/temporary_permission {
   permission revoke = granted_by + role->revoke
 }
 
-# Hierarchical Resource Management
 definition aaa/hierarchical_resource {
   relation owner: aaa/user
   relation parent: aaa/hierarchical_resource
