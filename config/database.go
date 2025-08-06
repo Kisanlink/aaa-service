@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/Kisanlink/aaa-service/entities/models"
 	"github.com/Kisanlink/kisanlink-db/pkg/db"
 	"go.uber.org/zap"
 )
@@ -99,7 +100,47 @@ func NewDatabaseManager(logger *zap.Logger) (*db.DatabaseManager, error) {
 		return nil, fmt.Errorf("failed to connect to database: %s", sanitizeError(err.Error()))
 	}
 
+	// Run automigration for all models
+	if err := runAutomigration(dm, logger); err != nil {
+		return nil, fmt.Errorf("failed to run automigration: %s", sanitizeError(err.Error()))
+	}
+
+	logger.Info("Database manager initialized successfully")
 	return dm, nil
+}
+
+// runAutomigration runs automigration for all models
+func runAutomigration(dm *db.DatabaseManager, logger *zap.Logger) error {
+	logger.Info("Starting automigration")
+
+	// Import models from aaa-service
+	models := []interface{}{
+		&models.User{},
+		&models.UserProfile{},
+		&models.Contact{},
+		&models.Address{},
+		&models.Role{},
+		&models.Permission{},
+		&models.UserRole{},
+		&models.Resource{},
+		&models.Action{},
+		&models.AuditLog{},
+	}
+
+	// Get the primary backend manager (assuming it's PostgreSQL/GORM)
+	primaryManager := dm.GetManager(db.BackendGorm)
+	if primaryManager == nil {
+		logger.Warn("PostgreSQL manager not available, skipping automigration")
+		return nil
+	}
+
+	// Run automigration
+	if err := primaryManager.AutoMigrateModels(context.Background(), models...); err != nil {
+		return fmt.Errorf("automigration failed: %w", err)
+	}
+
+	logger.Info("Automigration completed successfully")
+	return nil
 }
 
 // Helper functions

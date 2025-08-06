@@ -3,6 +3,7 @@ package models
 import (
 	"github.com/Kisanlink/kisanlink-db/pkg/base"
 	"github.com/Kisanlink/kisanlink-db/pkg/core/hash"
+	"gorm.io/gorm"
 )
 
 // Resource represents a resource in the AAA service that corresponds to SpiceDB resource definitions
@@ -89,6 +90,22 @@ func (r *Resource) BeforeDelete() error {
 // BeforeSoftDelete is called before soft deleting a resource
 func (r *Resource) BeforeSoftDelete() error {
 	return r.BaseModel.BeforeSoftDelete()
+}
+
+// GORM Hooks - These are for GORM compatibility
+// BeforeCreateGORM is called by GORM before creating a new record
+func (r *Resource) BeforeCreateGORM(tx *gorm.DB) error {
+	return r.BeforeCreate()
+}
+
+// BeforeUpdateGORM is called by GORM before updating an existing record
+func (r *Resource) BeforeUpdateGORM(tx *gorm.DB) error {
+	return r.BeforeUpdate()
+}
+
+// BeforeDeleteGORM is called by GORM before hard deleting a record
+func (r *Resource) BeforeDeleteGORM(tx *gorm.DB) error {
+	return r.BeforeDelete()
 }
 
 // GetTableIdentifier returns the table identifier for Resource

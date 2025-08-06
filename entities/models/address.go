@@ -3,6 +3,7 @@ package models
 import (
 	"github.com/Kisanlink/kisanlink-db/pkg/base"
 	"github.com/Kisanlink/kisanlink-db/pkg/core/hash"
+	"gorm.io/gorm"
 )
 
 // Address represents a user's address
@@ -51,6 +52,22 @@ func (a *Address) BeforeDelete() error {
 // BeforeSoftDelete is called before soft deleting an address
 func (a *Address) BeforeSoftDelete() error {
 	return a.BaseModel.BeforeSoftDelete()
+}
+
+// GORM Hooks - These are for GORM compatibility
+// BeforeCreateGORM is called by GORM before creating a new record
+func (a *Address) BeforeCreateGORM(tx *gorm.DB) error {
+	return a.BeforeCreate()
+}
+
+// BeforeUpdateGORM is called by GORM before updating an existing record
+func (a *Address) BeforeUpdateGORM(tx *gorm.DB) error {
+	return a.BeforeUpdate()
+}
+
+// BeforeDeleteGORM is called by GORM before hard deleting a record
+func (a *Address) BeforeDeleteGORM(tx *gorm.DB) error {
+	return a.BeforeDelete()
 }
 
 // GetTableIdentifier returns the table identifier for Address

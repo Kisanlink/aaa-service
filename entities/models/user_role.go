@@ -3,6 +3,7 @@ package models
 import (
 	"github.com/Kisanlink/kisanlink-db/pkg/base"
 	"github.com/Kisanlink/kisanlink-db/pkg/core/hash"
+	"gorm.io/gorm"
 )
 
 // UserRole represents the relationship between users and roles
@@ -45,6 +46,22 @@ func (ur *UserRole) BeforeDelete() error {
 // BeforeSoftDelete is called before soft deleting a user role
 func (ur *UserRole) BeforeSoftDelete() error {
 	return ur.BaseModel.BeforeSoftDelete()
+}
+
+// GORM Hooks - These are for GORM compatibility
+// BeforeCreateGORM is called by GORM before creating a new record
+func (ur *UserRole) BeforeCreateGORM(tx *gorm.DB) error {
+	return ur.BeforeCreate()
+}
+
+// BeforeUpdateGORM is called by GORM before updating an existing record
+func (ur *UserRole) BeforeUpdateGORM(tx *gorm.DB) error {
+	return ur.BeforeUpdate()
+}
+
+// BeforeDeleteGORM is called by GORM before hard deleting a record
+func (ur *UserRole) BeforeDeleteGORM(tx *gorm.DB) error {
+	return ur.BeforeDelete()
 }
 
 // GetTableIdentifier returns the table identifier for UserRole

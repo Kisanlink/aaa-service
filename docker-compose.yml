@@ -66,7 +66,7 @@ services:
       - SPICEDB_GRPC_PRESHARED_KEY=${DB_SPICEDB_TOKEN:-your-secret-key-here}
     command: >
       serve
-      --grpc-preshared-key ${DB_SPICEDB_TOKEN:-your-secret-key-here}
+      --grpc-preshared-key "admin-token|my-admin-key"
       --datastore-engine postgres
       --datastore-conn-uri postgres://${DB_POSTGRES_USER:-aaa_user}:${DB_POSTGRES_PASSWORD:-aaa_password}@${DB_POSTGRES_HOST:-localhost}:${DB_POSTGRES_PORT:-5432}/${SPICEDB_DB_NAME:-spicedb}?sslmode=${DB_SSL_MODE:-disable}
       --datastore-migrate

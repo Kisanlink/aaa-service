@@ -3,6 +3,7 @@ package models
 import (
 	"github.com/Kisanlink/kisanlink-db/pkg/base"
 	"github.com/Kisanlink/kisanlink-db/pkg/core/hash"
+	"gorm.io/gorm"
 )
 
 const (
@@ -31,9 +32,26 @@ func NewContact(userID string, mobileNumber uint64) *Contact {
 	}
 }
 
-func (c *Contact) BeforeCreate() error          { return c.BaseModel.BeforeCreate() }
-func (c *Contact) BeforeUpdate() error          { return c.BaseModel.BeforeUpdate() }
-func (c *Contact) BeforeDelete() error          { return c.BaseModel.BeforeDelete() }
-func (c *Contact) BeforeSoftDelete() error      { return c.BaseModel.BeforeSoftDelete() }
+func (c *Contact) BeforeCreate() error     { return c.BaseModel.BeforeCreate() }
+func (c *Contact) BeforeUpdate() error     { return c.BaseModel.BeforeUpdate() }
+func (c *Contact) BeforeDelete() error     { return c.BaseModel.BeforeDelete() }
+func (c *Contact) BeforeSoftDelete() error { return c.BaseModel.BeforeSoftDelete() }
+
+// GORM Hooks - These are for GORM compatibility
+// BeforeCreateGORM is called by GORM before creating a new record
+func (c *Contact) BeforeCreateGORM(tx *gorm.DB) error {
+	return c.BeforeCreate()
+}
+
+// BeforeUpdateGORM is called by GORM before updating an existing record
+func (c *Contact) BeforeUpdateGORM(tx *gorm.DB) error {
+	return c.BeforeUpdate()
+}
+
+// BeforeDeleteGORM is called by GORM before hard deleting a record
+func (c *Contact) BeforeDeleteGORM(tx *gorm.DB) error {
+	return c.BeforeDelete()
+}
+
 func (c *Contact) GetTableIdentifier() string   { return ContactTable }
 func (c *Contact) GetTableSize() hash.TableSize { return ContactTableSize }

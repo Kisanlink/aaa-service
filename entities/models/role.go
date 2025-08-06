@@ -3,6 +3,7 @@ package models
 import (
 	"github.com/Kisanlink/kisanlink-db/pkg/base"
 	"github.com/Kisanlink/kisanlink-db/pkg/core/hash"
+	"gorm.io/gorm"
 )
 
 // Role represents a role in the AAA service
@@ -60,6 +61,22 @@ func (r *Role) BeforeDelete() error {
 // BeforeSoftDelete is called before soft deleting a role
 func (r *Role) BeforeSoftDelete() error {
 	return r.BaseModel.BeforeSoftDelete()
+}
+
+// GORM Hooks - These are for GORM compatibility
+// BeforeCreateGORM is called by GORM before creating a new record
+func (r *Role) BeforeCreateGORM(tx *gorm.DB) error {
+	return r.BeforeCreate()
+}
+
+// BeforeUpdateGORM is called by GORM before updating an existing record
+func (r *Role) BeforeUpdateGORM(tx *gorm.DB) error {
+	return r.BeforeUpdate()
+}
+
+// BeforeDeleteGORM is called by GORM before hard deleting a record
+func (r *Role) BeforeDeleteGORM(tx *gorm.DB) error {
+	return r.BeforeDelete()
 }
 
 // GetTableIdentifier returns the table identifier for Role
@@ -175,6 +192,22 @@ func (p *Permission) BeforeDelete() error {
 // BeforeSoftDelete is called before soft deleting a permission
 func (p *Permission) BeforeSoftDelete() error {
 	return p.BaseModel.BeforeSoftDelete()
+}
+
+// GORM Hooks - These are for GORM compatibility
+// BeforeCreateGORM is called by GORM before creating a new record
+func (p *Permission) BeforeCreateGORM(tx *gorm.DB) error {
+	return p.BeforeCreate()
+}
+
+// BeforeUpdateGORM is called by GORM before updating an existing record
+func (p *Permission) BeforeUpdateGORM(tx *gorm.DB) error {
+	return p.BeforeUpdate()
+}
+
+// BeforeDeleteGORM is called by GORM before hard deleting a record
+func (p *Permission) BeforeDeleteGORM(tx *gorm.DB) error {
+	return p.BeforeDelete()
 }
 
 // GetTableIdentifier returns the table identifier for Permission

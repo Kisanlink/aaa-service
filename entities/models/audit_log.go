@@ -5,6 +5,7 @@ import (
 
 	"github.com/Kisanlink/kisanlink-db/pkg/base"
 	"github.com/Kisanlink/kisanlink-db/pkg/core/hash"
+	"gorm.io/gorm"
 )
 
 // AuditLog represents an audit log entry in the AAA service
@@ -122,6 +123,22 @@ func (al *AuditLog) BeforeDelete() error {
 // BeforeSoftDelete is called before soft deleting an audit log
 func (al *AuditLog) BeforeSoftDelete() error {
 	return al.BaseModel.BeforeSoftDelete()
+}
+
+// GORM Hooks - These are for GORM compatibility
+// BeforeCreateGORM is called by GORM before creating a new record
+func (al *AuditLog) BeforeCreateGORM(tx *gorm.DB) error {
+	return al.BeforeCreate()
+}
+
+// BeforeUpdateGORM is called by GORM before updating an existing record
+func (al *AuditLog) BeforeUpdateGORM(tx *gorm.DB) error {
+	return al.BeforeUpdate()
+}
+
+// BeforeDeleteGORM is called by GORM before hard deleting a record
+func (al *AuditLog) BeforeDeleteGORM(tx *gorm.DB) error {
+	return al.BeforeDelete()
 }
 
 // GetTableIdentifier returns the table identifier for AuditLog

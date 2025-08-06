@@ -3,6 +3,7 @@ package models
 import (
 	"github.com/Kisanlink/kisanlink-db/pkg/base"
 	"github.com/Kisanlink/kisanlink-db/pkg/core/hash"
+	"gorm.io/gorm"
 )
 
 type UserProfile struct {
@@ -31,9 +32,26 @@ func NewUserProfile(userID string) *UserProfile {
 	}
 }
 
-func (p *UserProfile) BeforeCreate() error          { return p.BaseModel.BeforeCreate() }
-func (p *UserProfile) BeforeUpdate() error          { return p.BaseModel.BeforeUpdate() }
-func (p *UserProfile) BeforeDelete() error          { return p.BaseModel.BeforeDelete() }
-func (p *UserProfile) BeforeSoftDelete() error      { return p.BaseModel.BeforeSoftDelete() }
+func (p *UserProfile) BeforeCreate() error     { return p.BaseModel.BeforeCreate() }
+func (p *UserProfile) BeforeUpdate() error     { return p.BaseModel.BeforeUpdate() }
+func (p *UserProfile) BeforeDelete() error     { return p.BaseModel.BeforeDelete() }
+func (p *UserProfile) BeforeSoftDelete() error { return p.BaseModel.BeforeSoftDelete() }
+
+// GORM Hooks - These are for GORM compatibility
+// BeforeCreateGORM is called by GORM before creating a new record
+func (p *UserProfile) BeforeCreateGORM(tx *gorm.DB) error {
+	return p.BeforeCreate()
+}
+
+// BeforeUpdateGORM is called by GORM before updating an existing record
+func (p *UserProfile) BeforeUpdateGORM(tx *gorm.DB) error {
+	return p.BeforeUpdate()
+}
+
+// BeforeDeleteGORM is called by GORM before hard deleting a record
+func (p *UserProfile) BeforeDeleteGORM(tx *gorm.DB) error {
+	return p.BeforeDelete()
+}
+
 func (p *UserProfile) GetTableIdentifier() string   { return "usr_prof" }
 func (p *UserProfile) GetTableSize() hash.TableSize { return hash.Small }

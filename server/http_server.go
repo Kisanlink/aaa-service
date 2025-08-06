@@ -138,6 +138,11 @@ func (m *InMemoryDBManager) BuildFilter(field string, operator db.FilterOperator
 	return db.Filter{Field: field, Operator: operator, Value: value}
 }
 
+func (m *InMemoryDBManager) AutoMigrateModels(ctx context.Context, models ...interface{}) error {
+	// In-memory database doesn't support schema migration
+	return nil
+}
+
 // setupMiddleware configures middleware for the router
 func (s *HTTPServer) setupMiddleware() {
 	loggerAdapter := utils.NewLoggerAdapter(s.logger)

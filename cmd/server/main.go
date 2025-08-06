@@ -385,3 +385,8 @@ func (m *InMemoryDBManager) ApplyFilters(query interface{}, filters []db.Filter)
 func (m *InMemoryDBManager) BuildFilter(field string, operator db.FilterOperator, value interface{}) db.Filter {
 	return db.Filter{Field: field, Operator: operator, Value: value}
 }
+
+func (m *InMemoryDBManager) AutoMigrateModels(ctx context.Context, models ...interface{}) error {
+	// In-memory database doesn't support schema migration
+	return nil
+}

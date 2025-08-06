@@ -476,3 +476,8 @@ func (m *MockDBManager) ApplyFilters(query interface{}, filters []db.Filter) (in
 func (m *MockDBManager) BuildFilter(field string, operator db.FilterOperator, value interface{}) db.Filter {
 	return db.Filter{Field: field, Operator: operator, Value: value}
 }
+
+func (m *MockDBManager) AutoMigrateModels(ctx context.Context, models ...interface{}) error {
+	// Mock implementation - no-op for testing
+	return nil
+}
