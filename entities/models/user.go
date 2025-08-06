@@ -106,6 +106,11 @@ func (u *User) BeforeSoftDelete() error { return u.BaseModel.BeforeSoftDelete() 
 func (u *User) GetTableIdentifier() string   { return "usr" }
 func (u *User) GetTableSize() hash.TableSize { return hash.Medium }
 
+// TableName specifies the table name for the User model
+func (u *User) TableName() string {
+	return "users"
+}
+
 // IsActive checks if the user account status is "active"
 func (u *User) IsActive() bool { return u.Status != nil && *u.Status == "active" }
 

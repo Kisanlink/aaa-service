@@ -134,7 +134,7 @@ func initializeServer(
 	responder := utils.NewResponder(loggerAdapter)
 
 	// Get primary database manager
-	primaryDBManager := dbManager.GetManager(dbManager.GetPostgresManager().GetBackendType())
+	primaryDBManager := dbManager.GetManager(db.BackendGorm)
 	if primaryDBManager == nil {
 		logger.Warn("No database manager available, using in-memory fallback")
 		primaryDBManager = &InMemoryDBManager{logger: loggerAdapter}

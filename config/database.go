@@ -127,6 +127,8 @@ func runAutomigration(dm *db.DatabaseManager, logger *zap.Logger) error {
 		&models.AuditLog{},
 	}
 
+	logger.Info("Models to migrate", zap.Int("count", len(models)))
+
 	// Get the primary backend manager (assuming it's PostgreSQL/GORM)
 	primaryManager := dm.GetManager(db.BackendGorm)
 	if primaryManager == nil {
@@ -134,8 +136,11 @@ func runAutomigration(dm *db.DatabaseManager, logger *zap.Logger) error {
 		return nil
 	}
 
+	logger.Info("Found PostgreSQL manager, running automigration")
+
 	// Run automigration
 	if err := primaryManager.AutoMigrateModels(context.Background(), models...); err != nil {
+		logger.Error("Automigration failed", zap.Error(err))
 		return fmt.Errorf("automigration failed: %w", err)
 	}
 

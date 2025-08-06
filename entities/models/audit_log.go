@@ -151,6 +151,11 @@ func (al *AuditLog) GetTableSize() hash.TableSize {
 	return hash.Medium
 }
 
+// TableName specifies the table name for the AuditLog model
+func (al *AuditLog) TableName() string {
+	return "audit_logs"
+}
+
 // IsSuccess checks if the audit log status is success
 func (al *AuditLog) IsSuccess() bool {
 	return al.Status == AuditStatusSuccess
