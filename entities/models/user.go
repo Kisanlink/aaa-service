@@ -10,9 +10,12 @@ import (
 // User represents a user in the AAA service
 type User struct {
 	*base.BaseModel
-	Username    string `json:"username" gorm:"unique;not null;size:100" validate:"required,username"`
-	Password    string `json:"password" gorm:"not null;size:255" validate:"required,min=8,max=128"`
-	IsValidated bool   `json:"is_validated" gorm:"default:false"`
+	PhoneNumber string  `json:"phone_number" gorm:"unique;not null;size:10" validate:"required,phone"`
+	CountryCode string  `json:"country_code" gorm:"not null;size:10;default:'+91'" validate:"required"`
+	Username    *string `json:"username" gorm:"unique;size:100" validate:"omitempty,username"`
+	Password    string  `json:"password" gorm:"not null;size:255" validate:"required,min=8,max=128"`
+	MPin        *string `json:"mpin" gorm:"size:255"`
+	IsValidated bool    `json:"is_validated" gorm:"default:false"`
 	// Status represents the current state of the user account
 	// Possible values:
 	// - "pending": Initial state when user is created but not validated
@@ -29,18 +32,26 @@ type User struct {
 }
 
 // NewUser creates a new User instance with default values
-// - Sets username and password
+// - Sets phone number and password
 // - Initializes with pending status
 // - Sets default token balance to 1000
 // - Sets validation status to false
-func NewUser(username string, password string) *User {
+func NewUser(phoneNumber string, countryCode string, password string) *User {
 	return &User{
-		BaseModel:   base.NewBaseModel("usr", hash.Medium),
-		Username:    username,
+		BaseModel:   base.NewBaseModel("USER", hash.Medium),
+		PhoneNumber: phoneNumber,
+		CountryCode: countryCode,
 		Password:    password,
 		IsValidated: false,
 		Tokens:      1000,
 	}
+}
+
+// NewUserWithUsername creates a new User instance with username
+func NewUserWithUsername(phoneNumber string, countryCode string, username string, password string) *User {
+	user := NewUser(phoneNumber, countryCode, password)
+	user.Username = &username
+	return user
 }
 
 // BeforeCreate is called before creating a new user
@@ -52,8 +63,11 @@ func (u *User) BeforeCreate() error {
 	}
 
 	// Validate required fields
-	if u.Username == "" {
-		return fmt.Errorf("username is required")
+	if u.PhoneNumber == "" {
+		return fmt.Errorf("phone number is required")
+	}
+	if u.CountryCode == "" {
+		return fmt.Errorf("country code is required")
 	}
 	if u.Password == "" {
 		return fmt.Errorf("password is required")
@@ -106,4 +120,19 @@ func (u *User) GetSpiceDBResourceType() string {
 // GetSpiceDBObjectID returns the SpiceDB object ID for this user
 func (u *User) GetSpiceDBObjectID() string {
 	return u.ID
+}
+
+// SetMPin sets the user's mPin (hashed)
+func (u *User) SetMPin(mPin string) {
+	u.MPin = &mPin
+}
+
+// HasMPin checks if user has mPin set
+func (u *User) HasMPin() bool {
+	return u.MPin != nil && *u.MPin != ""
+}
+
+// GetFullPhoneNumber returns the full phone number with country code
+func (u *User) GetFullPhoneNumber() string {
+	return u.CountryCode + u.PhoneNumber
 }

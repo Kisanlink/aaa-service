@@ -83,9 +83,10 @@ func NewAuthService(
 
 // LoginRequest represents a login request
 type LoginRequest struct {
-	Username string `json:"username" validate:"required"`
-	Password string `json:"password" validate:"required"`
-	MFACode  string `json:"mfa_code,omitempty"`
+	PhoneNumber string `json:"phone_number" validate:"required"`
+	CountryCode string `json:"country_code" validate:"required"`
+	Password    string `json:"password" validate:"required"`
+	MFACode     string `json:"mfa_code,omitempty"`
 }
 
 // LoginResponse represents a login response
@@ -100,11 +101,13 @@ type LoginResponse struct {
 
 // RegisterRequest represents a registration request
 type RegisterRequest struct {
-	Username string   `json:"username" validate:"required,min=3,max=50"`
-	Email    string   `json:"email" validate:"required,email"`
-	FullName string   `json:"full_name" validate:"required,min=1,max=100"`
-	Password string   `json:"password" validate:"required,min=8"`
-	RoleIDs  []string `json:"role_ids,omitempty"`
+	PhoneNumber string   `json:"phone_number" validate:"required"`
+	CountryCode string   `json:"country_code" validate:"required"`
+	Password    string   `json:"password" validate:"required,min=8"`
+	Username    *string  `json:"username,omitempty" validate:"omitempty,min=3,max=50"`
+	Email       *string  `json:"email,omitempty" validate:"omitempty,email"`
+	FullName    *string  `json:"full_name,omitempty" validate:"omitempty,min=1,max=100"`
+	RoleIDs     []string `json:"role_ids,omitempty"`
 }
 
 // TokenClaims represents JWT token claims
@@ -124,10 +127,10 @@ func (s *AuthService) Login(ctx context.Context, req *LoginRequest) (*LoginRespo
 		return nil, errors.NewValidationError("invalid login request", err.Error())
 	}
 
-	// Get user by username or email
-	user, err := s.userRepository.GetByUsername(ctx, req.Username)
+	// Get user by phone number
+	user, err := s.userRepository.GetByPhoneNumber(ctx, req.PhoneNumber, req.CountryCode)
 	if err != nil {
-		s.logger.Warn("Login attempt with invalid username", zap.String("username", req.Username))
+		s.logger.Warn("Login attempt with invalid phone number", zap.String("phone", req.CountryCode+req.PhoneNumber))
 		return nil, errors.NewUnauthorizedError("invalid credentials")
 	}
 
@@ -194,7 +197,11 @@ func (s *AuthService) Login(ctx context.Context, req *LoginRequest) (*LoginRespo
 		})
 	}
 
-	s.logger.Info("User logged in successfully", zap.String("user_id", user.ID), zap.String("username", user.Username))
+	username := ""
+	if user.Username != nil {
+		username = *user.Username
+	}
+	s.logger.Info("User logged in successfully", zap.String("user_id", user.ID), zap.String("username", username))
 
 	return &LoginResponse{
 		AccessToken:  accessToken,
@@ -212,10 +219,18 @@ func (s *AuthService) Register(ctx context.Context, req *RegisterRequest) (*Logi
 		return nil, errors.NewValidationError("invalid registration request", err.Error())
 	}
 
-	// Check if user already exists
-	existingUser, err := s.userRepository.GetByUsername(ctx, req.Username)
+	// Check if user already exists by phone number
+	existingUser, err := s.userRepository.GetByPhoneNumber(ctx, req.PhoneNumber, req.CountryCode)
 	if err == nil && existingUser != nil {
-		return nil, errors.NewConflictError("user already exists")
+		return nil, errors.NewConflictError("user with this phone number already exists")
+	}
+
+	// Check if username is taken (if provided)
+	if req.Username != nil && *req.Username != "" {
+		existingUser, err = s.userRepository.GetByUsername(ctx, *req.Username)
+		if err == nil && existingUser != nil {
+			return nil, errors.NewConflictError("username already taken")
+		}
 	}
 
 	// Note: The current interface doesn't have GetByEmail method
@@ -228,7 +243,10 @@ func (s *AuthService) Register(ctx context.Context, req *RegisterRequest) (*Logi
 	}
 
 	// Create user using the model's constructor
-	user := models.NewUser(req.Username, string(hashedPassword))
+	user := models.NewUser(req.PhoneNumber, req.CountryCode, string(hashedPassword))
+	if req.Username != nil && *req.Username != "" {
+		user.Username = req.Username
+	}
 	user.IsValidated = false
 	status := "pending"
 	user.Status = &status
@@ -269,18 +287,19 @@ func (s *AuthService) Register(ctx context.Context, req *RegisterRequest) (*Logi
 		})
 	}
 
-	s.logger.Info("User registered successfully", zap.String("user_id", user.ID), zap.String("username", user.Username))
+	s.logger.Info("User registered successfully", zap.String("user_id", user.ID), zap.String("username", *user.Username))
 
 	// Auto-login after registration
 	loginReq := &LoginRequest{
-		Username: req.Username,
-		Password: req.Password,
+		PhoneNumber: req.PhoneNumber,
+		CountryCode: req.CountryCode,
+		Password:    req.Password,
 	}
 	return s.Login(ctx, loginReq)
 }
 
-// RefreshToken refreshes an access token using a refresh token
-func (s *AuthService) RefreshToken(ctx context.Context, refreshToken string) (*LoginResponse, error) {
+// RefreshToken refreshes an access token using a refresh token and mPin
+func (s *AuthService) RefreshToken(ctx context.Context, refreshToken string, mPin string) (*LoginResponse, error) {
 	// Validate refresh token
 	claims, err := s.validateToken(refreshToken)
 	if err != nil {
@@ -302,6 +321,16 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshToken string) (*L
 	user, err := s.userRepository.GetByID(ctx, claims.UserID)
 	if err != nil {
 		return nil, errors.NewUnauthorizedError("user not found")
+	}
+
+	// Verify mPin
+	if user.MPin == nil || *user.MPin == "" {
+		return nil, errors.NewUnauthorizedError("mPin not set for this user")
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(*user.MPin), []byte(mPin)); err != nil {
+		s.logger.Warn("Invalid mPin during token refresh", zap.String("user_id", user.ID))
+		return nil, errors.NewUnauthorizedError("invalid mPin")
 	}
 
 	// Check if user is still active
@@ -374,9 +403,13 @@ func (s *AuthService) ValidateToken(tokenString string) (*TokenClaims, error) {
 
 // generateAccessToken generates a JWT access token
 func (s *AuthService) generateAccessToken(user *models.User, roles []*models.UserRole, permissions []string) (string, error) {
+	username := ""
+	if user.Username != nil {
+		username = *user.Username
+	}
 	claims := &TokenClaims{
 		UserID:      user.ID,
-		Username:    user.Username,
+		Username:    username,
 		IsValidated: user.IsValidated,
 		Roles:       roles,
 		Permissions: permissions,
@@ -394,9 +427,13 @@ func (s *AuthService) generateAccessToken(user *models.User, roles []*models.Use
 
 // generateRefreshToken generates a JWT refresh token
 func (s *AuthService) generateRefreshToken(user *models.User, roles []*models.UserRole, permissions []string) (string, error) {
+	username := ""
+	if user.Username != nil {
+		username = *user.Username
+	}
 	claims := &TokenClaims{
 		UserID:      user.ID,
-		Username:    user.Username,
+		Username:    username,
 		IsValidated: user.IsValidated,
 		Roles:       roles,
 		Permissions: permissions,
@@ -726,6 +763,64 @@ func (s *AuthService) createUserRelationshipsInSpiceDB(ctx context.Context, user
 	_, err := s.spicedbClient.WriteRelationships(ctx, req)
 	if err != nil {
 		return fmt.Errorf("failed to write relationships to SpiceDB: %w", err)
+	}
+
+	return nil
+}
+
+// SetMPin sets or updates the user's mPin
+func (s *AuthService) SetMPin(ctx context.Context, userID string, mPin string, currentPassword string) error {
+	// Get user
+	user, err := s.userRepository.GetByID(ctx, userID)
+	if err != nil {
+		return errors.NewNotFoundError("user not found")
+	}
+
+	// Verify current password
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(currentPassword)); err != nil {
+		return errors.NewUnauthorizedError("invalid password")
+	}
+
+	// Hash the mPin
+	hashedMPin, err := bcrypt.GenerateFromPassword([]byte(mPin), bcrypt.DefaultCost)
+	if err != nil {
+		return errors.NewInternalError(fmt.Errorf("failed to hash mPin: %w", err))
+	}
+
+	// Update user's mPin
+	user.SetMPin(string(hashedMPin))
+	if err := s.userRepository.Update(ctx, user); err != nil {
+		return errors.NewInternalError(fmt.Errorf("failed to update mPin: %w", err))
+	}
+
+	// Audit the action
+	if s.auditService != nil {
+		s.auditService.LogUserAction(ctx, userID, "set_mpin", "user", userID, map[string]interface{}{
+			"action": "mPin set/updated",
+		})
+	}
+
+	s.logger.Info("mPin set successfully", zap.String("user_id", userID))
+	return nil
+}
+
+// VerifyMPin verifies a user's mPin
+func (s *AuthService) VerifyMPin(ctx context.Context, userID string, mPin string) error {
+	// Get user
+	user, err := s.userRepository.GetByID(ctx, userID)
+	if err != nil {
+		return errors.NewNotFoundError("user not found")
+	}
+
+	// Check if mPin is set
+	if user.MPin == nil || *user.MPin == "" {
+		return errors.NewUnauthorizedError("mPin not set for this user")
+	}
+
+	// Verify mPin
+	if err := bcrypt.CompareHashAndPassword([]byte(*user.MPin), []byte(mPin)); err != nil {
+		s.logger.Warn("Invalid mPin verification attempt", zap.String("user_id", userID))
+		return errors.NewUnauthorizedError("invalid mPin")
 	}
 
 	return nil

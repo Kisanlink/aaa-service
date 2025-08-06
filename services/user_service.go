@@ -61,9 +61,16 @@ func (s *UserService) CreateUser(ctx context.Context, req *users.CreateUserReque
 		return nil, errors.NewValidationError("struct validation failed", err.Error())
 	}
 
-	// Check if user already exists
-	if existingUser, _ := s.userRepo.GetByUsername(ctx, req.Username); existingUser != nil {
-		return nil, errors.NewConflictError("user with this username already exists")
+	// Check if user already exists by phone number
+	if existingUser, _ := s.userRepo.GetByPhoneNumber(ctx, req.PhoneNumber, req.CountryCode); existingUser != nil {
+		return nil, errors.NewConflictError("user with this phone number already exists")
+	}
+
+	// Check if username is taken (if provided)
+	if req.Username != nil && *req.Username != "" {
+		if existingUser, _ := s.userRepo.GetByUsername(ctx, *req.Username); existingUser != nil {
+			return nil, errors.NewConflictError("username already taken")
+		}
 	}
 
 	// Hash the password
@@ -74,7 +81,10 @@ func (s *UserService) CreateUser(ctx context.Context, req *users.CreateUserReque
 	}
 
 	// Create user model
-	user := models.NewUser(req.Username, string(hashedPassword))
+	user := models.NewUser(req.PhoneNumber, req.CountryCode, string(hashedPassword))
+	if req.Username != nil && *req.Username != "" {
+		user.Username = req.Username
+	}
 
 	// Store user in database
 	if err := s.userRepo.Create(ctx, user); err != nil {
@@ -83,7 +93,10 @@ func (s *UserService) CreateUser(ctx context.Context, req *users.CreateUserReque
 	}
 
 	// Clear cache
-	s.cacheService.Delete(fmt.Sprintf("user:username:%s", user.Username))
+	s.cacheService.Delete(fmt.Sprintf("user:phone:%s%s", user.CountryCode, user.PhoneNumber))
+	if user.Username != nil {
+		s.cacheService.Delete(fmt.Sprintf("user:username:%s", *user.Username))
+	}
 
 	s.logger.Info("User created successfully", zap.String("userID", user.ID))
 
@@ -293,7 +306,9 @@ func (s *UserService) UpdateUser(ctx context.Context, req *users.UpdateUserReque
 
 	// Clear cache
 	s.cacheService.Delete(fmt.Sprintf("user:%s", existingUser.ID))
-	s.cacheService.Delete(fmt.Sprintf("user:username:%s", existingUser.Username))
+	if existingUser.Username != nil {
+		s.cacheService.Delete(fmt.Sprintf("user:username:%s", *existingUser.Username))
+	}
 
 	s.logger.Info("User updated successfully", zap.String("userID", existingUser.ID))
 
@@ -326,7 +341,9 @@ func (s *UserService) DeleteUser(ctx context.Context, userID string) error {
 
 	// Clear cache
 	s.cacheService.Delete(fmt.Sprintf("user:%s", userID))
-	s.cacheService.Delete(fmt.Sprintf("user:username:%s", user.Username))
+	if user.Username != nil {
+		s.cacheService.Delete(fmt.Sprintf("user:username:%s", *user.Username))
+	}
 
 	s.logger.Info("User deleted successfully", zap.String("userID", userID))
 	return nil
@@ -1229,5 +1246,167 @@ func (s *UserService) GetUserWithRoles(ctx context.Context, userID string) (*use
 	s.cacheService.Set(cacheKey, response, 300) // 5 minutes TTL
 
 	s.logger.Info("User with roles retrieved successfully", zap.String("userID", userID))
+	return response, nil
+}
+
+// VerifyUserPasswordByPhone verifies a user's password for authentication using phone number
+func (s *UserService) VerifyUserPasswordByPhone(ctx context.Context, phoneNumber, countryCode, password string) (*userResponses.UserResponse, error) {
+	s.logger.Info("Verifying user password by phone", zap.String("phone", countryCode+phoneNumber))
+
+	// Validate inputs
+	if phoneNumber == "" {
+		return nil, errors.NewValidationError("phone number is required")
+	}
+
+	if countryCode == "" {
+		return nil, errors.NewValidationError("country code is required")
+	}
+
+	if password == "" {
+		return nil, errors.NewValidationError("password is required")
+	}
+
+	// Get user by phone number
+	user, err := s.userRepo.GetByPhoneNumber(ctx, phoneNumber, countryCode)
+	if err != nil {
+		s.logger.Error("Failed to get user by phone number", zap.String("phone", countryCode+phoneNumber), zap.Error(err))
+		return nil, errors.NewNotFoundError("invalid credentials")
+	}
+
+	// Verify password using bcrypt
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
+	if err != nil {
+		s.logger.Warn("Invalid password attempt", zap.String("phone", countryCode+phoneNumber))
+		return nil, errors.NewNotFoundError("invalid credentials")
+	}
+
+	s.logger.Info("Password verification successful", zap.String("phone", countryCode+phoneNumber))
+
+	// Convert to response
+	response := &userResponses.UserResponse{}
+	response.FromModel(user)
+	return response, nil
+}
+
+// SetMPin sets or updates the user's mPin
+func (s *UserService) SetMPin(ctx context.Context, userID string, mPin string) error {
+	s.logger.Info("Setting mPin for user", zap.String("userID", userID))
+
+	// Validate inputs
+	if userID == "" {
+		return errors.NewValidationError("user ID is required")
+	}
+
+	if mPin == "" {
+		return errors.NewValidationError("mPin is required")
+	}
+
+	// Validate mPin format (4 or 6 digits)
+	if len(mPin) != 4 && len(mPin) != 6 {
+		return errors.NewValidationError("mPin must be 4 or 6 digits")
+	}
+
+	// Get user
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		s.logger.Error("Failed to get user", zap.Error(err))
+		return errors.NewNotFoundError("user not found")
+	}
+
+	// Hash the mPin
+	hashedMPin, err := bcrypt.GenerateFromPassword([]byte(mPin), bcrypt.DefaultCost)
+	if err != nil {
+		s.logger.Error("Failed to hash mPin", zap.Error(err))
+		return errors.NewInternalError(fmt.Errorf("failed to hash mPin: %w", err))
+	}
+
+	// Update user's mPin
+	user.SetMPin(string(hashedMPin))
+	if err := s.userRepo.Update(ctx, user); err != nil {
+		s.logger.Error("Failed to update user mPin", zap.Error(err))
+		return errors.NewInternalError(fmt.Errorf("failed to update mPin: %w", err))
+	}
+
+	// Clear user cache
+	s.cacheService.Delete(fmt.Sprintf("user:%s", userID))
+
+	s.logger.Info("mPin set successfully", zap.String("userID", userID))
+	return nil
+}
+
+// VerifyMPin verifies a user's mPin
+func (s *UserService) VerifyMPin(ctx context.Context, userID string, mPin string) error {
+	s.logger.Info("Verifying mPin for user", zap.String("userID", userID))
+
+	// Validate inputs
+	if userID == "" {
+		return errors.NewValidationError("user ID is required")
+	}
+
+	if mPin == "" {
+		return errors.NewValidationError("mPin is required")
+	}
+
+	// Get user
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		s.logger.Error("Failed to get user", zap.Error(err))
+		return errors.NewNotFoundError("user not found")
+	}
+
+	// Check if mPin is set
+	if user.MPin == nil || *user.MPin == "" {
+		return errors.NewUnauthorizedError("mPin not set for this user")
+	}
+
+	// Verify mPin
+	if err := bcrypt.CompareHashAndPassword([]byte(*user.MPin), []byte(mPin)); err != nil {
+		s.logger.Warn("Invalid mPin verification attempt", zap.String("userID", userID))
+		return errors.NewUnauthorizedError("invalid mPin")
+	}
+
+	s.logger.Info("mPin verification successful", zap.String("userID", userID))
+	return nil
+}
+
+// GetUserByPhoneNumber retrieves a user by phone number with caching
+func (s *UserService) GetUserByPhoneNumber(ctx context.Context, phoneNumber, countryCode string) (*userResponses.UserResponse, error) {
+	s.logger.Info("Getting user by phone number", zap.String("phone", countryCode+phoneNumber))
+
+	// Validate inputs
+	if phoneNumber == "" {
+		return nil, errors.NewValidationError("phone number is required")
+	}
+
+	if countryCode == "" {
+		return nil, errors.NewValidationError("country code is required")
+	}
+
+	// Try to get from cache first
+	cacheKey := fmt.Sprintf("user:phone:%s%s", countryCode, phoneNumber)
+	if cachedUser, found := s.cacheService.Get(cacheKey); found {
+		s.logger.Debug("User retrieved from cache", zap.String("phone", countryCode+phoneNumber))
+		if userResp, ok := cachedUser.(*userResponses.UserResponse); ok {
+			return userResp, nil
+		}
+	}
+
+	// Get user from database
+	user, err := s.userRepo.GetByPhoneNumber(ctx, phoneNumber, countryCode)
+	if err != nil {
+		s.logger.Error("Failed to get user by phone number", zap.Error(err))
+		return nil, errors.NewNotFoundError("user not found")
+	}
+
+	// Convert to response
+	response := &userResponses.UserResponse{}
+	response.FromModel(user)
+
+	// Cache the response
+	if err := s.cacheService.Set(cacheKey, response, 300); err != nil {
+		s.logger.Error("Failed to cache user", zap.Error(err))
+	} // 5 minutes TTL
+
+	s.logger.Info("User retrieved successfully", zap.String("phone", countryCode+phoneNumber))
 	return response, nil
 }

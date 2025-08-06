@@ -11,14 +11,14 @@ import (
 func TestNewUser(t *testing.T) {
 	for _, tt := range NewUserTests {
 		t.Run(tt.name, func(t *testing.T) {
-			user := models.NewUser(tt.username, "password123")
+			user := models.NewUser(tt.username, "+91", "password123")
 
 			if user == nil {
 				t.Fatal("NewUser returned nil")
 			}
 
-			if user.Username != tt.username {
-				t.Errorf("Expected username %s, got %s", tt.username, user.Username)
+			if user.Username != nil && *user.Username != tt.username {
+				t.Errorf("Expected username %s, got %s", tt.username, *user.Username)
 			}
 
 			if user.Password != "password123" {
@@ -33,9 +33,9 @@ func TestNewUser(t *testing.T) {
 				t.Errorf("Expected table size Medium, got %s", user.GetTableSize())
 			}
 
-			// Verify ID starts with usr
-			if len(user.ID) < 3 || user.ID[:3] != "usr" {
-				t.Errorf("Expected ID to start with usr, got %s", user.ID)
+			// Verify ID starts with USER
+			if len(user.ID) < 4 || user.ID[:4] != "USER" {
+				t.Errorf("Expected ID to start with USER, got %s", user.ID)
 			}
 
 			// Verify timestamps are set
@@ -53,9 +53,9 @@ func TestNewUser(t *testing.T) {
 func TestUserBeforeCreate(t *testing.T) {
 	for _, tt := range UserBeforeCreateTests {
 		t.Run(tt.name, func(t *testing.T) {
-			user := models.NewUser(tt.username, "password123")
+			user := models.NewUser(tt.username, "+91", "password123")
 			if tt.username == "" {
-				user.Username = ""
+				user.Username = nil
 			}
 			if tt.shouldError && tt.name == "User with empty password" {
 				user.Password = ""
@@ -87,7 +87,7 @@ func TestUserBeforeCreate(t *testing.T) {
 func TestUserBeforeUpdate(t *testing.T) {
 	for _, tt := range UserBeforeUpdateTests {
 		t.Run(tt.name, func(t *testing.T) {
-			user := models.NewUser(tt.username, "password123")
+			user := models.NewUser(tt.username, "+91", "password123")
 			originalUpdatedAt := user.UpdatedAt
 
 			// Sleep to ensure time difference
@@ -116,10 +116,10 @@ func TestUserBeforeUpdate(t *testing.T) {
 func TestUserValidation(t *testing.T) {
 	for _, tt := range UserValidationTests {
 		t.Run(tt.name, func(t *testing.T) {
-			user := models.NewUser(tt.username, "password123")
+			user := models.NewUser(tt.username, "+91", "9999999999")
 			// User doesn't have a Validate method, so we'll skip this test
 			// or implement a simple validation check
-			if user.Username == "" {
+			if user.Username == nil || *user.Username == "" {
 				t.Log("User has empty username")
 			}
 		})
@@ -127,7 +127,7 @@ func TestUserValidation(t *testing.T) {
 }
 
 func TestUserInterfaceCompliance(t *testing.T) {
-	user := models.NewUser("testuser", "password123")
+	user := models.NewUser("testuser", "+91", "password123")
 
 	// Test ModelInterface compliance
 	if user.GetID() != user.ID {

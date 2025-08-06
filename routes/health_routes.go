@@ -22,12 +22,11 @@ func SetupHealthRoutes(router *gin.Engine, healthHandler *health.HealthHandler) 
 			"service":      "aaa-service",
 			"description":  "Authentication, Authorization, and Accounting Service",
 			"version":      "2.0.0",
-			"api_versions": []string{"v1", "v2"},
+			"api_versions": []string{"v2"},
 			"endpoints": gin.H{
 				"health":        "/health",
 				"ready":         "/ready",
 				"live":          "/live",
-				"api_v1":        "/api/v1",
 				"api_v2":        "/api/v2",
 				"documentation": "/docs",
 			},
@@ -38,11 +37,6 @@ func SetupHealthRoutes(router *gin.Engine, healthHandler *health.HealthHandler) 
 	router.GET("/api", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"available_versions": []gin.H{
-				{
-					"version": "v1",
-					"path":    "/api/v1",
-					"status":  "stable",
-				},
 				{
 					"version": "v2",
 					"path":    "/api/v2",

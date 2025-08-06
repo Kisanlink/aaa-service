@@ -4,6 +4,8 @@ package responses
 type UserInfo struct {
 	ID          string `json:"id"`
 	Username    string `json:"username"`
+	PhoneNumber string `json:"phone_number"`
+	CountryCode string `json:"country_code"`
 	IsValidated bool   `json:"is_validated"`
 }
 

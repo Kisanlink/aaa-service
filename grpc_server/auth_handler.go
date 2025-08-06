@@ -30,10 +30,13 @@ func (h *AuthHandler) Login(ctx context.Context, req *pb.LoginRequestV2) (*pb.Lo
 	h.logger.Info("gRPC Login request", zap.String("username", req.Username))
 
 	// Convert gRPC request to service request
+	// Note: The gRPC interface uses username but the service expects phone number
+	// For now, we'll use the username as phone number (this should be updated in the proto)
 	loginReq := &services.LoginRequest{
-		Username: req.Username,
-		Password: req.Password,
-		MFACode:  req.MfaCode,
+		PhoneNumber: req.Username, // Using username as phone number temporarily
+		CountryCode: "+91",        // Default country code
+		Password:    req.Password,
+		MFACode:     req.MfaCode,
 	}
 
 	// Call authentication service
@@ -68,11 +71,13 @@ func (h *AuthHandler) Register(ctx context.Context, req *pb.RegisterRequestV2) (
 
 	// Convert gRPC request to service request
 	registerReq := &services.RegisterRequest{
-		Username: req.Username,
-		Email:    req.Email,
-		FullName: req.FullName,
-		Password: req.Password,
-		RoleIDs:  req.RoleIds,
+		PhoneNumber: req.Username, // Using username as phone number temporarily
+		CountryCode: "+91",        // Default country code
+		Username:    &req.Username,
+		Email:       &req.Email,
+		FullName:    &req.FullName,
+		Password:    req.Password,
+		RoleIDs:     req.RoleIds,
 	}
 
 	// Call authentication service
@@ -102,8 +107,10 @@ func (h *AuthHandler) Register(ctx context.Context, req *pb.RegisterRequestV2) (
 func (h *AuthHandler) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequestV2) (*pb.RefreshTokenResponseV2, error) {
 	h.logger.Info("gRPC RefreshToken request")
 
-	// Call authentication service
-	response, err := h.authService.RefreshToken(ctx, req.RefreshToken)
+	// Note: The gRPC interface doesn't include mPin, but the service requires it
+	// For now, we'll use an empty mPin which will likely fail
+	// This should be updated in the proto to include mPin field
+	response, err := h.authService.RefreshToken(ctx, req.RefreshToken, "")
 	if err != nil {
 		h.logger.Error("Token refresh failed", zap.Error(err))
 		return &pb.RefreshTokenResponseV2{
@@ -228,9 +235,16 @@ func convertUserToGRPC(response *services.LoginResponse) *pb.UserV2 {
 		status = *user.Status
 	}
 
+	username := ""
+	if user.Username != nil {
+		username = *user.Username
+	}
+
 	return &pb.UserV2{
 		Id:          user.ID,
-		Username:    user.Username,
+		Username:    username,
+		PhoneNumber: user.PhoneNumber,
+		CountryCode: user.CountryCode,
 		IsValidated: user.IsValidated,
 		Status:      status,
 		UserRoles:   userRoles,

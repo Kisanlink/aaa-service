@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/Kisanlink/aaa-service/entities/requests"
@@ -62,8 +63,8 @@ func (h *AuthHandler) LoginV2(c *gin.Context) {
 		return
 	}
 
-	// Get user by username and verify password using the service
-	userResponse, err := h.userService.VerifyUserPassword(c.Request.Context(), req.Username, req.Password)
+	// Get user by phone number and verify password using the service
+	userResponse, err := h.userService.VerifyUserPasswordByPhone(c.Request.Context(), req.PhoneNumber, req.CountryCode, req.Password)
 	if err != nil {
 		h.logger.Error("Failed to verify user credentials", zap.Error(err))
 		if notFoundErr, ok := err.(*errors.NotFoundError); ok {
@@ -77,14 +78,18 @@ func (h *AuthHandler) LoginV2(c *gin.Context) {
 	// Generate tokens using helper functions (from existing controller logic)
 	// Note: Passing nil for roles since helper expects []model.UserRole but we have []RoleDetail
 	// TODO: Implement proper role conversion or update helper functions
-	accessToken, err := helper.GenerateAccessToken(userResponse.ID, nil, userResponse.Username, userResponse.IsValidated)
+	username := ""
+	if userResponse.Username != nil {
+		username = *userResponse.Username
+	}
+	accessToken, err := helper.GenerateAccessToken(userResponse.ID, nil, username, userResponse.IsValidated)
 	if err != nil {
 		h.logger.Error("Failed to generate access token", zap.Error(err))
 		h.responder.SendInternalError(c, err)
 		return
 	}
 
-	refreshToken, err := helper.GenerateRefreshToken(userResponse.ID, nil, userResponse.Username, userResponse.IsValidated)
+	refreshToken, err := helper.GenerateRefreshToken(userResponse.ID, nil, username, userResponse.IsValidated)
 	if err != nil {
 		h.logger.Error("Failed to generate refresh token", zap.Error(err))
 		h.responder.SendInternalError(c, err)
@@ -99,7 +104,9 @@ func (h *AuthHandler) LoginV2(c *gin.Context) {
 		ExpiresIn:    3600, // 1 hour
 		User: &responses.UserInfo{
 			ID:          userResponse.ID,
-			Username:    userResponse.Username,
+			PhoneNumber: userResponse.PhoneNumber,
+			CountryCode: userResponse.CountryCode,
+			Username:    username,
 			IsValidated: userResponse.IsValidated,
 		},
 		Message: "Login successful",
@@ -153,10 +160,16 @@ func (h *AuthHandler) RegisterV2(c *gin.Context) {
 	}
 
 	// Create register response
+	username := ""
+	if userResponse.Username != nil {
+		username = *userResponse.Username
+	}
 	registerResponse := &responses.RegisterResponse{
 		User: &responses.UserInfo{
 			ID:          userResponse.ID,
-			Username:    userResponse.Username,
+			Username:    username,
+			PhoneNumber: userResponse.PhoneNumber,
+			CountryCode: userResponse.CountryCode,
 			IsValidated: userResponse.IsValidated,
 		},
 		Message: "User registered successfully",
@@ -184,17 +197,58 @@ func (h *AuthHandler) RefreshTokenV2(c *gin.Context) {
 		return
 	}
 
-	// TODO: Implement token refresh logic using helper functions
-	// For now, return a placeholder response
+	// Validate refresh token and get user ID
+	userID, err := helper.ValidateToken(req.RefreshToken)
+	if err != nil {
+		h.logger.Error("Invalid refresh token", zap.Error(err))
+		h.responder.SendError(c, http.StatusUnauthorized, "Invalid refresh token", err)
+		return
+	}
+
+	// Verify mPin
+	err = h.userService.VerifyMPin(c.Request.Context(), userID, req.MPin)
+	if err != nil {
+		h.logger.Error("Failed to verify mPin", zap.Error(err))
+		h.responder.SendError(c, http.StatusUnauthorized, "Invalid mPin", err)
+		return
+	}
+
+	// Get user details
+	userResponse, err := h.userService.GetUserByID(c.Request.Context(), userID)
+	if err != nil {
+		h.logger.Error("Failed to get user for token refresh", zap.Error(err))
+		h.responder.SendInternalError(c, err)
+		return
+	}
+
+	// Generate new tokens
+	username := ""
+	if userResponse.Username != nil {
+		username = *userResponse.Username
+	}
+	newAccessToken, err := helper.GenerateAccessToken(userResponse.ID, nil, username, userResponse.IsValidated)
+	if err != nil {
+		h.logger.Error("Failed to generate new access token", zap.Error(err))
+		h.responder.SendInternalError(c, err)
+		return
+	}
+
+	newRefreshToken, err := helper.GenerateRefreshToken(userResponse.ID, nil, username, userResponse.IsValidated)
+	if err != nil {
+		h.logger.Error("Failed to generate new refresh token", zap.Error(err))
+		h.responder.SendInternalError(c, err)
+		return
+	}
+
 	refreshResponse := &responses.RefreshTokenResponse{
-		AccessToken:  "new_access_token",
-		RefreshToken: "new_refresh_token",
+		AccessToken:  newAccessToken,
+		RefreshToken: newRefreshToken,
 		TokenType:    "Bearer",
 		ExpiresIn:    3600,
 		Message:      "Token refreshed successfully",
 	}
 
-	h.logger.Info("Token refreshed successfully")
+	h.logger.Info("Token refreshed successfully", zap.String("userID", userID))
 	h.responder.SendSuccess(c, http.StatusOK, refreshResponse)
 }
 
@@ -272,14 +326,77 @@ func (h *AuthHandler) ResetPasswordV2(c *gin.Context) {
 
 // Helper methods
 
+// SetMPinV2 handles POST /v2/auth/set-mpin
+// @Summary Set or update user's mPin
+// @Description Set or update mPin for secure refresh token validation
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param request body requests.SetMPinRequest true "Set mPin request"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} responses.ErrorResponse
+// @Failure 401 {object} responses.ErrorResponse
+// @Failure 500 {object} responses.ErrorResponse
+// @Router /api/v2/auth/set-mpin [post]
+// @Security Bearer
+func (h *AuthHandler) SetMPinV2(c *gin.Context) {
+	h.logger.Info("Processing set mPin request")
+
+	// Get user ID from context (set by auth middleware)
+	userID, exists := c.Get("userID")
+	if !exists {
+		h.responder.SendError(c, http.StatusUnauthorized, "User not authenticated", nil)
+		return
+	}
+
+	var req requests.SetMPinRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		h.logger.Error("Failed to bind set mPin request", zap.Error(err))
+		h.responder.SendValidationError(c, []string{err.Error()})
+		return
+	}
+
+	// Validate request
+	if err := req.Validate(); err != nil {
+		h.logger.Error("Set mPin request validation failed", zap.Error(err))
+		h.responder.SendValidationError(c, []string{err.Error()})
+		return
+	}
+
+	// Verify current password first
+	userIDStr, ok := userID.(string)
+	if !ok {
+		h.responder.SendInternalError(c, fmt.Errorf("invalid user ID type"))
+		return
+	}
+
+	// Removed userResponse as it's not needed
+
+	// Set mPin
+	err := h.userService.SetMPin(c.Request.Context(), userIDStr, req.MPin)
+	if err != nil {
+		h.logger.Error("Failed to set mPin", zap.Error(err))
+		h.responder.SendInternalError(c, err)
+		return
+	}
+
+	response := map[string]interface{}{
+		"success": true,
+		"message": "mPin set successfully",
+	}
+
+	h.logger.Info("mPin set successfully", zap.String("userID", userIDStr))
+	h.responder.SendSuccess(c, http.StatusOK, response)
+}
+
 // convertToCreateUserRequest converts a RegisterRequest to a CreateUserRequest
 func (h *AuthHandler) convertToCreateUserRequest(req *requests.RegisterRequest) *users.CreateUserRequest {
 	return &users.CreateUserRequest{
-		Username:      req.Username,
-		Password:      req.Password,
-		MobileNumber:  req.MobileNumber,
-		AadhaarNumber: req.AadhaarNumber,
+		PhoneNumber:   req.PhoneNumber,
 		CountryCode:   req.CountryCode,
+		Password:      req.Password,
+		Username:      req.Username,
+		AadhaarNumber: req.AadhaarNumber,
 		Name:          req.Name,
 	}
 }

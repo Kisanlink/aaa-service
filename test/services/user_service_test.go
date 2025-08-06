@@ -27,7 +27,7 @@ func TestUserService_CreateUser(t *testing.T) {
 
 			// Create user request
 			req := &userRequests.CreateUserRequest{
-				Username: tt.userName,
+				Username: &tt.userName,
 				Password: "password123",
 			}
 
@@ -61,7 +61,7 @@ func TestUserService_GetUserByID(t *testing.T) {
 
 			// Create test user if needed
 			if tt.setupUser {
-				user := models.NewUser(tt.userName, "password123")
+				user := models.NewUser(tt.userName, "+91", "password123")
 				err := userRepo.Create(context.Background(), user)
 				assert.NoError(t, err)
 			}
@@ -136,9 +136,10 @@ func (m *MockUserService) GetUserByID(ctx context.Context, userID string) (*user
 	if m.shouldError {
 		return nil, errors.New("user not found")
 	}
+	username := "testuser"
 	return &userResponses.UserResponse{
 		ID:       userID,
-		Username: "testuser",
+		Username: &username,
 	}, nil
 }
 
@@ -148,7 +149,7 @@ func (m *MockUserService) GetUserByUsername(ctx context.Context, username string
 	}
 	return &userResponses.UserResponse{
 		ID:       "usr123456789",
-		Username: username,
+		Username: &username,
 	}, nil
 }
 
@@ -156,10 +157,10 @@ func (m *MockUserService) GetUserByMobileNumber(ctx context.Context, mobileNumbe
 	if m.shouldError {
 		return nil, errors.New("user not found")
 	}
+	username := "testuser"
 	return &userResponses.UserResponse{
-		ID:           "usr123456789",
-		Username:     "testuser",
-		MobileNumber: mobileNumber,
+		ID:       "usr123456789",
+		Username: &username,
 	}, nil
 }
 
@@ -167,9 +168,10 @@ func (m *MockUserService) GetUserByAadhaarNumber(ctx context.Context, aadhaarNum
 	if m.shouldError {
 		return nil, errors.New("user not found")
 	}
+	username := "testuser"
 	return &userResponses.UserResponse{
 		ID:            "usr123456789",
-		Username:      "testuser",
+		Username:      &username,
 		AadhaarNumber: &aadhaarNumber,
 	}, nil
 }
@@ -178,9 +180,10 @@ func (m *MockUserService) UpdateUser(ctx context.Context, req *userRequests.Upda
 	if m.shouldError {
 		return nil, errors.New("update failed")
 	}
+	username := "testuser"
 	return &userResponses.UserResponse{
 		ID:       "usr123456789",
-		Username: "testuser",
+		Username: &username,
 	}, nil
 }
 
@@ -237,9 +240,10 @@ func (m *MockUserService) GetUserWithProfile(ctx context.Context, userID string)
 	if m.shouldError {
 		return nil, errors.New("get profile failed")
 	}
+	username := "testuser"
 	return &userResponses.UserResponse{
 		ID:       userID,
-		Username: "testuser",
+		Username: &username,
 	}, nil
 }
 
@@ -247,8 +251,9 @@ func (m *MockUserService) GetUserWithRoles(ctx context.Context, userID string) (
 	if m.shouldError {
 		return nil, errors.New("get roles failed")
 	}
+	username := "testuser"
 	return &userResponses.UserResponse{
 		ID:       userID,
-		Username: "testuser",
+		Username: &username,
 	}, nil
 }

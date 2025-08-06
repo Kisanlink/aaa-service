@@ -25,17 +25,9 @@ type AllHandlers struct {
 
 // SetupRoutes configures all routes for the application
 func SetupRoutes(router *gin.Engine, handlers AllHandlers) {
-	// Setup API versioned routes
+	// Setup API routes - V2 only
 	apiGroup := router.Group("/api")
 	{
-		// V1 Routes
-		v1Group := apiGroup.Group("/v1")
-		SetupV1Routes(v1Group, V1RouteHandlers{
-			UserHandler:    handlers.UserHandler,
-			RoleHandler:    handlers.RoleHandler,
-			AddressHandler: handlers.AddressHandler,
-		})
-
 		// V2 Routes
 		v2Group := apiGroup.Group("/v2")
 		SetupV2Routes(v2Group, V2RouteHandlers{

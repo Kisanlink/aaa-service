@@ -23,7 +23,7 @@ var UserHandlerCreateUserTests = []struct {
 		},
 		mockResponse: &users.UserResponse{
 			ID:       "usr123456789",
-			Username: "johndoe",
+			Username: stringPtr("johndoe"),
 			Name:     stringPtr("John Doe"),
 		},
 		mockError:       nil,
@@ -68,7 +68,7 @@ var UserHandlerGetUserByIDTests = []struct {
 		userID: "usr123456789",
 		mockResponse: &users.UserResponse{
 			ID:       "usr123456789",
-			Username: "johndoe",
+			Username: stringPtr("johndoe"),
 			Name:     stringPtr("John Doe"),
 		},
 		mockError:       nil,
@@ -120,7 +120,7 @@ var UserHandlerUpdateUserTests = []struct {
 		},
 		mockResponse: &users.UserResponse{
 			ID:       "usr123456789",
-			Username: "updateduser",
+			Username: stringPtr("updateduser"),
 			Name:     stringPtr("Updated Name"),
 		},
 		mockError:       nil,
@@ -167,7 +167,7 @@ var UserHandlerDeleteUserTests = []struct {
 		userID: "usr123456789",
 		mockResponse: &users.UserResponse{
 			ID:       "usr123456789",
-			Username: "johndoe",
+			Username: stringPtr("johndoe"),
 			Name:     stringPtr("John Doe"),
 			Status:   stringPtr("deleted"),
 		},

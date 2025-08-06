@@ -9,7 +9,9 @@ import (
 // UserResponse represents the user data sent in API responses
 type UserResponse struct {
 	ID            string           `json:"id"`
-	Username      string           `json:"username"`
+	PhoneNumber   string           `json:"phone_number"`
+	CountryCode   string           `json:"country_code"`
+	Username      *string          `json:"username,omitempty"`
 	IsValidated   bool             `json:"is_validated"`
 	CreatedAt     time.Time        `json:"created_at"`
 	UpdatedAt     time.Time        `json:"updated_at"`
@@ -23,11 +25,10 @@ type UserResponse struct {
 	ShareCode     *string          `json:"share_code,omitempty"`
 	YearOfBirth   *string          `json:"year_of_birth,omitempty"`
 	Message       *string          `json:"message,omitempty"`
-	MobileNumber  uint64           `json:"mobile_number"`
-	CountryCode   *string          `json:"country_code,omitempty"`
 	Tokens        int              `json:"tokens"`
 	Address       *AddressResponse `json:"address,omitempty"`
 	Roles         []RoleDetail     `json:"roles"`
+	HasMPin       bool             `json:"has_mpin"`
 }
 
 // GetType returns the type of response
@@ -43,12 +44,15 @@ func (r *UserResponse) IsSuccess() bool {
 // FromModel converts a User model to UserResponse
 func (r *UserResponse) FromModel(user *models.User) {
 	r.ID = user.ID
+	r.PhoneNumber = user.PhoneNumber
+	r.CountryCode = user.CountryCode
 	r.Username = user.Username
 	r.IsValidated = user.IsValidated
 	r.CreatedAt = user.CreatedAt
 	r.UpdatedAt = user.UpdatedAt
 	r.Status = user.Status
 	r.Tokens = user.Tokens
+	r.HasMPin = user.HasMPin()
 
 	// Convert roles
 	r.Roles = make([]RoleDetail, len(user.Roles))

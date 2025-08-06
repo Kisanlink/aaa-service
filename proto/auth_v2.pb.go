@@ -27,14 +27,16 @@ type UserV2 struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Username      string                 `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty"`
-	Email         string                 `protobuf:"bytes,3,opt,name=email,proto3" json:"email,omitempty"`
-	FullName      string                 `protobuf:"bytes,4,opt,name=full_name,json=fullName,proto3" json:"full_name,omitempty"`
-	IsValidated   bool                   `protobuf:"varint,5,opt,name=is_validated,json=isValidated,proto3" json:"is_validated,omitempty"`
-	Status        string                 `protobuf:"bytes,6,opt,name=status,proto3" json:"status,omitempty"`
-	CreatedAt     string                 `protobuf:"bytes,7,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	UpdatedAt     string                 `protobuf:"bytes,8,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
-	UserRoles     []*UserRoleV2          `protobuf:"bytes,9,rep,name=user_roles,json=userRoles,proto3" json:"user_roles,omitempty"`
-	Permissions   []string               `protobuf:"bytes,10,rep,name=permissions,proto3" json:"permissions,omitempty"`
+	PhoneNumber   string                 `protobuf:"bytes,3,opt,name=phone_number,json=phoneNumber,proto3" json:"phone_number,omitempty"`
+	CountryCode   string                 `protobuf:"bytes,4,opt,name=country_code,json=countryCode,proto3" json:"country_code,omitempty"`
+	Email         string                 `protobuf:"bytes,5,opt,name=email,proto3" json:"email,omitempty"`
+	FullName      string                 `protobuf:"bytes,6,opt,name=full_name,json=fullName,proto3" json:"full_name,omitempty"`
+	IsValidated   bool                   `protobuf:"varint,7,opt,name=is_validated,json=isValidated,proto3" json:"is_validated,omitempty"`
+	Status        string                 `protobuf:"bytes,8,opt,name=status,proto3" json:"status,omitempty"`
+	CreatedAt     string                 `protobuf:"bytes,9,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt     string                 `protobuf:"bytes,10,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	UserRoles     []*UserRoleV2          `protobuf:"bytes,11,rep,name=user_roles,json=userRoles,proto3" json:"user_roles,omitempty"`
+	Permissions   []string               `protobuf:"bytes,12,rep,name=permissions,proto3" json:"permissions,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -79,6 +81,20 @@ func (x *UserV2) GetId() string {
 func (x *UserV2) GetUsername() string {
 	if x != nil {
 		return x.Username
+	}
+	return ""
+}
+
+func (x *UserV2) GetPhoneNumber() string {
+	if x != nil {
+		return x.PhoneNumber
+	}
+	return ""
+}
+
+func (x *UserV2) GetCountryCode() string {
+	if x != nil {
+		return x.CountryCode
 	}
 	return ""
 }
@@ -1308,22 +1324,24 @@ var File_proto_auth_v2_proto protoreflect.FileDescriptor
 
 const file_proto_auth_v2_proto_rawDesc = "" +
 	"\n" +
-	"\x13proto/auth_v2.proto\x12\x02pb\"\xb1\x02\n" +
+	"\x13proto/auth_v2.proto\x12\x02pb\"\xf7\x02\n" +
 	"\x06UserV2\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1a\n" +
-	"\busername\x18\x02 \x01(\tR\busername\x12\x14\n" +
-	"\x05email\x18\x03 \x01(\tR\x05email\x12\x1b\n" +
-	"\tfull_name\x18\x04 \x01(\tR\bfullName\x12!\n" +
-	"\fis_validated\x18\x05 \x01(\bR\visValidated\x12\x16\n" +
-	"\x06status\x18\x06 \x01(\tR\x06status\x12\x1d\n" +
+	"\busername\x18\x02 \x01(\tR\busername\x12!\n" +
+	"\fphone_number\x18\x03 \x01(\tR\vphoneNumber\x12!\n" +
+	"\fcountry_code\x18\x04 \x01(\tR\vcountryCode\x12\x14\n" +
+	"\x05email\x18\x05 \x01(\tR\x05email\x12\x1b\n" +
+	"\tfull_name\x18\x06 \x01(\tR\bfullName\x12!\n" +
+	"\fis_validated\x18\a \x01(\bR\visValidated\x12\x16\n" +
+	"\x06status\x18\b \x01(\tR\x06status\x12\x1d\n" +
 	"\n" +
-	"created_at\x18\a \x01(\tR\tcreatedAt\x12\x1d\n" +
+	"created_at\x18\t \x01(\tR\tcreatedAt\x12\x1d\n" +
 	"\n" +
-	"updated_at\x18\b \x01(\tR\tupdatedAt\x12-\n" +
+	"updated_at\x18\n" +
+	" \x01(\tR\tupdatedAt\x12-\n" +
 	"\n" +
-	"user_roles\x18\t \x03(\v2\x0e.pb.UserRoleV2R\tuserRoles\x12 \n" +
-	"\vpermissions\x18\n" +
-	" \x03(\tR\vpermissions\"\xd4\x01\n" +
+	"user_roles\x18\v \x03(\v2\x0e.pb.UserRoleV2R\tuserRoles\x12 \n" +
+	"\vpermissions\x18\f \x03(\tR\vpermissions\"\xd4\x01\n" +
 	"\n" +
 	"UserRoleV2\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x17\n" +

@@ -8,14 +8,16 @@ option go_package = "github.com/Kisanlink/aaa-service/pb";
 message UserV2 {
     string id = 1;
     string username = 2;
-    string email = 3;
-    string full_name = 4;
-    bool is_validated = 5;
-    string status = 6;
-    string created_at = 7;
-    string updated_at = 8;
-    repeated UserRoleV2 user_roles = 9;
-    repeated string permissions = 10;
+    string phone_number = 3;
+    string country_code = 4;
+    string email = 5;
+    string full_name = 6;
+    bool is_validated = 7;
+    string status = 8;
+    string created_at = 9;
+    string updated_at = 10;
+    repeated UserRoleV2 user_roles = 11;
+    repeated string permissions = 12;
 }
 
 // V2 UserRole model

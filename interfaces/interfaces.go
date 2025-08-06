@@ -73,6 +73,10 @@ type UserService interface {
 	GetUserWithProfile(ctx context.Context, userID string) (*userResponses.UserResponse, error)
 	GetUserWithRoles(ctx context.Context, userID string) (*userResponses.UserResponse, error)
 	VerifyUserPassword(ctx context.Context, username, password string) (*userResponses.UserResponse, error)
+	VerifyUserPasswordByPhone(ctx context.Context, phoneNumber, countryCode, password string) (*userResponses.UserResponse, error)
+	SetMPin(ctx context.Context, userID string, mPin string) error
+	VerifyMPin(ctx context.Context, userID string, mPin string) error
+	GetUserByPhoneNumber(ctx context.Context, phoneNumber, countryCode string) (*userResponses.UserResponse, error)
 }
 
 // AddressService interface for address-related operations
@@ -115,6 +119,7 @@ type AuthService interface {
 type UserRepository interface {
 	base.Repository[*models.User]
 	GetByUsername(ctx context.Context, username string) (*models.User, error)
+	GetByPhoneNumber(ctx context.Context, phoneNumber string, countryCode string) (*models.User, error)
 	GetByMobileNumber(ctx context.Context, mobileNumber uint64) (*models.User, error)
 	GetByAadhaarNumber(ctx context.Context, aadhaarNumber string) (*models.User, error)
 	ListActive(ctx context.Context, limit, offset int) ([]*models.User, error)

@@ -184,13 +184,14 @@ func createRefreshHandler(authService *services.AuthService, logger *zap.Logger)
 	return func(c *gin.Context) {
 		var req struct {
 			RefreshToken string `json:"refresh_token" binding:"required"`
+			MPin         string `json:"mpin" binding:"required"`
 		}
 		if err := c.ShouldBindJSON(&req); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request", "message": err.Error()})
 			return
 		}
 
-		response, err := authService.RefreshToken(c.Request.Context(), req.RefreshToken)
+		response, err := authService.RefreshToken(c.Request.Context(), req.RefreshToken, req.MPin)
 		if err != nil {
 			logger.Error("Token refresh failed", zap.Error(err))
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "token refresh failed", "message": err.Error()})

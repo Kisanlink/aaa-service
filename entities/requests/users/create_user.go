@@ -8,11 +8,11 @@ import (
 
 // CreateUserRequest represents the request to create a new user
 type CreateUserRequest struct {
-	Username      string  `json:"username" validate:"required"`
+	PhoneNumber   string  `json:"phone_number" validate:"required"`
+	CountryCode   string  `json:"country_code" validate:"required"`
 	Password      string  `json:"password" validate:"required,min=8,max=128"`
-	MobileNumber  uint64  `json:"mobile_number" validate:"required"`
+	Username      *string `json:"username,omitempty" validate:"omitempty,username"`
 	AadhaarNumber *string `json:"aadhaar_number,omitempty"`
-	CountryCode   *string `json:"country_code,omitempty"`
 	Name          *string `json:"name,omitempty"`
 	CareOf        *string `json:"care_of,omitempty"`
 	DateOfBirth   *string `json:"date_of_birth,omitempty"`
@@ -21,18 +21,35 @@ type CreateUserRequest struct {
 
 // Validate validates the CreateUserRequest
 func (r *CreateUserRequest) Validate() error {
-	// Validate username
-	if r.Username == "" {
-		return fmt.Errorf("username is required")
+	// Validate phone number
+	if r.PhoneNumber == "" {
+		return fmt.Errorf("phone number is required")
 	}
-	if len(r.Username) < 3 || len(r.Username) > 100 {
-		return fmt.Errorf("username must be between 3 and 100 characters")
+	// Basic phone number validation (10 digits for Indian numbers)
+	phoneRegex := regexp.MustCompile(`^\d{10}$`)
+	if !phoneRegex.MatchString(r.PhoneNumber) {
+		return fmt.Errorf("phone number must be 10 digits")
 	}
 
-	// Validate username format (alphanumeric and underscore only)
-	usernameRegex := regexp.MustCompile(`^[a-zA-Z0-9_]+$`)
-	if !usernameRegex.MatchString(r.Username) {
-		return fmt.Errorf("username can only contain letters, numbers, and underscores")
+	// Validate country code
+	if r.CountryCode == "" {
+		return fmt.Errorf("country code is required")
+	}
+	// Basic country code validation
+	countryCodeRegex := regexp.MustCompile(`^\+\d{1,4}$`)
+	if !countryCodeRegex.MatchString(r.CountryCode) {
+		return fmt.Errorf("country code must start with + and contain 1-4 digits")
+	}
+
+	// Validate optional username if provided
+	if r.Username != nil && *r.Username != "" {
+		if len(*r.Username) < 3 || len(*r.Username) > 100 {
+			return fmt.Errorf("username must be between 3 and 100 characters")
+		}
+		usernameRegex := regexp.MustCompile(`^[a-zA-Z0-9_]+$`)
+		if !usernameRegex.MatchString(*r.Username) {
+			return fmt.Errorf("username can only contain letters, numbers, and underscores")
+		}
 	}
 
 	// Validate password
@@ -44,12 +61,6 @@ func (r *CreateUserRequest) Validate() error {
 	}
 	if len(r.Password) > 128 {
 		return fmt.Errorf("password must be at most 128 characters long")
-	}
-
-	// Validate mobile number
-	mobileStr := strconv.FormatUint(r.MobileNumber, 10)
-	if len(mobileStr) != 10 {
-		return fmt.Errorf("mobile number must be exactly 10 digits")
 	}
 
 	// Validate Aadhaar number if provided

@@ -257,6 +257,25 @@ func (r *UserRepository) GetByUsername(ctx context.Context, username string) (*m
 	return &users[0], nil
 }
 
+// GetByPhoneNumber retrieves a user by phone number
+func (r *UserRepository) GetByPhoneNumber(ctx context.Context, phoneNumber string, countryCode string) (*models.User, error) {
+	filters := []db.Filter{
+		r.dbManager.BuildFilter("phone_number", db.FilterOpEqual, phoneNumber),
+		r.dbManager.BuildFilter("country_code", db.FilterOpEqual, countryCode),
+	}
+
+	var users []models.User
+	if err := r.dbManager.List(ctx, filters, &users); err != nil {
+		return nil, fmt.Errorf("failed to get user by phone number: %w", err)
+	}
+
+	if len(users) == 0 {
+		return nil, fmt.Errorf("user not found with phone number: %s%s", countryCode, phoneNumber)
+	}
+
+	return &users[0], nil
+}
+
 // GetByMobileNumber retrieves a user by mobile number
 func (r *UserRepository) GetByMobileNumber(ctx context.Context, mobileNumber uint64) (*models.User, error) {
 	filters := []db.Filter{
