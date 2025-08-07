@@ -77,8 +77,8 @@ func main() {
 	httpPort := getEnv("HTTP_PORT", "8080")
 	grpcPort := getEnv("GRPC_PORT", "50051")
 	jwtSecret := getEnv("JWT_SECRET", "default-secret-key-change-in-production")
-	spiceDBAddr := getEnv("SPICEDB_ADDR", "localhost:50051")
-	spiceDBToken := getEnv("SPICEDB_TOKEN", "")
+	spiceDBAddr := getEnv("DB_SPICEDB_ENDPOINT", "localhost:50051")
+	spiceDBToken := getEnv("DB_SPICEDB_TOKEN", "")
 
 	if spiceDBToken == "" {
 		logger.Warn("SpiceDB token not set, using empty token")

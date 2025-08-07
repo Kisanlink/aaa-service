@@ -210,22 +210,19 @@ func TestUserRepository_ListActive(t *testing.T) {
 
 	// Create test users
 	user1 := models.NewUser("user1", "+91", "password123")
-	activeStatus := "active"
-	user1.Status = &activeStatus
-	t.Logf("User1 status before create: %s", *user1.Status)
-
 	user2 := models.NewUser("user2", "+91", "password123")
-	inactiveStatus := "inactive"
-	user2.Status = &inactiveStatus
-	t.Logf("User2 status before create: %s", *user2.Status)
 
+	// Create users first (they will have default "pending" status)
 	err := userRepo.Create(context.Background(), user1)
 	assert.NoError(t, err)
-	t.Logf("User1 status after create: %s, ID: %s", *user1.Status, user1.ID)
-
 	err = userRepo.Create(context.Background(), user2)
 	assert.NoError(t, err)
-	t.Logf("User2 status after create: %s, ID: %s", *user2.Status, user2.ID)
+
+	// Now update user1 to active status
+	activeStatus := "active"
+	user1.Status = &activeStatus
+	err = userRepo.Update(context.Background(), user1)
+	assert.NoError(t, err)
 
 	// List active users
 	activeUsers, err := userRepo.ListActive(context.Background(), 10, 0)
@@ -257,21 +254,19 @@ func TestUserRepository_CountActive(t *testing.T) {
 
 	// Create test users
 	user1 := models.NewUser("user1", "+91", "password123")
-	activeStatus := "active"
-	user1.Status = &activeStatus
-
 	user2 := models.NewUser("user2", "+91", "password123")
-	inactiveStatus := "inactive"
-	user2.Status = &inactiveStatus
 
+	// Create users first
 	err := userRepo.Create(context.Background(), user1)
 	assert.NoError(t, err)
 	err = userRepo.Create(context.Background(), user2)
 	assert.NoError(t, err)
 
-	// Print statuses for debugging
-	t.Logf("User1 status: %v", user1.Status)
-	t.Logf("User2 status: %v", user2.Status)
+	// Update user1 to active status
+	activeStatus := "active"
+	user1.Status = &activeStatus
+	err = userRepo.Update(context.Background(), user1)
+	assert.NoError(t, err)
 
 	// Count active users
 	count, err := userRepo.CountActive(context.Background())
@@ -300,7 +295,7 @@ func TestUserRepository_Search(t *testing.T) {
 	users, err := userRepo.Search(context.Background(), "john", 10, 0)
 	assert.NoError(t, err)
 	assert.Len(t, users, 1)
-	if users[0].Username != nil {
+	if len(users) > 0 && users[0].Username != nil {
 		assert.Equal(t, "john_doe", *users[0].Username)
 	} else {
 		t.Error("Expected username to be set")
@@ -309,10 +304,9 @@ func TestUserRepository_Search(t *testing.T) {
 
 // Helper functions for test setup
 func setupTestDatabase(t *testing.T) db.DBManager {
-	// Return a new mock database manager for each test to prevent interference
 	return &MockDBManager{
 		users:  make(map[string]*models.User),
-		nextID: 0,
+		nextID: 1,
 	}
 }
 
@@ -469,15 +463,20 @@ func (m *MockDBManager) List(ctx context.Context, filters []db.Filter, model int
 	}
 }
 
+func (m *MockDBManager) AutoMigrateModels(ctx context.Context, models ...interface{}) error {
+	// Mock implementation - no-op for testing
+	return nil
+}
+
 func (m *MockDBManager) ApplyFilters(query interface{}, filters []db.Filter) (interface{}, error) {
+	// Mock implementation - return query as-is for testing
 	return query, nil
 }
 
 func (m *MockDBManager) BuildFilter(field string, operator db.FilterOperator, value interface{}) db.Filter {
-	return db.Filter{Field: field, Operator: operator, Value: value}
-}
-
-func (m *MockDBManager) AutoMigrateModels(ctx context.Context, models ...interface{}) error {
-	// Mock implementation - no-op for testing
-	return nil
+	return db.Filter{
+		Field:    field,
+		Operator: operator,
+		Value:    value,
+	}
 }

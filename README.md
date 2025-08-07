@@ -113,8 +113,8 @@ DB_PASSWORD=password
 DB_NAME=aaa_service
 
 # SpiceDB Configuration
-SPICEDB_ADDR=localhost:50051
-SPICEDB_TOKEN=your_token
+DB_SPICEDB_ENDPOINT=localhost:50051
+DB_SPICEDB_TOKEN=your_token
 
 # Redis Configuration
 REDIS_ADDR=localhost:6379

@@ -825,3 +825,62 @@ func (s *AuthService) VerifyMPin(ctx context.Context, userID string, mPin string
 
 	return nil
 }
+
+// CheckSystemPermission checks if user has system-level permissions
+func (s *AuthService) CheckSystemPermission(ctx context.Context, userID, permission string) bool {
+	// Try to check permission in SpiceDB
+	if s.spicedbClient != nil {
+		// Create permission check request
+		permissionReq := &authzedpb.CheckPermissionRequest{
+			Resource: &authzedpb.ObjectReference{
+				ObjectType: "system",
+				ObjectId:   "main",
+			},
+			Permission: permission,
+			Subject: &authzedpb.SubjectReference{
+				Object: &authzedpb.ObjectReference{
+					ObjectType: "user",
+					ObjectId:   userID,
+				},
+			},
+		}
+
+		// Check permission
+		resp, err := s.spicedbClient.CheckPermission(ctx, permissionReq)
+		if err != nil {
+			s.logger.Warn("Failed to check system permission in SpiceDB",
+				zap.String("user_id", userID),
+				zap.String("permission", permission),
+				zap.Error(err))
+
+			// Fallback: Check if user has admin role in database
+			return s.checkAdminRoleFallback(ctx, userID)
+		}
+
+		return resp.Permissionship == authzedpb.CheckPermissionResponse_PERMISSIONSHIP_HAS_PERMISSION
+	}
+
+	// Fallback: Check if user has admin role in database
+	return s.checkAdminRoleFallback(ctx, userID)
+}
+
+// checkAdminRoleFallback checks if user has admin role in database
+func (s *AuthService) checkAdminRoleFallback(ctx context.Context, userID string) bool {
+	// Get user roles from database
+	userRoles, err := s.userRoleRepository.GetByUserID(ctx, userID)
+	if err != nil {
+		s.logger.Warn("Failed to get user roles for fallback check",
+			zap.String("user_id", userID),
+			zap.Error(err))
+		return false
+	}
+
+	// Check if user has admin role
+	for _, userRole := range userRoles {
+		if userRole.Role.Name == "admin" || userRole.Role.Name == "super_admin" {
+			return true
+		}
+	}
+
+	return false
+}
