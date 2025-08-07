@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -36,6 +37,9 @@ func SetupAAA(router *gin.Engine, handlers RouteHandlers) {
 
 		// Health check
 		publicAPI.GET("/health", createHealthHandler(handlers.Logger))
+
+		// Temporary test endpoint for debugging (remove in production)
+		publicAPI.GET("/test/auth", createTestAuthHandler(handlers.Logger))
 	}
 
 	// Protected routes (authentication and authorization required)
@@ -279,6 +283,23 @@ func createHealthHandler(logger *zap.Logger) gin.HandlerFunc {
 	}
 }
 
+// createTestAuthHandler creates a test endpoint for debugging authentication
+func createTestAuthHandler(logger *zap.Logger) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		logger.Info("Test auth endpoint accessed")
+
+		c.JSON(http.StatusOK, gin.H{
+			"status":  "success",
+			"message": "Test auth endpoint working - authentication is not required for this endpoint",
+			"data": gin.H{
+				"endpoint":       "/api/v2/test/auth",
+				"authentication": "not required",
+				"description":    "This endpoint is for testing purposes only",
+			},
+		})
+	}
+}
+
 // User management handlers (placeholder implementations)
 
 // GetUsersV2 handles GET /v2/users
@@ -297,7 +318,68 @@ func createHealthHandler(logger *zap.Logger) gin.HandlerFunc {
 // @Router /api/v2/users [get]
 func createGetUsersHandler(logger *zap.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.JSON(http.StatusNotImplemented, gin.H{"error": "not implemented", "message": "GetUsers not implemented yet"})
+		// Get user context for debugging
+		userID, exists := c.Get("user_id")
+		if exists {
+			logger.Info("GetUsers endpoint accessed with authentication",
+				zap.String("user_id", fmt.Sprintf("%v", userID)),
+				zap.String("path", c.Request.URL.Path))
+		} else {
+			logger.Error("GetUsers endpoint accessed but user_id not found in context")
+		}
+
+		// Parse pagination parameters
+		pageStr := c.DefaultQuery("page", "1")
+		limitStr := c.DefaultQuery("limit", "10")
+
+		page, err := strconv.Atoi(pageStr)
+		if err != nil || page < 1 {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error":   "invalid page parameter",
+				"message": "Page must be a positive integer",
+			})
+			return
+		}
+
+		limit, err := strconv.Atoi(limitStr)
+		if err != nil || limit < 1 || limit > 100 {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error":   "invalid limit parameter",
+				"message": "Limit must be between 1 and 100",
+			})
+			return
+		}
+
+		logger.Info("Users endpoint accessed",
+			zap.Int("page", page),
+			zap.Int("limit", limit))
+
+		// Return mock data for testing
+		c.JSON(http.StatusOK, gin.H{
+			"status":  "success",
+			"message": "Users retrieved successfully",
+			"data": gin.H{
+				"users": []gin.H{
+					{
+						"id":       "user-1",
+						"username": "testuser1",
+						"email":    "test1@example.com",
+						"status":   "active",
+					},
+					{
+						"id":       "user-2",
+						"username": "testuser2",
+						"email":    "test2@example.com",
+						"status":   "active",
+					},
+				},
+				"pagination": gin.H{
+					"page":  page,
+					"limit": limit,
+					"total": 2,
+				},
+			},
+		})
 	}
 }
 

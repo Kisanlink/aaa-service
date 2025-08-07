@@ -43,6 +43,7 @@ func (m *AuthMiddleware) HTTPAuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Skip authentication for health checks and public endpoints
 		if m.isPublicEndpoint(c.Request.URL.Path) {
+			m.logger.Debug("Skipping authentication for public endpoint", zap.String("path", c.Request.URL.Path))
 			c.Next()
 			return
 		}
@@ -62,21 +63,26 @@ func (m *AuthMiddleware) HTTPAuthMiddleware() gin.HandlerFunc {
 		// Parse Bearer token
 		tokenParts := strings.Split(authHeader, " ")
 		if len(tokenParts) != 2 || tokenParts[0] != "Bearer" {
-			m.logger.Warn("Invalid authorization header format", zap.String("path", c.Request.URL.Path))
+			m.logger.Warn("Invalid authorization header format",
+				zap.String("path", c.Request.URL.Path),
+				zap.String("header", authHeader))
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"error":   "unauthorized",
-				"message": "Invalid authorization header format",
+				"message": "Invalid authorization header format. Expected: Bearer <token>",
 			})
 			c.Abort()
 			return
 		}
 
 		token := tokenParts[1]
+		m.logger.Debug("Validating token", zap.String("token_prefix", token[:10]+"..."))
 
 		// Validate token
 		claims, err := m.authService.ValidateToken(token)
 		if err != nil {
-			m.logger.Warn("Invalid token", zap.String("path", c.Request.URL.Path), zap.Error(err))
+			m.logger.Warn("Invalid token",
+				zap.String("path", c.Request.URL.Path),
+				zap.Error(err))
 
 			// Audit failed authentication
 			if m.auditService != nil {
@@ -91,7 +97,7 @@ func (m *AuthMiddleware) HTTPAuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// Set user context
+		// Set user context in Gin context (this is what RequirePermission checks)
 		c.Set("user_id", claims.UserID)
 		c.Set("username", claims.Username)
 		c.Set("is_validated", claims.IsValidated)
@@ -106,7 +112,7 @@ func (m *AuthMiddleware) HTTPAuthMiddleware() gin.HandlerFunc {
 		ctx = context.WithValue(ctx, "user_agent", c.GetHeader("User-Agent"))
 		c.Request = c.Request.WithContext(ctx)
 
-		m.logger.Debug("User authenticated",
+		m.logger.Debug("User authenticated and context set",
 			zap.String("user_id", claims.UserID),
 			zap.String("username", claims.Username),
 			zap.String("path", c.Request.URL.Path))
@@ -320,15 +326,34 @@ func (m *AuthMiddleware) RequirePermission(resource, action string) gin.HandlerF
 	return func(c *gin.Context) {
 		userID, exists := c.Get("user_id")
 		if !exists {
+			m.logger.Error("User ID not found in context for permission check",
+				zap.String("path", c.Request.URL.Path),
+				zap.String("method", c.Request.Method))
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error":   "internal_error",
-				"message": "User context not found",
+				"message": "User context not found - authentication may have failed",
 			})
 			c.Abort()
 			return
 		}
 
-		userIDStr := fmt.Sprintf("%v", userID)
+		userIDStr, ok := userID.(string)
+		if !ok {
+			m.logger.Error("Invalid user ID type in context",
+				zap.String("user_id_type", fmt.Sprintf("%T", userID)),
+				zap.String("user_id_value", fmt.Sprintf("%v", userID)))
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error":   "internal_error",
+				"message": "Invalid user context type",
+			})
+			c.Abort()
+			return
+		}
+
+		m.logger.Debug("Checking permission",
+			zap.String("user_id", userIDStr),
+			zap.String("resource", resource),
+			zap.String("action", action))
 
 		// Check specific permission
 		permission := &services.Permission{
@@ -367,6 +392,11 @@ func (m *AuthMiddleware) RequirePermission(resource, action string) gin.HandlerF
 			c.Abort()
 			return
 		}
+
+		m.logger.Debug("Permission granted",
+			zap.String("user_id", userIDStr),
+			zap.String("resource", resource),
+			zap.String("action", action))
 
 		c.Next()
 	}
