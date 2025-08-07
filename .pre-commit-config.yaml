@@ -1,0 +1,73 @@
+repos:
+  # Go formatting and imports
+  - repo: https://github.com/dnephin/pre-commit-golang
+    rev: v0.5.1
+    hooks:
+      - id: go-fmt
+        name: Go Format
+        description: Run gofmt on Go code
+      - id: go-imports
+        name: Go Imports
+        description: Run goimports on Go code
+      - id: go-mod-tidy
+        name: Go Mod Tidy
+        description: Run go mod tidy
+      - id: go-unit-tests
+        name: Go Unit Tests
+        description: Run go unit tests
+        pass_filenames: false
+        args: [-short, -race]
+
+  # Go linting with golangci-lint
+  - repo: https://github.com/golangci/golangci-lint
+    rev: v1.54.2
+    hooks:
+      - id: golangci-lint
+        name: Go Lint
+        description: Run golangci-lint
+        args: [--timeout=5m]
+
+  # Security scanning with gosec - temporarily disabled
+  # - repo: https://github.com/securego/gosec
+  #   rev: v2.18.2
+  #   hooks:
+  #     - id: gosec
+  #       name: Go Security
+  #       description: Run gosec security scanner
+  #       args: [-quiet]
+
+  # General hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: check-added-large-files
+        name: Check for large files
+      - id: check-case-conflict
+        name: Check for case conflicts
+      - id: check-merge-conflict
+        name: Check for merge conflicts
+      - id: check-yaml
+        name: Check YAML
+      - id: end-of-file-fixer
+        name: Fix end of files
+      - id: trailing-whitespace
+        name: Trim trailing whitespace
+      - id: mixed-line-ending
+        name: Mixed line ending
+
+  # Dockerfile linting
+  - repo: https://github.com/hadolint/hadolint
+    rev: v2.12.0
+    hooks:
+      - id: hadolint-docker
+        name: Dockerfile Lint
+        description: Run hadolint on Dockerfiles
+
+  # Commit message format
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v3.0.0
+    hooks:
+      - id: conventional-pre-commit
+        name: Conventional Commit
+        description: Check commit message format
+        stages: [commit-msg]

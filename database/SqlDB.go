@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Kisanlink/aaa-service/model"
+	"github.com/Kisanlink/aaa-service/entities/models"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -29,12 +29,16 @@ func ConnectDB() {
 	fmt.Println("Connected to DB")
 
 	migrationErr := DB.AutoMigrate(
-		&model.User{},
-		&model.Role{},
-		&model.Permission{},
-		&model.RolePermission{},
-		&model.PermissionOnRole{},
-		&model.UserRole{},
+		&models.User{},
+		&models.UserProfile{},
+		&models.Contact{},
+		&models.Address{},
+		&models.Role{},
+		&models.Permission{},
+		&models.UserRole{},
+		&models.Resource{},
+		&models.Action{},
+		&models.AuditLog{},
 	)
 	if migrationErr != nil {
 		panic(fmt.Sprintf("Error migrating database: %v", migrationErr))

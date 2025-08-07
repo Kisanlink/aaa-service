@@ -28,6 +28,7 @@ func AuthInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServe
 	}
 
 	// Add user ID to context for downstream handlers
-	ctx = context.WithValue(ctx, "user_id", userID)
+	type userIDKey struct{}
+	ctx = context.WithValue(ctx, userIDKey{}, userID)
 	return handler(ctx, req)
 }
