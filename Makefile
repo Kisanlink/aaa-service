@@ -1,218 +1,140 @@
-# Makefile for AAA Service
-.PHONY: help install-tools lint test test-unit test-integration test-coverage build clean fmt imports security tidy docker pre-commit setup-hooks
+# AAA Service Makefile
+# Provides common development and deployment commands
 
-# Variables
-GO_FILES := $(shell find . -name '*.go' -not -path './vendor/*' -not -path './docs/*')
-BINARY_NAME := aaa-service
-BUILD_DIR := bin
-COVERAGE_DIR := coverage
-DOCKER_IMAGE := aaa-service:latest
+.PHONY: help build test clean docker-build docker-run dev setup lint format check coverage docs
 
-# Colors for output
-RED := \033[0;31m
-GREEN := \033[0;32m
-YELLOW := \033[0;33m
-BLUE := \033[0;34m
-NC := \033[0m # No Color
-
-## help: Show this help message
-help:
-	@echo "$(BLUE)AAA Service Makefile Commands:$(NC)"
+# Default target
+help: ## Show this help message
+	@echo "AAA Service - Identity & Access Management"
+	@echo "=========================================="
 	@echo ""
-	@grep -E '^## [a-zA-Z_-]+:' $(MAKEFILE_LIST) | \
-		sed 's/## //' | \
-		awk -F: '{printf "$(GREEN)%-20s$(NC) %s\n", $$1, $$2}'
+	@echo "Available commands:"
+	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-## install-tools: Install required development tools
-install-tools:
-	@echo "$(BLUE)Installing development tools...$(NC)"
-	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-	@go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest
-	@go install golang.org/x/tools/cmd/goimports@latest
-	@go install github.com/fzipp/gocyclo/cmd/gocyclo@latest
-	@which pre-commit > /dev/null || (echo "$(RED)Please install pre-commit: pip install pre-commit$(NC)" && exit 1)
-	@echo "$(GREEN)Tools installed successfully$(NC)"
+# Development commands
+setup: ## Setup development environment
+	@echo "Setting up development environment..."
+	go mod download
+	go mod tidy
+	@echo "✅ Development environment ready"
 
-## setup-hooks: Install pre-commit hooks
-setup-hooks: install-tools
-	@echo "$(BLUE)Setting up pre-commit hooks...$(NC)"
-	@pre-commit install
-	@pre-commit install --hook-type commit-msg
-	@echo "$(GREEN)Pre-commit hooks installed$(NC)"
+build: ## Build the application
+	@echo "Building AAA Service..."
+	go build -o bin/aaa-server cmd/server/main.go
+	@echo "✅ Build complete: bin/aaa-server"
 
-## fmt: Format Go code
-fmt:
-	@echo "$(BLUE)Formatting Go code...$(NC)"
-	@gofmt -s -w $(GO_FILES)
-	@echo "$(GREEN)Code formatted$(NC)"
+test: ## Run tests
+	@echo "Running tests..."
+	go test ./... -v
 
-## imports: Fix and organize imports
-imports:
-	@echo "$(BLUE)Fixing imports...$(NC)"
-	@goimports -w $(GO_FILES)
-	@echo "$(GREEN)Imports fixed$(NC)"
+test-coverage: ## Run tests with coverage
+	@echo "Running tests with coverage..."
+	go test ./... -cover -coverprofile=coverage.out
+	go tool cover -html=coverage.out -o coverage.html
+	@echo "✅ Coverage report: coverage.html"
 
-## tidy: Tidy Go modules
-tidy:
-	@echo "$(BLUE)Tidying Go modules...$(NC)"
-	@go mod tidy
-	@go mod verify
-	@echo "$(GREEN)Modules tidied$(NC)"
+lint: ## Run linter
+	@echo "Running linter..."
+	golangci-lint run
 
-## lint: Run all linters
-lint:
-	@echo "$(BLUE)Running linters...$(NC)"
-	@golangci-lint run --timeout=5m
-	@echo "$(GREEN)Linting completed$(NC)"
+format: ## Format code
+	@echo "Formatting code..."
+	go fmt ./...
+	gofmt -s -w .
 
-## security: Run security analysis
-security:
-	@echo "$(BLUE)Running security analysis...$(NC)"
-	@gosec -quiet ./...
-	@echo "$(GREEN)Security analysis completed$(NC)"
+check: lint test ## Run all quality checks
 
-## build: Build the application
-build:
-	@echo "$(BLUE)Building application...$(NC)"
-	@mkdir -p $(BUILD_DIR)
-	@go build -ldflags="-s -w" -o $(BUILD_DIR)/$(BINARY_NAME) ./cmd/server
-	@echo "$(GREEN)Build completed: $(BUILD_DIR)/$(BINARY_NAME)$(NC)"
+# Docker commands
+docker-build: ## Build Docker image
+	@echo "Building Docker image..."
+	docker build -t aaa-service:latest .
 
-## test-unit: Run unit tests
-test-unit:
-	@echo "$(BLUE)Running unit tests...$(NC)"
-	@mkdir -p $(COVERAGE_DIR)
-	@go test -race -short -coverprofile=$(COVERAGE_DIR)/unit.out -covermode=atomic ./...
-	@go tool cover -html=$(COVERAGE_DIR)/unit.out -o $(COVERAGE_DIR)/unit.html
-	@echo "$(GREEN)Unit tests completed$(NC)"
-	@echo "$(YELLOW)Coverage report: $(COVERAGE_DIR)/unit.html$(NC)"
+docker-run: ## Run Docker container
+	@echo "Running Docker container..."
+	docker run -p 8080:8080 aaa-service:latest
 
-## test-integration: Run integration tests
-test-integration:
-	@echo "$(BLUE)Running integration tests...$(NC)"
-	@echo "$(YELLOW)Starting test database...$(NC)"
-	@docker-compose -f docker-compose.test.yml up -d --wait
-	@sleep 5
-	@mkdir -p $(COVERAGE_DIR)
-	@go test -race -tags=integration -coverprofile=$(COVERAGE_DIR)/integration.out -covermode=atomic ./test/integration/...
-	@go tool cover -html=$(COVERAGE_DIR)/integration.out -o $(COVERAGE_DIR)/integration.html
-	@echo "$(GREEN)Integration tests completed$(NC)"
-	@echo "$(YELLOW)Coverage report: $(COVERAGE_DIR)/integration.html$(NC)"
-	@echo "$(YELLOW)Stopping test database...$(NC)"
-	@docker-compose -f docker-compose.test.yml down
+docker-clean: ## Clean Docker containers and images
+	@echo "Cleaning Docker resources..."
+	docker system prune -f
+	docker image prune -f
 
-## test-coverage: Run all tests and generate combined coverage
-test-coverage: test-unit test-integration
-	@echo "$(BLUE)Generating combined coverage report...$(NC)"
-	@echo 'mode: atomic' > $(COVERAGE_DIR)/combined.out
-	@tail -n +2 $(COVERAGE_DIR)/unit.out >> $(COVERAGE_DIR)/combined.out
-	@tail -n +2 $(COVERAGE_DIR)/integration.out >> $(COVERAGE_DIR)/combined.out
-	@go tool cover -html=$(COVERAGE_DIR)/combined.out -o $(COVERAGE_DIR)/combined.html
-	@go tool cover -func=$(COVERAGE_DIR)/combined.out | tail -1
-	@echo "$(GREEN)Combined coverage report: $(COVERAGE_DIR)/combined.html$(NC)"
+# Database commands
+db-migrate: ## Run database migrations
+	@echo "Running database migrations..."
+	@echo "TODO: Implement migration script"
 
-## test: Run all tests (unit only for pre-commit)
-test: test-unit
+db-seed: ## Seed database with test data
+	@echo "Seeding database..."
+	@echo "TODO: Implement seed script"
 
-## benchmark: Run benchmarks
-benchmark:
-	@echo "$(BLUE)Running benchmarks...$(NC)"
-	@go test -bench=. -benchmem ./...
-	@echo "$(GREEN)Benchmarks completed$(NC)"
+# Development server
+dev: ## Run development server
+	@echo "Starting development server..."
+	go run cmd/server/main.go
 
-## docker: Build Docker image
-docker:
-	@echo "$(BLUE)Building Docker image...$(NC)"
-	@docker build -t $(DOCKER_IMAGE) .
-	@echo "$(GREEN)Docker image built: $(DOCKER_IMAGE)$(NC)"
+# Documentation
+docs: ## Generate documentation
+	@echo "Generating documentation..."
+	swag init -g cmd/server/main.go
+	@echo "✅ Documentation generated"
 
-## clean: Clean build artifacts and coverage reports
-clean:
-	@echo "$(BLUE)Cleaning build artifacts...$(NC)"
-	@rm -rf $(BUILD_DIR) $(COVERAGE_DIR)
-	@go clean -cache -testcache -modcache
-	@echo "$(GREEN)Clean completed$(NC)"
+# Cleanup
+clean: ## Clean build artifacts
+	@echo "Cleaning build artifacts..."
+	rm -rf bin/
+	rm -f coverage.out coverage.html
+	@echo "✅ Cleanup complete"
 
-## pre-commit: Run all pre-commit checks manually
-pre-commit: fmt imports tidy lint security test-unit build
-	@echo "$(GREEN)All pre-commit checks passed!$(NC)"
+# Production
+prod-build: ## Build for production
+	@echo "Building for production..."
+	CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o bin/aaa-server cmd/server/main.go
 
-## ci: Run all CI checks (includes integration tests)
-ci: fmt imports tidy lint security test-coverage build
-	@echo "$(GREEN)All CI checks passed!$(NC)"
+# Security
+security-scan: ## Run security scan
+	@echo "Running security scan..."
+	gosec ./...
+	@echo "✅ Security scan complete"
 
-## dev-setup: Complete development environment setup
-dev-setup: install-tools setup-hooks
-	@echo "$(BLUE)Setting up development environment...$(NC)"
-	@cp .env.example .env 2>/dev/null || echo "No .env.example found"
-	@echo "$(GREEN)Development environment setup completed!$(NC)"
-	@echo "$(YELLOW)Next steps:$(NC)"
-	@echo "  1. Update .env file with your configuration"
-	@echo "  2. Run 'make test' to verify everything works"
-	@echo "  3. Start coding!"
+# Performance
+benchmark: ## Run benchmarks
+	@echo "Running benchmarks..."
+	go test -bench=. ./...
 
-## run: Run the application locally
-run: build
-	@echo "$(BLUE)Starting AAA service...$(NC)"
-	@echo "$(YELLOW)Make sure you have set up your environment variables!$(NC)"
-	@echo "$(YELLOW)Required variables: DB_POSTGRES_HOST, DB_POSTGRES_PORT, DB_POSTGRES_USER, DB_POSTGRES_PASSWORD, DB_POSTGRES_DBNAME$(NC)"
-	@echo "$(YELLOW)Make sure SpiceDB database 'spicedb' exists in your PostgreSQL instance$(NC)"
-	@./$(BUILD_DIR)/$(BINARY_NAME)
+# Monitoring
+health-check: ## Check service health
+	@echo "Checking service health..."
+	curl -f http://localhost:8080/health || echo "Service not running"
 
-## run-dev: Run the application in development mode
-run-dev:
-	@echo "$(BLUE)Starting AAA service in development mode...$(NC)"
-	@go run ./cmd/server
+# Dependencies
+deps-update: ## Update dependencies
+	@echo "Updating dependencies..."
+	go get -u ./...
+	go mod tidy
 
+deps-check: ## Check for outdated dependencies
+	@echo "Checking for outdated dependencies..."
+	go list -u -m all
 
+# Git hooks
+install-hooks: ## Install git hooks
+	@echo "Installing git hooks..."
+	cp scripts/pre-commit.sh .git/hooks/pre-commit
+	chmod +x .git/hooks/pre-commit
+	@echo "✅ Git hooks installed"
 
-## install-migrate: Install migrate tool
-install-migrate:
-	@echo "$(BLUE)Installing migrate tool...$(NC)"
-	@go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
-	@echo "$(GREEN)Migrate tool installed$(NC)"
+# Quick development workflow
+dev-setup: setup install-hooks ## Complete development setup
+	@echo "✅ Development setup complete"
 
-## migrate: Run database migrations
-migrate: install-migrate
-	@echo "$(BLUE)Running database migrations...$(NC)"
-	@if [ -z "$(DATABASE_URL)" ]; then \
-		echo "$(YELLOW)DATABASE_URL not set, constructing from individual variables...$(NC)"; \
-		export DATABASE_URL="postgres://$${DB_POSTGRES_USER:-aaa_user}:$${DB_POSTGRES_PASSWORD:-aaa_password}@$${DB_POSTGRES_HOST:-localhost}:$${DB_POSTGRES_PORT:-5432}/$${DB_POSTGRES_DBNAME:-aaa_service}?sslmode=$${DB_SSL_MODE:-disable}"; \
-	fi
-	@$(shell go env GOPATH)/bin/migrate -path ./migrations -database "$(DATABASE_URL)" up
+dev-start: dev-setup dev ## Start development environment
 
-## migrate-down: Rollback database migrations
-migrate-down:
-	@echo "$(BLUE)Rolling back database migrations...$(NC)"
-	@if [ -z "$(DATABASE_URL)" ]; then \
-		echo "$(YELLOW)DATABASE_URL not set, constructing from individual variables...$(NC)"; \
-		export DATABASE_URL="postgres://$${DB_POSTGRES_USER:-aaa_user}:$${DB_POSTGRES_PASSWORD:-aaa_password}@$${DB_POSTGRES_HOST:-localhost}:$${DB_POSTGRES_PORT:-5432}/$${DB_POSTGRES_DBNAME:-aaa_service}?sslmode=$${DB_SSL_MODE:-disable}"; \
-	fi
-	@$(shell go env GOPATH)/bin/migrate -path ./migrations -database "$(DATABASE_URL)" down
+# Helpers
+version: ## Show version information
+	@echo "AAA Service"
+	@echo "Version: $(shell git describe --tags --always --dirty)"
+	@echo "Commit: $(shell git rev-parse HEAD)"
+	@echo "Date: $(shell date)"
 
-
-
-## docker-down: Stop all Docker services
-docker-down:
-	@echo "$(BLUE)Stopping all Docker services...$(NC)"
-	@docker-compose down
-
-## docker-cleanup: Comprehensive Docker cleanup
-docker-cleanup:
-	@echo "$(BLUE)Running comprehensive Docker cleanup...$(NC)"
-	@docker system prune -f
-	@docker volume prune -f
-
-## docker-reset: Stop services and cleanup
-docker-reset: docker-down docker-cleanup
-	@echo "$(GREEN)Docker reset completed$(NC)"
-
-## docs: Generate documentation
-docs:
-	@echo "$(BLUE)Generating documentation...$(NC)"
-	@go doc -all ./... > docs/API.md
-	@echo "$(GREEN)Documentation generated$(NC)"
-
-integration-test:
-	docker compose -f ../kisanlink-db/pkg/db/docker-compose.test.yml up -d
-	go test -v -tags=integration -count=1 ./test/integration/postgres_integration_test.go
+# Default target
+.DEFAULT_GOAL := help
