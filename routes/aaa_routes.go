@@ -3,8 +3,10 @@ package routes
 import (
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/Kisanlink/aaa-service/middleware"
+	"github.com/Kisanlink/aaa-service/pkg/errors"
 	"github.com/Kisanlink/aaa-service/services"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -160,6 +162,31 @@ func createRegisterHandler(authService *services.AuthService, logger *zap.Logger
 		response, err := authService.Register(c.Request.Context(), &req)
 		if err != nil {
 			logger.Error("Registration failed", zap.Error(err))
+
+			// Handle different error types properly
+			if conflictErr, ok := err.(*errors.ConflictError); ok {
+				c.JSON(http.StatusConflict, gin.H{
+					"success":   false,
+					"timestamp": time.Now().UTC().Format(time.RFC3339),
+					"code":      "CONFLICT",
+					"message":   "Registration failed",
+					"details":   conflictErr.Error(),
+				})
+				return
+			}
+
+			if validationErr, ok := err.(*errors.ValidationError); ok {
+				c.JSON(http.StatusBadRequest, gin.H{
+					"success":   false,
+					"timestamp": time.Now().UTC().Format(time.RFC3339),
+					"code":      "VALIDATION_ERROR",
+					"message":   "Validation failed",
+					"errors":    []string{validationErr.Error()},
+				})
+				return
+			}
+
+			// Default error response
 			c.JSON(http.StatusBadRequest, gin.H{"error": "registration failed", "message": err.Error()})
 			return
 		}
