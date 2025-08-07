@@ -5,46 +5,42 @@ import (
 	"fmt"
 
 	"github.com/Kisanlink/aaa-service/entities/models"
+	"github.com/Kisanlink/kisanlink-db/pkg/base"
 	"github.com/Kisanlink/kisanlink-db/pkg/db"
 )
 
 // UserProfileRepository handles database operations for UserProfile entities
 type UserProfileRepository struct {
+	*base.BaseFilterableRepository[*models.UserProfile]
 	dbManager db.DBManager
 }
 
 // NewUserProfileRepository creates a new UserProfileRepository instance
 func NewUserProfileRepository(dbManager db.DBManager) *UserProfileRepository {
 	return &UserProfileRepository{
-		dbManager: dbManager,
+		BaseFilterableRepository: base.NewBaseFilterableRepository[*models.UserProfile](),
+		dbManager:                dbManager,
 	}
 }
 
-// Create creates a new user profile
+// Create creates a new user profile using the base repository
 func (r *UserProfileRepository) Create(ctx context.Context, profile *models.UserProfile) error {
-	if err := profile.BeforeCreate(); err != nil {
-		return fmt.Errorf("failed to prepare profile for creation: %w", err)
-	}
-	return r.dbManager.Create(ctx, profile)
+	return r.BaseFilterableRepository.Create(ctx, profile)
 }
 
-// GetByID retrieves a user profile by ID
+// GetByID retrieves a user profile by ID using the base repository
 func (r *UserProfileRepository) GetByID(ctx context.Context, id string) (*models.UserProfile, error) {
-	var profile models.UserProfile
-	if err := r.dbManager.GetByID(ctx, id, &profile); err != nil {
-		return nil, fmt.Errorf("failed to get profile by ID: %w", err)
-	}
-	return &profile, nil
+	return r.BaseFilterableRepository.GetByID(ctx, id)
 }
 
-// GetByUserID retrieves a user profile by user ID
+// GetByUserID retrieves a user profile by user ID using database-level filtering
 func (r *UserProfileRepository) GetByUserID(ctx context.Context, userID string) (*models.UserProfile, error) {
-	filters := []db.Filter{
-		r.dbManager.BuildFilter("user_id", db.FilterOpEqual, userID),
-	}
+	filter := base.NewFilterBuilder().
+		Where("user_id", base.OpEqual, userID).
+		Build()
 
-	var profiles []models.UserProfile
-	if err := r.dbManager.List(ctx, filters, &profiles); err != nil {
+	profiles, err := r.BaseFilterableRepository.Find(ctx, filter)
+	if err != nil {
 		return nil, fmt.Errorf("failed to get profile by user ID: %w", err)
 	}
 
@@ -52,36 +48,26 @@ func (r *UserProfileRepository) GetByUserID(ctx context.Context, userID string) 
 		return nil, fmt.Errorf("profile not found with user ID: %s", userID)
 	}
 
-	return &profiles[0], nil
+	return profiles[0], nil
 }
 
-// Update updates an existing user profile
+// Update updates an existing user profile using the base repository
 func (r *UserProfileRepository) Update(ctx context.Context, profile *models.UserProfile) error {
-	if err := profile.BeforeUpdate(); err != nil {
-		return fmt.Errorf("failed to prepare profile for update: %w", err)
-	}
-	return r.dbManager.Update(ctx, profile)
+	return r.BaseFilterableRepository.Update(ctx, profile)
 }
 
-// Delete deletes a user profile by ID
+// Delete deletes a user profile by ID using the base repository
 func (r *UserProfileRepository) Delete(ctx context.Context, id string) error {
-	return r.dbManager.Delete(ctx, id)
+	return r.BaseFilterableRepository.Delete(ctx, id)
 }
 
-// List retrieves a list of user profiles with pagination
-func (r *UserProfileRepository) List(ctx context.Context, filters []db.Filter, limit, offset int) ([]*models.UserProfile, error) {
-	var profiles []models.UserProfile
-	if err := r.dbManager.List(ctx, filters, &profiles); err != nil {
-		return nil, fmt.Errorf("failed to list profiles: %w", err)
-	}
+// List retrieves a list of user profiles with pagination using database-level filtering
+func (r *UserProfileRepository) List(ctx context.Context, limit, offset int) ([]*models.UserProfile, error) {
+	filter := base.NewFilterBuilder().
+		Limit(limit, offset).
+		Build()
 
-	// Convert []models.UserProfile to []*models.UserProfile
-	results := make([]*models.UserProfile, len(profiles))
-	for i, profile := range profiles {
-		results[i] = &profile
-	}
-
-	return results, nil
+	return r.BaseFilterableRepository.Find(ctx, filter)
 }
 
 // ExistsByUserID checks if a user profile exists for the given user ID

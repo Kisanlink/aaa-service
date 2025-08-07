@@ -77,58 +77,36 @@ func (r *UserRoleRepository) Count(ctx context.Context) (int64, error) {
 	return r.BaseFilterableRepository.Count(ctx)
 }
 
-// GetByUserID retrieves all roles for a user
+// GetByUserID retrieves all roles for a user using database-level filtering
 func (r *UserRoleRepository) GetByUserID(ctx context.Context, userID string) ([]*models.UserRole, error) {
-	filters := []db.Filter{
-		r.dbManager.BuildFilter("user_id", db.FilterOpEqual, userID),
-		r.dbManager.BuildFilter("is_active", db.FilterOpEqual, true),
-	}
+	filter := base.NewFilterBuilder().
+		Where("user_id", base.OpEqual, userID).
+		Where("is_active", base.OpEqual, true).
+		Build()
 
-	var userRoles []models.UserRole
-	if err := r.dbManager.List(ctx, filters, &userRoles); err != nil {
-		return nil, fmt.Errorf("failed to get user roles by user ID: %w", err)
-	}
-
-	// Convert []models.UserRole to []*models.UserRole
-	result := make([]*models.UserRole, len(userRoles))
-	for i := range userRoles {
-		result[i] = &userRoles[i]
-	}
-
-	return result, nil
+	return r.BaseFilterableRepository.Find(ctx, filter)
 }
 
-// GetByRoleID retrieves all users for a role
+// GetByRoleID retrieves all users for a role using database-level filtering
 func (r *UserRoleRepository) GetByRoleID(ctx context.Context, roleID string) ([]*models.UserRole, error) {
-	filters := []db.Filter{
-		r.dbManager.BuildFilter("role_id", db.FilterOpEqual, roleID),
-		r.dbManager.BuildFilter("is_active", db.FilterOpEqual, true),
-	}
+	filter := base.NewFilterBuilder().
+		Where("role_id", base.OpEqual, roleID).
+		Where("is_active", base.OpEqual, true).
+		Build()
 
-	var userRoles []models.UserRole
-	if err := r.dbManager.List(ctx, filters, &userRoles); err != nil {
-		return nil, fmt.Errorf("failed to get user roles by role ID: %w", err)
-	}
-
-	// Convert []models.UserRole to []*models.UserRole
-	result := make([]*models.UserRole, len(userRoles))
-	for i := range userRoles {
-		result[i] = &userRoles[i]
-	}
-
-	return result, nil
+	return r.BaseFilterableRepository.Find(ctx, filter)
 }
 
-// GetByUserAndRole retrieves a specific user role assignment
+// GetByUserAndRole retrieves a specific user role assignment using database-level filtering
 func (r *UserRoleRepository) GetByUserAndRole(ctx context.Context, userID, roleID string) (*models.UserRole, error) {
-	filters := []db.Filter{
-		r.dbManager.BuildFilter("user_id", db.FilterOpEqual, userID),
-		r.dbManager.BuildFilter("role_id", db.FilterOpEqual, roleID),
-		r.dbManager.BuildFilter("is_active", db.FilterOpEqual, true),
-	}
+	filter := base.NewFilterBuilder().
+		Where("user_id", base.OpEqual, userID).
+		Where("role_id", base.OpEqual, roleID).
+		Where("is_active", base.OpEqual, true).
+		Build()
 
-	var userRoles []models.UserRole
-	if err := r.dbManager.List(ctx, filters, &userRoles); err != nil {
+	userRoles, err := r.BaseFilterableRepository.Find(ctx, filter)
+	if err != nil {
 		return nil, fmt.Errorf("failed to get user role: %w", err)
 	}
 
@@ -136,7 +114,7 @@ func (r *UserRoleRepository) GetByUserAndRole(ctx context.Context, userID, roleI
 		return nil, fmt.Errorf("user role not found")
 	}
 
-	return &userRoles[0], nil
+	return userRoles[0], nil
 }
 
 // DeleteByUserAndRole deletes a user role assignment by user ID and role ID

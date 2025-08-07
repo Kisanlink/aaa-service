@@ -3,7 +3,6 @@ package users
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/Kisanlink/aaa-service/entities/models"
 	"github.com/Kisanlink/kisanlink-db/pkg/base"
@@ -44,14 +43,20 @@ func (r *UserRepository) Delete(ctx context.Context, id string) error {
 	return r.BaseFilterableRepository.Delete(ctx, id)
 }
 
-// List retrieves users with pagination using the base repository
+// List retrieves users with pagination using database-level filtering
 func (r *UserRepository) List(ctx context.Context, limit, offset int) ([]*models.User, error) {
-	return r.BaseFilterableRepository.List(ctx, limit, offset)
+	// Use base filterable repository for optimized database-level filtering
+	filter := base.NewFilterBuilder().
+		Limit(limit, offset).
+		Build()
+
+	return r.BaseFilterableRepository.Find(ctx, filter)
 }
 
-// Count returns the total number of users using the base repository
+// Count returns the total number of users using database-level counting
 func (r *UserRepository) Count(ctx context.Context) (int64, error) {
-	return r.BaseFilterableRepository.Count(ctx)
+	filter := base.NewFilter()
+	return r.BaseFilterableRepository.CountWithFilter(ctx, filter)
 }
 
 // Exists checks if a user exists by ID using the base repository
@@ -121,14 +126,14 @@ func (r *UserRepository) SoftDeleteMany(ctx context.Context, ids []string, delet
 	return r.BaseFilterableRepository.SoftDeleteMany(ctx, ids, deletedBy)
 }
 
-// GetByUsername retrieves a user by username
+// GetByUsername retrieves a user by username using database-level filtering
 func (r *UserRepository) GetByUsername(ctx context.Context, username string) (*models.User, error) {
-	filters := []db.Filter{
-		r.dbManager.BuildFilter("username", db.FilterOpEqual, username),
-	}
+	filter := base.NewFilterBuilder().
+		Where("username", base.OpEqual, username).
+		Build()
 
-	var users []models.User
-	if err := r.dbManager.List(ctx, filters, &users); err != nil {
+	users, err := r.BaseFilterableRepository.Find(ctx, filter)
+	if err != nil {
 		return nil, fmt.Errorf("failed to get user by username: %w", err)
 	}
 
@@ -136,18 +141,18 @@ func (r *UserRepository) GetByUsername(ctx context.Context, username string) (*m
 		return nil, fmt.Errorf("user not found with username: %s", username)
 	}
 
-	return &users[0], nil
+	return users[0], nil
 }
 
-// GetByPhoneNumber retrieves a user by phone number
+// GetByPhoneNumber retrieves a user by phone number using database-level filtering
 func (r *UserRepository) GetByPhoneNumber(ctx context.Context, phoneNumber string, countryCode string) (*models.User, error) {
-	filters := []db.Filter{
-		r.dbManager.BuildFilter("phone_number", db.FilterOpEqual, phoneNumber),
-		r.dbManager.BuildFilter("country_code", db.FilterOpEqual, countryCode),
-	}
+	filter := base.NewFilterBuilder().
+		Where("phone_number", base.OpEqual, phoneNumber).
+		Where("country_code", base.OpEqual, countryCode).
+		Build()
 
-	var users []models.User
-	if err := r.dbManager.List(ctx, filters, &users); err != nil {
+	users, err := r.BaseFilterableRepository.Find(ctx, filter)
+	if err != nil {
 		return nil, fmt.Errorf("failed to get user by phone number: %w", err)
 	}
 
@@ -155,17 +160,17 @@ func (r *UserRepository) GetByPhoneNumber(ctx context.Context, phoneNumber strin
 		return nil, fmt.Errorf("user not found with phone number: %s%s", countryCode, phoneNumber)
 	}
 
-	return &users[0], nil
+	return users[0], nil
 }
 
-// GetByMobileNumber retrieves a user by mobile number
+// GetByMobileNumber retrieves a user by mobile number using database-level filtering
 func (r *UserRepository) GetByMobileNumber(ctx context.Context, mobileNumber uint64) (*models.User, error) {
-	filters := []db.Filter{
-		r.dbManager.BuildFilter("mobile_number", db.FilterOpEqual, mobileNumber),
-	}
+	filter := base.NewFilterBuilder().
+		Where("mobile_number", base.OpEqual, mobileNumber).
+		Build()
 
-	var users []models.User
-	if err := r.dbManager.List(ctx, filters, &users); err != nil {
+	users, err := r.BaseFilterableRepository.Find(ctx, filter)
+	if err != nil {
 		return nil, fmt.Errorf("failed to get user by mobile number: %w", err)
 	}
 
@@ -173,17 +178,17 @@ func (r *UserRepository) GetByMobileNumber(ctx context.Context, mobileNumber uin
 		return nil, fmt.Errorf("user not found with mobile number: %d", mobileNumber)
 	}
 
-	return &users[0], nil
+	return users[0], nil
 }
 
-// GetByAadhaarNumber retrieves a user by Aadhaar number
+// GetByAadhaarNumber retrieves a user by Aadhaar number using database-level filtering
 func (r *UserRepository) GetByAadhaarNumber(ctx context.Context, aadhaarNumber string) (*models.User, error) {
-	filters := []db.Filter{
-		r.dbManager.BuildFilter("aadhaar_number", db.FilterOpEqual, aadhaarNumber),
-	}
+	filter := base.NewFilterBuilder().
+		Where("aadhaar_number", base.OpEqual, aadhaarNumber).
+		Build()
 
-	var users []models.User
-	if err := r.dbManager.List(ctx, filters, &users); err != nil {
+	users, err := r.BaseFilterableRepository.Find(ctx, filter)
+	if err != nil {
 		return nil, fmt.Errorf("failed to get user by Aadhaar number: %w", err)
 	}
 
@@ -191,45 +196,26 @@ func (r *UserRepository) GetByAadhaarNumber(ctx context.Context, aadhaarNumber s
 		return nil, fmt.Errorf("user not found with Aadhaar number: %s", aadhaarNumber)
 	}
 
-	return &users[0], nil
+	return users[0], nil
 }
 
-// ListActive retrieves all active users using the base repository
+// ListActive retrieves all active users using database-level filtering
 func (r *UserRepository) ListActive(ctx context.Context, limit, offset int) ([]*models.User, error) {
-	// Get all users from base repository
-	allUsers, err := r.BaseFilterableRepository.List(ctx, limit, offset)
-	if err != nil {
-		return nil, fmt.Errorf("failed to list users: %w", err)
-	}
+	filter := base.NewFilterBuilder().
+		Where("status", base.OpEqual, "active").
+		Limit(limit, offset).
+		Build()
 
-	// Filter for active users
-	var activeUsers []*models.User
-	for _, user := range allUsers {
-		if user.Status != nil && *user.Status == "active" {
-			activeUsers = append(activeUsers, user)
-		}
-	}
-
-	return activeUsers, nil
+	return r.BaseFilterableRepository.Find(ctx, filter)
 }
 
-// CountActive returns the total number of active users using the base repository
+// CountActive returns the total number of active users using database-level counting
 func (r *UserRepository) CountActive(ctx context.Context) (int64, error) {
-	// Get all users from base repository
-	allUsers, err := r.BaseFilterableRepository.List(ctx, 1000, 0) // Get all users for counting
-	if err != nil {
-		return 0, fmt.Errorf("failed to list users: %w", err)
-	}
+	filter := base.NewFilterBuilder().
+		Where("status", base.OpEqual, "active").
+		Build()
 
-	// Count active users
-	var count int64
-	for _, user := range allUsers {
-		if user.Status != nil && *user.Status == "active" {
-			count++
-		}
-	}
-
-	return count, nil
+	return r.BaseFilterableRepository.CountWithFilter(ctx, filter)
 }
 
 // GetWithRoles retrieves a user with their roles using proper joins with goroutines
@@ -424,24 +410,14 @@ func (r *UserRepository) GetWithProfile(ctx context.Context, userID string) (*mo
 	return &user, nil
 }
 
-// Search searches users by keyword in name, username, or mobile number
-// Search searches for users by keyword in username using the base repository
+// Search searches for users by keyword in username using database-level filtering
 func (r *UserRepository) Search(ctx context.Context, keyword string, limit, offset int) ([]*models.User, error) {
-	// Get all users from base repository
-	allUsers, err := r.BaseFilterableRepository.List(ctx, limit, offset)
-	if err != nil {
-		return nil, fmt.Errorf("failed to list users: %w", err)
-	}
+	filter := base.NewFilterBuilder().
+		Where("username", base.OpContains, keyword).
+		Limit(limit, offset).
+		Build()
 
-	// Filter for users matching the keyword
-	var matchingUsers []*models.User
-	for _, user := range allUsers {
-		if user.Username != nil && strings.Contains(strings.ToLower(*user.Username), strings.ToLower(keyword)) {
-			matchingUsers = append(matchingUsers, user)
-		}
-	}
-
-	return matchingUsers, nil
+	return r.BaseFilterableRepository.Find(ctx, filter)
 }
 
 // GetUsersWithRelationships efficiently loads multiple users with their relationships using goroutines
@@ -618,4 +594,363 @@ func (r *UserRepository) BulkValidateUsers(ctx context.Context, userIDs []string
 	}
 
 	return nil
+}
+
+// GetByEmail retrieves a user by email using database-level filtering
+func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*models.User, error) {
+	filter := base.NewFilterBuilder().
+		Where("email", base.OpEqual, email).
+		Build()
+
+	users, err := r.BaseFilterableRepository.Find(ctx, filter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user by email: %w", err)
+	}
+
+	if len(users) == 0 {
+		return nil, fmt.Errorf("user not found with email: %s", email)
+	}
+
+	return users[0], nil
+}
+
+// GetByStatus retrieves users by status using database-level filtering
+func (r *UserRepository) GetByStatus(ctx context.Context, status string, limit, offset int) ([]*models.User, error) {
+	filter := base.NewFilterBuilder().
+		Where("status", base.OpEqual, status).
+		Limit(limit, offset).
+		Build()
+
+	return r.BaseFilterableRepository.Find(ctx, filter)
+}
+
+// GetByValidationStatus retrieves users by validation status using database-level filtering
+func (r *UserRepository) GetByValidationStatus(ctx context.Context, isValidated bool, limit, offset int) ([]*models.User, error) {
+	filter := base.NewFilterBuilder().
+		Where("is_validated", base.OpEqual, isValidated).
+		Limit(limit, offset).
+		Build()
+
+	return r.BaseFilterableRepository.Find(ctx, filter)
+}
+
+// GetByDateRange retrieves users created within a date range using database-level filtering
+func (r *UserRepository) GetByDateRange(ctx context.Context, startDate, endDate string, limit, offset int) ([]*models.User, error) {
+	filter := base.NewFilterBuilder().
+		WhereBetween("created_at", startDate, endDate).
+		Limit(limit, offset).
+		Build()
+
+	return r.BaseFilterableRepository.Find(ctx, filter)
+}
+
+// GetByUpdatedDateRange retrieves users updated within a date range using database-level filtering
+func (r *UserRepository) GetByUpdatedDateRange(ctx context.Context, startDate, endDate string, limit, offset int) ([]*models.User, error) {
+	filter := base.NewFilterBuilder().
+		WhereBetween("updated_at", startDate, endDate).
+		Limit(limit, offset).
+		Build()
+
+	return r.BaseFilterableRepository.Find(ctx, filter)
+}
+
+// GetByDeletedDateRange retrieves users deleted within a date range using database-level filtering
+func (r *UserRepository) GetByDeletedDateRange(ctx context.Context, startDate, endDate string, limit, offset int) ([]*models.User, error) {
+	filter := base.NewFilterBuilder().
+		WhereBetween("deleted_at", startDate, endDate).
+		Limit(limit, offset).
+		Build()
+
+	return r.BaseFilterableRepository.Find(ctx, filter)
+}
+
+// GetByUsernameAndStatus retrieves users by username and status using database-level filtering
+func (r *UserRepository) GetByUsernameAndStatus(ctx context.Context, username, status string, limit, offset int) ([]*models.User, error) {
+	filter := base.NewFilterBuilder().
+		Where("username", base.OpEqual, username).
+		Where("status", base.OpEqual, status).
+		Limit(limit, offset).
+		Build()
+
+	return r.BaseFilterableRepository.Find(ctx, filter)
+}
+
+// GetByUsernameAndValidationStatus retrieves users by username and validation status using database-level filtering
+func (r *UserRepository) GetByUsernameAndValidationStatus(ctx context.Context, username string, isValidated bool, limit, offset int) ([]*models.User, error) {
+	filter := base.NewFilterBuilder().
+		Where("username", base.OpEqual, username).
+		Where("is_validated", base.OpEqual, isValidated).
+		Limit(limit, offset).
+		Build()
+
+	return r.BaseFilterableRepository.Find(ctx, filter)
+}
+
+// GetByUsernameAndDateRange retrieves users by username and date range using database-level filtering
+func (r *UserRepository) GetByUsernameAndDateRange(ctx context.Context, username, startDate, endDate string, limit, offset int) ([]*models.User, error) {
+	filter := base.NewFilterBuilder().
+		Where("username", base.OpEqual, username).
+		WhereBetween("created_at", startDate, endDate).
+		Limit(limit, offset).
+		Build()
+
+	return r.BaseFilterableRepository.Find(ctx, filter)
+}
+
+// GetByUsernameAndUpdatedDateRange retrieves users by username and updated date range using database-level filtering
+func (r *UserRepository) GetByUsernameAndUpdatedDateRange(ctx context.Context, username, startDate, endDate string, limit, offset int) ([]*models.User, error) {
+	filter := base.NewFilterBuilder().
+		Where("username", base.OpEqual, username).
+		WhereBetween("updated_at", startDate, endDate).
+		Limit(limit, offset).
+		Build()
+
+	return r.BaseFilterableRepository.Find(ctx, filter)
+}
+
+// GetByUsernameAndDeletedDateRange retrieves users by username and deleted date range using database-level filtering
+func (r *UserRepository) GetByUsernameAndDeletedDateRange(ctx context.Context, username, startDate, endDate string, limit, offset int) ([]*models.User, error) {
+	filter := base.NewFilterBuilder().
+		Where("username", base.OpEqual, username).
+		WhereBetween("deleted_at", startDate, endDate).
+		Limit(limit, offset).
+		Build()
+
+	return r.BaseFilterableRepository.Find(ctx, filter)
+}
+
+// GetByStatusAndValidationStatus retrieves users by status and validation status using database-level filtering
+func (r *UserRepository) GetByStatusAndValidationStatus(ctx context.Context, status string, isValidated bool, limit, offset int) ([]*models.User, error) {
+	filter := base.NewFilterBuilder().
+		Where("status", base.OpEqual, status).
+		Where("is_validated", base.OpEqual, isValidated).
+		Limit(limit, offset).
+		Build()
+
+	return r.BaseFilterableRepository.Find(ctx, filter)
+}
+
+// GetByStatusAndDateRange retrieves users by status and date range using database-level filtering
+func (r *UserRepository) GetByStatusAndDateRange(ctx context.Context, status, startDate, endDate string, limit, offset int) ([]*models.User, error) {
+	filter := base.NewFilterBuilder().
+		Where("status", base.OpEqual, status).
+		WhereBetween("created_at", startDate, endDate).
+		Limit(limit, offset).
+		Build()
+
+	return r.BaseFilterableRepository.Find(ctx, filter)
+}
+
+// GetByStatusAndUpdatedDateRange retrieves users by status and updated date range using database-level filtering
+func (r *UserRepository) GetByStatusAndUpdatedDateRange(ctx context.Context, status, startDate, endDate string, limit, offset int) ([]*models.User, error) {
+	filter := base.NewFilterBuilder().
+		Where("status", base.OpEqual, status).
+		WhereBetween("updated_at", startDate, endDate).
+		Limit(limit, offset).
+		Build()
+
+	return r.BaseFilterableRepository.Find(ctx, filter)
+}
+
+// GetByStatusAndDeletedDateRange retrieves users by status and deleted date range using database-level filtering
+func (r *UserRepository) GetByStatusAndDeletedDateRange(ctx context.Context, status, startDate, endDate string, limit, offset int) ([]*models.User, error) {
+	filter := base.NewFilterBuilder().
+		Where("status", base.OpEqual, status).
+		WhereBetween("deleted_at", startDate, endDate).
+		Limit(limit, offset).
+		Build()
+
+	return r.BaseFilterableRepository.Find(ctx, filter)
+}
+
+// GetByValidationStatusAndDateRange retrieves users by validation status and date range using database-level filtering
+func (r *UserRepository) GetByValidationStatusAndDateRange(ctx context.Context, isValidated bool, startDate, endDate string, limit, offset int) ([]*models.User, error) {
+	filter := base.NewFilterBuilder().
+		Where("is_validated", base.OpEqual, isValidated).
+		WhereBetween("created_at", startDate, endDate).
+		Limit(limit, offset).
+		Build()
+
+	return r.BaseFilterableRepository.Find(ctx, filter)
+}
+
+// GetByValidationStatusAndUpdatedDateRange retrieves users by validation status and updated date range using database-level filtering
+func (r *UserRepository) GetByValidationStatusAndUpdatedDateRange(ctx context.Context, isValidated bool, startDate, endDate string, limit, offset int) ([]*models.User, error) {
+	filter := base.NewFilterBuilder().
+		Where("is_validated", base.OpEqual, isValidated).
+		WhereBetween("updated_at", startDate, endDate).
+		Limit(limit, offset).
+		Build()
+
+	return r.BaseFilterableRepository.Find(ctx, filter)
+}
+
+// GetByValidationStatusAndDeletedDateRange retrieves users by validation status and deleted date range using database-level filtering
+func (r *UserRepository) GetByValidationStatusAndDeletedDateRange(ctx context.Context, isValidated bool, startDate, endDate string, limit, offset int) ([]*models.User, error) {
+	filter := base.NewFilterBuilder().
+		Where("is_validated", base.OpEqual, isValidated).
+		WhereBetween("deleted_at", startDate, endDate).
+		Limit(limit, offset).
+		Build()
+
+	return r.BaseFilterableRepository.Find(ctx, filter)
+}
+
+// GetByUsernameAndStatusAndValidationStatus retrieves users by username, status and validation status using database-level filtering
+func (r *UserRepository) GetByUsernameAndStatusAndValidationStatus(ctx context.Context, username, status string, isValidated bool, limit, offset int) ([]*models.User, error) {
+	filter := base.NewFilterBuilder().
+		Where("username", base.OpEqual, username).
+		Where("status", base.OpEqual, status).
+		Where("is_validated", base.OpEqual, isValidated).
+		Limit(limit, offset).
+		Build()
+
+	return r.BaseFilterableRepository.Find(ctx, filter)
+}
+
+// GetByUsernameAndStatusAndDateRange retrieves users by username, status and date range using database-level filtering
+func (r *UserRepository) GetByUsernameAndStatusAndDateRange(ctx context.Context, username, status, startDate, endDate string, limit, offset int) ([]*models.User, error) {
+	filter := base.NewFilterBuilder().
+		Where("username", base.OpEqual, username).
+		Where("status", base.OpEqual, status).
+		WhereBetween("created_at", startDate, endDate).
+		Limit(limit, offset).
+		Build()
+
+	return r.BaseFilterableRepository.Find(ctx, filter)
+}
+
+// GetByUsernameAndStatusAndUpdatedDateRange retrieves users by username, status and updated date range using database-level filtering
+func (r *UserRepository) GetByUsernameAndStatusAndUpdatedDateRange(ctx context.Context, username, status, startDate, endDate string, limit, offset int) ([]*models.User, error) {
+	filter := base.NewFilterBuilder().
+		Where("username", base.OpEqual, username).
+		Where("status", base.OpEqual, status).
+		WhereBetween("updated_at", startDate, endDate).
+		Limit(limit, offset).
+		Build()
+
+	return r.BaseFilterableRepository.Find(ctx, filter)
+}
+
+// GetByUsernameAndStatusAndDeletedDateRange retrieves users by username, status and deleted date range using database-level filtering
+func (r *UserRepository) GetByUsernameAndStatusAndDeletedDateRange(ctx context.Context, username, status, startDate, endDate string, limit, offset int) ([]*models.User, error) {
+	filter := base.NewFilterBuilder().
+		Where("username", base.OpEqual, username).
+		Where("status", base.OpEqual, status).
+		WhereBetween("deleted_at", startDate, endDate).
+		Limit(limit, offset).
+		Build()
+
+	return r.BaseFilterableRepository.Find(ctx, filter)
+}
+
+// GetByUsernameAndValidationStatusAndDateRange retrieves users by username, validation status and date range using database-level filtering
+func (r *UserRepository) GetByUsernameAndValidationStatusAndDateRange(ctx context.Context, username string, isValidated bool, startDate, endDate string, limit, offset int) ([]*models.User, error) {
+	filter := base.NewFilterBuilder().
+		Where("username", base.OpEqual, username).
+		Where("is_validated", base.OpEqual, isValidated).
+		WhereBetween("created_at", startDate, endDate).
+		Limit(limit, offset).
+		Build()
+
+	return r.BaseFilterableRepository.Find(ctx, filter)
+}
+
+// GetByUsernameAndValidationStatusAndUpdatedDateRange retrieves users by username, validation status and updated date range using database-level filtering
+func (r *UserRepository) GetByUsernameAndValidationStatusAndUpdatedDateRange(ctx context.Context, username string, isValidated bool, startDate, endDate string, limit, offset int) ([]*models.User, error) {
+	filter := base.NewFilterBuilder().
+		Where("username", base.OpEqual, username).
+		Where("is_validated", base.OpEqual, isValidated).
+		WhereBetween("updated_at", startDate, endDate).
+		Limit(limit, offset).
+		Build()
+
+	return r.BaseFilterableRepository.Find(ctx, filter)
+}
+
+// GetByUsernameAndValidationStatusAndDeletedDateRange retrieves users by username, validation status and deleted date range using database-level filtering
+func (r *UserRepository) GetByUsernameAndValidationStatusAndDeletedDateRange(ctx context.Context, username string, isValidated bool, startDate, endDate string, limit, offset int) ([]*models.User, error) {
+	filter := base.NewFilterBuilder().
+		Where("username", base.OpEqual, username).
+		Where("is_validated", base.OpEqual, isValidated).
+		WhereBetween("deleted_at", startDate, endDate).
+		Limit(limit, offset).
+		Build()
+
+	return r.BaseFilterableRepository.Find(ctx, filter)
+}
+
+// GetByStatusAndValidationStatusAndDateRange retrieves users by status, validation status and date range using database-level filtering
+func (r *UserRepository) GetByStatusAndValidationStatusAndDateRange(ctx context.Context, status string, isValidated bool, startDate, endDate string, limit, offset int) ([]*models.User, error) {
+	filter := base.NewFilterBuilder().
+		Where("status", base.OpEqual, status).
+		Where("is_validated", base.OpEqual, isValidated).
+		WhereBetween("created_at", startDate, endDate).
+		Limit(limit, offset).
+		Build()
+
+	return r.BaseFilterableRepository.Find(ctx, filter)
+}
+
+// GetByStatusAndValidationStatusAndUpdatedDateRange retrieves users by status, validation status and updated date range using database-level filtering
+func (r *UserRepository) GetByStatusAndValidationStatusAndUpdatedDateRange(ctx context.Context, status string, isValidated bool, startDate, endDate string, limit, offset int) ([]*models.User, error) {
+	filter := base.NewFilterBuilder().
+		Where("status", base.OpEqual, status).
+		Where("is_validated", base.OpEqual, isValidated).
+		WhereBetween("updated_at", startDate, endDate).
+		Limit(limit, offset).
+		Build()
+
+	return r.BaseFilterableRepository.Find(ctx, filter)
+}
+
+// GetByStatusAndValidationStatusAndDeletedDateRange retrieves users by status, validation status and deleted date range using database-level filtering
+func (r *UserRepository) GetByStatusAndValidationStatusAndDeletedDateRange(ctx context.Context, status string, isValidated bool, startDate, endDate string, limit, offset int) ([]*models.User, error) {
+	filter := base.NewFilterBuilder().
+		Where("status", base.OpEqual, status).
+		Where("is_validated", base.OpEqual, isValidated).
+		WhereBetween("deleted_at", startDate, endDate).
+		Limit(limit, offset).
+		Build()
+
+	return r.BaseFilterableRepository.Find(ctx, filter)
+}
+
+// GetByUsernameAndStatusAndValidationStatusAndDateRange retrieves users by username, status, validation status and date range using database-level filtering
+func (r *UserRepository) GetByUsernameAndStatusAndValidationStatusAndDateRange(ctx context.Context, username, status string, isValidated bool, startDate, endDate string, limit, offset int) ([]*models.User, error) {
+	filter := base.NewFilterBuilder().
+		Where("username", base.OpEqual, username).
+		Where("status", base.OpEqual, status).
+		Where("is_validated", base.OpEqual, isValidated).
+		WhereBetween("created_at", startDate, endDate).
+		Limit(limit, offset).
+		Build()
+
+	return r.BaseFilterableRepository.Find(ctx, filter)
+}
+
+// GetByUsernameAndStatusAndValidationStatusAndUpdatedDateRange retrieves users by username, status, validation status and updated date range using database-level filtering
+func (r *UserRepository) GetByUsernameAndStatusAndValidationStatusAndUpdatedDateRange(ctx context.Context, username, status string, isValidated bool, startDate, endDate string, limit, offset int) ([]*models.User, error) {
+	filter := base.NewFilterBuilder().
+		Where("username", base.OpEqual, username).
+		Where("status", base.OpEqual, status).
+		Where("is_validated", base.OpEqual, isValidated).
+		WhereBetween("updated_at", startDate, endDate).
+		Limit(limit, offset).
+		Build()
+
+	return r.BaseFilterableRepository.Find(ctx, filter)
+}
+
+// GetByUsernameAndStatusAndValidationStatusAndDeletedDateRange retrieves users by username, status, validation status and deleted date range using database-level filtering
+func (r *UserRepository) GetByUsernameAndStatusAndValidationStatusAndDeletedDateRange(ctx context.Context, username, status string, isValidated bool, startDate, endDate string, limit, offset int) ([]*models.User, error) {
+	filter := base.NewFilterBuilder().
+		Where("username", base.OpEqual, username).
+		Where("status", base.OpEqual, status).
+		Where("is_validated", base.OpEqual, isValidated).
+		WhereBetween("deleted_at", startDate, endDate).
+		Limit(limit, offset).
+		Build()
+
+	return r.BaseFilterableRepository.Find(ctx, filter)
 }
