@@ -88,7 +88,7 @@ func TestHTTPServer_CreateUser(t *testing.T) {
 	body, _ := json.Marshal(payload)
 
 	client := &http.Client{Timeout: 10 * time.Second}
-	resp, err := client.Post(baseURL+"/api/v1/users", "application/json", bytes.NewReader(body))
+	resp, err := client.Post(baseURL+"/api/v2/users", "application/json", bytes.NewReader(body))
 	if err != nil {
 		t.Fatalf("Failed to POST /api/v1/users: %v", err)
 	}
@@ -115,7 +115,7 @@ func TestHTTPServer_ListUsers(t *testing.T) {
 	}
 
 	client := &http.Client{Timeout: 5 * time.Second}
-	resp, err := client.Get(baseURL + "/api/v1/users")
+	resp, err := client.Get(baseURL + "/api/v2/users")
 	if err != nil {
 		t.Fatalf("Failed to GET /api/v1/users: %v", err)
 	}

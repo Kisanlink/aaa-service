@@ -5,7 +5,7 @@ go 1.24
 toolchain go1.24.4
 
 require (
-	github.com/Kisanlink/kisanlink-db v0.0.1-0.20250806102035-b4f251545093
+	github.com/Kisanlink/kisanlink-db v0.0.1-0.20250808063359-46fa1145a652
 	github.com/authzed/authzed-go v1.4.1
 	github.com/authzed/grpcutil v0.0.0-20240123194739-2ea1e3d2d98b
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible

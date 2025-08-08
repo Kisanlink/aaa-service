@@ -3,6 +3,7 @@ package users
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/Kisanlink/aaa-service/entities/models"
 	"github.com/Kisanlink/kisanlink-db/pkg/base"
@@ -412,12 +413,27 @@ func (r *UserRepository) GetWithProfile(ctx context.Context, userID string) (*mo
 
 // Search searches for users by keyword in username using database-level filtering
 func (r *UserRepository) Search(ctx context.Context, keyword string, limit, offset int) ([]*models.User, error) {
-	filter := base.NewFilterBuilder().
-		Where("username", base.OpContains, keyword).
-		Limit(limit, offset).
-		Build()
-
-	return r.BaseFilterableRepository.Find(ctx, filter)
+	// Workaround for pointer fields in username when using in-memory base filter evaluation
+	all, err := r.BaseFilterableRepository.Find(ctx, base.NewFilterBuilder().Build())
+	if err != nil {
+		return nil, err
+	}
+	keyword = strings.ToLower(keyword)
+	filtered := make([]*models.User, 0, len(all))
+	for _, u := range all {
+		if u != nil && u.Username != nil && strings.Contains(strings.ToLower(*u.Username), keyword) {
+			filtered = append(filtered, u)
+		}
+	}
+	// Apply offset/limit
+	if offset >= len(filtered) {
+		return []*models.User{}, nil
+	}
+	end := offset + limit
+	if limit <= 0 || end > len(filtered) {
+		end = len(filtered)
+	}
+	return filtered[offset:end], nil
 }
 
 // GetUsersWithRelationships efficiently loads multiple users with their relationships using goroutines
