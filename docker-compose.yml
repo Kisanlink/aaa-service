@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   aaa-service:
     build:
@@ -56,6 +54,20 @@ services:
       timeout: 5s
       retries: 5
 
+  spicedb-migrate:
+    image: authzed/spicedb:latest
+    container_name: aaa-spicedb-migrate
+    environment:
+      - SPICEDB_DATASTORE_ENGINE=postgres
+      - SPICEDB_DATASTORE_CONN_URI=postgres://${SPICEDB_PG_USER:-spicedb}:${SPICEDB_PG_PASSWORD:-spicedb}@postgres17:5432/${SPICEDB_DB_NAME:-spicedb}?sslmode=disable
+    command: ["migrate", "head"]
+    networks:
+      - aaa-network
+    restart: "no"
+    depends_on:
+      postgres17:
+        condition: service_healthy
+
   spicedb:
     image: authzed/spicedb:latest
     container_name: aaa-spicedb
@@ -64,12 +76,9 @@ services:
     environment:
       - SPICEDB_LOG_LEVEL=info
       - SPICEDB_GRPC_PRESHARED_KEY=${DB_SPICEDB_TOKEN:-your-secret-key-here}
-    command: >
-      serve
-      --grpc-preshared-key ${DB_SPICEDB_TOKEN:-your-secret-key-here}
-      --datastore-engine postgres
-      --datastore-conn-uri postgres://${DB_POSTGRES_USER:-aaa_user}:${DB_POSTGRES_PASSWORD:-aaa_password}@${DB_POSTGRES_HOST:-localhost}:${DB_POSTGRES_PORT:-5432}/${SPICEDB_DB_NAME:-spicedb}?sslmode=${DB_SSL_MODE:-disable}
-      --log-level info
+      - SPICEDB_DATASTORE_ENGINE=postgres
+      - SPICEDB_DATASTORE_CONN_URI=postgres://${SPICEDB_PG_USER:-spicedb}:${SPICEDB_PG_PASSWORD:-spicedb}@postgres17:5432/${SPICEDB_DB_NAME:-spicedb}?sslmode=disable
+    command: ["serve", "--log-level", "info"]
     networks:
       - aaa-network
     restart: unless-stopped
@@ -80,11 +89,34 @@ services:
       retries: 3
       start_period: 30s
     depends_on:
-      redis:
+      spicedb-migrate:
+        condition: service_completed_successfully
+      postgres17:
         condition: service_healthy
+
+  postgres17:
+    image: postgres:17-alpine
+    container_name: aaa-spicedb-postgres17
+    environment:
+      - POSTGRES_DB=${SPICEDB_DB_NAME:-spicedb}
+      - POSTGRES_USER=${SPICEDB_PG_USER:-spicedb}
+      - POSTGRES_PASSWORD=${SPICEDB_PG_PASSWORD:-spicedb}
+    ports:
+      - "55432:5432"
+    volumes:
+      - spicedb_pg_data:/var/lib/postgresql/data
+    networks:
+      - aaa-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${SPICEDB_PG_USER:-spicedb} -d ${SPICEDB_DB_NAME:-spicedb}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   redis_data:
+  spicedb_pg_data:
 
 networks:
   aaa-network:

@@ -38,8 +38,7 @@ func SetupAAA(router *gin.Engine, handlers RouteHandlers) {
 		// Health check
 		publicAPI.GET("/health", createHealthHandler(handlers.Logger))
 
-		// Temporary test endpoint for debugging (remove in production)
-		publicAPI.GET("/test/auth", createTestAuthHandler(handlers.Logger))
+		// Debug endpoint removed for security. If needed, guard behind build tags/feature flags.
 	}
 
 	// Protected routes (authentication and authorization required)

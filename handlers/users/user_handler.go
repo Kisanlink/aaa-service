@@ -6,10 +6,18 @@ import (
 	"strconv"
 
 	"github.com/Kisanlink/aaa-service/entities/requests/users"
+	"github.com/Kisanlink/aaa-service/entities/responses"
+	userresponses "github.com/Kisanlink/aaa-service/entities/responses/users"
 	"github.com/Kisanlink/aaa-service/interfaces"
 	"github.com/Kisanlink/aaa-service/pkg/errors"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
+)
+
+// references to satisfy imports for Swagger comment parsing
+var (
+	_ = userresponses.UserResponse{}
+	_ responses.ErrorResponse
 )
 
 // UserHandler handles HTTP requests for user operations
@@ -45,7 +53,7 @@ func NewUserHandler(
 // @Accept json
 // @Produce json
 // @Param user body users.CreateUserRequest true "User creation data"
-// @Success 201 {object} users.UserResponse
+// @Success 201 {object} userresponses.UserResponse
 // @Failure 400 {object} responses.ErrorResponse
 // @Failure 409 {object} responses.ErrorResponse
 // @Failure 500 {object} responses.ErrorResponse
@@ -101,7 +109,7 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path string true "User ID"
-// @Success 200 {object} users.UserResponse
+// @Success 200 {object} userresponses.UserResponse
 // @Failure 400 {object} responses.ErrorResponse
 // @Failure 404 {object} responses.ErrorResponse
 // @Failure 500 {object} responses.ErrorResponse

@@ -411,29 +411,29 @@ func (r *UserRepository) GetWithProfile(ctx context.Context, userID string) (*mo
 	return &user, nil
 }
 
-// Search searches for users by keyword in username using database-level filtering
+// Search searches for users by keyword in username using the BaseFilterableRepository
+// with case-insensitive contains and proper pagination.
 func (r *UserRepository) Search(ctx context.Context, keyword string, limit, offset int) ([]*models.User, error) {
-	// Workaround for pointer fields in username when using in-memory base filter evaluation
-	all, err := r.BaseFilterableRepository.Find(ctx, base.NewFilterBuilder().Build())
-	if err != nil {
-		return nil, err
+	// Sanitize pagination
+	if offset < 0 {
+		offset = 0
 	}
-	keyword = strings.ToLower(keyword)
-	filtered := make([]*models.User, 0, len(all))
-	for _, u := range all {
-		if u != nil && u.Username != nil && strings.Contains(strings.ToLower(*u.Username), keyword) {
-			filtered = append(filtered, u)
-		}
+	if limit <= 0 {
+		limit = 10
 	}
-	// Apply offset/limit
-	if offset >= len(filtered) {
-		return []*models.User{}, nil
+
+	// If no keyword, just list with pagination
+	if strings.TrimSpace(keyword) == "" {
+		return r.List(ctx, limit, offset)
 	}
-	end := offset + limit
-	if limit <= 0 || end > len(filtered) {
-		end = len(filtered)
-	}
-	return filtered[offset:end], nil
+
+	// Build filter for case-insensitive contains and pagination
+	filter := base.NewFilterBuilder().
+		Where("username", base.OpContains, keyword).
+		Limit(limit, offset).
+		Build()
+
+	return r.BaseFilterableRepository.Find(ctx, filter)
 }
 
 // GetUsersWithRelationships efficiently loads multiple users with their relationships using goroutines

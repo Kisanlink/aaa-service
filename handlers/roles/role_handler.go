@@ -6,11 +6,15 @@ import (
 
 	"github.com/Kisanlink/aaa-service/entities/models"
 	"github.com/Kisanlink/aaa-service/entities/requests/roles"
+	responses "github.com/Kisanlink/aaa-service/entities/responses"
 	"github.com/Kisanlink/aaa-service/interfaces"
 	"github.com/Kisanlink/aaa-service/pkg/errors"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
+
+// reference to avoid unused import when only used in Swagger comments
+var _ responses.ErrorResponse
 
 // RoleHandler handles role-related HTTP requests
 type RoleHandler struct {
@@ -43,9 +47,9 @@ func NewRoleHandler(
 // @Produce json
 // @Param role body roles.CreateRoleRequest true "Role creation data"
 // @Success 201 {object} map[string]interface{}
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 409 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
+// @Failure 400 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
+// @Failure 409 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
+// @Failure 500 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
 // @Router /api/v2/roles [post]
 func (h *RoleHandler) CreateRole(c *gin.Context) {
 	h.logger.Info("Creating role")
@@ -95,9 +99,9 @@ func (h *RoleHandler) CreateRole(c *gin.Context) {
 // @Produce json
 // @Param id path string true "Role ID"
 // @Success 200 {object} map[string]interface{}
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 404 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
+// @Failure 400 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
+// @Failure 404 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
+// @Failure 500 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
 // @Router /api/v2/roles/{id} [get]
 func (h *RoleHandler) GetRole(c *gin.Context) {
 	roleID := c.Param("id")
@@ -129,10 +133,10 @@ func (h *RoleHandler) GetRole(c *gin.Context) {
 // @Param id path string true "Role ID"
 // @Param role body roles.UpdateRoleRequest true "Role update data"
 // @Success 200 {object} map[string]interface{}
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 404 {object} responses.ErrorResponse
-// @Failure 409 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
+// @Failure 400 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
+// @Failure 404 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
+// @Failure 409 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
+// @Failure 500 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
 // @Router /api/v2/roles/{id} [put]
 func (h *RoleHandler) UpdateRole(c *gin.Context) {
 	roleID := c.Param("id")
@@ -196,10 +200,10 @@ func (h *RoleHandler) UpdateRole(c *gin.Context) {
 // @Produce json
 // @Param id path string true "Role ID"
 // @Success 200 {object} map[string]interface{}
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 404 {object} responses.ErrorResponse
-// @Failure 409 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
+// @Failure 400 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
+// @Failure 404 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
+// @Failure 409 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
+// @Failure 500 {object} github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse
 // @Router /api/v2/roles/{id} [delete]
 func (h *RoleHandler) DeleteRole(c *gin.Context) {
 	roleID := c.Param("id")

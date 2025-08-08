@@ -833,13 +833,13 @@ func (s *AuthService) CheckSystemPermission(ctx context.Context, userID, permiss
 		// Create permission check request
 		permissionReq := &authzedpb.CheckPermissionRequest{
 			Resource: &authzedpb.ObjectReference{
-				ObjectType: "system",
+				ObjectType: "aaa/system",
 				ObjectId:   "main",
 			},
 			Permission: permission,
 			Subject: &authzedpb.SubjectReference{
 				Object: &authzedpb.ObjectReference{
-					ObjectType: "user",
+					ObjectType: "aaa/user",
 					ObjectId:   userID,
 				},
 			},

@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/Kisanlink/aaa-service/config"
-	_ "github.com/Kisanlink/aaa-service/docs"
 	"github.com/Kisanlink/aaa-service/grpc_server"
 	"github.com/Kisanlink/aaa-service/interfaces"
 	"github.com/Kisanlink/aaa-service/middleware"
@@ -24,11 +23,10 @@ import (
 	"github.com/Kisanlink/aaa-service/services"
 	"github.com/Kisanlink/aaa-service/utils"
 	"github.com/Kisanlink/kisanlink-db/pkg/db"
+	scalar "github.com/MarceloPetrucio/go-scalar-api-reference"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
 	"go.uber.org/zap"
 )
 
@@ -36,7 +34,7 @@ import (
 // @version 2.0
 // @description Authentication, Authorization, and Accounting Service with SpiceDB integration
 // @host localhost:8080
-// @BasePath /api/v2
+// @BasePath /
 // @securityDefinitions.apikey BearerAuth
 // @in header
 // @name Authorization
@@ -82,6 +80,11 @@ func main() {
 
 	if spiceDBToken == "" {
 		logger.Warn("SpiceDB token not set, using empty token")
+	}
+
+	// Ensure SpiceDB schema exists before initializing DB manager
+	if err := services.EnsureSpiceDBSchema(context.Background(), spiceDBAddr, spiceDBToken, logger); err != nil {
+		logger.Warn("Failed to ensure SpiceDB schema; DB connection may fail if schema is absent", zap.Error(err))
 	}
 
 	// Initialize database manager
@@ -259,10 +262,31 @@ func initializeHTTPServer(
 	// Setup routes using the routes package
 	routes.SetupAAAWrapper(router, authService, authzService, auditService, authMiddleware, logger)
 
-	// Add swagger documentation
-	router.GET("/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	// Serve OpenAPI and Scalar-powered docs UI
+	router.StaticFile("/docs/swagger.json", "docs/swagger.json")
+	router.StaticFile("/docs/swagger.yaml", "docs/swagger.yaml")
+	router.GET("/docs", func(c *gin.Context) {
+		scheme := "http"
+		if c.Request.TLS != nil || c.Request.Header.Get("X-Forwarded-Proto") == "https" {
+			scheme = "https"
+		}
+		specURL := scheme + "://" + c.Request.Host + "/docs/swagger.json"
+
+		htmlContent, err := scalar.ApiReferenceHTML(&scalar.Options{
+			SpecURL:  specURL,
+			DarkMode: true,
+			CustomOptions: scalar.CustomOptions{
+				PageTitle: "AAA Service API Reference",
+			},
+		})
+		if err != nil {
+			c.String(http.StatusInternalServerError, "failed to render API docs: %v", err)
+			return
+		}
+		c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(htmlContent))
+	})
 	router.GET("/", func(c *gin.Context) {
-		c.Redirect(http.StatusMovedPermanently, "/docs/index.html")
+		c.Redirect(http.StatusMovedPermanently, "/docs")
 	})
 
 	return &HTTPServer{

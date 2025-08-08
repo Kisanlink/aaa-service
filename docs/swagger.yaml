@@ -1,6 +1,16 @@
-basePath: /api/v2
+basePath: /
 definitions:
-  addresses.CreateAddressRequest:
+  github_com_Kisanlink_aaa-service_entities_requests.SetMPinRequest:
+    properties:
+      mpin:
+        type: string
+      password:
+        type: string
+    required:
+    - mpin
+    - password
+    type: object
+  github_com_Kisanlink_aaa-service_entities_requests_addresses.CreateAddressRequest:
     properties:
       body: {}
       context:
@@ -60,7 +70,7 @@ definitions:
     required:
     - user_id
     type: object
-  addresses.UpdateAddressRequest:
+  github_com_Kisanlink_aaa-service_entities_requests_addresses.UpdateAddressRequest:
     properties:
       body: {}
       context:
@@ -120,53 +130,7 @@ definitions:
     required:
     - id
     type: object
-  permissions.CreatePermissionRequest:
-    properties:
-      actions:
-        items:
-          type: string
-        type: array
-      effect:
-        type: string
-      resource:
-        type: string
-    required:
-    - actions
-    - effect
-    - resource
-    type: object
-  permissions.UpdatePermissionRequest:
-    properties:
-      actions:
-        items:
-          type: string
-        type: array
-      effect:
-        type: string
-      id:
-        type: string
-      resource:
-        type: string
-    required:
-    - id
-    type: object
-  responses.ErrorResponse:
-    properties:
-      code:
-        type: integer
-      details:
-        additionalProperties: true
-        type: object
-      error:
-        type: string
-      message:
-        type: string
-      request_id:
-        type: string
-      timestamp:
-        type: string
-    type: object
-  roles.CreateRoleRequest:
+  github_com_Kisanlink_aaa-service_entities_requests_roles.CreateRoleRequest:
     properties:
       body: {}
       context:
@@ -202,7 +166,7 @@ definitions:
     required:
     - name
     type: object
-  roles.UpdateRoleRequest:
+  github_com_Kisanlink_aaa-service_entities_requests_roles.UpdateRoleRequest:
     properties:
       body: {}
       context:
@@ -239,6 +203,197 @@ definitions:
         type: string
     required:
     - role_id
+    type: object
+  github_com_Kisanlink_aaa-service_entities_requests_users.CreateUserRequest:
+    properties:
+      aadhaar_number:
+        type: string
+      care_of:
+        type: string
+      country_code:
+        type: string
+      date_of_birth:
+        type: string
+      name:
+        type: string
+      password:
+        maxLength: 128
+        minLength: 8
+        type: string
+      phone_number:
+        type: string
+      username:
+        type: string
+      year_of_birth:
+        type: string
+    required:
+    - country_code
+    - password
+    - phone_number
+    type: object
+  github_com_Kisanlink_aaa-service_entities_requests_users.UpdateUserRequest:
+    properties:
+      care_of:
+        type: string
+      country_code:
+        type: string
+      date_of_birth:
+        type: string
+      email_hash:
+        type: string
+      message:
+        type: string
+      mobile_number:
+        type: integer
+      name:
+        type: string
+      photo:
+        type: string
+      share_code:
+        type: string
+      status:
+        type: string
+      tokens:
+        type: integer
+      year_of_birth:
+        type: string
+    type: object
+  github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse:
+    properties:
+      code:
+        type: integer
+      details:
+        additionalProperties: true
+        type: object
+      error:
+        type: string
+      message:
+        type: string
+      request_id:
+        type: string
+      timestamp:
+        type: string
+    type: object
+  github_com_Kisanlink_aaa-service_entities_responses_users.AddressResponse:
+    properties:
+      country:
+        type: string
+      created_at:
+        type: string
+      district:
+        type: string
+      full_address:
+        type: string
+      house:
+        type: string
+      id:
+        type: string
+      landmark:
+        type: string
+      pincode:
+        type: string
+      post_office:
+        type: string
+      state:
+        type: string
+      street:
+        type: string
+      subdistrict:
+        type: string
+      updated_at:
+        type: string
+      vtc:
+        type: string
+    type: object
+  github_com_Kisanlink_aaa-service_entities_responses_users.RoleDetail:
+    properties:
+      assigned_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      name:
+        type: string
+    type: object
+  github_com_Kisanlink_aaa-service_entities_responses_users.UserResponse:
+    properties:
+      aadhaar_number:
+        type: string
+      address:
+        $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses_users.AddressResponse'
+      care_of:
+        type: string
+      country_code:
+        type: string
+      created_at:
+        type: string
+      date_of_birth:
+        type: string
+      email_hash:
+        type: string
+      has_mpin:
+        type: boolean
+      id:
+        type: string
+      is_validated:
+        type: boolean
+      message:
+        type: string
+      name:
+        type: string
+      phone_number:
+        type: string
+      photo:
+        type: string
+      roles:
+        items:
+          $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses_users.RoleDetail'
+        type: array
+      share_code:
+        type: string
+      status:
+        type: string
+      tokens:
+        type: integer
+      updated_at:
+        type: string
+      username:
+        type: string
+      year_of_birth:
+        type: string
+    type: object
+  handlers_permissions.CreatePermissionRequest:
+    properties:
+      actions:
+        items:
+          type: string
+        type: array
+      effect:
+        type: string
+      resource:
+        type: string
+    required:
+    - actions
+    - effect
+    - resource
+    type: object
+  handlers_permissions.UpdatePermissionRequest:
+    properties:
+      actions:
+        items:
+          type: string
+        type: array
+      effect:
+        type: string
+      id:
+        type: string
+      resource:
+        type: string
+    required:
+    - id
     type: object
   routes.SwaggerAuditLog:
     properties:
@@ -387,149 +542,6 @@ definitions:
       reason:
         type: string
     type: object
-  users.AddressResponse:
-    properties:
-      country:
-        type: string
-      created_at:
-        type: string
-      district:
-        type: string
-      full_address:
-        type: string
-      house:
-        type: string
-      id:
-        type: string
-      landmark:
-        type: string
-      pincode:
-        type: string
-      post_office:
-        type: string
-      state:
-        type: string
-      street:
-        type: string
-      subdistrict:
-        type: string
-      updated_at:
-        type: string
-      vtc:
-        type: string
-    type: object
-  users.CreateUserRequest:
-    properties:
-      aadhaar_number:
-        type: string
-      care_of:
-        type: string
-      country_code:
-        type: string
-      date_of_birth:
-        type: string
-      mobile_number:
-        type: integer
-      name:
-        type: string
-      password:
-        maxLength: 128
-        minLength: 8
-        type: string
-      username:
-        type: string
-      year_of_birth:
-        type: string
-    required:
-    - mobile_number
-    - password
-    - username
-    type: object
-  users.RoleDetail:
-    properties:
-      assigned_at:
-        type: string
-      description:
-        type: string
-      id:
-        type: string
-      is_active:
-        type: boolean
-      name:
-        type: string
-    type: object
-  users.UpdateUserRequest:
-    properties:
-      care_of:
-        type: string
-      country_code:
-        type: string
-      date_of_birth:
-        type: string
-      email_hash:
-        type: string
-      message:
-        type: string
-      mobile_number:
-        type: integer
-      name:
-        type: string
-      photo:
-        type: string
-      share_code:
-        type: string
-      status:
-        type: string
-      tokens:
-        type: integer
-      year_of_birth:
-        type: string
-    type: object
-  users.UserResponse:
-    properties:
-      aadhaar_number:
-        type: string
-      address:
-        $ref: '#/definitions/users.AddressResponse'
-      care_of:
-        type: string
-      country_code:
-        type: string
-      created_at:
-        type: string
-      date_of_birth:
-        type: string
-      email_hash:
-        type: string
-      id:
-        type: string
-      is_validated:
-        type: boolean
-      message:
-        type: string
-      mobile_number:
-        type: integer
-      name:
-        type: string
-      photo:
-        type: string
-      roles:
-        items:
-          $ref: '#/definitions/users.RoleDetail'
-        type: array
-      share_code:
-        type: string
-      status:
-        type: string
-      tokens:
-        type: integer
-      updated_at:
-        type: string
-      username:
-        type: string
-      year_of_birth:
-        type: string
-    type: object
 host: localhost:8080
 info:
   contact: {}
@@ -538,7 +550,7 @@ info:
   title: AAA Service API
   version: "2.0"
 paths:
-  /api/v1/addresses:
+  /api/v2/addresses:
     post:
       consumes:
       - application/json
@@ -549,7 +561,7 @@ paths:
         name: address
         required: true
         schema:
-          $ref: '#/definitions/addresses.CreateAddressRequest'
+          $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_requests_addresses.CreateAddressRequest'
       produces:
       - application/json
       responses:
@@ -571,7 +583,7 @@ paths:
       summary: Create a new address
       tags:
       - addresses
-  /api/v1/addresses/{id}:
+  /api/v2/addresses/{id}:
     delete:
       consumes:
       - application/json
@@ -659,7 +671,7 @@ paths:
         name: address
         required: true
         schema:
-          $ref: '#/definitions/addresses.UpdateAddressRequest'
+          $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_requests_addresses.UpdateAddressRequest'
       produces:
       - application/json
       responses:
@@ -686,7 +698,7 @@ paths:
       summary: Update address
       tags:
       - addresses
-  /api/v1/addresses/search:
+  /api/v2/addresses/search:
     get:
       consumes:
       - application/json
@@ -728,535 +740,6 @@ paths:
       summary: Search addresses
       tags:
       - addresses
-  /api/v1/roles:
-    get:
-      consumes:
-      - application/json
-      description: Get a paginated list of roles
-      parameters:
-      - default: 10
-        description: Number of roles to return
-        in: query
-        name: limit
-        type: integer
-      - default: 0
-        description: Number of roles to skip
-        in: query
-        name: offset
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: List roles
-      tags:
-      - roles
-    post:
-      consumes:
-      - application/json
-      description: Create a new role with the provided information
-      parameters:
-      - description: Role creation data
-        in: body
-        name: role
-        required: true
-        schema:
-          $ref: '#/definitions/roles.CreateRoleRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "409":
-          description: Conflict
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-      summary: Create a new role
-      tags:
-      - roles
-  /api/v1/roles/{id}:
-    delete:
-      consumes:
-      - application/json
-      description: Delete a role by its unique identifier
-      parameters:
-      - description: Role ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "409":
-          description: Conflict
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-      summary: Delete role
-      tags:
-      - roles
-    get:
-      consumes:
-      - application/json
-      description: Retrieve a role by its unique identifier
-      parameters:
-      - description: Role ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-      summary: Get role by ID
-      tags:
-      - roles
-    put:
-      consumes:
-      - application/json
-      description: Update an existing role's information
-      parameters:
-      - description: Role ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Role update data
-        in: body
-        name: role
-        required: true
-        schema:
-          $ref: '#/definitions/roles.UpdateRoleRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "409":
-          description: Conflict
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-      summary: Update role
-      tags:
-      - roles
-  /api/v1/users:
-    get:
-      consumes:
-      - application/json
-      description: Get a paginated list of users
-      parameters:
-      - default: 10
-        description: Number of users to return
-        in: query
-        name: limit
-        type: integer
-      - default: 0
-        description: Number of users to skip
-        in: query
-        name: offset
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: List users
-      tags:
-      - users
-    post:
-      consumes:
-      - application/json
-      description: Create a new user with the provided information
-      parameters:
-      - description: User creation data
-        in: body
-        name: user
-        required: true
-        schema:
-          $ref: '#/definitions/users.CreateUserRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/users.UserResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "409":
-          description: Conflict
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-      summary: Create a new user
-      tags:
-      - users
-  /api/v1/users/{id}:
-    delete:
-      consumes:
-      - application/json
-      description: Delete a user by their unique identifier
-      parameters:
-      - description: User ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-      summary: Delete user
-      tags:
-      - users
-    get:
-      consumes:
-      - application/json
-      description: Retrieve a user by their unique identifier
-      parameters:
-      - description: User ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/users.UserResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-      summary: Get user by ID
-      tags:
-      - users
-    put:
-      consumes:
-      - application/json
-      description: Update an existing user's information
-      parameters:
-      - description: User ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: User update data
-        in: body
-        name: user
-        required: true
-        schema:
-          $ref: '#/definitions/users.UpdateUserRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-      summary: Update user
-      tags:
-      - users
-  /api/v1/users/{id}/roles/{roleId}:
-    delete:
-      consumes:
-      - application/json
-      description: Remove a role from a specific user
-      parameters:
-      - description: User ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Role ID
-        in: path
-        name: roleId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-      summary: Remove role from user
-      tags:
-      - users
-    post:
-      consumes:
-      - application/json
-      description: Assign a role to a specific user
-      parameters:
-      - description: User ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Role ID
-        in: path
-        name: roleId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            additionalProperties: true
-            type: object
-        "409":
-          description: Conflict
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Assign role to user
-      tags:
-      - users
-  /api/v1/users/{id}/validate:
-    post:
-      consumes:
-      - application/json
-      description: Validate a user account
-      parameters:
-      - description: User ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            additionalProperties: true
-            type: object
-        "409":
-          description: Conflict
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Validate user
-      tags:
-      - users
-  /api/v1/users/search:
-    get:
-      consumes:
-      - application/json
-      description: Search for users based on query parameters
-      parameters:
-      - description: Search query
-        in: query
-        name: q
-        required: true
-        type: string
-      - default: 10
-        description: Number of users to return
-        in: query
-        name: limit
-        type: integer
-      - default: 0
-        description: Number of users to skip
-        in: query
-        name: offset
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Search users
-      tags:
-      - users
   /api/v2/admin/audit:
     get:
       consumes:
@@ -1685,6 +1168,43 @@ paths:
       summary: User registration (V2)
       tags:
       - authentication
+  /api/v2/auth/set-mpin:
+    post:
+      consumes:
+      - application/json
+      description: Set or update mPin for secure refresh token validation
+      parameters:
+      - description: Set mPin request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_requests.SetMPinRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Set or update user's mPin
+      tags:
+      - auth
   /api/v2/authz/check:
     post:
       consumes:
@@ -1792,7 +1312,7 @@ paths:
         name: permission
         required: true
         schema:
-          $ref: '#/definitions/permissions.CreatePermissionRequest'
+          $ref: '#/definitions/handlers_permissions.CreatePermissionRequest'
       produces:
       - application/json
       responses:
@@ -1902,7 +1422,7 @@ paths:
         name: permission
         required: true
         schema:
-          $ref: '#/definitions/permissions.UpdatePermissionRequest'
+          $ref: '#/definitions/handlers_permissions.UpdatePermissionRequest'
       produces:
       - application/json
       responses:
@@ -2014,6 +1534,191 @@ paths:
       summary: Grant temporary permission
       tags:
       - permissions
+  /api/v2/roles:
+    get:
+      consumes:
+      - application/json
+      description: Get a paginated list of roles
+      parameters:
+      - default: 10
+        description: Number of roles to return
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Number of roles to skip
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List roles
+      tags:
+      - roles
+    post:
+      consumes:
+      - application/json
+      description: Create a new role with the provided information
+      parameters:
+      - description: Role creation data
+        in: body
+        name: role
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_requests_roles.CreateRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+      summary: Create a new role
+      tags:
+      - roles
+  /api/v2/roles/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a role by its unique identifier
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+      summary: Delete role
+      tags:
+      - roles
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a role by its unique identifier
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+      summary: Get role by ID
+      tags:
+      - roles
+    put:
+      consumes:
+      - application/json
+      description: Update an existing role's information
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Role update data
+        in: body
+        name: role
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_requests_roles.UpdateRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+      summary: Update role
+      tags:
+      - roles
   /api/v2/users:
     get:
       consumes:
@@ -2058,7 +1763,73 @@ paths:
       summary: List all users (V2)
       tags:
       - users
+    post:
+      consumes:
+      - application/json
+      description: Create a new user with the provided information
+      parameters:
+      - description: User creation data
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_requests_users.CreateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses_users.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+      summary: Create a new user
+      tags:
+      - users
   /api/v2/users/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a user by their unique identifier
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+      summary: Delete user
+      tags:
+      - users
     get:
       consumes:
       - application/json
@@ -2155,6 +1926,175 @@ paths:
       security:
       - BearerAuth: []
       summary: Update user (V2)
+      tags:
+      - users
+  /api/v2/users/{id}/roles/{roleId}:
+    delete:
+      consumes:
+      - application/json
+      description: Remove a role from a specific user
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Role ID
+        in: path
+        name: roleId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+      summary: Remove role from user
+      tags:
+      - users
+    post:
+      consumes:
+      - application/json
+      description: Assign a role to a specific user
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Role ID
+        in: path
+        name: roleId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Assign role to user
+      tags:
+      - users
+  /api/v2/users/{id}/validate:
+    post:
+      consumes:
+      - application/json
+      description: Validate a user account
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Validate user
+      tags:
+      - users
+  /api/v2/users/search:
+    get:
+      consumes:
+      - application/json
+      description: Search for users based on query parameters
+      parameters:
+      - description: Search query
+        in: query
+        name: q
+        required: true
+        type: string
+      - default: 10
+        description: Number of users to return
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Number of users to skip
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Search users
       tags:
       - users
   /health:

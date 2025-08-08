@@ -20,6 +20,7 @@ import (
 	"github.com/Kisanlink/aaa-service/services"
 	"github.com/Kisanlink/aaa-service/utils"
 	"github.com/Kisanlink/kisanlink-db/pkg/db"
+	scalar "github.com/MarceloPetrucio/go-scalar-api-reference"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -167,28 +168,29 @@ func (s *HTTPServer) setupRoutes() {
 	s.router.StaticFile("/docs/swagger.json", "docs/swagger.json")
 	s.router.StaticFile("/docs/swagger.yaml", "docs/swagger.yaml")
 	s.router.GET("/docs", func(c *gin.Context) {
-		// Minimal Scalar API Reference embedding that points to our OpenAPI spec
-		const scalarHTML = `<!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>API Reference</title>
-    <script id="scalar" src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
-    <style>html,body{height:100%;margin:0;} #app{height:100%;}</style>
-  </head>
-  <body>
-    <div id="app">
-      <scalar-api-reference
-        theme="purple"
-        layout="modern"
-        style="height:100%"
-        spec-url="/docs/swagger.json"
-      />
-    </div>
-  </body>
-</html>`
-		c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(scalarHTML))
+		scheme := "http"
+		if c.Request.TLS != nil || c.Request.Header.Get("X-Forwarded-Proto") == "https" {
+			scheme = "https"
+		}
+		specURL := scheme + "://" + c.Request.Host + "/docs/swagger.json"
+
+		htmlContent, err := scalar.ApiReferenceHTML(&scalar.Options{
+			SpecURL:  specURL,
+			DarkMode: true,
+			CustomOptions: scalar.CustomOptions{
+				PageTitle: "AAA Service API Reference",
+			},
+		})
+		if err != nil {
+			c.String(http.StatusInternalServerError, "failed to render API docs: %v", err)
+			return
+		}
+		c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(htmlContent))
+	})
+
+	// Redirect root to docs for convenience
+	s.router.GET("/", func(c *gin.Context) {
+		c.Redirect(http.StatusMovedPermanently, "/docs")
 	})
 
 	// Setup all other routes using the centralized routes package
