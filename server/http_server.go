@@ -163,6 +163,34 @@ func (s *HTTPServer) setupRoutes() {
 	// Setup health routes with the health handler
 	routes.SetupHealthRoutes(s.router, s.handlers.HealthHandler)
 
+	// Serve OpenAPI (Swagger) files and Scalar-powered docs UI
+	s.router.StaticFile("/docs/swagger.json", "docs/swagger.json")
+	s.router.StaticFile("/docs/swagger.yaml", "docs/swagger.yaml")
+	s.router.GET("/docs", func(c *gin.Context) {
+		// Minimal Scalar API Reference embedding that points to our OpenAPI spec
+		const scalarHTML = `<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>API Reference</title>
+    <script id="scalar" src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
+    <style>html,body{height:100%;margin:0;} #app{height:100%;}</style>
+  </head>
+  <body>
+    <div id="app">
+      <scalar-api-reference
+        theme="purple"
+        layout="modern"
+        style="height:100%"
+        spec-url="/docs/swagger.json"
+      />
+    </div>
+  </body>
+</html>`
+		c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(scalarHTML))
+	})
+
 	// Setup all other routes using the centralized routes package
 	routes.SetupRoutes(s.router, routes.AllHandlers{
 		AuthHandler:       s.handlers.AuthHandler,
