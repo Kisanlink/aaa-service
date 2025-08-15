@@ -72,13 +72,19 @@ services:
     image: authzed/spicedb:latest
     container_name: aaa-spicedb
     ports:
-      - "50051:50051"
+      - "50051:50051"  # gRPC API
+      - "8443:8443"    # HTTP API
     environment:
       - SPICEDB_LOG_LEVEL=info
       - SPICEDB_GRPC_PRESHARED_KEY=${DB_SPICEDB_TOKEN:-your-secret-key-here}
       - SPICEDB_DATASTORE_ENGINE=postgres
       - SPICEDB_DATASTORE_CONN_URI=postgres://${SPICEDB_PG_USER:-spicedb}:${SPICEDB_PG_PASSWORD:-spicedb}@postgres17:5432/${SPICEDB_DB_NAME:-spicedb}?sslmode=disable
-    command: ["serve", "--log-level", "info"]
+    command:
+      - serve
+      - --log-level=info
+      - --grpc-addr=0.0.0.0:50051
+      - --http-addr=0.0.0.0:8443
+      - --http-enabled=true
     networks:
       - aaa-network
     restart: unless-stopped
@@ -92,6 +98,21 @@ services:
       spicedb-migrate:
         condition: service_completed_successfully
       postgres17:
+        condition: service_healthy
+
+  spicedb-playground:
+    image: ghcr.io/authzed/spicedb-playground:latest
+    container_name: aaa-spicedb-playground
+    ports:
+      - "3000:3000"    # Playground UI
+    environment:
+      - SPICEDB_HTTP_ENDPOINT=http://spicedb:8443
+      - SPICEDB_TOKEN=${DB_SPICEDB_TOKEN:-your-secret-key-here}
+    networks:
+      - aaa-network
+    restart: unless-stopped
+    depends_on:
+      spicedb:
         condition: service_healthy
 
   postgres17:
