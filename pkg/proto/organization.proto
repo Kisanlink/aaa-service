@@ -1,0 +1,108 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "github.com/Kisanlink/aaa-service/pb";
+
+import "google/protobuf/timestamp.proto";
+
+// Organization model
+message Organization {
+    string id = 1;
+    string name = 2;
+    string description = 3;
+    string parent_id = 4;
+    bool is_active = 5;
+    map<string, string> metadata = 6;
+    google.protobuf.Timestamp created_at = 7;
+    google.protobuf.Timestamp updated_at = 8;
+    Organization parent = 9;
+    repeated Organization children = 10;
+}
+
+// Create Organization Request
+message CreateOrganizationRequest {
+    string name = 1;
+    string description = 2;
+    string parent_id = 3;
+    string template_id = 4; // Optional template to apply
+    map<string, string> metadata = 5;
+}
+
+// Create Organization Response
+message CreateOrganizationResponse {
+    int32 status_code = 1;
+    string message = 2;
+    Organization organization = 3;
+}
+
+// Get Organization Request
+message GetOrganizationRequest {
+    string id = 1;
+    bool include_children = 2;
+    bool include_parent = 3;
+}
+
+// Get Organization Response
+message GetOrganizationResponse {
+    int32 status_code = 1;
+    string message = 2;
+    Organization organization = 3;
+}
+
+// List Organizations Request
+message ListOrganizationsRequest {
+    string parent_id = 1; // Filter by parent
+    bool include_inactive = 2;
+    int32 page = 3;
+    int32 page_size = 4;
+    string search = 5;
+}
+
+// List Organizations Response
+message ListOrganizationsResponse {
+    int32 status_code = 1;
+    string message = 2;
+    repeated Organization organizations = 3;
+    int32 total_count = 4;
+    int32 page = 5;
+    int32 page_size = 6;
+}
+
+// Update Organization Request
+message UpdateOrganizationRequest {
+    string id = 1;
+    string name = 2;
+    string description = 3;
+    string parent_id = 4;
+    bool is_active = 5;
+    map<string, string> metadata = 6;
+}
+
+// Update Organization Response
+message UpdateOrganizationResponse {
+    int32 status_code = 1;
+    string message = 2;
+    Organization organization = 3;
+}
+
+// Delete Organization Request
+message DeleteOrganizationRequest {
+    string id = 1;
+    bool cascade = 2; // Delete children too
+}
+
+// Delete Organization Response
+message DeleteOrganizationResponse {
+    int32 status_code = 1;
+    string message = 2;
+}
+
+// Organization Service
+service OrganizationService {
+    rpc CreateOrganization(CreateOrganizationRequest) returns (CreateOrganizationResponse);
+    rpc GetOrganization(GetOrganizationRequest) returns (GetOrganizationResponse);
+    rpc ListOrganizations(ListOrganizationsRequest) returns (ListOrganizationsResponse);
+    rpc UpdateOrganization(UpdateOrganizationRequest) returns (UpdateOrganizationResponse);
+    rpc DeleteOrganization(DeleteOrganizationRequest) returns (DeleteOrganizationResponse);
+}

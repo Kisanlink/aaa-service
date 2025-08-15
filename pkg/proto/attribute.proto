@@ -1,0 +1,181 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "github.com/Kisanlink/aaa-service/pb";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+
+// Attribute model
+message Attribute {
+    string id = 1;
+    string subject_id = 2;
+    string subject_type = 3; // "principal", "resource", "organization"
+    string key = 4;
+    google.protobuf.Struct value = 5;
+    string organization_id = 6;
+    google.protobuf.Timestamp expires_at = 7;
+    bool is_active = 8;
+    string set_by_id = 9;
+    google.protobuf.Struct metadata = 10;
+    google.protobuf.Timestamp created_at = 11;
+    google.protobuf.Timestamp updated_at = 12;
+}
+
+// Set Attributes Request
+message SetAttributesRequest {
+    string subject_id = 1;
+    string subject_type = 2;
+    map<string, google.protobuf.Value> attributes = 3;  // Key-value pairs
+    google.protobuf.Timestamp expires_at = 4;
+    string organization_id = 5;
+}
+
+// Set Attributes Response
+message SetAttributesResponse {
+    int32 status_code = 1;
+    string message = 2;
+    repeated Attribute attributes = 3;
+}
+
+// Get Attributes Request
+message GetAttributesRequest {
+    string subject_id = 1;
+    string subject_type = 2;
+    repeated string keys = 3;  // Empty means get all
+    bool include_expired = 4;
+}
+
+// Get Attributes Response
+message GetAttributesResponse {
+    int32 status_code = 1;
+    string message = 2;
+    repeated Attribute attributes = 3;
+}
+
+// Delete Attributes Request
+message DeleteAttributesRequest {
+    string subject_id = 1;
+    string subject_type = 2;
+    repeated string keys = 3;  // Empty means delete all
+}
+
+// Delete Attributes Response
+message DeleteAttributesResponse {
+    int32 status_code = 1;
+    string message = 2;
+    int32 deleted_count = 3;
+}
+
+// List Attributes Request
+message ListAttributesRequest {
+    string subject_type = 1;
+    string organization_id = 2;
+    string key_prefix = 3;  // Filter by key prefix
+    bool include_expired = 4;
+    int32 page = 5;
+    int32 page_size = 6;
+}
+
+// List Attributes Response
+message ListAttributesResponse {
+    int32 status_code = 1;
+    string message = 2;
+    repeated Attribute attributes = 3;
+    int32 total_count = 4;
+    int32 page = 5;
+    int32 page_size = 6;
+}
+
+// Attribute History model
+message AttributeHistory {
+    string id = 1;
+    string attribute_id = 2;
+    string subject_id = 3;
+    string subject_type = 4;
+    string key = 5;
+    google.protobuf.Struct old_value = 6;
+    google.protobuf.Struct new_value = 7;
+    string action = 8; // "SET", "DELETE"
+    string changed_by_id = 9;
+    google.protobuf.Timestamp changed_at = 10;
+    string organization_id = 11;
+}
+
+// Get Attribute History Request
+message GetAttributeHistoryRequest {
+    string subject_id = 1;
+    string subject_type = 2;
+    string key = 3;
+    google.protobuf.Timestamp start_time = 4;
+    google.protobuf.Timestamp end_time = 5;
+    int32 page = 6;
+    int32 page_size = 7;
+}
+
+// Get Attribute History Response
+message GetAttributeHistoryResponse {
+    int32 status_code = 1;
+    string message = 2;
+    repeated AttributeHistory history = 3;
+    int32 total_count = 4;
+    int32 page = 5;
+    int32 page_size = 6;
+}
+
+// Bulk Set Attributes Request
+message BulkSetAttributesRequest {
+    repeated AttributeSubject subjects = 1;
+
+    message AttributeSubject {
+        string subject_id = 1;
+        string subject_type = 2;
+        map<string, google.protobuf.Value> attributes = 3;
+        google.protobuf.Timestamp expires_at = 4;
+    }
+}
+
+// Bulk Set Attributes Response
+message BulkSetAttributesResponse {
+    int32 status_code = 1;
+    string message = 2;
+    int32 success_count = 3;
+    repeated string failed_subjects = 4;
+}
+
+// Search Attributes Request
+message SearchAttributesRequest {
+    string subject_type = 1;
+    map<string, google.protobuf.Value> match_attributes = 2;  // Find subjects with these attributes
+    string organization_id = 3;
+    int32 page = 4;
+    int32 page_size = 5;
+}
+
+// Search Attributes Response
+message SearchAttributesResponse {
+    int32 status_code = 1;
+    string message = 2;
+    repeated AttributeSubject subjects = 3;
+    int32 total_count = 4;
+    int32 page = 5;
+    int32 page_size = 6;
+
+    message AttributeSubject {
+        string subject_id = 1;
+        string subject_type = 2;
+        repeated Attribute attributes = 3;
+    }
+}
+
+// Attribute Service - manages attributes for ABAC
+service AttributeService {
+    rpc SetAttributes(SetAttributesRequest) returns (SetAttributesResponse);
+    rpc GetAttributes(GetAttributesRequest) returns (GetAttributesResponse);
+    rpc DeleteAttributes(DeleteAttributesRequest) returns (DeleteAttributesResponse);
+    rpc ListAttributes(ListAttributesRequest) returns (ListAttributesResponse);
+    rpc GetAttributeHistory(GetAttributeHistoryRequest) returns (GetAttributeHistoryResponse);
+    rpc BulkSetAttributes(BulkSetAttributesRequest) returns (BulkSetAttributesResponse);
+    rpc SearchAttributes(SearchAttributesRequest) returns (SearchAttributesResponse);
+}

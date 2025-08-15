@@ -1,16 +1,17 @@
+openapi: 3.0.0
+info:
+  title: AAA Service API
+  description: Authentication, Authorization, and Accounting Service with PostgreSQL RBAC
+  version: 2.0.0
+  contact:
+    name: AAA Service Team
+    email: support@example.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
 basePath: /
 definitions:
-  github_com_Kisanlink_aaa-service_entities_requests.SetMPinRequest:
-    properties:
-      mpin:
-        type: string
-      password:
-        type: string
-    required:
-    - mpin
-    - password
-    type: object
-  github_com_Kisanlink_aaa-service_entities_requests_addresses.CreateAddressRequest:
+  addresses.CreateAddressRequest:
     properties:
       body: {}
       context:
@@ -70,7 +71,7 @@ definitions:
     required:
     - user_id
     type: object
-  github_com_Kisanlink_aaa-service_entities_requests_addresses.UpdateAddressRequest:
+  addresses.UpdateAddressRequest:
     properties:
       body: {}
       context:
@@ -130,7 +131,507 @@ definitions:
     required:
     - id
     type: object
-  github_com_Kisanlink_aaa-service_entities_requests_roles.CreateRoleRequest:
+  permissions.CreatePermissionRequest:
+    properties:
+      actions:
+        items:
+          type: string
+        type: array
+      effect:
+        type: string
+      resource:
+        type: string
+    required:
+    - actions
+    - effect
+    - resource
+    type: object
+  permissions.UpdatePermissionRequest:
+    properties:
+      actions:
+        items:
+          type: string
+        type: array
+      effect:
+        type: string
+      id:
+        type: string
+      resource:
+        type: string
+    required:
+    - id
+    type: object
+  requests.ModuleActionDefinition:
+    description: Action definition structure for module registration
+    properties:
+      description:
+        example: Create a new user
+        type: string
+      name:
+        example: create_user
+        type: string
+      resource:
+        example: user
+        type: string
+    required:
+    - name
+    - resource
+    type: object
+  requests.ModuleRegistrationRequest:
+    description: Request structure for registering a new module
+    properties:
+      actions:
+        items:
+          $ref: '#/definitions/requests.ModuleActionDefinition'
+        type: array
+      resources:
+        items:
+          $ref: '#/definitions/requests.ModuleResourceDefinition'
+        type: array
+      roles:
+        items:
+          $ref: '#/definitions/requests.ModuleRoleDefinition'
+        type: array
+      service_name:
+        example: user-service
+        type: string
+      version:
+        example: 1.0.0
+        type: string
+    required:
+    - service_name
+    - version
+    type: object
+  requests.ModuleResourceDefinition:
+    description: Resource definition structure for module registration
+    properties:
+      actions:
+        example:
+        - '["create"'
+        - ' "read"'
+        - ' "update"'
+        - ' "delete"]'
+        items:
+          type: string
+        type: array
+      description:
+        example: User resource
+        type: string
+      name:
+        example: user
+        type: string
+    required:
+    - name
+    type: object
+  requests.ModuleRoleDefinition:
+    description: Role definition structure for module registration
+    properties:
+      description:
+        example: User administrator role
+        type: string
+      name:
+        example: user_admin
+        type: string
+      permissions:
+        example:
+        - '["user:create"'
+        - ' "user:read"'
+        - ' "user:update"'
+        - ' "user:delete"]'
+        items:
+          type: string
+        type: array
+    required:
+    - name
+    type: object
+  requests.RefreshTokenRequest:
+    properties:
+      mpin:
+        type: string
+      refresh_token:
+        type: string
+    required:
+    - mpin
+    - refresh_token
+    type: object
+  requests.SetMPinRequest:
+    properties:
+      mpin:
+        type: string
+      password:
+        type: string
+    required:
+    - mpin
+    - password
+    type: object
+  requests.UpdateUserRequest:
+    description: Request structure for updating user information
+    properties:
+      country_code:
+        example: US
+        type: string
+      phone_number:
+        example: "+1234567890"
+        type: string
+      username:
+        example: john_doe
+        type: string
+    type: object
+  responses.ErrorResponse:
+    properties:
+      code:
+        type: integer
+      details:
+        additionalProperties: true
+        type: object
+      error:
+        type: string
+      message:
+        type: string
+      request_id:
+        type: string
+      timestamp:
+        type: string
+    type: object
+  responses.ErrorResponseSwagger:
+    description: Standard error response structure
+    properties:
+      code:
+        example: 400
+        type: integer
+      details:
+        additionalProperties: true
+        type: object
+      error:
+        example: VALIDATION_ERROR
+        type: string
+      message:
+        example: Invalid input data
+        type: string
+      request_id:
+        example: req-123456789
+        type: string
+      success:
+        example: false
+        type: boolean
+      timestamp:
+        example: "2024-01-01T00:00:00Z"
+        type: string
+    type: object
+  responses.HealthCheckData:
+    description: Health check data structure
+    properties:
+      service:
+        example: aaa-service
+        type: string
+      status:
+        example: healthy
+        type: string
+      version:
+        example: "2.0"
+        type: string
+    type: object
+  responses.HealthCheckResponse:
+    description: Health check response structure
+    properties:
+      data:
+        $ref: '#/definitions/responses.HealthCheckData'
+      message:
+        example: Service is healthy
+        type: string
+      request_id:
+        example: req-123456789
+        type: string
+      success:
+        example: true
+        type: boolean
+      timestamp:
+        example: "2024-01-01T00:00:00Z"
+        type: string
+    type: object
+  responses.LoginResponseData:
+    description: Login response data containing tokens and user info
+    properties:
+      access_token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+      expires_in:
+        example: 86400
+        type: integer
+      refresh_token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+      token_type:
+        example: Bearer
+        type: string
+      user:
+        $ref: '#/definitions/responses.UserInfo'
+    type: object
+  responses.LoginSuccessResponse:
+    description: Successful login response with tokens and user info
+    properties:
+      data:
+        $ref: '#/definitions/responses.LoginResponseData'
+      message:
+        example: Login successful
+        type: string
+      request_id:
+        example: req-123456789
+        type: string
+      success:
+        example: true
+        type: boolean
+      timestamp:
+        example: "2024-01-01T00:00:00Z"
+        type: string
+    type: object
+  responses.LogoutSuccessResponse:
+    description: Successful logout response
+    properties:
+      message:
+        example: Logout successful
+        type: string
+      request_id:
+        example: req-123456789
+        type: string
+      success:
+        example: true
+        type: boolean
+      timestamp:
+        example: "2024-01-01T00:00:00Z"
+        type: string
+    type: object
+  responses.ModuleDetailData:
+    description: Module detail data structure
+    properties:
+      module:
+        $ref: '#/definitions/responses.ModuleInfo'
+    type: object
+  responses.ModuleDetailResponse:
+    description: Module detail response structure
+    properties:
+      data:
+        $ref: '#/definitions/responses.ModuleDetailData'
+      message:
+        example: Module details retrieved successfully
+        type: string
+      request_id:
+        example: req-123456789
+        type: string
+      success:
+        example: true
+        type: boolean
+      timestamp:
+        example: "2024-01-01T00:00:00Z"
+        type: string
+    type: object
+  responses.ModuleInfo:
+    description: Module information structure
+    properties:
+      health:
+        example: healthy
+        type: string
+      last_seen:
+        example: "2024-01-01T00:00:00Z"
+        type: string
+      registered_at:
+        example: "2024-01-01T00:00:00Z"
+        type: string
+      service_name:
+        example: user-service
+        type: string
+      status:
+        example: active
+        type: string
+      version:
+        example: 1.0.0
+        type: string
+    type: object
+  responses.ModuleListData:
+    description: Module list data structure
+    properties:
+      modules:
+        items:
+          $ref: '#/definitions/responses.ModuleInfo'
+        type: array
+    type: object
+  responses.ModuleListResponse:
+    description: Module list response structure
+    properties:
+      data:
+        $ref: '#/definitions/responses.ModuleListData'
+      message:
+        example: Modules retrieved successfully
+        type: string
+      request_id:
+        example: req-123456789
+        type: string
+      success:
+        example: true
+        type: boolean
+      timestamp:
+        example: "2024-01-01T00:00:00Z"
+        type: string
+    type: object
+  responses.PaginationInfo:
+    description: Pagination information structure
+    properties:
+      page:
+        example: 1
+        type: integer
+      per_page:
+        example: 20
+        type: integer
+      total:
+        example: 100
+        type: integer
+      total_pages:
+        example: 5
+        type: integer
+    type: object
+  responses.RefreshTokenResponseData:
+    description: Refresh token response data
+    properties:
+      access_token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+      expires_in:
+        example: 86400
+        type: integer
+      refresh_token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+      token_type:
+        example: Bearer
+        type: string
+    type: object
+  responses.RefreshTokenSuccessResponse:
+    description: Successful token refresh response
+    properties:
+      data:
+        $ref: '#/definitions/responses.RefreshTokenResponseData'
+      message:
+        example: Token refreshed successfully
+        type: string
+      request_id:
+        example: req-123456789
+        type: string
+      success:
+        example: true
+        type: boolean
+      timestamp:
+        example: "2024-01-01T00:00:00Z"
+        type: string
+    type: object
+  responses.RegisterResponseData:
+    description: Registration response data containing user info
+    properties:
+      user:
+        $ref: '#/definitions/responses.UserInfoSwagger'
+    type: object
+  responses.RegisterSuccessResponse:
+    description: Successful registration response with user info
+    properties:
+      data:
+        $ref: '#/definitions/responses.RegisterResponseData'
+      message:
+        example: User registered successfully
+        type: string
+      request_id:
+        example: req-123456789
+        type: string
+      success:
+        example: true
+        type: boolean
+      timestamp:
+        example: "2024-01-01T00:00:00Z"
+        type: string
+    type: object
+  responses.UserDetailData:
+    description: Detailed user data structure
+    properties:
+      user:
+        $ref: '#/definitions/responses.UserInfoSwagger'
+    type: object
+  responses.UserDetailResponse:
+    description: Detailed user response structure
+    properties:
+      data:
+        $ref: '#/definitions/responses.UserDetailData'
+      message:
+        example: User retrieved successfully
+        type: string
+      request_id:
+        example: req-123456789
+        type: string
+      success:
+        example: true
+        type: boolean
+      timestamp:
+        example: "2024-01-01T00:00:00Z"
+        type: string
+    type: object
+  responses.UserInfo:
+    properties:
+      country_code:
+        type: string
+      id:
+        type: string
+      is_validated:
+        type: boolean
+      phone_number:
+        type: string
+      username:
+        type: string
+    type: object
+  responses.UserInfoSwagger:
+    description: User information structure
+    properties:
+      country_code:
+        example: US
+        type: string
+      id:
+        example: USER123456789
+        type: string
+      is_validated:
+        example: true
+        type: boolean
+      phone_number:
+        example: "+1234567890"
+        type: string
+      username:
+        example: john_doe
+        type: string
+    type: object
+  responses.UsersListData:
+    description: Users list data structure
+    properties:
+      users:
+        items:
+          $ref: '#/definitions/responses.UserInfoSwagger'
+        type: array
+    type: object
+  responses.UsersListResponse:
+    description: Users list response with pagination
+    properties:
+      data:
+        $ref: '#/definitions/responses.UsersListData'
+      message:
+        example: Users retrieved successfully
+        type: string
+      pagination:
+        $ref: '#/definitions/responses.PaginationInfo'
+      request_id:
+        example: req-123456789
+        type: string
+      success:
+        example: true
+        type: boolean
+      timestamp:
+        example: "2024-01-01T00:00:00Z"
+        type: string
+    type: object
+  roles.CreateRoleRequest:
     properties:
       body: {}
       context:
@@ -166,7 +667,7 @@ definitions:
     required:
     - name
     type: object
-  github_com_Kisanlink_aaa-service_entities_requests_roles.UpdateRoleRequest:
+  roles.UpdateRoleRequest:
     properties:
       body: {}
       context:
@@ -204,7 +705,50 @@ definitions:
     required:
     - role_id
     type: object
-  github_com_Kisanlink_aaa-service_entities_requests_users.CreateUserRequest:
+  services.LoginRequest:
+    properties:
+      country_code:
+        type: string
+      mfa_code:
+        type: string
+      password:
+        type: string
+      phone_number:
+        type: string
+    required:
+    - country_code
+    - password
+    - phone_number
+    type: object
+  services.RegisterRequest:
+    properties:
+      country_code:
+        type: string
+      email:
+        type: string
+      full_name:
+        maxLength: 100
+        minLength: 1
+        type: string
+      password:
+        minLength: 8
+        type: string
+      phone_number:
+        type: string
+      role_ids:
+        items:
+          type: string
+        type: array
+      username:
+        maxLength: 50
+        minLength: 3
+        type: string
+    required:
+    - country_code
+    - password
+    - phone_number
+    type: object
+  users.CreateUserRequest:
     properties:
       aadhaar_number:
         type: string
@@ -231,7 +775,7 @@ definitions:
     - password
     - phone_number
     type: object
-  github_com_Kisanlink_aaa-service_entities_requests_users.UpdateUserRequest:
+  users.UpdateUserRequest:
     properties:
       care_of:
         type: string
@@ -258,297 +802,6 @@ definitions:
       year_of_birth:
         type: string
     type: object
-  github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse:
-    properties:
-      code:
-        type: integer
-      details:
-        additionalProperties: true
-        type: object
-      error:
-        type: string
-      message:
-        type: string
-      request_id:
-        type: string
-      timestamp:
-        type: string
-    type: object
-  github_com_Kisanlink_aaa-service_entities_responses_users.AddressResponse:
-    properties:
-      country:
-        type: string
-      created_at:
-        type: string
-      district:
-        type: string
-      full_address:
-        type: string
-      house:
-        type: string
-      id:
-        type: string
-      landmark:
-        type: string
-      pincode:
-        type: string
-      post_office:
-        type: string
-      state:
-        type: string
-      street:
-        type: string
-      subdistrict:
-        type: string
-      updated_at:
-        type: string
-      vtc:
-        type: string
-    type: object
-  github_com_Kisanlink_aaa-service_entities_responses_users.RoleDetail:
-    properties:
-      assigned_at:
-        type: string
-      description:
-        type: string
-      id:
-        type: string
-      is_active:
-        type: boolean
-      name:
-        type: string
-    type: object
-  github_com_Kisanlink_aaa-service_entities_responses_users.UserResponse:
-    properties:
-      aadhaar_number:
-        type: string
-      address:
-        $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses_users.AddressResponse'
-      care_of:
-        type: string
-      country_code:
-        type: string
-      created_at:
-        type: string
-      date_of_birth:
-        type: string
-      email_hash:
-        type: string
-      has_mpin:
-        type: boolean
-      id:
-        type: string
-      is_validated:
-        type: boolean
-      message:
-        type: string
-      name:
-        type: string
-      phone_number:
-        type: string
-      photo:
-        type: string
-      roles:
-        items:
-          $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses_users.RoleDetail'
-        type: array
-      share_code:
-        type: string
-      status:
-        type: string
-      tokens:
-        type: integer
-      updated_at:
-        type: string
-      username:
-        type: string
-      year_of_birth:
-        type: string
-    type: object
-  handlers_permissions.CreatePermissionRequest:
-    properties:
-      actions:
-        items:
-          type: string
-        type: array
-      effect:
-        type: string
-      resource:
-        type: string
-    required:
-    - actions
-    - effect
-    - resource
-    type: object
-  handlers_permissions.UpdatePermissionRequest:
-    properties:
-      actions:
-        items:
-          type: string
-        type: array
-      effect:
-        type: string
-      id:
-        type: string
-      resource:
-        type: string
-    required:
-    - id
-    type: object
-  routes.SwaggerAuditLog:
-    properties:
-      action:
-        type: string
-      created_at:
-        type: string
-      details:
-        additionalProperties: true
-        type: object
-      id:
-        type: string
-      ip_address:
-        type: string
-      message:
-        type: string
-      resource_id:
-        type: string
-      resource_type:
-        type: string
-      status:
-        type: string
-      timestamp:
-        type: string
-      updated_at:
-        type: string
-      user_agent:
-        type: string
-      user_id:
-        type: string
-    type: object
-  routes.SwaggerAuditQueryResult:
-    properties:
-      limit:
-        type: integer
-      logs:
-        items:
-          $ref: '#/definitions/routes.SwaggerAuditLog'
-        type: array
-      page:
-        type: integer
-      total:
-        type: integer
-      total_pages:
-        type: integer
-    type: object
-  routes.SwaggerLoginRequest:
-    properties:
-      mfa_code:
-        type: string
-      password:
-        type: string
-      username:
-        type: string
-    required:
-    - password
-    - username
-    type: object
-  routes.SwaggerLoginResponse:
-    properties:
-      access_token:
-        type: string
-      expires_in:
-        type: integer
-      permissions:
-        items:
-          type: string
-        type: array
-      refresh_token:
-        type: string
-      token_type:
-        type: string
-      user:
-        $ref: '#/definitions/routes.SwaggerUser'
-    type: object
-  routes.SwaggerRefreshTokenRequest:
-    properties:
-      refresh_token:
-        type: string
-    required:
-    - refresh_token
-    type: object
-  routes.SwaggerRegisterRequest:
-    properties:
-      email:
-        type: string
-      full_name:
-        maxLength: 100
-        minLength: 1
-        type: string
-      password:
-        minLength: 8
-        type: string
-      role_ids:
-        items:
-          type: string
-        type: array
-      username:
-        maxLength: 50
-        minLength: 3
-        type: string
-    required:
-    - email
-    - full_name
-    - password
-    - username
-    type: object
-  routes.SwaggerUser:
-    properties:
-      created_at:
-        type: string
-      deleted_at:
-        type: string
-      id:
-        type: string
-      is_validated:
-        type: boolean
-      status:
-        type: string
-      tokens:
-        type: integer
-      updated_at:
-        type: string
-      username:
-        type: string
-    type: object
-  services.Permission:
-    properties:
-      action:
-        type: string
-      resource:
-        type: string
-      resource_id:
-        type: string
-      user_id:
-        type: string
-    type: object
-  services.PermissionResult:
-    properties:
-      allowed:
-        type: boolean
-      permissions:
-        items:
-          type: string
-        type: array
-      reason:
-        type: string
-    type: object
-host: localhost:8080
-info:
-  contact: {}
-  description: Authentication, Authorization, and Accounting Service with SpiceDB
-    integration
-  title: AAA Service API
-  version: "2.0"
 paths:
   /api/v2/addresses:
     post:
@@ -561,7 +814,7 @@ paths:
         name: address
         required: true
         schema:
-          $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_requests_addresses.CreateAddressRequest'
+          $ref: '#/definitions/addresses.CreateAddressRequest'
       produces:
       - application/json
       responses:
@@ -671,7 +924,7 @@ paths:
         name: address
         required: true
         schema:
-          $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_requests_addresses.UpdateAddressRequest'
+          $ref: '#/definitions/addresses.UpdateAddressRequest'
       produces:
       - application/json
       responses:
@@ -973,61 +1226,6 @@ paths:
       summary: System information
       tags:
       - admin
-  /api/v2/audit/logs:
-    get:
-      consumes:
-      - application/json
-      description: Retrieve audit logs with filtering and pagination
-      parameters:
-      - default: 1
-        description: Page number
-        in: query
-        name: page
-        type: integer
-      - default: 50
-        description: Items per page
-        in: query
-        name: per_page
-        type: integer
-      - description: Filter by user ID
-        in: query
-        name: user_id
-        type: string
-      - description: Filter by action
-        in: query
-        name: action
-        type: string
-      - description: Filter by resource type
-        in: query
-        name: resource
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/routes.SwaggerAuditQueryResult'
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties: true
-            type: object
-        "403":
-          description: Forbidden
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Get audit logs (V2)
-      tags:
-      - audit
   /api/v2/auth/login:
     post:
       consumes:
@@ -1039,29 +1237,26 @@ paths:
         name: credentials
         required: true
         schema:
-          $ref: '#/definitions/routes.SwaggerLoginRequest'
+          $ref: '#/definitions/services.LoginRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/routes.SwaggerLoginResponse'
+            $ref: '#/definitions/responses.LoginSuccessResponse'
         "400":
           description: Bad Request
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
         "401":
           description: Unauthorized
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
       summary: User login (V2)
       tags:
       - authentication
@@ -1076,18 +1271,15 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/responses.LogoutSuccessResponse'
         "401":
           description: Unauthorized
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
       security:
       - BearerAuth: []
       summary: User logout (V2)
@@ -1104,29 +1296,26 @@ paths:
         name: token
         required: true
         schema:
-          $ref: '#/definitions/routes.SwaggerRefreshTokenRequest'
+          $ref: '#/definitions/requests.RefreshTokenRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/routes.SwaggerLoginResponse'
+            $ref: '#/definitions/responses.RefreshTokenSuccessResponse'
         "400":
           description: Bad Request
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
         "401":
           description: Unauthorized
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
       summary: Refresh access token (V2)
       tags:
       - authentication
@@ -1141,30 +1330,26 @@ paths:
         name: user
         required: true
         schema:
-          $ref: '#/definitions/routes.SwaggerRegisterRequest'
+          $ref: '#/definitions/services.RegisterRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/responses.RegisterSuccessResponse'
         "400":
           description: Bad Request
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
         "409":
           description: Conflict
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
       summary: User registration (V2)
       tags:
       - authentication
@@ -1179,7 +1364,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_requests.SetMPinRequest'
+          $ref: '#/definitions/requests.SetMPinRequest'
       produces:
       - application/json
       responses:
@@ -1191,39 +1376,157 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
       security:
       - Bearer: []
       summary: Set or update user's mPin
       tags:
       - auth
-  /api/v2/authz/check:
-    post:
+  /api/v2/health:
+    get:
       consumes:
       - application/json
-      description: Check if a user has permission to perform an action on a resource
-      parameters:
-      - description: Permission check data
-        in: body
-        name: permission
-        required: true
-        schema:
-          $ref: '#/definitions/services.Permission'
+      description: Basic health check for the AAA service
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/services.PermissionResult'
+            $ref: '#/definitions/responses.HealthCheckResponse'
+      summary: Health check (V2)
+      tags:
+      - health
+  /api/v2/modules:
+    get:
+      description: Get a list of all registered modules
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/responses.ModuleListResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List all registered modules
+      tags:
+      - modules
+  /api/v2/modules/{service_name}:
+    get:
+      description: Get detailed information about a registered module
+      parameters:
+      - description: Service name
+        in: path
+        name: service_name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/responses.ModuleDetailResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get module information
+      tags:
+      - modules
+  /api/v2/modules/{service_name}/health:
+    get:
+      description: Check if a module is healthy and operational
+      parameters:
+      - description: Service name
+        in: path
+        name: service_name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Check module health
+      tags:
+      - modules
+  /api/v2/modules/register:
+    post:
+      consumes:
+      - application/json
+      description: Register a complete module with actions, roles, resources, and
+        permissions
+      parameters:
+      - description: Module registration request
+        in: body
+        name: module
+        required: true
+        schema:
+          $ref: '#/definitions/requests.ModuleRegistrationRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/responses.ModuleDetailResponse'
         "400":
           description: Bad Request
           schema:
@@ -1239,32 +1542,19 @@ paths:
           schema:
             additionalProperties: true
             type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties: true
+            type: object
         "500":
           description: Internal Server Error
           schema:
             additionalProperties: true
             type: object
-      security:
-      - BearerAuth: []
-      summary: Check user permission (V2)
+      summary: Register a new module
       tags:
-      - authorization
-  /api/v2/health:
-    get:
-      consumes:
-      - application/json
-      description: Basic health check for the AAA service
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Health check (V2)
-      tags:
-      - health
+      - modules
   /api/v2/permissions:
     get:
       consumes:
@@ -1312,7 +1602,7 @@ paths:
         name: permission
         required: true
         schema:
-          $ref: '#/definitions/handlers_permissions.CreatePermissionRequest'
+          $ref: '#/definitions/permissions.CreatePermissionRequest'
       produces:
       - application/json
       responses:
@@ -1422,7 +1712,7 @@ paths:
         name: permission
         required: true
         schema:
-          $ref: '#/definitions/handlers_permissions.UpdatePermissionRequest'
+          $ref: '#/definitions/permissions.UpdatePermissionRequest'
       produces:
       - application/json
       responses:
@@ -1581,7 +1871,7 @@ paths:
         name: role
         required: true
         schema:
-          $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_requests_roles.CreateRoleRequest'
+          $ref: '#/definitions/roles.CreateRoleRequest'
       produces:
       - application/json
       responses:
@@ -1593,15 +1883,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
         "409":
           description: Conflict
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
       summary: Create a new role
       tags:
       - roles
@@ -1627,19 +1917,19 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
         "409":
           description: Conflict
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
       summary: Delete role
       tags:
       - roles
@@ -1664,15 +1954,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
       summary: Get role by ID
       tags:
       - roles
@@ -1691,7 +1981,7 @@ paths:
         name: role
         required: true
         schema:
-          $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_requests_roles.UpdateRoleRequest'
+          $ref: '#/definitions/roles.UpdateRoleRequest'
       produces:
       - application/json
       responses:
@@ -1703,19 +1993,19 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
         "409":
           description: Conflict
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
       summary: Update role
       tags:
       - roles
@@ -1741,23 +2031,19 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/responses.UsersListResponse'
         "401":
           description: Unauthorized
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
         "403":
           description: Forbidden
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
       security:
       - BearerAuth: []
       summary: List all users (V2)
@@ -1773,26 +2059,26 @@ paths:
         name: user
         required: true
         schema:
-          $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_requests_users.CreateUserRequest'
+          $ref: '#/definitions/users.CreateUserRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses_users.UserResponse'
+            $ref: '#/definitions/responses.UserDetailResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
         "409":
           description: Conflict
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
       summary: Create a new user
       tags:
       - users
@@ -1818,15 +2104,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
       summary: Delete user
       tags:
       - users
@@ -1846,28 +2132,23 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/responses.UserDetailResponse'
         "401":
           description: Unauthorized
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
         "403":
           description: Forbidden
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
         "404":
           description: Not Found
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
       security:
       - BearerAuth: []
       summary: Get user by ID (V2)
@@ -1888,41 +2169,34 @@ paths:
         name: user
         required: true
         schema:
-          additionalProperties: true
-          type: object
+          $ref: '#/definitions/requests.UpdateUserRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/responses.UserDetailResponse'
         "400":
           description: Bad Request
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
         "401":
           description: Unauthorized
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
         "403":
           description: Forbidden
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
         "404":
           description: Not Found
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
       security:
       - BearerAuth: []
       summary: Update user (V2)
@@ -1955,15 +2229,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse'
+            $ref: '#/definitions/responses.ErrorResponse'
       summary: Remove role from user
       tags:
       - users

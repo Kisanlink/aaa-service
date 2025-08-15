@@ -79,7 +79,7 @@ linters:
     - staticcheck
     - typecheck
     - unused
-    
+
     # Additional recommended linters
     - asciicheck
     - bodyclose
@@ -156,22 +156,22 @@ issues:
         - lll
         - gocognit
         - funlen
-        
+
     # Exclude some staticcheck messages
     - linters:
         - staticcheck
       text: "SA9003:"
-      
+
     # Exclude lll issues for long lines with go:generate
     - linters:
         - lll
       source: "^//go:generate "
-      
+
     # Exclude gosec for test files
     - path: _test\.go
       linters:
         - gosec
-        
+
     # Exclude certain gocritic rules that are too strict
     - linters:
         - gocritic
@@ -179,4 +179,4 @@ issues:
 
   exclude-use-default: false
   max-issues-per-linter: 50
-  max-same-issues: 3 
+  max-same-issues: 3

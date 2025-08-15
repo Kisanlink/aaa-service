@@ -1,0 +1,203 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "github.com/Kisanlink/aaa-service/pb";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+
+// Binding model
+message Binding {
+    string id = 1;
+    string subject_id = 2;
+    string subject_type = 3; // "user", "group", "service"
+    string binding_type = 4; // "role" or "permission"
+    string role_id = 5;      // When binding_type is "role"
+    string permission_id = 6; // When binding_type is "permission"
+    string resource_type = 7; // e.g., "aaa/table", "aaa/resource"
+    string resource_id = 8;   // Specific resource instance
+    string organization_id = 9;
+    google.protobuf.Struct caveat = 10; // JSON constraints
+    int32 version = 11;
+    string created_by_id = 12;
+    bool is_active = 13;
+    google.protobuf.Timestamp created_at = 14;
+    google.protobuf.Timestamp updated_at = 15;
+}
+
+// Caveat builder helpers
+message TimeCaveat {
+    google.protobuf.Timestamp starts_at = 1;
+    google.protobuf.Timestamp ends_at = 2;
+}
+
+message AttributeCaveat {
+    map<string, string> required_attributes = 1;
+}
+
+message ColumnCaveat {
+    repeated string column_groups = 1;
+}
+
+// Create Binding Request
+message CreateBindingRequest {
+    string subject_id = 1;
+    string subject_type = 2;
+    string binding_type = 3;
+    string role_id = 4;
+    string permission_id = 5;
+    string resource_type = 6;
+    string resource_id = 7;
+    string organization_id = 8;
+
+    // Caveat options (will be combined into caveat JSON)
+    TimeCaveat time_caveat = 9;
+    AttributeCaveat attribute_caveat = 10;
+    ColumnCaveat column_caveat = 11;
+    google.protobuf.Struct custom_caveat = 12; // Additional custom constraints
+
+    bool wait_until_applied = 13; // Strict consistency mode
+}
+
+// Create Binding Response
+message CreateBindingResponse {
+    int32 status_code = 1;
+    string message = 2;
+    Binding binding = 3;
+    string consistency_token = 4; // When wait_until_applied is true
+}
+
+// List Bindings Request
+message ListBindingsRequest {
+    string subject_id = 1;
+    string subject_type = 2;
+    string resource_type = 3;
+    string resource_id = 4;
+    string organization_id = 5;
+    bool include_inactive = 6;
+    bool include_inherited = 7; // Include bindings from parent groups
+    int32 page = 8;
+    int32 page_size = 9;
+}
+
+// List Bindings Response
+message ListBindingsResponse {
+    int32 status_code = 1;
+    string message = 2;
+    repeated Binding bindings = 3;
+    int32 total_count = 4;
+    int32 page = 5;
+    int32 page_size = 6;
+}
+
+// Get Binding Request
+message GetBindingRequest {
+    string id = 1;
+    bool include_history = 2;
+}
+
+// Get Binding Response
+message GetBindingResponse {
+    int32 status_code = 1;
+    string message = 2;
+    Binding binding = 3;
+    repeated BindingHistory history = 4;
+}
+
+// Update Binding Request
+message UpdateBindingRequest {
+    string id = 1;
+
+    // Caveat updates
+    TimeCaveat time_caveat = 2;
+    AttributeCaveat attribute_caveat = 3;
+    ColumnCaveat column_caveat = 4;
+    google.protobuf.Struct custom_caveat = 5;
+
+    bool is_active = 6;
+    bool wait_until_applied = 7;
+}
+
+// Update Binding Response
+message UpdateBindingResponse {
+    int32 status_code = 1;
+    string message = 2;
+    Binding binding = 3;
+    string consistency_token = 4;
+}
+
+// Delete Binding Request
+message DeleteBindingRequest {
+    string id = 1;
+    bool wait_until_applied = 2;
+}
+
+// Delete Binding Response
+message DeleteBindingResponse {
+    int32 status_code = 1;
+    string message = 2;
+    string consistency_token = 3;
+}
+
+// Rollback Binding Request
+message RollbackBindingRequest {
+    string id = 1;
+    int32 to_version = 2;
+    bool wait_until_applied = 3;
+}
+
+// Rollback Binding Response
+message RollbackBindingResponse {
+    int32 status_code = 1;
+    string message = 2;
+    Binding binding = 3;
+    string consistency_token = 4;
+}
+
+// Binding History model
+message BindingHistory {
+    string id = 1;
+    string binding_id = 2;
+    string subject_id = 3;
+    string subject_type = 4;
+    string binding_type = 5;
+    string role_id = 6;
+    string permission_id = 7;
+    string resource_type = 8;
+    string resource_id = 9;
+    string organization_id = 10;
+    google.protobuf.Struct caveat = 11;
+    int32 version = 12;
+    string action = 13; // "CREATE", "UPDATE", "DELETE"
+    string changed_by_id = 14;
+    google.protobuf.Timestamp changed_at = 15;
+}
+
+// Get Binding History Request
+message GetBindingHistoryRequest {
+    string binding_id = 1;
+    int32 page = 2;
+    int32 page_size = 3;
+}
+
+// Get Binding History Response
+message GetBindingHistoryResponse {
+    int32 status_code = 1;
+    string message = 2;
+    repeated BindingHistory history = 3;
+    int32 total_count = 4;
+    int32 page = 5;
+    int32 page_size = 6;
+}
+
+// Binding Service - manages authorization bindings
+service BindingService {
+    rpc CreateBinding(CreateBindingRequest) returns (CreateBindingResponse);
+    rpc GetBinding(GetBindingRequest) returns (GetBindingResponse);
+    rpc ListBindings(ListBindingsRequest) returns (ListBindingsResponse);
+    rpc UpdateBinding(UpdateBindingRequest) returns (UpdateBindingResponse);
+    rpc DeleteBinding(DeleteBindingRequest) returns (DeleteBindingResponse);
+    rpc RollbackBinding(RollbackBindingRequest) returns (RollbackBindingResponse);
+    rpc GetBindingHistory(GetBindingHistoryRequest) returns (GetBindingHistoryResponse);
+}

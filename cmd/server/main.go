@@ -12,33 +12,108 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/Kisanlink/aaa-service/config"
-	"github.com/Kisanlink/aaa-service/grpc_server"
-	"github.com/Kisanlink/aaa-service/interfaces"
-	"github.com/Kisanlink/aaa-service/middleware"
-	addressRepo "github.com/Kisanlink/aaa-service/repositories/addresses"
-	roleRepo "github.com/Kisanlink/aaa-service/repositories/roles"
-	userRepo "github.com/Kisanlink/aaa-service/repositories/users"
-	"github.com/Kisanlink/aaa-service/routes"
-	"github.com/Kisanlink/aaa-service/services"
+	"github.com/Kisanlink/aaa-service/internal/config"
+	"github.com/Kisanlink/aaa-service/internal/entities/models"
+	"github.com/Kisanlink/aaa-service/internal/grpc_server"
+	"github.com/Kisanlink/aaa-service/internal/handlers/admin"
+	"github.com/Kisanlink/aaa-service/internal/handlers/roles"
+	"github.com/Kisanlink/aaa-service/internal/interfaces"
+	"github.com/Kisanlink/aaa-service/internal/middleware"
+	addressRepo "github.com/Kisanlink/aaa-service/internal/repositories/addresses"
+	roleRepo "github.com/Kisanlink/aaa-service/internal/repositories/roles"
+	userRepo "github.com/Kisanlink/aaa-service/internal/repositories/users"
+	"github.com/Kisanlink/aaa-service/internal/routes"
+	"github.com/Kisanlink/aaa-service/internal/services"
+	"github.com/Kisanlink/aaa-service/internal/services/user"
+	"github.com/Kisanlink/aaa-service/migrations"
 	"github.com/Kisanlink/aaa-service/utils"
+	"github.com/Kisanlink/kisanlink-db/pkg/base"
 	"github.com/Kisanlink/kisanlink-db/pkg/db"
 	scalar "github.com/MarceloPetrucio/go-scalar-api-reference"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 )
 
 // @title AAA Service API
 // @version 2.0
-// @description Authentication, Authorization, and Accounting Service with SpiceDB integration
+// @description Authentication, Authorization, and Accounting Service with PostgreSQL-based RBAC
 // @host localhost:8080
 // @BasePath /
 // @securityDefinitions.apikey BearerAuth
 // @in header
 // @name Authorization
 // @description Type "Bearer" followed by a space and JWT token.
+
+// runSeedScripts runs all seeding scripts to initialize default data
+func runSeedScripts(ctx context.Context, dbManager *db.DatabaseManager, logger *zap.Logger) error {
+	logger.Info("🌱 Starting database seeding...")
+
+	// 1. Seed static actions
+	if postgresManager := dbManager.GetPostgresManager(); postgresManager != nil {
+		if _, err := postgresManager.GetDB(ctx, false); err != nil {
+			return fmt.Errorf("failed to get postgres DB for seeding: %w", err)
+		}
+
+		if err := migrations.SeedStaticActionsWithDBManager(ctx, dbManager, logger); err != nil {
+			return fmt.Errorf("failed to seed static actions: %w", err)
+		}
+
+		// Seed core resources, roles, and permissions using PostgreSQL
+		if err := migrations.SeedCoreResourcesRolesPermissionsWithDBManager(ctx, dbManager, logger); err != nil {
+			return fmt.Errorf("failed to seed core roles/permissions: %w", err)
+		}
+	}
+
+	// 2. Seed default roles
+	logger.Info("🔧 Creating default roles...")
+	defaultRoles := []struct {
+		name        string
+		description string
+		scope       models.RoleScope
+	}{
+		{"super_admin", "Super Administrator with global access", models.RoleScopeGlobal},
+		{"admin", "Administrator with organization-level access", models.RoleScopeOrg},
+		{"user", "Regular user with basic access", models.RoleScopeOrg},
+		{"viewer", "Read-only access user", models.RoleScopeOrg},
+		{"aaa_admin", "AAA service administrator", models.RoleScopeGlobal},
+		{"module_admin", "Module administrator for service management", models.RoleScopeOrg},
+	}
+
+	// Get the primary backend manager (explicitly request GORM backend)
+	primaryManager := dbManager.GetManager(db.BackendGorm)
+	if primaryManager == nil {
+		logger.Warn("Primary database manager (GORM) not available; skipping role seeding")
+		return nil
+	}
+
+	for _, roleData := range defaultRoles {
+		// Check if role already exists by name
+		filters := []base.FilterCondition{{Field: "name", Operator: base.OpEqual, Value: roleData.name}}
+		var existing []models.Role
+		if err := primaryManager.List(ctx, filters, &existing); err != nil {
+			logger.Error("Failed to check existing role", zap.String("role", roleData.name), zap.Error(err))
+			continue
+		}
+		if len(existing) > 0 {
+			logger.Info("Role already exists", zap.String("role", roleData.name))
+			continue
+		}
+
+		// Create new role
+		role := models.NewRole(roleData.name, roleData.description, roleData.scope)
+		if err := primaryManager.Create(ctx, role); err != nil {
+			logger.Error("Failed to create role", zap.String("role", roleData.name), zap.Error(err))
+		} else {
+			logger.Info("Created role", zap.String("role", roleData.name), zap.String("id", role.ID))
+		}
+	}
+
+	logger.Info("✅ Database seeding completed!")
+	return nil
+}
 
 // Server manages both HTTP and gRPC servers
 type Server struct {
@@ -75,17 +150,6 @@ func main() {
 	httpPort := getEnv("HTTP_PORT", "8080")
 	grpcPort := getEnv("GRPC_PORT", "50051")
 	jwtSecret := getEnv("JWT_SECRET", "default-secret-key-change-in-production")
-	spiceDBAddr := getEnv("DB_SPICEDB_ENDPOINT", "localhost:50051")
-	spiceDBToken := getEnv("DB_SPICEDB_TOKEN", "")
-
-	if spiceDBToken == "" {
-		logger.Warn("SpiceDB token not set, using empty token")
-	}
-
-	// Ensure SpiceDB schema exists before initializing DB manager
-	if err := services.EnsureSpiceDBSchema(context.Background(), spiceDBAddr, spiceDBToken, logger); err != nil {
-		logger.Warn("Failed to ensure SpiceDB schema; DB connection may fail if schema is absent", zap.Error(err))
-	}
 
 	// Initialize database manager
 	dbManager, err := config.NewDatabaseManager(logger)
@@ -98,9 +162,47 @@ func main() {
 		}
 	}()
 
+	// Optionally run database seeding scripts
+	if getEnv("AAA_RUN_SEED", "true") == "true" {
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+		if err := runSeedScripts(ctx, dbManager, logger); err != nil {
+			logger.Fatal("Failed to run database seeding scripts", zap.Error(err))
+		}
+	} else {
+		logger.Info("Skipping database seeding; AAA_RUN_SEED is not true")
+	}
+
+	// Initialize ID counters from database to prevent duplicate key violations
+	logger.Info("Initializing ID counters from database")
+	primaryDBManager := dbManager.GetManager(db.BackendGorm)
+	if primaryDBManager != nil {
+		// Get the underlying GORM DB for counter initialization
+		if postgresManager, ok := primaryDBManager.(*db.PostgresManager); ok {
+			// Get the GORM database connection
+			gormDB, err := postgresManager.GetDB(context.Background(), false)
+			if err != nil {
+				logger.Warn("Failed to get GORM DB connection, skipping counter initialization", zap.Error(err))
+			} else {
+				counterService := services.NewCounterInitializationService(gormDB, logger)
+				ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+				defer cancel()
+				if err := counterService.InitializeAllCounters(ctx); err != nil {
+					logger.Warn("Failed to initialize ID counters, continuing with default values", zap.Error(err))
+				} else {
+					logger.Info("ID counters initialized successfully from database")
+				}
+			}
+		} else {
+			logger.Warn("Database manager is not a PostgresManager, skipping counter initialization")
+		}
+	} else {
+		logger.Warn("No database manager available, skipping counter initialization")
+	}
+
 	// Initialize services and repositories
 	server, err := initializeServer(
-		httpPort, grpcPort, jwtSecret, spiceDBAddr, spiceDBToken,
+		httpPort, grpcPort, jwtSecret,
 		dbManager, logger,
 	)
 	if err != nil {
@@ -127,7 +229,7 @@ func main() {
 
 // initializeServer initializes all services and creates the server
 func initializeServer(
-	httpPort, grpcPort, jwtSecret, spiceDBAddr, spiceDBToken string,
+	httpPort, grpcPort, jwtSecret string,
 	dbManager *db.DatabaseManager,
 	logger *zap.Logger,
 ) (*Server, error) {
@@ -143,14 +245,29 @@ func initializeServer(
 		primaryDBManager = &InMemoryDBManager{logger: loggerAdapter}
 	}
 
-	// Initialize repositories
+	// Initialize repositories with the DatabaseManager for advanced operations
 	userRepository := userRepo.NewUserRepository(primaryDBManager)
 	addressRepository := addressRepo.NewAddressRepository(primaryDBManager)
 	roleRepository := roleRepo.NewRoleRepository(primaryDBManager)
 	userRoleRepository := roleRepo.NewUserRoleRepository(primaryDBManager)
 
 	// Initialize cache service
-	cacheService := services.NewCacheService("localhost:6379", "", 0, loggerAdapter)
+	// FIX: Check CACHE_DISABLED environment variable to optionally disable Redis
+	var cacheService interfaces.CacheService
+	if getEnv("CACHE_DISABLED", "false") == "true" {
+		logger.Info("Cache disabled by CACHE_DISABLED=true, using no-op cache service")
+		cacheService = services.NewNoOpCacheService(loggerAdapter)
+	} else {
+		// Initialize cache service from environment variables (fallback to defaults)
+		redisHost := getEnv("REDIS_HOST", "localhost")
+		redisPort := getEnv("REDIS_PORT", "6379")
+		redisPassword := getEnv("REDIS_PASSWORD", "")
+		redisDB := 0 // Could be made configurable via REDIS_DB env var
+		logger.Info("Initializing Redis cache service",
+			zap.String("host", redisHost),
+			zap.String("port", redisPort))
+		cacheService = services.NewCacheService(redisHost+":"+redisPort, redisPassword, redisDB, loggerAdapter)
+	}
 
 	// Initialize maintenance service
 	maintenanceService := services.NewMaintenanceService(cacheService, loggerAdapter)
@@ -158,13 +275,16 @@ func initializeServer(
 	// Initialize business services
 	_ = services.NewAddressService(addressRepository, cacheService, loggerAdapter, validator) // Available for future use
 	roleService := services.NewRoleService(roleRepository, userRoleRepository, cacheService, loggerAdapter, validator)
-	userService := services.NewUserService(userRepository, roleRepository, userRoleRepository, cacheService, logger, validator)
+	userService := user.NewService(userRepository, roleRepository, userRoleRepository, cacheService, logger, validator)
+
+	// Initialize handlers
+	roleHandler := roles.NewRoleHandler(roleService, validator, responder, logger)
 
 	// Initialize HTTP server
 	httpServer, err := initializeHTTPServer(
-		httpPort, jwtSecret, spiceDBAddr, spiceDBToken,
+		httpPort, jwtSecret,
 		primaryDBManager, userService, roleService, userRepository, userRoleRepository,
-		cacheService, validator, responder, maintenanceService, logger,
+		cacheService, validator, responder, maintenanceService, logger, roleHandler,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize HTTP server: %w", err)
@@ -176,8 +296,6 @@ func initializeServer(
 		JWTSecret:        jwtSecret,
 		TokenExpiry:      24 * time.Hour,
 		RefreshExpiry:    7 * 24 * time.Hour,
-		SpiceDBAddr:      spiceDBAddr,
-		SpiceDBToken:     spiceDBToken,
 		EnableReflection: true,
 	}
 
@@ -198,7 +316,7 @@ func initializeServer(
 
 // initializeHTTPServer creates and configures the HTTP server with middleware
 func initializeHTTPServer(
-	port, jwtSecret, spiceDBAddr, spiceDBToken string,
+	port, jwtSecret string,
 	dbManager db.DBManager,
 	userService interfaces.UserService,
 	roleService interfaces.RoleService,
@@ -209,48 +327,124 @@ func initializeHTTPServer(
 	responder interfaces.Responder,
 	maintenanceService interfaces.MaintenanceService,
 	logger *zap.Logger,
+	roleHandler *roles.RoleHandler,
 ) (*HTTPServer, error) {
-	// Initialize enhanced services for middleware
+	// Build auth, authorization, and audit stack
+	auditService, authzService, authService, authMiddleware, auditMiddleware, err := setupAuthStack(
+		context.Background(),
+		dbManager,
+		cacheService,
+		userRepository,
+		roleService,
+		userRoleRepository,
+		jwtSecret,
+		logger,
+		validator,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create gin router
+	router := gin.New()
+
+	// Setup middleware stack
+	setupHTTPMiddleware(router, authMiddleware, auditMiddleware, maintenanceService, responder, logger)
+
+	// Setup routes and docs
+	setupRoutesAndDocs(router, authService, authzService, auditService, authMiddleware, maintenanceService, validator, responder, logger, roleHandler)
+
+	return &HTTPServer{
+		router: router,
+		port:   port,
+		logger: logger,
+	}, nil
+}
+
+// setupAuthStack initializes audit, authorization, and authentication services, and their middlewares
+func setupAuthStack(
+	ctx context.Context,
+	dbManager db.DBManager,
+	cacheService interfaces.CacheService,
+	userRepository interfaces.UserRepository,
+	roleService interfaces.RoleService,
+	userRoleRepository interfaces.UserRoleRepository,
+	jwtSecret string,
+	logger *zap.Logger,
+	validator interfaces.Validator,
+) (*services.AuditService, *services.AuthorizationService, *services.AuthService, *middleware.AuthMiddleware, *middleware.AuditMiddleware, error) {
 	auditService := services.NewAuditService(dbManager, cacheService, logger)
 
+	// Get database connection for authorization service
+	// Use the dbManager interface directly instead of type assertion
+	var gormDB *gorm.DB
+	var err error
+
+	// Get GORM DB from the manager if it's available
+	if pm, ok := dbManager.(*db.PostgresManager); ok {
+		gormDB, err = pm.GetDB(ctx, false)
+		if err != nil {
+			return nil, nil, nil, nil, nil, fmt.Errorf("failed to get database connection: %w", err)
+		}
+	} else {
+		// Fallback: create a simple in-memory connection if not PostgreSQL
+		return nil, nil, nil, nil, nil, fmt.Errorf("database manager is not PostgreSQL-based")
+	}
+
 	authzConfig := &services.AuthorizationServiceConfig{
-		SpiceDBAddr:  spiceDBAddr,
-		SpiceDBToken: spiceDBToken,
+		DB: gormDB,
 	}
 	authzService, err := services.NewAuthorizationService(cacheService, auditService, authzConfig, logger)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create authorization service: %w", err)
+		return nil, nil, nil, nil, nil, fmt.Errorf("failed to create authorization service: %w", err)
 	}
 
 	authConfig := &services.AuthServiceConfig{
 		JWTSecret:     jwtSecret,
 		TokenExpiry:   24 * time.Hour,
 		RefreshExpiry: 7 * 24 * time.Hour,
-		SpiceDBAddr:   spiceDBAddr,
-		SpiceDBToken:  spiceDBToken,
+	}
+	jwtCfg := config.LoadJWTConfigFromEnv()
+	// Ensure secret matches legacy env fallbacks
+	if jwtCfg.Secret == "" {
+		jwtCfg.Secret = jwtSecret
 	}
 	authService, err := services.NewAuthService(
-		userRepository, roleService, userRoleRepository,
-		cacheService, authzService, auditService,
-		authConfig, logger, validator,
+		userRepository,
+		roleService,
+		userRoleRepository,
+		cacheService,
+		authzService,
+		auditService,
+		authConfig,
+		logger,
+		validator,
+		jwtCfg,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create authentication service: %w", err)
+		return nil, nil, nil, nil, nil, fmt.Errorf("failed to create authentication service: %w", err)
 	}
 
-	// Initialize middleware
-	authMiddleware := middleware.NewAuthMiddleware(authService, authzService, auditService, logger)
+	authMiddleware := middleware.NewAuthMiddleware(authService, authzService, auditService, logger, middleware.NewHS256Verifier(), jwtCfg)
 	auditMiddleware := middleware.NewAuditMiddleware(auditService, logger)
+	return auditService, authzService, authService, authMiddleware, auditMiddleware, nil
+}
 
-	// Create gin router
-	router := gin.New()
-
-	// Setup middleware stack
+// setupHTTPMiddleware configures the middleware stack on the provided router
+func setupHTTPMiddleware(
+	router *gin.Engine,
+	authMiddleware *middleware.AuthMiddleware,
+	auditMiddleware *middleware.AuditMiddleware,
+	maintenanceService interfaces.MaintenanceService,
+	responder interfaces.Responder,
+	logger *zap.Logger,
+) {
 	loggerAdapter := utils.NewLoggerAdapter(logger)
 	routes.SetupMiddleware(router,
 		cors.Default(),
 		middleware.RequestID(),
 		middleware.Logger(loggerAdapter),
+		middleware.ResponseContextHeaders(),
 		auditMiddleware.HTTPAuditMiddleware(),
 		authMiddleware.HTTPAuthMiddleware(),
 		authMiddleware.HTTPAuthzMiddleware(),
@@ -258,42 +452,59 @@ func initializeHTTPServer(
 		middleware.PanicRecoveryHandler(loggerAdapter),
 		middleware.MaintenanceMode(maintenanceService, responder, loggerAdapter),
 	)
+}
 
-	// Setup routes using the routes package
-	routes.SetupAAAWrapper(router, authService, authzService, auditService, authMiddleware, logger)
+// setupRoutesAndDocs registers API routes and documentation endpoints
+func setupRoutesAndDocs(
+	router *gin.Engine,
+	authService *services.AuthService,
+	authzService *services.AuthorizationService,
+	auditService *services.AuditService,
+	authMiddleware *middleware.AuthMiddleware,
+	maintenanceService interfaces.MaintenanceService,
+	validator interfaces.Validator,
+	responder interfaces.Responder,
+	logger *zap.Logger,
+	roleHandler *roles.RoleHandler,
+) {
+	// Create AdminHandler for v2 admin routes
+	adminHandler := admin.NewAdminHandler(maintenanceService, validator, responder, logger)
 
-	// Serve OpenAPI and Scalar-powered docs UI
-	router.StaticFile("/docs/swagger.json", "docs/swagger.json")
-	router.StaticFile("/docs/swagger.yaml", "docs/swagger.yaml")
-	router.GET("/docs", func(c *gin.Context) {
-		scheme := "http"
-		if c.Request.TLS != nil || c.Request.Header.Get("X-Forwarded-Proto") == "https" {
-			scheme = "https"
-		}
-		specURL := scheme + "://" + c.Request.Host + "/docs/swagger.json"
+	// Setup routes using the routes package with AdminHandler
+	routes.SetupAAAWithAdmin(router, authService, authzService, auditService, authMiddleware, adminHandler, roleHandler, logger)
 
-		htmlContent, err := scalar.ApiReferenceHTML(&scalar.Options{
-			SpecURL:  specURL,
-			DarkMode: true,
-			CustomOptions: scalar.CustomOptions{
-				PageTitle: "AAA Service API Reference",
-			},
+	// Serve OpenAPI and Scalar-powered docs UI (gated by env)
+	if getEnv("AAA_ENABLE_DOCS", "true") == "true" {
+		router.StaticFile("/docs/swagger.json", "docs/swagger.json")
+		router.StaticFile("/docs/swagger.yaml", "docs/swagger.yaml")
+		router.GET("/docs", func(c *gin.Context) {
+			scheme := "http"
+			if c.Request.TLS != nil || c.Request.Header.Get("X-Forwarded-Proto") == "https" {
+				scheme = "https"
+			}
+			specURL := scheme + "://" + c.Request.Host + "/docs/swagger.json"
+
+			htmlContent, err := scalar.ApiReferenceHTML(&scalar.Options{
+				SpecURL:  specURL,
+				DarkMode: true,
+				CustomOptions: scalar.CustomOptions{
+					PageTitle: "AAA Service API Reference",
+				},
+			})
+			if err != nil {
+				c.String(http.StatusInternalServerError, "failed to render API docs: %v", err)
+				return
+			}
+			c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(htmlContent))
 		})
-		if err != nil {
-			c.String(http.StatusInternalServerError, "failed to render API docs: %v", err)
-			return
-		}
-		c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(htmlContent))
-	})
-	router.GET("/", func(c *gin.Context) {
-		c.Redirect(http.StatusMovedPermanently, "/docs")
-	})
-
-	return &HTTPServer{
-		router: router,
-		port:   port,
-		logger: logger,
-	}, nil
+		router.GET("/", func(c *gin.Context) {
+			c.Redirect(http.StatusMovedPermanently, "/docs")
+		})
+	} else {
+		router.GET("/", func(c *gin.Context) {
+			c.String(http.StatusOK, "aaa-service running")
+		})
+	}
 }
 
 // Start starts both HTTP and gRPC servers
@@ -400,14 +611,8 @@ func (m *InMemoryDBManager) GetByID(ctx context.Context, id interface{}, model i
 }
 func (m *InMemoryDBManager) Update(ctx context.Context, model interface{}) error { return nil }
 func (m *InMemoryDBManager) Delete(ctx context.Context, id interface{}) error    { return nil }
-func (m *InMemoryDBManager) List(ctx context.Context, filters []db.Filter, model interface{}) error {
+func (m *InMemoryDBManager) List(ctx context.Context, filters []base.FilterCondition, model interface{}) error {
 	return nil
-}
-func (m *InMemoryDBManager) ApplyFilters(query interface{}, filters []db.Filter) (interface{}, error) {
-	return query, nil
-}
-func (m *InMemoryDBManager) BuildFilter(field string, operator db.FilterOperator, value interface{}) db.Filter {
-	return db.Filter{Field: field, Operator: operator, Value: value}
 }
 
 func (m *InMemoryDBManager) AutoMigrateModels(ctx context.Context, models ...interface{}) error {

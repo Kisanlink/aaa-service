@@ -1,0 +1,243 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "github.com/Kisanlink/aaa-service/pb";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+
+// Check Request - single authorization check
+message CheckRequest {
+    string principal_id = 1;    // User or Service ID
+    string resource_type = 2;   // e.g., "aaa/table", "aaa/resource"
+    string resource_id = 3;     // Specific resource instance
+    string action = 4;          // e.g., "view", "edit", "delete"
+
+    // Context for caveat evaluation
+    google.protobuf.Struct attributes = 5;     // Principal attributes
+    repeated string requested_columns = 6;      // For column-level checks
+    google.protobuf.Timestamp check_time = 7;   // Time for time-based caveats
+
+    // Consistency options
+    string consistency_token = 8;  // Use specific consistency point
+    bool use_strict = 9;          // Force strict consistency
+}
+
+// Check Response
+message CheckResponse {
+    bool allowed = 1;
+    string decision_id = 2;       // Unique ID for this decision
+    repeated string reasons = 3;   // Human-readable reasons
+    string consistency_token = 4;  // Current consistency point
+
+    // Debug information (optional)
+    DebugInfo debug = 5;
+}
+
+// Debug information for authorization decisions
+message DebugInfo {
+    repeated string tuple_path = 1;          // SpiceDB tuple path
+    repeated CaveatEvaluation caveats = 2;   // Caveat evaluation details
+    int64 evaluation_time_ms = 3;           // Time taken for evaluation
+}
+
+// Caveat evaluation details
+message CaveatEvaluation {
+    string caveat_name = 1;
+    google.protobuf.Struct caveat_context = 2;
+    bool result = 3;
+    string reason = 4;
+}
+
+// Batch Check Request - multiple authorization checks
+message BatchCheckRequest {
+    repeated CheckItem items = 1;
+
+    // Shared context for all checks
+    google.protobuf.Struct shared_attributes = 2;
+    google.protobuf.Timestamp check_time = 3;
+
+    // Consistency options
+    string consistency_token = 4;
+    bool use_strict = 5;
+}
+
+// Individual check item in batch
+message CheckItem {
+    string request_id = 1;      // Client-provided ID for correlation
+    string principal_id = 2;
+    string resource_type = 3;
+    string resource_id = 4;
+    string action = 5;
+    google.protobuf.Struct attributes = 6;  // Override shared attributes
+    repeated string requested_columns = 7;
+}
+
+// Batch Check Response
+message BatchCheckResponse {
+    repeated CheckResult results = 1;
+    string consistency_token = 2;
+}
+
+// Individual check result in batch
+message CheckResult {
+    string request_id = 1;
+    bool allowed = 2;
+    string decision_id = 3;
+    repeated string reasons = 4;
+    DebugInfo debug = 5;
+}
+
+// Lookup Resources Request - find resources user can access
+message LookupResourcesRequest {
+    string principal_id = 1;
+    string resource_type = 2;
+    string action = 3;
+
+    // Filters
+    string parent_resource_id = 4;
+    string organization_id = 5;
+
+    // Context
+    google.protobuf.Struct attributes = 6;
+    google.protobuf.Timestamp check_time = 7;
+
+    // Pagination
+    int32 page = 8;
+    int32 page_size = 9;
+    string continuation_token = 10;
+
+    // Consistency
+    string consistency_token = 11;
+}
+
+// Lookup Resources Response
+message LookupResourcesResponse {
+    repeated ResourceAccess resources = 1;
+    string continuation_token = 2;
+    string consistency_token = 3;
+    int32 total_count = 4;
+}
+
+// Resource access information
+message ResourceAccess {
+    string resource_id = 1;
+    string resource_type = 2;
+    repeated string allowed_actions = 3;
+    google.protobuf.Struct metadata = 4;  // Resource metadata
+}
+
+// Check Columns Request - column-level authorization
+message CheckColumnsRequest {
+    string principal_id = 1;
+    string table_name = 2;
+    string resource_id = 3;      // Specific table instance
+    repeated string requested_columns = 4;
+    string action = 5;           // "read" or "write"
+
+    // Context
+    google.protobuf.Struct attributes = 6;
+    google.protobuf.Timestamp check_time = 7;
+
+    // Consistency
+    string consistency_token = 8;
+    bool use_strict = 9;
+}
+
+// Check Columns Response
+message CheckColumnsResponse {
+    bool allowed = 1;                      // Overall decision
+    repeated string allowed_columns = 2;    // Subset of requested columns allowed
+    repeated string denied_columns = 3;     // Columns explicitly denied
+    repeated string column_groups = 4;      // Column groups user has access to
+    string decision_id = 5;
+    string consistency_token = 6;
+}
+
+// List Allowed Columns Request - get all accessible columns
+message ListAllowedColumnsRequest {
+    string principal_id = 1;
+    string table_name = 2;
+    string resource_id = 3;
+    string action = 4;
+
+    // Context
+    google.protobuf.Struct attributes = 5;
+    google.protobuf.Timestamp check_time = 6;
+
+    // Consistency
+    string consistency_token = 7;
+}
+
+// List Allowed Columns Response
+message ListAllowedColumnsResponse {
+    repeated string allowed_columns = 1;
+    repeated ColumnGroupAccess column_groups = 2;
+    string consistency_token = 3;
+}
+
+// Column group access information
+message ColumnGroupAccess {
+    string group_name = 1;
+    string description = 2;
+    repeated string columns = 3;
+}
+
+// Explain Request - explain authorization decision
+message ExplainRequest {
+    string principal_id = 1;
+    string resource_type = 2;
+    string resource_id = 3;
+    string action = 4;
+
+    // Context
+    google.protobuf.Struct attributes = 5;
+    repeated string requested_columns = 6;
+    google.protobuf.Timestamp check_time = 7;
+
+    // Options
+    bool include_tuple_path = 8;
+    bool include_caveats = 9;
+    bool include_denied_paths = 10;
+}
+
+// Explain Response
+message ExplainResponse {
+    bool allowed = 1;
+    string decision_id = 2;
+
+    // Explanation details
+    repeated TuplePath allowed_paths = 3;   // Paths that grant access
+    repeated TuplePath denied_paths = 4;    // Paths that were checked but denied
+    repeated CaveatEvaluation caveats = 5;  // All caveat evaluations
+
+    // Summary
+    string human_explanation = 6;           // Human-readable explanation
+}
+
+// Tuple path in authorization graph
+message TuplePath {
+    repeated TupleNode nodes = 1;
+    bool is_allowed = 2;
+    string denied_reason = 3;
+}
+
+// Node in tuple path
+message TupleNode {
+    string object_type = 1;
+    string object_id = 2;
+    string relation = 3;
+    string subject_type = 4;
+    string subject_id = 5;
+}
+
+// Authorization Service - runtime authorization checks
+service AuthorizationService {
+    rpc Check(CheckRequest) returns (CheckResponse);
+    rpc BatchCheck(BatchCheckRequest) returns (BatchCheckResponse);
+    rpc LookupResources(LookupResourcesRequest) returns (LookupResourcesResponse);
+    rpc CheckColumns(CheckColumnsRequest) returns (CheckColumnsResponse);
+    rpc ListAllowedColumns(ListAllowedColumnsRequest) returns (ListAllowedColumnsResponse);
+    rpc Explain(ExplainRequest) returns (ExplainResponse);
+}

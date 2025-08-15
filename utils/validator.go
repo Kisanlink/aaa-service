@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Kisanlink/aaa-service/interfaces"
+	"github.com/Kisanlink/aaa-service/internal/interfaces"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 )

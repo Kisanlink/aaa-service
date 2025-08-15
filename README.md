@@ -1,325 +1,158 @@
-# AAA Service - Identity & Access Management
+# AAA Service
 
-A comprehensive Identity and Access Management (IAM) service built with Go, featuring role-based access control, permission management, and SpiceDB integration for advanced authorization.
+A comprehensive Authentication, Authorization, and Accounting service built with Go, featuring role-based access control, permission management, and PostgreSQL RBAC for advanced authorization.
 
-## 🚀 Features
+## Features
 
-### Core IAM Functionality
-- **User Management** - Complete user lifecycle with profile and contact management
-- **Role-Based Access Control (RBAC)** - Hierarchical role system with permission inheritance
-- **Permission Management** - Fine-grained permissions with resource-based access control
-- **Authorization** - SpiceDB integration for real-time permission evaluation
-- **Audit Logging** - Comprehensive audit trail for all operations
+- **Authentication** - JWT-based authentication with refresh tokens
+- **Authorization** - PostgreSQL RBAC integration for real-time permission evaluation
+- **Accounting** - Comprehensive audit logging and event tracking
+- **User Management** - Complete user lifecycle management
+- **Role Management** - Hierarchical roles with organization and group scoping
+- **Permission System** - Fine-grained permissions with resource-level control
+- **Multi-tenancy** - Organization and group-based isolation
+- **API Gateway** - RESTful HTTP and gRPC interfaces
+- **Caching** - Redis-based caching for performance
+- **Database Support** - PostgreSQL primary, DynamoDB and S3 optional
 
-### Advanced Features
-- **Multi-Factor Authentication (MFA)** - Framework ready for MFA implementation
-- **Token Management** - JWT-based authentication with refresh tokens
-- **Address Management** - Geocoding and address validation
-- **Maintenance Mode** - System maintenance with admin bypass
-- **Health Monitoring** - Comprehensive health checks and metrics
+## Architecture
 
-## 🏗️ Architecture
+The service follows a clean architecture pattern with:
 
-### Service Layer
-```
-HTTP API (Gin) → gRPC Services → Business Logic → Data Layer → Database
-```
+- **Handlers** - HTTP and gRPC request handling
+- **Services** - Business logic and authorization
+- **Repositories** - Data access layer
+- **Models** - Domain entities and data structures
+- **Middleware** - Authentication, authorization, and audit
+- **Database** - PostgreSQL with kisanlink-db manager
 
-### Key Components
-- **HTTP Handlers** - RESTful API endpoints
-- **gRPC Services** - Internal service communication
-- **SpiceDB** - Authorization and relationship management
-- **PostgreSQL/DynamoDB** - Data persistence
-- **Redis** - Caching and session management
+## Tech Stack
 
-## 📁 Project Structure
+- **Language**: Go 1.21+
+- **Framework**: Gin (HTTP), gRPC
+- **Database**: PostgreSQL (primary), DynamoDB, S3
+- **Cache**: Redis
+- **Authorization**: PostgreSQL RBAC
+- **Logging**: Zap
+- **Validation**: Custom validator
+- **Testing**: Go testing framework
 
-```
-aaa-service/
-├── cmd/                    # Application entry points
-├── config/                 # Configuration management
-├── database/              # Database layer
-├── docs/                  # Documentation
-├── entities/              # Domain models
-│   ├── models/           # Data models
-│   ├── requests/         # Request DTOs
-│   └── responses/        # Response DTOs
-├── grpc_server/          # gRPC service implementations
-├── handlers/             # HTTP handlers
-│   ├── admin/           # Admin operations
-│   ├── auth/            # Authentication
-│   ├── health/          # Health checks
-│   ├── permissions/     # Permission management
-│   ├── roles/           # Role management
-│   ├── users/           # User management
-│   └── addresses/       # Address management
-├── interfaces/           # Interface definitions
-├── middleware/           # HTTP middleware
-├── pb/                   # Generated protobuf files
-├── proto/                # Protobuf definitions
-├── repositories/         # Data access layer
-├── routes/              # Route definitions
-├── scripts/             # Build and deployment scripts
-├── server/              # Server implementations
-├── services/            # Business logic layer
-├── test/                # Test files
-├── utils/               # Utility functions
-├── spicedb_schema.zed  # SpiceDB authorization schema
-└── README.md           # This file
-```
-
-## 🛠️ Quick Start
+## Quick Start
 
 ### Prerequisites
+
 - Go 1.21+
+- PostgreSQL 15+
+- Redis 7+
 - Docker & Docker Compose
-- PostgreSQL (or DynamoDB)
-- Redis
-- SpiceDB
 
-### Development Setup
+### Environment Setup
 
-1. **Clone and setup**
+1. Copy the environment file:
    ```bash
-   git clone <repository-url>
-   cd aaa-service
    cp env.example .env
    ```
 
-2. **Start dependencies**
+2. Update the database configuration in `.env`:
    ```bash
-   docker-compose up -d
+   DB_POSTGRES_HOST=localhost
+   DB_POSTGRES_PORT=5432
+   DB_POSTGRES_USER=postgres
+   DB_POSTGRES_PASSWORD=your_password
+   DB_POSTGRES_DBNAME=kisanlink
    ```
 
-3. **Install dependencies**
+3. Start the required services:
    ```bash
-   go mod download
+   docker-compose up -d postgres redis
    ```
 
-4. **Run the service**
+4. Run the service:
    ```bash
    go run cmd/server/main.go
    ```
 
-### Environment Configuration
+### Database Setup
+
+The service will automatically:
+- Connect to PostgreSQL using kisanlink-db manager
+- Run migrations if `AAA_AUTO_MIGRATE=true`
+- Seed initial data if `AAA_RUN_SEED=true`
+
+## API Documentation
+
+- **Swagger UI**: Available at `/swagger/index.html` when `AAA_ENABLE_DOCS=true`
+- **gRPC**: Reflection enabled for development tools
+- **Health Check**: `/health` endpoint for monitoring
+
+## Configuration
+
+### Database Configuration
+
+The service uses kisanlink-db for database management:
 
 ```bash
-# Database Configuration
-DB_PROVIDER=postgres  # or dynamodb
-DB_HOST=localhost
-DB_PORT=5432
-DB_USER=postgres
-DB_PASSWORD=password
-DB_NAME=aaa_service
+# Primary backend (gorm for PostgreSQL)
+DB_PRIMARY_BACKEND=gorm
 
-# SpiceDB Configuration
-DB_SPICEDB_ENDPOINT=localhost:50051
-DB_SPICEDB_TOKEN=your_token
+# PostgreSQL settings
+DB_POSTGRES_HOST=localhost
+DB_POSTGRES_PORT=5432
+DB_POSTGRES_USER=postgres
+DB_POSTGRES_PASSWORD=your_password
+DB_POSTGRES_DBNAME=kisanlink
 
-# Redis Configuration
-REDIS_ADDR=localhost:6379
-REDIS_PASSWORD=
-
-# JWT Configuration
-JWT_SECRET=your_jwt_secret
-JWT_EXPIRY=24h
+# Optional: DynamoDB and S3
+DB_DYNAMO_REGION=us-east-1
+DB_S3_REGION=us-east-1
 ```
 
-## 🔐 IAM Workflows
+### Authorization Configuration
 
-### User Management
+PostgreSQL RBAC is used for authorization:
+- No external authorization service required
+- Permissions stored in PostgreSQL tables
+- Real-time permission evaluation
+- Support for hierarchical roles and resources
+
+## Development
+
+### Running Tests
+
 ```bash
-# Create user
-POST /api/v2/users
-{
-  "username": "john.doe",
-  "email": "john@example.com",
-  "password": "secure_password",
-  "roles": ["user"]
-}
-
-# Get user with roles
-GET /api/v2/users/{user_id}
-
-# Update user
-PUT /api/v2/users/{user_id}
-```
-
-### Role Management
-```bash
-# Create role
-POST /api/v2/roles
-{
-  "name": "admin",
-  "description": "Administrator role",
-  "parent_id": null
-}
-
-# Assign permissions to role
-POST /api/v2/roles/{role_id}/permissions
-{
-  "permission_ids": ["perm_123", "perm_456"]
-}
-```
-
-### Permission Management
-```bash
-# Create permission
-POST /api/v2/permissions
-{
-  "name": "read_users",
-  "description": "Read user information",
-  "resource": "users",
-  "actions": ["read"]
-}
-
-# Evaluate permission
-POST /api/v2/permissions/evaluate
-{
-  "user_id": "user_123",
-  "resource": "users",
-  "action": "read"
-}
-```
-
-## 🔧 API Endpoints
-
-### Authentication
-- `POST /api/v2/auth/login` - User login
-- `POST /api/v2/auth/logout` - User logout
-- `POST /api/v2/auth/refresh` - Refresh token
-- `POST /api/v2/auth/register` - User registration
-
-### User Management
-- `GET /api/v2/users` - List users
-- `POST /api/v2/users` - Create user
-- `GET /api/v2/users/{id}` - Get user
-- `PUT /api/v2/users/{id}` - Update user
-- `DELETE /api/v2/users/{id}` - Delete user
-
-### Role Management
-- `GET /api/v2/roles` - List roles
-- `POST /api/v2/roles` - Create role
-- `GET /api/v2/roles/{id}` - Get role
-- `PUT /api/v2/roles/{id}` - Update role
-- `DELETE /api/v2/roles/{id}` - Delete role
-
-### Permission Management
-- `GET /api/v2/permissions` - List permissions
-- `POST /api/v2/permissions` - Create permission
-- `GET /api/v2/permissions/{id}` - Get permission
-- `PUT /api/v2/permissions/{id}` - Update permission
-- `DELETE /api/v2/permissions/{id}` - Delete permission
-
-### Admin Operations
-- `GET /api/v2/admin/health` - Health check
-- `GET /api/v2/admin/metrics` - System metrics
-- `GET /api/v2/admin/audit-logs` - Audit logs
-
-## 🧪 Testing
-
-### Run Tests
-```bash
-# Run all tests
+# Unit tests
 go test ./...
 
-# Run with coverage
-go test ./... -cover
-
-# Run specific package
-go test ./handlers -v
+# Integration tests with test database
+docker-compose -f docker-compose.test.yml up -d
+go test -tags=integration ./...
 ```
 
-### Integration Tests
-```bash
-# Run integration tests
-docker-compose -f docker-compose.test.yml up --abort-on-container-exit
+### Code Structure
+
+```
+aaa-service/
+├── cmd/server/          # Main application entry point
+├── internal/            # Private application code
+│   ├── config/         # Configuration management
+│   ├── handlers/       # HTTP and gRPC handlers
+│   ├── services/       # Business logic
+│   ├── repositories/   # Data access layer
+│   ├── middleware/     # HTTP middleware
+│   └── routes/         # Route definitions
+├── pkg/                # Public packages
+├── migrations/         # Database migrations
+└── docs/              # Documentation and schemas
 ```
 
-## 🚀 Deployment
-
-### Docker Deployment
-```bash
-# Build image
-docker build -t aaa-service .
-
-# Run container
-docker run -p 8080:8080 aaa-service
-```
-
-### Kubernetes Deployment
-```bash
-# Apply manifests
-kubectl apply -f k8s/
-```
-
-## 📊 Monitoring
-
-### Health Checks
-- `GET /health` - Basic health check
-- `GET /api/v2/admin/health/detailed` - Detailed health status
-
-### Metrics
-- `GET /api/v2/admin/metrics` - System metrics
-- Prometheus metrics available at `/metrics`
-
-## 🔒 Security Features
-
-### Authentication
-- JWT-based authentication
-- Refresh token rotation
-- Token blacklisting
-- Password hashing with bcrypt
-
-### Authorization
-- SpiceDB integration for fine-grained permissions
-- Role-based access control
-- Resource-based permissions
-- Real-time permission evaluation
-
-### Audit & Compliance
-- Comprehensive audit logging
-- User action tracking
-- Data access monitoring
-- Compliance reporting
-
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Add tests for new functionality
-5. Run `make check` to ensure code quality
-6. Submit a pull request
+4. Add tests
+5. Submit a pull request
 
-## 📝 License
+## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🆘 Support
-
-For questions and support:
-- Create an issue in the GitHub repository
-- Check the [documentation](docs/)
-- Review the [API documentation](docs/swagger.json)
-
-## 🗺️ Roadmap
-
-### Planned Features
-- [ ] Complete MFA implementation
-- [ ] Advanced analytics dashboard
-- [ ] GraphQL API layer
-- [ ] Real-time notifications
-- [ ] Advanced audit analytics
-- [ ] Multi-tenant support
-
-### Performance Optimizations
-- [ ] Connection pooling
-- [ ] Query optimization
-- [ ] Caching improvements
-- [ ] Load balancing
-- [ ] Auto-scaling
-
----
-
-**AAA Service** - Enterprise-grade Identity and Access Management
+This project is licensed under the MIT License.

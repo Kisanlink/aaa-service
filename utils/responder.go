@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Kisanlink/aaa-service/interfaces"
+	"github.com/Kisanlink/aaa-service/internal/interfaces"
 	"github.com/Kisanlink/aaa-service/pkg/errors"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -24,6 +24,19 @@ func NewResponder(logger interfaces.Logger) interfaces.Responder {
 
 // SendSuccess sends a successful response
 func (r *Responder) SendSuccess(c *gin.Context, statusCode int, data interface{}) {
+	// Propagate context/token info in headers
+	if requestID := c.GetString("request_id"); requestID != "" {
+		c.Header("X-Request-Id", requestID)
+	}
+	if uid, ok := c.Get("user_id"); ok {
+		if s, ok := uid.(string); ok && s != "" {
+			c.Header("X-User-Id", s)
+		}
+	}
+	if authz := c.GetHeader("Authorization"); authz != "" {
+		c.Header("X-Authorization", authz)
+	}
+
 	response := gin.H{
 		"success":   true,
 		"timestamp": time.Now().UTC().Format(time.RFC3339),
@@ -40,6 +53,19 @@ func (r *Responder) SendSuccess(c *gin.Context, statusCode int, data interface{}
 
 // SendError sends an error response
 func (r *Responder) SendError(c *gin.Context, statusCode int, message string, err error) {
+	// Propagate context/token info in headers
+	if requestID := c.GetString("request_id"); requestID != "" {
+		c.Header("X-Request-Id", requestID)
+	}
+	if uid, ok := c.Get("user_id"); ok {
+		if s, ok := uid.(string); ok && s != "" {
+			c.Header("X-User-Id", s)
+		}
+	}
+	if authz := c.GetHeader("Authorization"); authz != "" {
+		c.Header("X-Authorization", authz)
+	}
+
 	response := gin.H{
 		"success":   false,
 		"timestamp": time.Now().UTC().Format(time.RFC3339),
@@ -100,6 +126,18 @@ func (r *Responder) SendError(c *gin.Context, statusCode int, message string, er
 
 // SendValidationError sends a validation error response
 func (r *Responder) SendValidationError(c *gin.Context, errors []string) {
+	if requestID := c.GetString("request_id"); requestID != "" {
+		c.Header("X-Request-Id", requestID)
+	}
+	if uid, ok := c.Get("user_id"); ok {
+		if s, ok := uid.(string); ok && s != "" {
+			c.Header("X-User-Id", s)
+		}
+	}
+	if authz := c.GetHeader("Authorization"); authz != "" {
+		c.Header("X-Authorization", authz)
+	}
+
 	response := gin.H{
 		"success":   false,
 		"timestamp": time.Now().UTC().Format(time.RFC3339),

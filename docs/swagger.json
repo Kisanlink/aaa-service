@@ -29,7 +29,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_requests_addresses.CreateAddressRequest"
+                            "$ref": "#/definitions/addresses.CreateAddressRequest"
                         }
                     }
                 ],
@@ -198,7 +198,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_requests_addresses.UpdateAddressRequest"
+                            "$ref": "#/definitions/addresses.UpdateAddressRequest"
                         }
                     }
                 ],
@@ -629,89 +629,6 @@
                 }
             }
         },
-        "/api/v2/audit/logs": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Retrieve audit logs with filtering and pagination",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "audit"
-                ],
-                "summary": "Get audit logs (V2)",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "default": 1,
-                        "description": "Page number",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "default": 50,
-                        "description": "Items per page",
-                        "name": "per_page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Filter by user ID",
-                        "name": "user_id",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Filter by action",
-                        "name": "action",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Filter by resource type",
-                        "name": "resource",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/routes.SwaggerAuditQueryResult"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
         "/api/v2/auth/login": {
             "post": {
                 "description": "Authenticate user with username and password and MFA",
@@ -732,7 +649,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/routes.SwaggerLoginRequest"
+                            "$ref": "#/definitions/services.LoginRequest"
                         }
                     }
                 ],
@@ -740,28 +657,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/routes.SwaggerLoginResponse"
+                            "$ref": "#/definitions/responses.LoginSuccessResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/responses.ErrorResponseSwagger"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/responses.ErrorResponseSwagger"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/responses.ErrorResponseSwagger"
                         }
                     }
                 }
@@ -789,22 +703,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/responses.LogoutSuccessResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/responses.ErrorResponseSwagger"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/responses.ErrorResponseSwagger"
                         }
                     }
                 }
@@ -830,7 +741,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/routes.SwaggerRefreshTokenRequest"
+                            "$ref": "#/definitions/requests.RefreshTokenRequest"
                         }
                     }
                 ],
@@ -838,28 +749,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/routes.SwaggerLoginResponse"
+                            "$ref": "#/definitions/responses.RefreshTokenSuccessResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/responses.ErrorResponseSwagger"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/responses.ErrorResponseSwagger"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/responses.ErrorResponseSwagger"
                         }
                     }
                 }
@@ -885,7 +793,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/routes.SwaggerRegisterRequest"
+                            "$ref": "#/definitions/services.RegisterRequest"
                         }
                     }
                 ],
@@ -893,29 +801,25 @@
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/responses.RegisterSuccessResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/responses.ErrorResponseSwagger"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/responses.ErrorResponseSwagger"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/responses.ErrorResponseSwagger"
                         }
                     }
                 }
@@ -946,7 +850,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_requests.SetMPinRequest"
+                            "$ref": "#/definitions/requests.SetMPinRequest"
                         }
                     }
                 ],
@@ -961,32 +865,27 @@
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse"
+                            "$ref": "#/definitions/responses.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse"
+                            "$ref": "#/definitions/responses.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse"
+                            "$ref": "#/definitions/responses.ErrorResponse"
                         }
                     }
                 }
             }
         },
-        "/api/v2/authz/check": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Check if a user has permission to perform an action on a resource",
+        "/api/v2/health": {
+            "get": {
+                "description": "Basic health check for the AAA service",
                 "consumes": [
                     "application/json"
                 ],
@@ -994,25 +893,82 @@
                     "application/json"
                 ],
                 "tags": [
-                    "authorization"
+                    "health"
                 ],
-                "summary": "Check user permission (V2)",
-                "parameters": [
-                    {
-                        "description": "Permission check data",
-                        "name": "permission",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/services.Permission"
-                        }
-                    }
-                ],
+                "summary": "Health check (V2)",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/services.PermissionResult"
+                            "$ref": "#/definitions/responses.HealthCheckResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/modules": {
+            "get": {
+                "description": "Get a list of all registered modules",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "modules"
+                ],
+                "summary": "List all registered modules",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/responses.ModuleListResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/modules/register": {
+            "post": {
+                "description": "Register a complete module with actions, roles, resources, and permissions",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "modules"
+                ],
+                "summary": "Register a new module",
+                "parameters": [
+                    {
+                        "description": "Module registration request",
+                        "name": "module",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.ModuleRegistrationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/responses.ModuleDetailResponse"
                         }
                     },
                     "400": {
@@ -1036,6 +992,13 @@
                             "additionalProperties": true
                         }
                     },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
@@ -1046,22 +1009,113 @@
                 }
             }
         },
-        "/api/v2/health": {
+        "/api/v2/modules/{service_name}": {
             "get": {
-                "description": "Basic health check for the AAA service",
-                "consumes": [
-                    "application/json"
-                ],
+                "description": "Get detailed information about a registered module",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "health"
+                    "modules"
                 ],
-                "summary": "Health check (V2)",
+                "summary": "Get module information",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Service name",
+                        "name": "service_name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/responses.ModuleDetailResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/modules/{service_name}/health": {
+            "get": {
+                "description": "Check if a module is healthy and operational",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "modules"
+                ],
+                "summary": "Check module health",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Service name",
+                        "name": "service_name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -1142,7 +1196,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers_permissions.CreatePermissionRequest"
+                            "$ref": "#/definitions/permissions.CreatePermissionRequest"
                         }
                     }
                 ],
@@ -1376,7 +1430,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers_permissions.UpdatePermissionRequest"
+                            "$ref": "#/definitions/permissions.UpdatePermissionRequest"
                         }
                     }
                 ],
@@ -1536,7 +1590,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_requests_roles.CreateRoleRequest"
+                            "$ref": "#/definitions/roles.CreateRoleRequest"
                         }
                     }
                 ],
@@ -1551,19 +1605,19 @@
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse"
+                            "$ref": "#/definitions/responses.ErrorResponseSwagger"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse"
+                            "$ref": "#/definitions/responses.ErrorResponseSwagger"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse"
+                            "$ref": "#/definitions/responses.ErrorResponseSwagger"
                         }
                     }
                 }
@@ -1602,19 +1656,19 @@
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse"
+                            "$ref": "#/definitions/responses.ErrorResponseSwagger"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse"
+                            "$ref": "#/definitions/responses.ErrorResponseSwagger"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse"
+                            "$ref": "#/definitions/responses.ErrorResponseSwagger"
                         }
                     }
                 }
@@ -1645,7 +1699,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_requests_roles.UpdateRoleRequest"
+                            "$ref": "#/definitions/roles.UpdateRoleRequest"
                         }
                     }
                 ],
@@ -1660,25 +1714,25 @@
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse"
+                            "$ref": "#/definitions/responses.ErrorResponseSwagger"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse"
+                            "$ref": "#/definitions/responses.ErrorResponseSwagger"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse"
+                            "$ref": "#/definitions/responses.ErrorResponseSwagger"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse"
+                            "$ref": "#/definitions/responses.ErrorResponseSwagger"
                         }
                     }
                 }
@@ -1715,25 +1769,25 @@
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse"
+                            "$ref": "#/definitions/responses.ErrorResponseSwagger"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse"
+                            "$ref": "#/definitions/responses.ErrorResponseSwagger"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse"
+                            "$ref": "#/definitions/responses.ErrorResponseSwagger"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse"
+                            "$ref": "#/definitions/responses.ErrorResponseSwagger"
                         }
                     }
                 }
@@ -1777,29 +1831,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/responses.UsersListResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/responses.ErrorResponseSwagger"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/responses.ErrorResponseSwagger"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/responses.ErrorResponseSwagger"
                         }
                     }
                 }
@@ -1823,7 +1873,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_requests_users.CreateUserRequest"
+                            "$ref": "#/definitions/users.CreateUserRequest"
                         }
                     }
                 ],
@@ -1831,25 +1881,25 @@
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses_users.UserResponse"
+                            "$ref": "#/definitions/responses.UserDetailResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse"
+                            "$ref": "#/definitions/responses.ErrorResponse"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse"
+                            "$ref": "#/definitions/responses.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse"
+                            "$ref": "#/definitions/responses.ErrorResponse"
                         }
                     }
                 }
@@ -1947,36 +1997,31 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/responses.UserDetailResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/responses.ErrorResponseSwagger"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/responses.ErrorResponseSwagger"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/responses.ErrorResponseSwagger"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/responses.ErrorResponseSwagger"
                         }
                     }
                 }
@@ -2012,8 +2057,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/requests.UpdateUserRequest"
                         }
                     }
                 ],
@@ -2021,43 +2065,37 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/responses.UserDetailResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/responses.ErrorResponseSwagger"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/responses.ErrorResponseSwagger"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/responses.ErrorResponseSwagger"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/responses.ErrorResponseSwagger"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/responses.ErrorResponseSwagger"
                         }
                     }
                 }
@@ -2094,19 +2132,19 @@
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse"
+                            "$ref": "#/definitions/responses.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse"
+                            "$ref": "#/definitions/responses.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse"
+                            "$ref": "#/definitions/responses.ErrorResponse"
                         }
                     }
                 }
@@ -2218,19 +2256,19 @@
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse"
+                            "$ref": "#/definitions/responses.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse"
+                            "$ref": "#/definitions/responses.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse"
+                            "$ref": "#/definitions/responses.ErrorResponse"
                         }
                     }
                 }
@@ -2378,22 +2416,7 @@
         }
     },
     "definitions": {
-        "github_com_Kisanlink_aaa-service_entities_requests.SetMPinRequest": {
-            "type": "object",
-            "required": [
-                "mpin",
-                "password"
-            ],
-            "properties": {
-                "mpin": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_Kisanlink_aaa-service_entities_requests_addresses.CreateAddressRequest": {
+        "addresses.CreateAddressRequest": {
             "type": "object",
             "required": [
                 "user_id"
@@ -2477,7 +2500,7 @@
                 }
             }
         },
-        "github_com_Kisanlink_aaa-service_entities_requests_addresses.UpdateAddressRequest": {
+        "addresses.UpdateAddressRequest": {
             "type": "object",
             "required": [
                 "id"
@@ -2561,7 +2584,713 @@
                 }
             }
         },
-        "github_com_Kisanlink_aaa-service_entities_requests_roles.CreateRoleRequest": {
+        "permissions.CreatePermissionRequest": {
+            "type": "object",
+            "required": [
+                "actions",
+                "effect",
+                "resource"
+            ],
+            "properties": {
+                "actions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "effect": {
+                    "type": "string"
+                },
+                "resource": {
+                    "type": "string"
+                }
+            }
+        },
+        "permissions.UpdatePermissionRequest": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "actions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "effect": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "resource": {
+                    "type": "string"
+                }
+            }
+        },
+        "requests.ModuleActionDefinition": {
+            "description": "Action definition structure for module registration",
+            "type": "object",
+            "required": [
+                "name",
+                "resource"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "example": "Create a new user"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "create_user"
+                },
+                "resource": {
+                    "type": "string",
+                    "example": "user"
+                }
+            }
+        },
+        "requests.ModuleRegistrationRequest": {
+            "description": "Request structure for registering a new module",
+            "type": "object",
+            "required": [
+                "service_name",
+                "version"
+            ],
+            "properties": {
+                "actions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/requests.ModuleActionDefinition"
+                    }
+                },
+                "resources": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/requests.ModuleResourceDefinition"
+                    }
+                },
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/requests.ModuleRoleDefinition"
+                    }
+                },
+                "service_name": {
+                    "type": "string",
+                    "example": "user-service"
+                },
+                "version": {
+                    "type": "string",
+                    "example": "1.0.0"
+                }
+            }
+        },
+        "requests.ModuleResourceDefinition": {
+            "description": "Resource definition structure for module registration",
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "actions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "[\"create\"",
+                        " \"read\"",
+                        " \"update\"",
+                        " \"delete\"]"
+                    ]
+                },
+                "description": {
+                    "type": "string",
+                    "example": "User resource"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "user"
+                }
+            }
+        },
+        "requests.ModuleRoleDefinition": {
+            "description": "Role definition structure for module registration",
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "example": "User administrator role"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "user_admin"
+                },
+                "permissions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "[\"user:create\"",
+                        " \"user:read\"",
+                        " \"user:update\"",
+                        " \"user:delete\"]"
+                    ]
+                }
+            }
+        },
+        "requests.RefreshTokenRequest": {
+            "type": "object",
+            "required": [
+                "mpin",
+                "refresh_token"
+            ],
+            "properties": {
+                "mpin": {
+                    "type": "string"
+                },
+                "refresh_token": {
+                    "type": "string"
+                }
+            }
+        },
+        "requests.SetMPinRequest": {
+            "type": "object",
+            "required": [
+                "mpin",
+                "password"
+            ],
+            "properties": {
+                "mpin": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "requests.UpdateUserRequest": {
+            "description": "Request structure for updating user information",
+            "type": "object",
+            "properties": {
+                "country_code": {
+                    "type": "string",
+                    "example": "US"
+                },
+                "phone_number": {
+                    "type": "string",
+                    "example": "+1234567890"
+                },
+                "username": {
+                    "type": "string",
+                    "example": "john_doe"
+                }
+            }
+        },
+        "responses.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "details": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "request_id": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "string"
+                }
+            }
+        },
+        "responses.ErrorResponseSwagger": {
+            "description": "Standard error response structure",
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 400
+                },
+                "details": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "error": {
+                    "type": "string",
+                    "example": "VALIDATION_ERROR"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Invalid input data"
+                },
+                "request_id": {
+                    "type": "string",
+                    "example": "req-123456789"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                }
+            }
+        },
+        "responses.HealthCheckData": {
+            "description": "Health check data structure",
+            "type": "object",
+            "properties": {
+                "service": {
+                    "type": "string",
+                    "example": "aaa-service"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "healthy"
+                },
+                "version": {
+                    "type": "string",
+                    "example": "2.0"
+                }
+            }
+        },
+        "responses.HealthCheckResponse": {
+            "description": "Health check response structure",
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/responses.HealthCheckData"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Service is healthy"
+                },
+                "request_id": {
+                    "type": "string",
+                    "example": "req-123456789"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                }
+            }
+        },
+        "responses.LoginResponseData": {
+            "description": "Login response data containing tokens and user info",
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "string",
+                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                },
+                "expires_in": {
+                    "type": "integer",
+                    "example": 86400
+                },
+                "refresh_token": {
+                    "type": "string",
+                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                },
+                "token_type": {
+                    "type": "string",
+                    "example": "Bearer"
+                },
+                "user": {
+                    "$ref": "#/definitions/responses.UserInfo"
+                }
+            }
+        },
+        "responses.LoginSuccessResponse": {
+            "description": "Successful login response with tokens and user info",
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/responses.LoginResponseData"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Login successful"
+                },
+                "request_id": {
+                    "type": "string",
+                    "example": "req-123456789"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                }
+            }
+        },
+        "responses.LogoutSuccessResponse": {
+            "description": "Successful logout response",
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "Logout successful"
+                },
+                "request_id": {
+                    "type": "string",
+                    "example": "req-123456789"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                }
+            }
+        },
+        "responses.ModuleDetailData": {
+            "description": "Module detail data structure",
+            "type": "object",
+            "properties": {
+                "module": {
+                    "$ref": "#/definitions/responses.ModuleInfo"
+                }
+            }
+        },
+        "responses.ModuleDetailResponse": {
+            "description": "Module detail response structure",
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/responses.ModuleDetailData"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Module details retrieved successfully"
+                },
+                "request_id": {
+                    "type": "string",
+                    "example": "req-123456789"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                }
+            }
+        },
+        "responses.ModuleInfo": {
+            "description": "Module information structure",
+            "type": "object",
+            "properties": {
+                "health": {
+                    "type": "string",
+                    "example": "healthy"
+                },
+                "last_seen": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                },
+                "registered_at": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                },
+                "service_name": {
+                    "type": "string",
+                    "example": "user-service"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "active"
+                },
+                "version": {
+                    "type": "string",
+                    "example": "1.0.0"
+                }
+            }
+        },
+        "responses.ModuleListData": {
+            "description": "Module list data structure",
+            "type": "object",
+            "properties": {
+                "modules": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.ModuleInfo"
+                    }
+                }
+            }
+        },
+        "responses.ModuleListResponse": {
+            "description": "Module list response structure",
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/responses.ModuleListData"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Modules retrieved successfully"
+                },
+                "request_id": {
+                    "type": "string",
+                    "example": "req-123456789"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                }
+            }
+        },
+        "responses.PaginationInfo": {
+            "description": "Pagination information structure",
+            "type": "object",
+            "properties": {
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "per_page": {
+                    "type": "integer",
+                    "example": 20
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 100
+                },
+                "total_pages": {
+                    "type": "integer",
+                    "example": 5
+                }
+            }
+        },
+        "responses.RefreshTokenResponseData": {
+            "description": "Refresh token response data",
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "string",
+                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                },
+                "expires_in": {
+                    "type": "integer",
+                    "example": 86400
+                },
+                "refresh_token": {
+                    "type": "string",
+                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                },
+                "token_type": {
+                    "type": "string",
+                    "example": "Bearer"
+                }
+            }
+        },
+        "responses.RefreshTokenSuccessResponse": {
+            "description": "Successful token refresh response",
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/responses.RefreshTokenResponseData"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Token refreshed successfully"
+                },
+                "request_id": {
+                    "type": "string",
+                    "example": "req-123456789"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                }
+            }
+        },
+        "responses.RegisterResponseData": {
+            "description": "Registration response data containing user info",
+            "type": "object",
+            "properties": {
+                "user": {
+                    "$ref": "#/definitions/responses.UserInfoSwagger"
+                }
+            }
+        },
+        "responses.RegisterSuccessResponse": {
+            "description": "Successful registration response with user info",
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/responses.RegisterResponseData"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "User registered successfully"
+                },
+                "request_id": {
+                    "type": "string",
+                    "example": "req-123456789"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                }
+            }
+        },
+        "responses.UserDetailData": {
+            "description": "Detailed user data structure",
+            "type": "object",
+            "properties": {
+                "user": {
+                    "$ref": "#/definitions/responses.UserInfoSwagger"
+                }
+            }
+        },
+        "responses.UserDetailResponse": {
+            "description": "Detailed user response structure",
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/responses.UserDetailData"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "User retrieved successfully"
+                },
+                "request_id": {
+                    "type": "string",
+                    "example": "req-123456789"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                }
+            }
+        },
+        "responses.UserInfo": {
+            "type": "object",
+            "properties": {
+                "country_code": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_validated": {
+                    "type": "boolean"
+                },
+                "phone_number": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "responses.UserInfoSwagger": {
+            "description": "User information structure",
+            "type": "object",
+            "properties": {
+                "country_code": {
+                    "type": "string",
+                    "example": "US"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "USER123456789"
+                },
+                "is_validated": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "phone_number": {
+                    "type": "string",
+                    "example": "+1234567890"
+                },
+                "username": {
+                    "type": "string",
+                    "example": "john_doe"
+                }
+            }
+        },
+        "responses.UsersListData": {
+            "description": "Users list data structure",
+            "type": "object",
+            "properties": {
+                "users": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.UserInfoSwagger"
+                    }
+                }
+            }
+        },
+        "responses.UsersListResponse": {
+            "description": "Users list response with pagination",
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/responses.UsersListData"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Users retrieved successfully"
+                },
+                "pagination": {
+                    "$ref": "#/definitions/responses.PaginationInfo"
+                },
+                "request_id": {
+                    "type": "string",
+                    "example": "req-123456789"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                }
+            }
+        },
+        "roles.CreateRoleRequest": {
             "type": "object",
             "required": [
                 "name"
@@ -2613,7 +3342,7 @@
                 }
             }
         },
-        "github_com_Kisanlink_aaa-service_entities_requests_roles.UpdateRoleRequest": {
+        "roles.UpdateRoleRequest": {
             "type": "object",
             "required": [
                 "role_id"
@@ -2668,7 +3397,68 @@
                 }
             }
         },
-        "github_com_Kisanlink_aaa-service_entities_requests_users.CreateUserRequest": {
+        "services.LoginRequest": {
+            "type": "object",
+            "required": [
+                "country_code",
+                "password",
+                "phone_number"
+            ],
+            "properties": {
+                "country_code": {
+                    "type": "string"
+                },
+                "mfa_code": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "phone_number": {
+                    "type": "string"
+                }
+            }
+        },
+        "services.RegisterRequest": {
+            "type": "object",
+            "required": [
+                "country_code",
+                "password",
+                "phone_number"
+            ],
+            "properties": {
+                "country_code": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "full_name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 1
+                },
+                "password": {
+                    "type": "string",
+                    "minLength": 8
+                },
+                "phone_number": {
+                    "type": "string"
+                },
+                "role_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "username": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "minLength": 3
+                }
+            }
+        },
+        "users.CreateUserRequest": {
             "type": "object",
             "required": [
                 "country_code",
@@ -2707,7 +3497,7 @@
                 }
             }
         },
-        "github_com_Kisanlink_aaa-service_entities_requests_users.UpdateUserRequest": {
+        "users.UpdateUserRequest": {
             "type": "object",
             "properties": {
                 "care_of": {
@@ -2744,433 +3534,6 @@
                     "type": "integer"
                 },
                 "year_of_birth": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_Kisanlink_aaa-service_entities_responses.ErrorResponse": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "type": "integer"
-                },
-                "details": {
-                    "type": "object",
-                    "additionalProperties": true
-                },
-                "error": {
-                    "type": "string"
-                },
-                "message": {
-                    "type": "string"
-                },
-                "request_id": {
-                    "type": "string"
-                },
-                "timestamp": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_Kisanlink_aaa-service_entities_responses_users.AddressResponse": {
-            "type": "object",
-            "properties": {
-                "country": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "district": {
-                    "type": "string"
-                },
-                "full_address": {
-                    "type": "string"
-                },
-                "house": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "landmark": {
-                    "type": "string"
-                },
-                "pincode": {
-                    "type": "string"
-                },
-                "post_office": {
-                    "type": "string"
-                },
-                "state": {
-                    "type": "string"
-                },
-                "street": {
-                    "type": "string"
-                },
-                "subdistrict": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "vtc": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_Kisanlink_aaa-service_entities_responses_users.RoleDetail": {
-            "type": "object",
-            "properties": {
-                "assigned_at": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "is_active": {
-                    "type": "boolean"
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_Kisanlink_aaa-service_entities_responses_users.UserResponse": {
-            "type": "object",
-            "properties": {
-                "aadhaar_number": {
-                    "type": "string"
-                },
-                "address": {
-                    "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses_users.AddressResponse"
-                },
-                "care_of": {
-                    "type": "string"
-                },
-                "country_code": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "date_of_birth": {
-                    "type": "string"
-                },
-                "email_hash": {
-                    "type": "string"
-                },
-                "has_mpin": {
-                    "type": "boolean"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "is_validated": {
-                    "type": "boolean"
-                },
-                "message": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "phone_number": {
-                    "type": "string"
-                },
-                "photo": {
-                    "type": "string"
-                },
-                "roles": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_Kisanlink_aaa-service_entities_responses_users.RoleDetail"
-                    }
-                },
-                "share_code": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "tokens": {
-                    "type": "integer"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "username": {
-                    "type": "string"
-                },
-                "year_of_birth": {
-                    "type": "string"
-                }
-            }
-        },
-        "handlers_permissions.CreatePermissionRequest": {
-            "type": "object",
-            "required": [
-                "actions",
-                "effect",
-                "resource"
-            ],
-            "properties": {
-                "actions": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "effect": {
-                    "type": "string"
-                },
-                "resource": {
-                    "type": "string"
-                }
-            }
-        },
-        "handlers_permissions.UpdatePermissionRequest": {
-            "type": "object",
-            "required": [
-                "id"
-            ],
-            "properties": {
-                "actions": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "effect": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "resource": {
-                    "type": "string"
-                }
-            }
-        },
-        "routes.SwaggerAuditLog": {
-            "type": "object",
-            "properties": {
-                "action": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "details": {
-                    "type": "object",
-                    "additionalProperties": true
-                },
-                "id": {
-                    "type": "string"
-                },
-                "ip_address": {
-                    "type": "string"
-                },
-                "message": {
-                    "type": "string"
-                },
-                "resource_id": {
-                    "type": "string"
-                },
-                "resource_type": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "timestamp": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "user_agent": {
-                    "type": "string"
-                },
-                "user_id": {
-                    "type": "string"
-                }
-            }
-        },
-        "routes.SwaggerAuditQueryResult": {
-            "type": "object",
-            "properties": {
-                "limit": {
-                    "type": "integer"
-                },
-                "logs": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/routes.SwaggerAuditLog"
-                    }
-                },
-                "page": {
-                    "type": "integer"
-                },
-                "total": {
-                    "type": "integer"
-                },
-                "total_pages": {
-                    "type": "integer"
-                }
-            }
-        },
-        "routes.SwaggerLoginRequest": {
-            "type": "object",
-            "required": [
-                "password",
-                "username"
-            ],
-            "properties": {
-                "mfa_code": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string"
-                },
-                "username": {
-                    "type": "string"
-                }
-            }
-        },
-        "routes.SwaggerLoginResponse": {
-            "type": "object",
-            "properties": {
-                "access_token": {
-                    "type": "string"
-                },
-                "expires_in": {
-                    "type": "integer"
-                },
-                "permissions": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "refresh_token": {
-                    "type": "string"
-                },
-                "token_type": {
-                    "type": "string"
-                },
-                "user": {
-                    "$ref": "#/definitions/routes.SwaggerUser"
-                }
-            }
-        },
-        "routes.SwaggerRefreshTokenRequest": {
-            "type": "object",
-            "required": [
-                "refresh_token"
-            ],
-            "properties": {
-                "refresh_token": {
-                    "type": "string"
-                }
-            }
-        },
-        "routes.SwaggerRegisterRequest": {
-            "type": "object",
-            "required": [
-                "email",
-                "full_name",
-                "password",
-                "username"
-            ],
-            "properties": {
-                "email": {
-                    "type": "string"
-                },
-                "full_name": {
-                    "type": "string",
-                    "maxLength": 100,
-                    "minLength": 1
-                },
-                "password": {
-                    "type": "string",
-                    "minLength": 8
-                },
-                "role_ids": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "username": {
-                    "type": "string",
-                    "maxLength": 50,
-                    "minLength": 3
-                }
-            }
-        },
-        "routes.SwaggerUser": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "type": "string"
-                },
-                "deleted_at": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "is_validated": {
-                    "type": "boolean"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "tokens": {
-                    "type": "integer"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "username": {
-                    "type": "string"
-                }
-            }
-        },
-        "services.Permission": {
-            "type": "object",
-            "properties": {
-                "action": {
-                    "type": "string"
-                },
-                "resource": {
-                    "type": "string"
-                },
-                "resource_id": {
-                    "type": "string"
-                },
-                "user_id": {
-                    "type": "string"
-                }
-            }
-        },
-        "services.PermissionResult": {
-            "type": "object",
-            "properties": {
-                "allowed": {
-                    "type": "boolean"
-                },
-                "permissions": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "reason": {
                     "type": "string"
                 }
             }

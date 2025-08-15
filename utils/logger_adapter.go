@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"github.com/Kisanlink/aaa-service/interfaces"
+	"github.com/Kisanlink/aaa-service/internal/interfaces"
 	"go.uber.org/zap"
 )
 
