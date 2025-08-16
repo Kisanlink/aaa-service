@@ -80,7 +80,7 @@ func NewServicePrincipal(serviceID, name string) *Principal {
 // NewService creates a new Service instance
 func NewService(name, description, organizationID, hashedAPIKey string) *Service {
 	return &Service{
-		BaseModel:      base.NewBaseModel("svc", hash.Small),
+		BaseModel:      base.NewBaseModel("PRINCIPAL", hash.Small),
 		Name:           name,
 		Description:    description,
 		OrganizationID: organizationID,

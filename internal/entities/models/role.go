@@ -42,7 +42,7 @@ const (
 // NewRole creates a new Role instance with specified name and description
 func NewRole(name, description string, scope RoleScope) *Role {
 	return &Role{
-		BaseModel:   base.NewBaseModel("role", hash.Small),
+		BaseModel:   base.NewBaseModel("ROLE", hash.Small),
 		Name:        name,
 		Description: description,
 		Scope:       scope,

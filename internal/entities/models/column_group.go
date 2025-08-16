@@ -97,7 +97,7 @@ func (cs *ColumnSet) TableName() string {
 // NewColumnGroup creates a new ColumnGroup instance
 func NewColumnGroup(name, description, tableName, organizationID string) *ColumnGroup {
 	return &ColumnGroup{
-		BaseModel:      base.NewBaseModel("clg", hash.Small),
+		BaseModel:      base.NewBaseModel("COLGROUP", hash.Small),
 		Name:           name,
 		Description:    description,
 		Table:          tableName,
@@ -109,7 +109,7 @@ func NewColumnGroup(name, description, tableName, organizationID string) *Column
 // NewColumnGroupMember creates a new ColumnGroupMember instance
 func NewColumnGroupMember(columnGroupID, columnName string, position int) *ColumnGroupMember {
 	return &ColumnGroupMember{
-		BaseModel:      base.NewBaseModel("cgm", hash.Small),
+		BaseModel:      base.NewBaseModel("COLGRMEM", hash.Small),
 		ColumnGroupID:  columnGroupID,
 		ColumnName:     columnName,
 		ColumnPosition: position,
@@ -124,7 +124,7 @@ func NewColumnSet(name, tableName string, columnCount int, organizationID string
 	bitmap := make(BitSet, bitmapSize)
 
 	return &ColumnSet{
-		BaseModel:      base.NewBaseModel("cls", hash.Small),
+		BaseModel:      base.NewBaseModel("COLSET", hash.Small),
 		Name:           name,
 		Table:          tableName,
 		Bitmap:         bitmap,

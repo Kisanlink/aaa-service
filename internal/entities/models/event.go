@@ -264,7 +264,7 @@ func (ec *EventCheckpoint) TableName() string {
 // NewEventCheckpoint creates a new EventCheckpoint instance
 func NewEventCheckpoint(lastEventID string, lastSequenceNum int64, lastEventHash string, merkleRoot string, eventCount int64, createdByID string) *EventCheckpoint {
 	return &EventCheckpoint{
-		BaseModel:       base.NewBaseModel("evc", hash.Small),
+		BaseModel:       base.NewBaseModel("EVENT", hash.Small),
 		CheckpointTime:  time.Now(),
 		LastEventID:     lastEventID,
 		LastSequenceNum: lastSequenceNum,

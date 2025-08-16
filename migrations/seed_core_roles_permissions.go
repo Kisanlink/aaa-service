@@ -153,14 +153,25 @@ func seedAdminAndSuperAdminPermissions(ctx context.Context, db *gorm.DB, logger 
 			if err != gorm.ErrRecordNotFound {
 				return err
 			}
-			perm = *models.NewPermissionWithResourceAndAction(permName, fmt.Sprintf("%s on %s", actionName, resourceName), res.ID, act.ID)
-			if err := db.WithContext(ctx).Create(&perm).Error; err != nil {
+			// Create new permission only if it doesn't exist
+			newPerm := models.NewPermissionWithResourceAndAction(permName, fmt.Sprintf("%s on %s", actionName, resourceName), res.ID, act.ID)
+			if err := db.WithContext(ctx).Create(newPerm).Error; err != nil {
 				return err
 			}
+			perm = *newPerm
 		}
-		// Attach to role via many2many
-		if err := db.WithContext(ctx).Model(role).Association("Permissions").Append(&perm); err != nil {
+		// Check if role-permission relationship already exists
+		var existingRPs []models.RolePermission
+		if err := db.WithContext(ctx).Where("role_id = ? AND permission_id = ? AND is_active = ?", role.ID, perm.ID, true).Find(&existingRPs).Error; err != nil {
 			return err
+		}
+
+		// Create role-permission relationship if it doesn't exist
+		if len(existingRPs) == 0 {
+			rp := models.NewRolePermission(role.ID, perm.ID)
+			if err := db.WithContext(ctx).Create(rp).Error; err != nil {
+				return err
+			}
 		}
 		return nil
 	}
@@ -528,16 +539,36 @@ func seedAdminAndSuperAdminPermissionsDM(ctx context.Context, primary db.DBManag
 		}
 		var perm models.Permission
 		if len(perms) == 0 {
-			perm = *models.NewPermissionWithResourceAndAction(permName, fmt.Sprintf("%s on %s", actionName, resourceName), res.ID, act.ID)
-			if err := primary.Create(ctx, &perm); err != nil {
+			// Create new permission only if it doesn't exist
+			newPerm := models.NewPermissionWithResourceAndAction(permName, fmt.Sprintf("%s on %s", actionName, resourceName), res.ID, act.ID)
+			if err := primary.Create(ctx, newPerm); err != nil {
 				return err
 			}
+			perm = *newPerm
 		} else {
+			// Use existing permission
 			perm = perms[0]
 		}
-		if err := gormDB.WithContext(ctx).Model(role).Association("Permissions").Append(&perm); err != nil {
+
+		// Check if role-permission relationship already exists
+		var existingRPs []models.RolePermission
+		filters := []base.FilterCondition{
+			{Field: "role_id", Operator: base.OpEqual, Value: role.ID},
+			{Field: "permission_id", Operator: base.OpEqual, Value: perm.ID},
+			{Field: "is_active", Operator: base.OpEqual, Value: true},
+		}
+		if err := primary.List(ctx, filters, &existingRPs); err != nil {
 			return err
 		}
+
+		// Create role-permission relationship if it doesn't exist
+		if len(existingRPs) == 0 {
+			rp := models.NewRolePermission(role.ID, perm.ID)
+			if err := primary.Create(ctx, rp); err != nil {
+				return err
+			}
+		}
+
 		return nil
 	}
 

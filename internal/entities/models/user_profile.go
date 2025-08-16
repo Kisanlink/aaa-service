@@ -27,7 +27,7 @@ type UserProfile struct {
 // NewUserProfile creates a new UserProfile instance
 func NewUserProfile(userID string) *UserProfile {
 	return &UserProfile{
-		BaseModel: base.NewBaseModel("USR_PROF", hash.Small),
+		BaseModel: base.NewBaseModel("USERPROF", hash.Small),
 		UserID:    userID,
 	}
 }

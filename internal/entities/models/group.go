@@ -85,7 +85,7 @@ func NewGroup(name, description, organizationID string) *Group {
 // NewGroupMembership creates a new GroupMembership instance
 func NewGroupMembership(groupID, principalID, principalType, addedByID string) *GroupMembership {
 	return &GroupMembership{
-		BaseModel:     base.NewBaseModel("grm", hash.Small),
+		BaseModel:     base.NewBaseModel("GROUPMEM", hash.Small),
 		GroupID:       groupID,
 		PrincipalID:   principalID,
 		PrincipalType: principalType,
@@ -97,7 +97,7 @@ func NewGroupMembership(groupID, principalID, principalType, addedByID string) *
 // NewGroupInheritance creates a new GroupInheritance instance
 func NewGroupInheritance(parentGroupID, childGroupID string) *GroupInheritance {
 	return &GroupInheritance{
-		BaseModel:     base.NewBaseModel("gri", hash.Small),
+		BaseModel:     base.NewBaseModel("GROUPINV", hash.Small),
 		ParentGroupID: parentGroupID,
 		ChildGroupID:  childGroupID,
 		IsActive:      true,

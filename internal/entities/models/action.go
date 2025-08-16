@@ -123,7 +123,7 @@ const (
 // NewAction creates a new Action instance
 func NewAction(name, description string) *Action {
 	return &Action{
-		BaseModel:   base.NewBaseModel("act", hash.Small),
+		BaseModel:   base.NewBaseModel("ACT", hash.Small),
 		Name:        name,
 		Description: description,
 		Category:    CategoryGeneral,
