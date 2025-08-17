@@ -1,0 +1,223 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "github.com/Kisanlink/aaa-service/pb";
+
+import "google/protobuf/timestamp.proto";
+
+// Group model
+message Group {
+    string id = 1;
+    string name = 2;
+    string description = 3;
+    string organization_id = 4;
+    string parent_id = 5;
+    bool is_active = 6;
+    map<string, string> metadata = 7;
+    google.protobuf.Timestamp created_at = 8;
+    google.protobuf.Timestamp updated_at = 9;
+    Group parent = 10;
+    repeated Group children = 11;
+    repeated GroupMembership memberships = 12;
+    int32 member_count = 13;
+}
+
+// GroupMembership model
+message GroupMembership {
+    string id = 1;
+    string group_id = 2;
+    string principal_id = 3;
+    string principal_type = 4; // "user" or "service"
+    google.protobuf.Timestamp starts_at = 5;
+    google.protobuf.Timestamp ends_at = 6;
+    bool is_active = 7;
+    string added_by_id = 8;
+    map<string, string> metadata = 9;
+    google.protobuf.Timestamp created_at = 10;
+    google.protobuf.Timestamp updated_at = 11;
+}
+
+// GroupInheritance model
+message GroupInheritance {
+    string id = 1;
+    string parent_group_id = 2;
+    string child_group_id = 3;
+    google.protobuf.Timestamp starts_at = 4;
+    google.protobuf.Timestamp ends_at = 5;
+    bool is_active = 6;
+    google.protobuf.Timestamp created_at = 7;
+}
+
+// Create Group Request
+message CreateGroupRequest {
+    string name = 1;
+    string description = 2;
+    string organization_id = 3;
+    string parent_id = 4;
+    map<string, string> metadata = 5;
+}
+
+// Create Group Response
+message CreateGroupResponse {
+    int32 status_code = 1;
+    string message = 2;
+    Group group = 3;
+}
+
+// Get Group Request
+message GetGroupRequest {
+    string id = 1;
+    bool include_members = 2;
+    bool include_children = 3;
+    bool include_parent = 4;
+}
+
+// Get Group Response
+message GetGroupResponse {
+    int32 status_code = 1;
+    string message = 2;
+    Group group = 3;
+}
+
+// List Groups Request
+message ListGroupsRequest {
+    string organization_id = 1;
+    string parent_id = 2;
+    bool include_inactive = 3;
+    int32 page = 4;
+    int32 page_size = 5;
+    string search = 6;
+}
+
+// List Groups Response
+message ListGroupsResponse {
+    int32 status_code = 1;
+    string message = 2;
+    repeated Group groups = 3;
+    int32 total_count = 4;
+    int32 page = 5;
+    int32 page_size = 6;
+}
+
+// Add Group Member Request
+message AddGroupMemberRequest {
+    string group_id = 1;
+    string principal_id = 2;
+    string principal_type = 3; // "user" or "service"
+    google.protobuf.Timestamp starts_at = 4;
+    google.protobuf.Timestamp ends_at = 5;
+    map<string, string> metadata = 6;
+}
+
+// Add Group Member Response
+message AddGroupMemberResponse {
+    int32 status_code = 1;
+    string message = 2;
+    GroupMembership membership = 3;
+}
+
+// Remove Group Member Request
+message RemoveGroupMemberRequest {
+    string group_id = 1;
+    string principal_id = 2;
+}
+
+// Remove Group Member Response
+message RemoveGroupMemberResponse {
+    int32 status_code = 1;
+    string message = 2;
+}
+
+// List Group Members Request
+message ListGroupMembersRequest {
+    string group_id = 1;
+    bool include_inherited = 2;  // Include members from parent groups
+    bool active_only = 3;        // Only currently effective memberships
+    int32 page = 4;
+    int32 page_size = 5;
+}
+
+// List Group Members Response
+message ListGroupMembersResponse {
+    int32 status_code = 1;
+    string message = 2;
+    repeated GroupMembership memberships = 3;
+    int32 total_count = 4;
+    int32 page = 5;
+    int32 page_size = 6;
+}
+
+// Link Groups Request (create inheritance)
+message LinkGroupsRequest {
+    string parent_group_id = 1;
+    string child_group_id = 2;
+    google.protobuf.Timestamp starts_at = 3;
+    google.protobuf.Timestamp ends_at = 4;
+}
+
+// Link Groups Response
+message LinkGroupsResponse {
+    int32 status_code = 1;
+    string message = 2;
+    GroupInheritance inheritance = 3;
+}
+
+// Unlink Groups Request
+message UnlinkGroupsRequest {
+    string parent_group_id = 1;
+    string child_group_id = 2;
+}
+
+// Unlink Groups Response
+message UnlinkGroupsResponse {
+    int32 status_code = 1;
+    string message = 2;
+}
+
+// Update Group Request
+message UpdateGroupRequest {
+    string id = 1;
+    string name = 2;
+    string description = 3;
+    string parent_id = 4;
+    bool is_active = 5;
+    map<string, string> metadata = 6;
+}
+
+// Update Group Response
+message UpdateGroupResponse {
+    int32 status_code = 1;
+    string message = 2;
+    Group group = 3;
+}
+
+// Delete Group Request
+message DeleteGroupRequest {
+    string id = 1;
+    bool cascade = 2; // Delete child groups too
+}
+
+// Delete Group Response
+message DeleteGroupResponse {
+    int32 status_code = 1;
+    string message = 2;
+}
+
+// Group Service
+service GroupService {
+    rpc CreateGroup(CreateGroupRequest) returns (CreateGroupResponse);
+    rpc GetGroup(GetGroupRequest) returns (GetGroupResponse);
+    rpc ListGroups(ListGroupsRequest) returns (ListGroupsResponse);
+    rpc UpdateGroup(UpdateGroupRequest) returns (UpdateGroupResponse);
+    rpc DeleteGroup(DeleteGroupRequest) returns (DeleteGroupResponse);
+
+    // Membership management
+    rpc AddGroupMember(AddGroupMemberRequest) returns (AddGroupMemberResponse);
+    rpc RemoveGroupMember(RemoveGroupMemberRequest) returns (RemoveGroupMemberResponse);
+    rpc ListGroupMembers(ListGroupMembersRequest) returns (ListGroupMembersResponse);
+
+    // Inheritance management
+    rpc LinkGroups(LinkGroupsRequest) returns (LinkGroupsResponse);
+    rpc UnlinkGroups(UnlinkGroupsRequest) returns (UnlinkGroupsResponse);
+}

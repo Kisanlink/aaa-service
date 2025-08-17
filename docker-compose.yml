@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   aaa-service:
     build:
@@ -8,10 +6,12 @@ services:
     container_name: aaa-service-v2
     ports:
       - "8080:8080"
+      - "50051:50051"  # gRPC port
     environment:
-      - PORT=8080
+      - HTTP_PORT=8080
+      - GRPC_PORT=50051
       - DB_PRIMARY_BACKEND=gorm
-      - DB_POSTGRES_HOST=${DB_POSTGRES_HOST:-localhost}
+      - DB_POSTGRES_HOST=${DB_POSTGRES_HOST:-postgres}
       - DB_POSTGRES_PORT=${DB_POSTGRES_PORT:-5432}
       - DB_POSTGRES_USER=${DB_POSTGRES_USER:-aaa_user}
       - DB_POSTGRES_PASSWORD=${DB_POSTGRES_PASSWORD:-aaa_password}
@@ -19,16 +19,17 @@ services:
       - DB_POSTGRES_SSLMODE=${DB_SSL_MODE:-disable}
       - DB_POSTGRES_MAX_CONNS=10
       - DB_POSTGRES_IDLE_CONNS=5
-      - DB_SPICEDB_ENDPOINT=spicedb:50051
-      - DB_SPICEDB_TOKEN=${DB_SPICEDB_TOKEN:-your-secret-key-here}
-      - SPICEDB_DB_NAME=${SPICEDB_DB_NAME:-spicedb}
+      - DATABASE_URL=postgres://${DB_POSTGRES_USER:-aaa_user}:${DB_POSTGRES_PASSWORD:-aaa_password}@postgres:5432/${DB_POSTGRES_DBNAME:-aaa_service}?sslmode=disable
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - JWT_SECRET=${JWT_SECRET:-your-jwt-secret-key-here}
       - LOG_LEVEL=info
+      - AAA_RUN_SEED=${AAA_RUN_SEED:-true}
+      - AAA_ENABLE_DOCS=${AAA_ENABLE_DOCS:-true}
     depends_on:
       redis:
         condition: service_healthy
-      spicedb:
+      postgres:
         condition: service_healthy
     networks:
       - aaa-network
@@ -56,35 +57,29 @@ services:
       timeout: 5s
       retries: 5
 
-  spicedb:
-    image: authzed/spicedb:latest
-    container_name: aaa-spicedb
-    ports:
-      - "50051:50051"
+  postgres:
+    image: postgres:17-alpine
+    container_name: aaa-postgres
     environment:
-      - SPICEDB_LOG_LEVEL=info
-      - SPICEDB_GRPC_PRESHARED_KEY=${DB_SPICEDB_TOKEN:-your-secret-key-here}
-    command: >
-      serve
-      --grpc-preshared-key ${DB_SPICEDB_TOKEN:-your-secret-key-here}
-      --datastore-engine postgres
-      --datastore-conn-uri postgres://${DB_POSTGRES_USER:-aaa_user}:${DB_POSTGRES_PASSWORD:-aaa_password}@${DB_POSTGRES_HOST:-localhost}:${DB_POSTGRES_PORT:-5432}/${SPICEDB_DB_NAME:-spicedb}?sslmode=${DB_SSL_MODE:-disable}
-      --log-level info
+      - POSTGRES_DB=${DB_POSTGRES_DBNAME:-aaa_service}
+      - POSTGRES_USER=${DB_POSTGRES_USER:-aaa_user}
+      - POSTGRES_PASSWORD=${DB_POSTGRES_PASSWORD:-aaa_password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
     networks:
       - aaa-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "grpc_health_probe", "-addr=localhost:50051"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-    depends_on:
-      redis:
-        condition: service_healthy
+      test: ["CMD-SHELL", "pg_isready -U ${DB_POSTGRES_USER:-aaa_user} -d ${DB_POSTGRES_DBNAME:-aaa_service}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   redis_data:
+  postgres_data:
 
 networks:
   aaa-network:

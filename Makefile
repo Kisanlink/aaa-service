@@ -27,6 +27,26 @@ test: ## Run tests
 	@echo "Running tests..."
 	go test ./... -v
 
+test-short: ## Run short tests only
+	@echo "Running short tests..."
+	go test -short -v ./...
+
+test-e2e: ## Run end-to-end integration tests
+	@echo "Running end-to-end integration tests..."
+	go test -v ./test/integration/... -timeout 30s
+
+test-e2e-verbose: ## Run end-to-end tests with verbose output
+	@echo "Running end-to-end integration tests (verbose)..."
+	go test -v ./test/integration/... -timeout 30s -count=1
+
+test-farmers: ## Run farmers module end-to-end tests
+	@echo "Running farmers module end-to-end tests..."
+	go test -v ./test/integration/e2e_farmers_module_test.go -timeout 30s
+
+demo: ## Run end-to-end demonstration
+	@echo "Running AAA Service end-to-end demonstration..."
+	go run scripts/e2e_demo.go
+
 test-coverage: ## Run tests with coverage
 	@echo "Running tests with coverage..."
 	go test ./... -cover -coverprofile=coverage.out
@@ -68,9 +88,15 @@ db-seed: ## Seed database with test data
 	@echo "TODO: Implement seed script"
 
 # Development server
-dev: ## Run development server
-	@echo "Starting development server..."
+run: ## Run the AAA service server
+	@echo "Starting AAA service server..."
+	@echo "HTTP server will be available at: http://localhost:8080"
+	@echo "gRPC server will be available at: localhost:50051"
+	@echo "API documentation at: http://localhost:8080/docs"
+	@echo ""
 	go run cmd/server/main.go
+
+dev: run ## Alias for run command
 
 # Documentation
 docs: ## Generate documentation
@@ -103,8 +129,28 @@ benchmark: ## Run benchmarks
 
 # Monitoring
 health-check: ## Check service health
-	@echo "Checking service health..."
-	curl -f http://localhost:8080/health || echo "Service not running"
+	@echo "Checking AAA service health..."
+	@echo "Testing HTTP server health endpoint..."
+	@curl -f -s http://localhost:8080/health && echo "✅ HTTP server is healthy" || echo "❌ HTTP server is not responding"
+	@echo ""
+	@echo "Testing HTTP server root endpoint..."
+	@curl -f -s -o /dev/null http://localhost:8080/ && echo "✅ HTTP root endpoint accessible" || echo "❌ HTTP root endpoint not accessible"
+	@echo ""
+	@echo "Testing API documentation endpoint..."
+	@curl -f -s -o /dev/null http://localhost:8080/docs && echo "✅ API docs accessible" || echo "❌ API docs not accessible"
+
+test-server: ## Test if server is running correctly
+	@echo "Testing AAA service server..."
+	@echo "==============================="
+	@make health-check
+	@echo ""
+	@echo "Testing gRPC server connection..."
+	@echo "Note: gRPC health check requires grpcurl or similar tool"
+	@echo "gRPC server should be available at: localhost:50051"
+	@echo ""
+	@echo "If all tests pass, the server is running correctly!"
+
+
 
 # Dependencies
 deps-update: ## Update dependencies

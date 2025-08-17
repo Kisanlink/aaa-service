@@ -1,0 +1,212 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "github.com/Kisanlink/aaa-service/pb";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+
+// Contract model - defines service surface
+message Contract {
+    string id = 1;
+    string service_id = 2;
+    string name = 3;
+    string version = 4;
+    string description = 5;
+    ContractManifest manifest = 6;
+    string organization_id = 7;
+    string approved_by_id = 8;
+    google.protobuf.Timestamp approved_at = 9;
+    bool is_active = 10;
+    google.protobuf.Timestamp created_at = 11;
+    google.protobuf.Timestamp updated_at = 12;
+}
+
+// Contract manifest defining resources, actions, and default bindings
+message ContractManifest {
+    string service_name = 1;
+    string service_version = 2;
+
+    repeated ResourceDefinition resources = 3;
+    repeated ActionDefinition actions = 4;
+    repeated RoleTemplate roles = 5;
+    repeated DefaultBinding default_bindings = 6;
+
+    google.protobuf.Struct metadata = 7;
+}
+
+// Resource definition in contract
+message ResourceDefinition {
+    string name = 1;
+    string type = 2;
+    string description = 3;
+    string parent_type = 4;  // Optional parent resource type
+    repeated string required_actions = 5;
+    map<string, string> metadata = 6;
+}
+
+// Action definition in contract
+message ActionDefinition {
+    string name = 1;
+    string description = 2;
+    repeated string applicable_resources = 3;  // Resource types this action applies to
+    bool requires_write = 4;
+    bool requires_admin = 5;
+}
+
+// Role template in contract
+message RoleTemplate {
+    string name = 1;
+    string description = 2;
+    string scope = 3;  // "GLOBAL" or "ORG"
+    repeated PermissionGrant permissions = 4;
+}
+
+// Permission grant in role template
+message PermissionGrant {
+    string resource_type = 1;
+    repeated string actions = 2;
+}
+
+// Default binding to create
+message DefaultBinding {
+    string role_name = 1;
+    string resource_type = 2;
+    string subject_type = 3;  // "owner", "admin_group", etc.
+    google.protobuf.Struct caveat = 4;
+}
+
+// Apply Contract Request
+message ApplyContractRequest {
+    string service_id = 1;
+    ContractManifest manifest = 2;
+    string organization_id = 3;
+    bool dry_run = 4;  // Validate without applying
+    bool force = 5;    // Force apply even with conflicts
+}
+
+// Apply Contract Response
+message ApplyContractResponse {
+    int32 status_code = 1;
+    string message = 2;
+    Contract contract = 3;
+    ContractDiff diff = 4;
+    repeated string warnings = 5;
+}
+
+// Contract diff showing what will change
+message ContractDiff {
+    repeated ResourceChange resource_changes = 1;
+    repeated ActionChange action_changes = 2;
+    repeated RoleChange role_changes = 3;
+    repeated BindingChange binding_changes = 4;
+
+    message ResourceChange {
+        string change_type = 1;  // "CREATE", "UPDATE", "DELETE"
+        ResourceDefinition resource = 2;
+    }
+
+    message ActionChange {
+        string change_type = 1;
+        ActionDefinition action = 2;
+    }
+
+    message RoleChange {
+        string change_type = 1;
+        RoleTemplate role = 2;
+    }
+
+    message BindingChange {
+        string change_type = 1;
+        DefaultBinding binding = 2;
+    }
+}
+
+// Get Contract Request
+message GetContractRequest {
+    string id = 1;
+    bool include_diff = 2;
+}
+
+// Get Contract Response
+message GetContractResponse {
+    int32 status_code = 1;
+    string message = 2;
+    Contract contract = 3;
+    ContractDiff diff = 4;
+}
+
+// List Contracts Request
+message ListContractsRequest {
+    string service_id = 1;
+    string organization_id = 2;
+    bool include_inactive = 3;
+    int32 page = 4;
+    int32 page_size = 5;
+}
+
+// List Contracts Response
+message ListContractsResponse {
+    int32 status_code = 1;
+    string message = 2;
+    repeated Contract contracts = 3;
+    int32 total_count = 4;
+    int32 page = 5;
+    int32 page_size = 6;
+}
+
+// Validate Contract Request
+message ValidateContractRequest {
+    ContractManifest manifest = 1;
+    string organization_id = 2;
+}
+
+// Validate Contract Response
+message ValidateContractResponse {
+    int32 status_code = 1;
+    string message = 2;
+    bool is_valid = 3;
+    repeated ValidationError errors = 4;
+    repeated string warnings = 5;
+
+    message ValidationError {
+        string field = 1;
+        string error = 2;
+    }
+}
+
+// Revert Contract Request
+message RevertContractRequest {
+    string id = 1;
+    bool force = 2;
+}
+
+// Revert Contract Response
+message RevertContractResponse {
+    int32 status_code = 1;
+    string message = 2;
+    ContractDiff revert_diff = 3;
+}
+
+// Get Contract Template Request
+message GetContractTemplateRequest {
+    string template_type = 1;  // e.g., "microservice", "database", "api"
+}
+
+// Get Contract Template Response
+message GetContractTemplateResponse {
+    int32 status_code = 1;
+    string message = 2;
+    ContractManifest template = 3;
+}
+
+// Contract Service - manages service contracts
+service ContractService {
+    rpc ApplyContract(ApplyContractRequest) returns (ApplyContractResponse);
+    rpc GetContract(GetContractRequest) returns (GetContractResponse);
+    rpc ListContracts(ListContractsRequest) returns (ListContractsResponse);
+    rpc ValidateContract(ValidateContractRequest) returns (ValidateContractResponse);
+    rpc RevertContract(RevertContractRequest) returns (RevertContractResponse);
+    rpc GetContractTemplate(GetContractTemplateRequest) returns (GetContractTemplateResponse);
+}

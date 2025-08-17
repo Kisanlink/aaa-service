@@ -1,0 +1,109 @@
+syntax = "proto3";
+
+package pb;
+option go_package = "github.com/Kisanlink/aaa-service/pb";
+
+message ConnUser {
+    string id = 1;
+    string created_at = 2;
+    string updated_at = 3;
+    string username = 4;
+    string password = 5;
+    bool is_validated = 6;
+}
+
+message ConnRole {
+    string id = 1;
+    string name = 2;
+    string description = 3;
+}
+
+message ConnPermission {
+    string id = 1;
+    string name = 2;
+    string description = 3;
+}
+
+message ConnPermissionOnRole {
+    string id = 1;
+    string created_at = 2;
+    string updated_at = 3;
+    ConnPermission permission = 4;
+    string user_role_id = 5;
+}
+
+message ConnUserRole {
+    string id = 1;
+    string created_at = 2;
+    string updated_at = 3;
+    ConnUser user = 4;
+    string role_permission_id = 5;
+}
+
+message ConnRolePermission {
+    string id = 1;
+    string created_at = 2;
+    string updated_at = 3;
+    ConnRole role = 4;
+    repeated ConnPermissionOnRole permission_on_roles = 5;
+    repeated ConnUserRole user_roles = 6;
+}
+
+
+message CreateConnRolePermissionRequest {
+    repeated string role_ids = 1;
+    repeated string permission_ids = 2;
+}
+
+message CreateConnRolePermissionResponse {
+    int32 status_code = 1;
+    string message = 2;
+    ConnRolePermission conn_role_permission = 3;
+}
+
+message GetConnRolePermissionallRequest {
+}
+message GetConnRolePermissionallResponse {
+    int32 status_code = 1;
+    string message = 2;
+    repeated ConnRolePermission conn_role_permission = 3;
+}
+message GetConnRolePermissionByIdRequest {
+    string id = 1;
+}
+
+message GetConnRolePermissionByIdResponse {
+    int32 status_code = 1;
+    string message = 2;
+    ConnRolePermission conn_role_permission = 3;
+}
+
+message UpdateConnRolePermissionRequest {
+    string id = 1;
+    repeated string role_ids = 2;
+    repeated string permission_ids = 3;
+}
+
+message UpdateConnRolePermissionResponse {
+    int32 status_code = 1;
+    string message = 2;
+    ConnRolePermission conn_role_permission = 3;
+}
+
+message DeleteConnRolePermissionRequest {
+    string id = 1;
+}
+
+message DeleteConnRolePermissionResponse {
+    int32 status_code = 1;
+    string message = 2;
+}
+
+
+service ConnectRolePermissionService {
+    rpc CreateConnectRolePermission(CreateConnRolePermissionRequest) returns (CreateConnRolePermissionResponse);
+    rpc GetAllRolePermission(GetConnRolePermissionallRequest) returns (GetConnRolePermissionallResponse);
+    rpc GetRolePermissionById(GetConnRolePermissionByIdRequest) returns (GetConnRolePermissionByIdResponse);
+    rpc UpdateRolePermission(UpdateConnRolePermissionRequest) returns (UpdateConnRolePermissionResponse);
+    rpc DeleteRolePermission(DeleteConnRolePermissionRequest) returns (DeleteConnRolePermissionResponse);
+}

@@ -1,0 +1,261 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "github.com/Kisanlink/aaa-service/pb";
+
+import "google/protobuf/timestamp.proto";
+
+// Action model
+message Action {
+    string id = 1;
+    string name = 2;
+    string description = 3;
+    bool is_static = 4;  // Static (built-in) vs dynamic (service-defined)
+    string service_id = 5; // For dynamic actions
+    map<string, string> metadata = 6;
+    google.protobuf.Timestamp created_at = 7;
+    google.protobuf.Timestamp updated_at = 8;
+}
+
+// Resource model
+message Resource {
+    string id = 1;
+    string name = 2;
+    string type = 3;  // e.g., "aaa/table", "aaa/database", "aaa/api_endpoint"
+    string description = 4;
+    string parent_id = 5;
+    string owner_id = 6;
+    string organization_id = 7;
+    bool is_active = 8;
+    map<string, string> metadata = 9;
+    google.protobuf.Timestamp created_at = 10;
+    google.protobuf.Timestamp updated_at = 11;
+    Resource parent = 12;
+    repeated Resource children = 13;
+}
+
+// Enhanced Role model with scope
+message Role {
+    string id = 1;
+    string name = 2;
+    string description = 3;
+    string scope = 4;  // "GLOBAL" or "ORG"
+    string organization_id = 5; // Required when scope is "ORG"
+    int32 version = 6;
+    string parent_id = 7;
+    bool is_active = 8;
+    map<string, string> metadata = 9;
+    google.protobuf.Timestamp created_at = 10;
+    google.protobuf.Timestamp updated_at = 11;
+    Role parent = 12;
+    repeated Role children = 13;
+    repeated Permission permissions = 14;
+}
+
+// Permission model
+message Permission {
+    string id = 1;
+    string name = 2;
+    string description = 3;
+    string resource_id = 4;
+    string action_id = 5;
+    bool is_active = 6;
+    google.protobuf.Timestamp created_at = 7;
+    google.protobuf.Timestamp updated_at = 8;
+    Resource resource = 9;
+    Action action = 10;
+}
+
+// Register Action Request
+message RegisterActionRequest {
+    string name = 1;
+    string description = 2;
+    bool is_static = 3;
+    string service_id = 4;
+    map<string, string> metadata = 5;
+}
+
+// Register Action Response
+message RegisterActionResponse {
+    int32 status_code = 1;
+    string message = 2;
+    Action action = 3;
+}
+
+// List Actions Request
+message ListActionsRequest {
+    bool include_static = 1;
+    bool include_dynamic = 2;
+    string service_id = 3;
+    int32 page = 4;
+    int32 page_size = 5;
+}
+
+// List Actions Response
+message ListActionsResponse {
+    int32 status_code = 1;
+    string message = 2;
+    repeated Action actions = 3;
+    int32 total_count = 4;
+    int32 page = 5;
+    int32 page_size = 6;
+}
+
+// Register Resource Request
+message RegisterResourceRequest {
+    string name = 1;
+    string type = 2;
+    string description = 3;
+    string parent_id = 4;
+    string owner_id = 5;
+    string organization_id = 6;
+    map<string, string> metadata = 7;
+}
+
+// Register Resource Response
+message RegisterResourceResponse {
+    int32 status_code = 1;
+    string message = 2;
+    Resource resource = 3;
+}
+
+// Set Resource Parent Request
+message SetResourceParentRequest {
+    string resource_id = 1;
+    string parent_id = 2;
+}
+
+// Set Resource Parent Response
+message SetResourceParentResponse {
+    int32 status_code = 1;
+    string message = 2;
+    Resource resource = 3;
+}
+
+// List Resources Request
+message ListResourcesRequest {
+    string type = 1;
+    string parent_id = 2;
+    string owner_id = 3;
+    string organization_id = 4;
+    bool include_children = 5;
+    int32 page = 6;
+    int32 page_size = 7;
+}
+
+// List Resources Response
+message ListResourcesResponse {
+    int32 status_code = 1;
+    string message = 2;
+    repeated Resource resources = 3;
+    int32 total_count = 4;
+    int32 page = 5;
+    int32 page_size = 6;
+}
+
+// Create Role Request
+message CreateRoleRequest {
+    string name = 1;
+    string description = 2;
+    string scope = 3;  // "GLOBAL" or "ORG"
+    string organization_id = 4;
+    string parent_id = 5;
+    repeated string permission_ids = 6;
+    map<string, string> metadata = 7;
+}
+
+// Create Role Response
+message CreateRoleResponse {
+    int32 status_code = 1;
+    string message = 2;
+    Role role = 3;
+}
+
+// List Roles Request
+message ListRolesRequest {
+    string scope = 1;  // Filter by scope
+    string organization_id = 2;
+    bool include_inactive = 3;
+    bool include_permissions = 4;
+    int32 page = 5;
+    int32 page_size = 6;
+}
+
+// List Roles Response
+message ListRolesResponse {
+    int32 status_code = 1;
+    string message = 2;
+    repeated Role roles = 3;
+    int32 total_count = 4;
+    int32 page = 5;
+    int32 page_size = 6;
+}
+
+// Create Permission Request
+message CreatePermissionRequest {
+    string name = 1;
+    string description = 2;
+    string resource_id = 3;
+    string action_id = 4;
+}
+
+// Create Permission Response
+message CreatePermissionResponse {
+    int32 status_code = 1;
+    string message = 2;
+    Permission permission = 3;
+}
+
+// Attach Permissions Request
+message AttachPermissionsRequest {
+    string role_id = 1;
+    repeated string permission_ids = 2;
+}
+
+// Attach Permissions Response
+message AttachPermissionsResponse {
+    int32 status_code = 1;
+    string message = 2;
+    Role role = 3;
+}
+
+// List Permissions Request
+message ListPermissionsRequest {
+    string role_id = 1;
+    string resource_id = 2;
+    string action_id = 3;
+    int32 page = 4;
+    int32 page_size = 5;
+}
+
+// List Permissions Response
+message ListPermissionsResponse {
+    int32 status_code = 1;
+    string message = 2;
+    repeated Permission permissions = 3;
+    int32 total_count = 4;
+    int32 page = 5;
+    int32 page_size = 6;
+}
+
+// Catalog Service - manages actions, resources, roles, and permissions
+service CatalogService {
+    // Action management
+    rpc RegisterAction(RegisterActionRequest) returns (RegisterActionResponse);
+    rpc ListActions(ListActionsRequest) returns (ListActionsResponse);
+
+    // Resource management
+    rpc RegisterResource(RegisterResourceRequest) returns (RegisterResourceResponse);
+    rpc SetResourceParent(SetResourceParentRequest) returns (SetResourceParentResponse);
+    rpc ListResources(ListResourcesRequest) returns (ListResourcesResponse);
+
+    // Role management
+    rpc CreateRole(CreateRoleRequest) returns (CreateRoleResponse);
+    rpc ListRoles(ListRolesRequest) returns (ListRolesResponse);
+
+    // Permission management
+    rpc CreatePermission(CreatePermissionRequest) returns (CreatePermissionResponse);
+    rpc AttachPermissions(AttachPermissionsRequest) returns (AttachPermissionsResponse);
+    rpc ListPermissions(ListPermissionsRequest) returns (ListPermissionsResponse);
+}

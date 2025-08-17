@@ -1,0 +1,228 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "github.com/Kisanlink/aaa-service/pb";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+
+// Event model - immutable audit event
+message Event {
+    string id = 1;
+    google.protobuf.Timestamp occurred_at = 2;
+    string actor_id = 3;
+    string actor_type = 4;  // "user", "service", "system"
+    string kind = 5;        // Event type (e.g., "org.created", "binding.created")
+    string resource_type = 6;
+    string resource_id = 7;
+    string organization_id = 8;
+    google.protobuf.Struct payload = 9;
+    string prev_hash = 10;
+    string hash = 11;
+    int64 sequence_num = 12;
+
+    // Metadata
+    string request_id = 13;
+    string source_ip = 14;
+    string user_agent = 15;
+}
+
+// Event Checkpoint model
+message EventCheckpoint {
+    string id = 1;
+    google.protobuf.Timestamp checkpoint_time = 2;
+    string last_event_id = 3;
+    int64 last_sequence_num = 4;
+    string last_event_hash = 5;
+    string merkle_root = 6;
+    int64 event_count = 7;
+    string created_by_id = 8;
+    google.protobuf.Timestamp created_at = 9;
+}
+
+// List Events Request
+message ListEventsRequest {
+    // Filters
+    string actor_id = 1;
+    string resource_type = 2;
+    string resource_id = 3;
+    string organization_id = 4;
+    repeated string kinds = 5;  // Filter by event kinds
+
+    // Time range
+    google.protobuf.Timestamp start_time = 6;
+    google.protobuf.Timestamp end_time = 7;
+
+    // Pagination
+    int32 page = 8;
+    int32 page_size = 9;
+    string continuation_token = 10;
+
+    // Options
+    bool include_payload = 11;
+    bool verify_hash = 12;
+}
+
+// List Events Response
+message ListEventsResponse {
+    int32 status_code = 1;
+    string message = 2;
+    repeated Event events = 3;
+    string continuation_token = 4;
+    int32 total_count = 5;
+    bool hash_verified = 6;
+}
+
+// Get Event Request
+message GetEventRequest {
+    string id = 1;
+    bool verify_hash = 2;
+    bool include_chain = 3;  // Include previous events in chain
+    int32 chain_depth = 4;   // How many previous events to include
+}
+
+// Get Event Response
+message GetEventResponse {
+    int32 status_code = 1;
+    string message = 2;
+    Event event = 3;
+    repeated Event chain = 4;  // Previous events if requested
+    bool hash_verified = 5;
+}
+
+// Verify Event Chain Request
+message VerifyEventChainRequest {
+    string start_event_id = 1;
+    string end_event_id = 2;
+    bool deep_verify = 3;  // Verify all payload hashes too
+}
+
+// Verify Event Chain Response
+message VerifyEventChainResponse {
+    int32 status_code = 1;
+    string message = 2;
+    bool is_valid = 3;
+    int64 events_verified = 4;
+    repeated ChainError errors = 5;
+
+    message ChainError {
+        string event_id = 1;
+        string error_type = 2;  // "HASH_MISMATCH", "MISSING_EVENT", "SEQUENCE_GAP"
+        string description = 3;
+    }
+}
+
+// Create Checkpoint Request
+message CreateCheckpointRequest {
+    string description = 1;
+    bool verify_before_checkpoint = 2;
+}
+
+// Create Checkpoint Response
+message CreateCheckpointResponse {
+    int32 status_code = 1;
+    string message = 2;
+    EventCheckpoint checkpoint = 3;
+}
+
+// List Checkpoints Request
+message ListCheckpointsRequest {
+    google.protobuf.Timestamp start_time = 1;
+    google.protobuf.Timestamp end_time = 2;
+    int32 page = 3;
+    int32 page_size = 4;
+}
+
+// List Checkpoints Response
+message ListCheckpointsResponse {
+    int32 status_code = 1;
+    string message = 2;
+    repeated EventCheckpoint checkpoints = 3;
+    int32 total_count = 4;
+    int32 page = 5;
+    int32 page_size = 6;
+}
+
+// Export Events Request
+message ExportEventsRequest {
+    google.protobuf.Timestamp start_time = 1;
+    google.protobuf.Timestamp end_time = 2;
+    repeated string kinds = 3;
+    string organization_id = 4;
+    string format = 5;  // "json", "csv", "parquet"
+    bool include_hash_proof = 6;
+}
+
+// Export Events Response
+message ExportEventsResponse {
+    int32 status_code = 1;
+    string message = 2;
+    string export_id = 3;
+    string download_url = 4;
+    int64 event_count = 5;
+    google.protobuf.Timestamp expires_at = 6;
+}
+
+// Replay Events Request - rebuild state from events
+message ReplayEventsRequest {
+    google.protobuf.Timestamp replay_to = 1;  // Replay events up to this time
+    string checkpoint_id = 2;                 // Or replay from checkpoint
+    bool dry_run = 3;                        // Don't actually apply changes
+    repeated string resource_types = 4;       // Only replay specific resource types
+}
+
+// Replay Events Response
+message ReplayEventsResponse {
+    int32 status_code = 1;
+    string message = 2;
+    int64 events_replayed = 3;
+    google.protobuf.Struct state_snapshot = 4;  // Final state after replay
+    repeated ReplayError errors = 5;
+
+    message ReplayError {
+        string event_id = 1;
+        string error = 2;
+    }
+}
+
+// Event Statistics Request
+message EventStatisticsRequest {
+    google.protobuf.Timestamp start_time = 1;
+    google.protobuf.Timestamp end_time = 2;
+    string organization_id = 3;
+    repeated string group_by = 4;  // "kind", "actor_type", "resource_type", "hour", "day"
+}
+
+// Event Statistics Response
+message EventStatisticsResponse {
+    int32 status_code = 1;
+    string message = 2;
+    int64 total_events = 3;
+    repeated StatisticGroup groups = 4;
+
+    message StatisticGroup {
+        map<string, string> dimensions = 1;
+        int64 count = 2;
+        repeated TopItem top_actors = 3;
+        repeated TopItem top_resources = 4;
+    }
+
+    message TopItem {
+        string id = 1;
+        string name = 2;
+        int64 count = 3;
+    }
+}
+
+// Event Service - manages audit events
+service EventService {
+    rpc ListEvents(ListEventsRequest) returns (ListEventsResponse);
+    rpc GetEvent(GetEventRequest) returns (GetEventResponse);
+    rpc VerifyEventChain(VerifyEventChainRequest) returns (VerifyEventChainResponse);
+    rpc CreateCheckpoint(CreateCheckpointRequest) returns (CreateCheckpointResponse);
+    rpc ListCheckpoints(ListCheckpointsRequest) returns (ListCheckpointsResponse);
+    rpc ExportEvents(ExportEventsRequest) returns (ExportEventsResponse);
+    rpc ReplayEvents(ReplayEventsRequest) returns (ReplayEventsResponse);
+    rpc GetEventStatistics(EventStatisticsRequest) returns (EventStatisticsResponse);
+}

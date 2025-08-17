@@ -164,7 +164,7 @@ func (s *UserService) CreateUser(ctx context.Context, username, password string)
         if username == "" {
             return errors.NewMissingFieldError("username")
         }
-        
+
         if len(password) < 8 {
             return errors.NewInvalidInputError("password", password, "Password must be at least 8 characters")
         }
@@ -213,14 +213,14 @@ func (r *UserRepository) GetByID(ctx context.Context, id string) (*User, error) 
         err := r.dbManager.GetDB().WithContext(ctx).
             Where("id = ?", id).
             First(&user).Error
-        
+
         if err != nil {
             if errors.Is(err, gorm.ErrRecordNotFound) {
                 return nil, errors.NewUserNotFoundError(id)
             }
             return nil, errors.Wrap(err, ErrorTypeDatabaseError, "Failed to get user")
         }
-        
+
         return &user, nil
     })
 }
@@ -250,7 +250,7 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) error {
     w.Header().Set("Content-Type", "application/json")
     w.WriteHeader(http.StatusCreated)
     json.NewEncoder(w).Encode(map[string]string{"status": "success"})
-    
+
     return nil
 }
 ```
@@ -295,4 +295,4 @@ To integrate this error handling system with existing code:
 3. Use `errors.Try` and `errors.TryWithResult` for consistent error handling
 4. Register error handlers for specific error types
 5. Use the HTTP middleware for web applications
-6. Update error checking to use `errors.IsErrorType` 
+6. Update error checking to use `errors.IsErrorType`
