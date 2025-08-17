@@ -4,12 +4,13 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/Kisanlink/aaa-service/internal/entities/models"
 	userResponses "github.com/Kisanlink/aaa-service/internal/entities/responses/users"
 	"github.com/Kisanlink/aaa-service/pkg/errors"
 	"go.uber.org/zap"
 )
 
-// GetUserByID retrieves a user by their ID
+// GetUserByID retrieves a user by their unique identifier
 func (s *Service) GetUserByID(ctx context.Context, userID string) (*userResponses.UserResponse, error) {
 	s.logger.Info("Getting user by ID", zap.String("user_id", userID))
 
@@ -26,12 +27,11 @@ func (s *Service) GetUserByID(ctx context.Context, userID string) (*userResponse
 		}
 	}
 
-	// Get from repository
-	user, err := s.userRepo.GetByID(ctx, userID)
+	// Get user from repository
+	user := &models.User{}
+	_, err := s.userRepo.GetByID(ctx, userID, user)
 	if err != nil {
-		s.logger.Error("Failed to get user by ID",
-			zap.String("user_id", userID),
-			zap.Error(err))
+		s.logger.Error("Failed to get user by ID", zap.String("user_id", userID), zap.Error(err))
 		return nil, errors.NewNotFoundError("user not found")
 	}
 
@@ -47,7 +47,9 @@ func (s *Service) GetUserByID(ctx context.Context, userID string) (*userResponse
 	}
 
 	// Cache the result
-	s.cacheService.Set(cacheKey, response, 300) // 5 minutes cache
+	if err := s.cacheService.Set(cacheKey, response, 300); err != nil {
+		s.logger.Warn("Failed to cache user response", zap.Error(err))
+	}
 
 	s.logger.Info("User retrieved successfully", zap.String("user_id", userID))
 	return response, nil

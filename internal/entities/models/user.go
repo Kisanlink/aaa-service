@@ -15,7 +15,7 @@ type User struct {
 	CountryCode string  `json:"country_code" gorm:"not null;size:10;default:'+91'" validate:"required"`
 	Username    *string `json:"username" gorm:"unique;size:100" validate:"omitempty,username"`
 	Password    string  `json:"password" gorm:"not null;size:255" validate:"required,min=8,max=128"`
-	MPin        *string `json:"mpin" gorm:"size:255"`
+	MPin        *string `json:"mpin" gorm:"column:m_pin;size:255"`
 	IsValidated bool    `json:"is_validated" gorm:"default:false"`
 	// Status represents the current state of the user account
 	// Possible values:
@@ -104,7 +104,9 @@ func (u *User) BeforeDelete() error     { return u.BaseModel.BeforeDelete() }
 func (u *User) BeforeSoftDelete() error { return u.BaseModel.BeforeSoftDelete() }
 
 // Helper methods
-func (u *User) GetTableIdentifier() string   { return "USR" }
+// Note: GetTableIdentifier is used by the base model for ID generation
+// GORM uses TableName() method for database operations
+func (u *User) GetTableIdentifier() string   { return "USER" }
 func (u *User) GetTableSize() hash.TableSize { return hash.Medium }
 
 // Explicit method implementations to satisfy linter

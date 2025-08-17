@@ -27,6 +27,8 @@ require (
 
 require github.com/authzed/authzed-go v1.4.1 // indirect
 
+replace github.com/Kisanlink/kisanlink-db => ../kisanlink-db
+
 require (
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.6-20250613105001-9f2d3c737feb.1 // indirect
 	github.com/KyleBanks/depth v1.2.1 // indirect

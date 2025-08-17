@@ -73,7 +73,8 @@ func (s *AddressService) GetAddressByID(ctx context.Context, addressID string) (
 	}
 
 	// Get from database
-	address, err := s.addressRepo.GetByID(ctx, addressID)
+	address := &models.Address{}
+	_, err := s.addressRepo.GetByID(ctx, addressID, address)
 	if err != nil {
 		s.logger.Error("Failed to get address by ID", zap.String("addressID", addressID), zap.Error(err))
 		return nil, fmt.Errorf("failed to get address: %w", err)
@@ -110,7 +111,7 @@ func (s *AddressService) UpdateAddress(ctx context.Context, address *models.Addr
 	}
 
 	// Check if address exists by trying to get it
-	_, err := s.addressRepo.GetByID(ctx, address.ID)
+	_, err := s.addressRepo.GetByID(ctx, address.ID, address)
 	if err != nil {
 		s.logger.Error("Failed to check address existence", zap.String("addressID", address.ID), zap.Error(err))
 		return errors.NewNotFoundError("address not found")
@@ -139,7 +140,8 @@ func (s *AddressService) DeleteAddress(ctx context.Context, addressID string) er
 	s.logger.Info("Deleting address")
 
 	// Delete address
-	if err := s.addressRepo.Delete(ctx, addressID); err != nil {
+	address := &models.Address{}
+	if err := s.addressRepo.Delete(ctx, addressID, address); err != nil {
 		s.logger.Error("Failed to delete address")
 		return fmt.Errorf("failed to delete address: %w", err)
 	}

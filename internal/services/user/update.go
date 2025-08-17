@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/Kisanlink/aaa-service/internal/entities/models"
 	"github.com/Kisanlink/aaa-service/internal/entities/requests/users"
 	userResponses "github.com/Kisanlink/aaa-service/internal/entities/responses/users"
 	"github.com/Kisanlink/aaa-service/pkg/errors"
@@ -28,11 +29,10 @@ func (s *Service) UpdateUser(ctx context.Context, req *users.UpdateUserRequest) 
 	}
 
 	// Get existing user
-	existingUser, err := s.userRepo.GetByID(ctx, userID)
+	existingUser := &models.User{}
+	_, err := s.userRepo.GetByID(ctx, userID, existingUser)
 	if err != nil {
-		s.logger.Error("Failed to get existing user",
-			zap.String("user_id", userID),
-			zap.Error(err))
+		s.logger.Error("Failed to get existing user for update", zap.String("user_id", userID), zap.Error(err))
 		return nil, errors.NewNotFoundError("user not found")
 	}
 
@@ -97,37 +97,34 @@ func (s *Service) ChangePassword(ctx context.Context, userID, oldPassword, newPa
 	}
 
 	// Get existing user
-	existingUser, err := s.userRepo.GetByID(ctx, userID)
+	existingUser := &models.User{}
+	_, err := s.userRepo.GetByID(ctx, userID, existingUser)
 	if err != nil {
-		s.logger.Error("Failed to get existing user for password change",
-			zap.String("user_id", userID),
-			zap.Error(err))
+		s.logger.Error("Failed to get existing user for password change", zap.String("user_id", userID), zap.Error(err))
 		return errors.NewNotFoundError("user not found")
 	}
 
 	// Verify old password
 	if err := bcrypt.CompareHashAndPassword([]byte(existingUser.Password), []byte(oldPassword)); err != nil {
-		s.logger.Warn("Invalid old password provided", zap.String("user_id", userID))
+		s.logger.Error("Invalid old password", zap.String("user_id", userID))
 		return errors.NewUnauthorizedError("invalid old password")
 	}
 
 	// Hash new password
-	hashedPassword, err := s.hashPassword(newPassword)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
 	if err != nil {
-		s.logger.Error("Failed to hash new password", zap.Error(err))
+		s.logger.Error("Failed to hash new password", zap.String("user_id", userID), zap.Error(err))
 		return errors.NewInternalError(err)
 	}
 
 	// Update password
-	existingUser.Password = hashedPassword
+	existingUser.Password = string(hashedPassword)
 	existingUser.UpdatedAt = time.Now()
 
 	// Update in repository
 	err = s.userRepo.Update(ctx, existingUser)
 	if err != nil {
-		s.logger.Error("Failed to update user password in repository",
-			zap.String("user_id", userID),
-			zap.Error(err))
+		s.logger.Error("Failed to update user password in repository", zap.String("user_id", userID), zap.Error(err))
 		return errors.NewInternalError(err)
 	}
 

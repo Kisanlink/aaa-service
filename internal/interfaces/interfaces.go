@@ -103,6 +103,31 @@ type RoleService interface {
 	GetUserRoles(ctx context.Context, userID string) ([]*models.UserRole, error)
 }
 
+// GroupService interface for group management operations
+type GroupService interface {
+	CreateGroup(ctx context.Context, req interface{}) (interface{}, error)
+	GetGroup(ctx context.Context, groupID string) (interface{}, error)
+	UpdateGroup(ctx context.Context, groupID string, req interface{}) (interface{}, error)
+	DeleteGroup(ctx context.Context, groupID string, deletedBy string) error
+	ListGroups(ctx context.Context, limit, offset int, organizationID string, includeInactive bool) (interface{}, error)
+	AddMemberToGroup(ctx context.Context, req interface{}) (interface{}, error)
+	RemoveMemberFromGroup(ctx context.Context, groupID, principalID string, removedBy string) error
+	GetGroupMembers(ctx context.Context, groupID string, limit, offset int) (interface{}, error)
+}
+
+// OrganizationService interface for organization management operations
+type OrganizationService interface {
+	CreateOrganization(ctx context.Context, req interface{}) (interface{}, error)
+	GetOrganization(ctx context.Context, orgID string) (interface{}, error)
+	UpdateOrganization(ctx context.Context, orgID string, req interface{}) (interface{}, error)
+	DeleteOrganization(ctx context.Context, orgID string, deletedBy string) error
+	ListOrganizations(ctx context.Context, limit, offset int, includeInactive bool) ([]interface{}, error)
+	GetOrganizationHierarchy(ctx context.Context, orgID string) (interface{}, error)
+	ActivateOrganization(ctx context.Context, orgID string) error
+	DeactivateOrganization(ctx context.Context, orgID string) error
+	GetOrganizationStats(ctx context.Context, orgID string) (interface{}, error)
+}
+
 // AuthService interface for authentication operations
 type AuthService interface {
 	Login(ctx context.Context, username, password string) (interface{}, error)
@@ -154,6 +179,15 @@ type UserRoleRepository interface {
 	GetByUserAndRole(ctx context.Context, userID, roleID string) (*models.UserRole, error)
 	DeleteByUserAndRole(ctx context.Context, userID, roleID string) error
 	ExistsByUserAndRole(ctx context.Context, userID, roleID string) (bool, error)
+}
+
+// ContactRepository interface for contact data operations
+type ContactRepository interface {
+	base.Repository[*models.Contact]
+	GetByUserID(ctx context.Context, userID string) ([]*models.Contact, error)
+	GetByType(ctx context.Context, contactType string) ([]*models.Contact, error)
+	GetByValue(ctx context.Context, value string) (*models.Contact, error)
+	GetPrimaryContact(ctx context.Context, userID string) (*models.Contact, error)
 }
 
 // TokenManager interface for token operations

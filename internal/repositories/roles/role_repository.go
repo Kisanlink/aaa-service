@@ -29,8 +29,7 @@ func (r *RoleRepository) Create(ctx context.Context, role *models.Role) error {
 }
 
 // GetByID retrieves a role by ID
-func (r *RoleRepository) GetByID(ctx context.Context, id string) (*models.Role, error) {
-	role := &models.Role{}
+func (r *RoleRepository) GetByID(ctx context.Context, id string, role *models.Role) (*models.Role, error) {
 	err := r.dbManager.GetByID(ctx, id, role)
 	if err != nil {
 		return nil, err
@@ -44,8 +43,8 @@ func (r *RoleRepository) Update(ctx context.Context, role *models.Role) error {
 }
 
 // Delete deletes a role by ID
-func (r *RoleRepository) Delete(ctx context.Context, id string) error {
-	return r.dbManager.Delete(ctx, id)
+func (r *RoleRepository) Delete(ctx context.Context, id string, role *models.Role) error {
+	return r.BaseFilterableRepository.Delete(ctx, id, role)
 }
 
 // List retrieves all roles with pagination using database-level filtering
@@ -71,7 +70,13 @@ func (r *RoleRepository) GetByName(ctx context.Context, name string) (*models.Ro
 	}
 
 	var roles []models.Role
-	if err := r.dbManager.List(ctx, filters, &roles); err != nil {
+	filter := &base.Filter{
+		Group: base.FilterGroup{
+			Conditions: filters,
+			Logic:      base.LogicAnd,
+		},
+	}
+	if err := r.dbManager.List(ctx, filter, &roles); err != nil {
 		return nil, fmt.Errorf("failed to get role by name: %w", err)
 	}
 

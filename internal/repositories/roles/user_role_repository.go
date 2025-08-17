@@ -33,12 +33,11 @@ func (r *UserRoleRepository) Create(ctx context.Context, userRole *models.UserRo
 }
 
 // GetByID retrieves a user role by ID
-func (r *UserRoleRepository) GetByID(ctx context.Context, id string) (*models.UserRole, error) {
-	var userRole models.UserRole
-	if err := r.dbManager.GetByID(ctx, id, &userRole); err != nil {
+func (r *UserRoleRepository) GetByID(ctx context.Context, id string, userRole *models.UserRole) (*models.UserRole, error) {
+	if err := r.dbManager.GetByID(ctx, id, userRole); err != nil {
 		return nil, fmt.Errorf("failed to get user role by ID: %w", err)
 	}
-	return &userRole, nil
+	return userRole, nil
 }
 
 // Update updates an existing user role
@@ -51,15 +50,21 @@ func (r *UserRoleRepository) Update(ctx context.Context, userRole *models.UserRo
 }
 
 // Delete deletes a user role by ID
-func (r *UserRoleRepository) Delete(ctx context.Context, id string) error {
-	return r.dbManager.Delete(ctx, id)
+func (r *UserRoleRepository) Delete(ctx context.Context, id string, userRole *models.UserRole) error {
+	return r.BaseFilterableRepository.Delete(ctx, id, userRole)
 }
 
 // List retrieves user roles with pagination
 func (r *UserRoleRepository) List(ctx context.Context, limit, offset int) ([]*models.UserRole, error) {
 	var userRoles []models.UserRole
 
-	if err := r.dbManager.List(ctx, []base.FilterCondition{}, &userRoles); err != nil {
+	emptyFilter := &base.Filter{
+		Group: base.FilterGroup{
+			Conditions: []base.FilterCondition{},
+			Logic:      base.LogicAnd,
+		},
+	}
+	if err := r.dbManager.List(ctx, emptyFilter, &userRoles); err != nil {
 		return nil, fmt.Errorf("failed to list user roles: %w", err)
 	}
 
@@ -85,7 +90,13 @@ func (r *UserRoleRepository) GetByUserID(ctx context.Context, userID string) ([]
 	}
 
 	var userRoles []models.UserRole
-	if err := r.dbManager.List(ctx, filters, &userRoles); err != nil {
+	filter := &base.Filter{
+		Group: base.FilterGroup{
+			Conditions: filters,
+			Logic:      base.LogicAnd,
+		},
+	}
+	if err := r.dbManager.List(ctx, filter, &userRoles); err != nil {
 		return nil, fmt.Errorf("failed to get user roles: %w", err)
 	}
 
@@ -137,7 +148,7 @@ func (r *UserRoleRepository) DeleteByUserAndRole(ctx context.Context, userID, ro
 	}
 
 	// Then delete it
-	return r.Delete(ctx, userRole.ID)
+	return r.Delete(ctx, userRole.ID, userRole)
 }
 
 // GetActiveByUserID retrieves all active roles for a user
@@ -159,7 +170,8 @@ func (r *UserRoleRepository) Deactivate(ctx context.Context, id string) error {
 
 // Exists checks if a user role exists by ID
 func (r *UserRoleRepository) Exists(ctx context.Context, id string) (bool, error) {
-	_, err := r.GetByID(ctx, id)
+	userRole := &models.UserRole{}
+	_, err := r.GetByID(ctx, id, userRole)
 	if err != nil {
 		return false, nil // User role doesn't exist
 	}

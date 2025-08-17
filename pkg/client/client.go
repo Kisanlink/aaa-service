@@ -145,11 +145,21 @@ func (c *Client) makeAuthenticatedRequest(ctx context.Context, method, path stri
 	if err != nil {
 		return fmt.Errorf("request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			// Log error but don't fail the request
+		}
+	}()
 
 	if resp.StatusCode >= 400 {
 		var errorResp map[string]interface{}
-		json.NewDecoder(resp.Body).Decode(&errorResp)
+		if err := json.NewDecoder(resp.Body).Decode(&errorResp); err != nil {
+			// If we can't decode the error response, create a generic one
+			errorResp = map[string]interface{}{
+				"error":  "request failed",
+				"status": resp.StatusCode,
+			}
+		}
 		return fmt.Errorf("request failed with status %d: %v", resp.StatusCode, errorResp)
 	}
 

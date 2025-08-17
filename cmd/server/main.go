@@ -16,14 +16,17 @@ import (
 	"github.com/Kisanlink/aaa-service/internal/entities/models"
 	"github.com/Kisanlink/aaa-service/internal/grpc_server"
 	"github.com/Kisanlink/aaa-service/internal/handlers/admin"
+	"github.com/Kisanlink/aaa-service/internal/handlers/permissions"
 	"github.com/Kisanlink/aaa-service/internal/handlers/roles"
 	"github.com/Kisanlink/aaa-service/internal/interfaces"
 	"github.com/Kisanlink/aaa-service/internal/middleware"
 	addressRepo "github.com/Kisanlink/aaa-service/internal/repositories/addresses"
+	contactRepo "github.com/Kisanlink/aaa-service/internal/repositories/contacts"
 	roleRepo "github.com/Kisanlink/aaa-service/internal/repositories/roles"
 	userRepo "github.com/Kisanlink/aaa-service/internal/repositories/users"
 	"github.com/Kisanlink/aaa-service/internal/routes"
 	"github.com/Kisanlink/aaa-service/internal/services"
+	contactService "github.com/Kisanlink/aaa-service/internal/services/contacts"
 	"github.com/Kisanlink/aaa-service/internal/services/user"
 	"github.com/Kisanlink/aaa-service/migrations"
 	"github.com/Kisanlink/aaa-service/utils"
@@ -93,7 +96,13 @@ func runSeedScripts(ctx context.Context, dbManager *db.DatabaseManager, logger *
 		// Check if role already exists by name
 		filters := []base.FilterCondition{{Field: "name", Operator: base.OpEqual, Value: roleData.name}}
 		var existing []models.Role
-		if err := primaryManager.List(ctx, filters, &existing); err != nil {
+		filter := &base.Filter{
+			Group: base.FilterGroup{
+				Conditions: filters,
+				Logic:      base.LogicAnd,
+			},
+		}
+		if err := primaryManager.List(ctx, filter, &existing); err != nil {
 			logger.Error("Failed to check existing role", zap.String("role", roleData.name), zap.Error(err))
 			continue
 		}
@@ -277,14 +286,19 @@ func initializeServer(
 	roleService := services.NewRoleService(roleRepository, userRoleRepository, cacheService, loggerAdapter, validator)
 	userService := user.NewService(userRepository, roleRepository, userRoleRepository, cacheService, logger, validator)
 
+	// Initialize contact service
+	contactRepository := contactRepo.NewContactRepository(primaryDBManager)
+	contactServiceInstance := contactService.NewContactService(contactRepository, cacheService, loggerAdapter, validator)
+
 	// Initialize handlers
 	roleHandler := roles.NewRoleHandler(roleService, validator, responder, logger)
+	permissionHandler := permissions.NewPermissionHandler(primaryDBManager, validator, responder, logger)
 
 	// Initialize HTTP server
 	httpServer, err := initializeHTTPServer(
 		httpPort, jwtSecret,
 		primaryDBManager, userService, roleService, userRepository, userRoleRepository,
-		cacheService, validator, responder, maintenanceService, logger, roleHandler,
+		cacheService, validator, responder, maintenanceService, logger, roleHandler, permissionHandler, contactServiceInstance,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize HTTP server: %w", err)
@@ -328,6 +342,8 @@ func initializeHTTPServer(
 	maintenanceService interfaces.MaintenanceService,
 	logger *zap.Logger,
 	roleHandler *roles.RoleHandler,
+	permissionHandler *permissions.PermissionHandler,
+	contactServiceInstance *contactService.ContactService,
 ) (*HTTPServer, error) {
 	// Build auth, authorization, and audit stack
 	auditService, authzService, authService, authMiddleware, auditMiddleware, err := setupAuthStack(
@@ -352,7 +368,7 @@ func initializeHTTPServer(
 	setupHTTPMiddleware(router, authMiddleware, auditMiddleware, maintenanceService, responder, logger)
 
 	// Setup routes and docs
-	setupRoutesAndDocs(router, authService, authzService, auditService, authMiddleware, maintenanceService, validator, responder, logger, roleHandler)
+	setupRoutesAndDocs(router, authService, authzService, auditService, authMiddleware, maintenanceService, validator, responder, logger, roleHandler, permissionHandler, userService, roleService, contactServiceInstance)
 
 	return &HTTPServer{
 		router: router,
@@ -466,12 +482,16 @@ func setupRoutesAndDocs(
 	responder interfaces.Responder,
 	logger *zap.Logger,
 	roleHandler *roles.RoleHandler,
+	permissionHandler *permissions.PermissionHandler,
+	userService interfaces.UserService,
+	roleService interfaces.RoleService,
+	contactServiceInstance *contactService.ContactService,
 ) {
 	// Create AdminHandler for v2 admin routes
 	adminHandler := admin.NewAdminHandler(maintenanceService, validator, responder, logger)
 
 	// Setup routes using the routes package with AdminHandler
-	routes.SetupAAAWithAdmin(router, authService, authzService, auditService, authMiddleware, adminHandler, roleHandler, logger)
+	routes.SetupAAAWithAdmin(router, authService, authzService, auditService, authMiddleware, adminHandler, roleHandler, permissionHandler, userService, roleService, contactServiceInstance, validator, responder, logger)
 
 	// Serve OpenAPI and Scalar-powered docs UI (gated by env)
 	if getEnv("AAA_ENABLE_DOCS", "true") == "true" {
@@ -611,8 +631,12 @@ func (m *InMemoryDBManager) GetByID(ctx context.Context, id interface{}, model i
 }
 func (m *InMemoryDBManager) Update(ctx context.Context, model interface{}) error { return nil }
 func (m *InMemoryDBManager) Delete(ctx context.Context, id interface{}) error    { return nil }
-func (m *InMemoryDBManager) List(ctx context.Context, filters []base.FilterCondition, model interface{}) error {
+func (m *InMemoryDBManager) List(ctx context.Context, filter *base.Filter, model interface{}) error {
 	return nil
+}
+
+func (m *InMemoryDBManager) Count(ctx context.Context, filter *base.Filter, model interface{}) (int64, error) {
+	return 0, nil
 }
 
 func (m *InMemoryDBManager) AutoMigrateModels(ctx context.Context, models ...interface{}) error {

@@ -30,7 +30,8 @@ func (r *UserProfileRepository) Create(ctx context.Context, profile *models.User
 
 // GetByID retrieves a user profile by ID using the base repository
 func (r *UserProfileRepository) GetByID(ctx context.Context, id string) (*models.UserProfile, error) {
-	return r.BaseFilterableRepository.GetByID(ctx, id)
+	profile := &models.UserProfile{}
+	return r.BaseFilterableRepository.GetByID(ctx, id, profile)
 }
 
 // GetByUserID retrieves a user profile by user ID using database-level filtering
@@ -58,7 +59,8 @@ func (r *UserProfileRepository) Update(ctx context.Context, profile *models.User
 
 // Delete deletes a user profile by ID using the base repository
 func (r *UserProfileRepository) Delete(ctx context.Context, id string) error {
-	return r.BaseFilterableRepository.Delete(ctx, id)
+	profile := &models.UserProfile{}
+	return r.BaseFilterableRepository.Delete(ctx, id, profile)
 }
 
 // List retrieves a list of user profiles with pagination using database-level filtering

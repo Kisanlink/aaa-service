@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/Kisanlink/aaa-service/internal/entities/models"
 	"github.com/Kisanlink/aaa-service/pkg/errors"
 	"go.uber.org/zap"
 )
@@ -17,7 +18,8 @@ func (s *Service) DeleteUser(ctx context.Context, userID string) error {
 	}
 
 	// Get existing user
-	_, err := s.userRepo.GetByID(ctx, userID)
+	user := &models.User{}
+	_, err := s.userRepo.GetByID(ctx, userID, user)
 	if err != nil {
 		s.logger.Error("Failed to get existing user for deletion",
 			zap.String("user_id", userID),
@@ -76,7 +78,8 @@ func (s *Service) HardDeleteUser(ctx context.Context, userID string) error {
 	}
 
 	// Get existing user
-	_, err := s.userRepo.GetByID(ctx, userID)
+	user := &models.User{}
+	_, err := s.userRepo.GetByID(ctx, userID, user)
 	if err != nil {
 		s.logger.Error("Failed to get existing user for hard deletion",
 			zap.String("user_id", userID),
@@ -108,7 +111,7 @@ func (s *Service) HardDeleteUser(ctx context.Context, userID string) error {
 	}
 
 	// Perform hard delete
-	err = s.userRepo.Delete(ctx, userID)
+	err = s.userRepo.Delete(ctx, userID, user)
 	if err != nil {
 		s.logger.Error("Failed to hard delete user",
 			zap.String("user_id", userID),
@@ -127,5 +130,7 @@ func (s *Service) HardDeleteUser(ctx context.Context, userID string) error {
 // clearUserRoleCache removes user role data from cache
 func (s *Service) clearUserRoleCache(userID string) {
 	cacheKey := fmt.Sprintf("user_roles:%s", userID)
-	s.cacheService.Delete(cacheKey)
+	if err := s.cacheService.Delete(cacheKey); err != nil {
+		s.logger.Warn("Failed to delete user role cache", zap.Error(err))
+	}
 }

@@ -189,8 +189,7 @@ func (s *PostgresAuthorizationService) roleHasPermission(ctx context.Context, ro
 	}
 
 	// Check for specific action
-	query = query.Joins("JOIN actions ON resource_permissions.action_id = actions.id").
-		Where("actions.name = ? AND actions.is_active = ?", action, true)
+	query = query.Where("resource_permissions.action = ?", action)
 
 	if err := query.Count(&count).Error; err != nil {
 		return false, err
@@ -274,7 +273,7 @@ func (s *PostgresAuthorizationService) GrantPermission(ctx context.Context, role
 	}
 
 	// Create ResourcePermission
-	resourcePerm := models.NewResourcePermission(resourceID, resourceType, roleID, action.ID)
+	resourcePerm := models.NewResourcePermission(resourceID, resourceType, roleID, actionName)
 	if err := s.db.WithContext(ctx).Create(resourcePerm).Error; err != nil {
 		return fmt.Errorf("failed to grant permission: %w", err)
 	}
@@ -296,8 +295,8 @@ func (s *PostgresAuthorizationService) RevokePermission(ctx context.Context, rol
 	// Soft delete the ResourcePermission
 	err := s.db.WithContext(ctx).
 		Model(&models.ResourcePermission{}).
-		Where("role_id = ? AND resource_type = ? AND resource_id = ? AND action_id = ?",
-			roleID, resourceType, resourceID, action.ID).
+		Where("role_id = ? AND resource_type = ? AND resource_id = ? AND action = ?",
+			roleID, resourceType, resourceID, actionName).
 		Update("is_active", false).Error
 
 	if err != nil {

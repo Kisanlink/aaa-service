@@ -70,28 +70,20 @@ func (s *RoleService) CreateRole(ctx context.Context, role *models.Role) error {
 	return nil
 }
 
-// GetRoleByID retrieves a role by ID with caching
+// GetRoleByID retrieves a role by ID
 func (s *RoleService) GetRoleByID(ctx context.Context, roleID string) (*models.Role, error) {
-	// Try to get from cache first
-	cacheKey := fmt.Sprintf("role:%s", roleID)
-	if cached, exists := s.cacheService.Get(cacheKey); exists {
-		if role, ok := cached.(*models.Role); ok {
-			s.logger.Debug("Role retrieved from cache", zap.String("roleID", roleID))
-			return role, nil
-		}
+	s.logger.Info("Getting role by ID", zap.String("roleID", roleID))
+
+	if roleID == "" {
+		return nil, errors.NewValidationError("role ID cannot be empty")
 	}
 
-	// Get from database
-	role, err := s.roleRepo.GetByID(ctx, roleID)
+	role := &models.Role{}
+	_, err := s.roleRepo.GetByID(ctx, roleID, role)
 	if err != nil {
 		s.logger.Error("Failed to get role by ID", zap.String("roleID", roleID), zap.Error(err))
 		return nil, fmt.Errorf("failed to get role: %w", err)
 	}
-
-	// Cache the result
-	if err := s.cacheService.Set(cacheKey, role, 300); err != nil {
-		s.logger.Error("Failed to cache role", zap.Error(err))
-	} // Cache for 5 minutes
 
 	return role, nil
 }
@@ -119,7 +111,8 @@ func (s *RoleService) UpdateRole(ctx context.Context, role *models.Role) error {
 	}
 
 	// Check if role exists
-	_, err := s.roleRepo.GetByID(ctx, role.ID)
+	existingRole := &models.Role{}
+	_, err := s.roleRepo.GetByID(ctx, role.ID, existingRole)
 	if err != nil {
 		s.logger.Error("Failed to find role for update", zap.String("roleID", role.ID), zap.Error(err))
 		return errors.NewNotFoundError("role not found")
@@ -144,8 +137,16 @@ func (s *RoleService) UpdateRole(ctx context.Context, role *models.Role) error {
 func (s *RoleService) DeleteRole(ctx context.Context, roleID string) error {
 	s.logger.Info("Deleting role", zap.String("roleID", roleID))
 
+	// Get role to delete
+	role := &models.Role{}
+	_, err := s.roleRepo.GetByID(ctx, roleID, role)
+	if err != nil {
+		s.logger.Error("Failed to get role for deletion", zap.String("roleID", roleID), zap.Error(err))
+		return fmt.Errorf("failed to get role: %w", err)
+	}
+
 	// Delete role
-	if err := s.roleRepo.Delete(ctx, roleID); err != nil {
+	if err := s.roleRepo.Delete(ctx, roleID, role); err != nil {
 		s.logger.Error("Failed to delete role", zap.String("roleID", roleID), zap.Error(err))
 		return fmt.Errorf("failed to delete role: %w", err)
 	}
@@ -192,40 +193,42 @@ func (s *RoleService) SearchRoles(ctx context.Context, query string, limit, offs
 }
 
 // AssignRoleToUser assigns a role to a user
-func (s *RoleService) AssignRoleToUser(ctx context.Context, userID, roleID string) error {
+func (s *RoleService) AssignRoleToUser(ctx context.Context,
+	userID, roleID string) error {
 	s.logger.Info("Assigning role to user", zap.String("userID", userID), zap.String("roleID", roleID))
 
+	if userID == "" || roleID == "" {
+		return errors.NewValidationError("user ID and role ID are required")
+	}
+
 	// Check if role exists
-	role, err := s.roleRepo.GetByID(ctx, roleID)
+	role := &models.Role{}
+	_, err := s.roleRepo.GetByID(ctx, roleID, role)
 	if err != nil {
-		s.logger.Error("Role not found", zap.String("roleID", roleID), zap.Error(err))
+		s.logger.Error("Failed to get role for assignment", zap.String("roleID", roleID), zap.Error(err))
 		return errors.NewNotFoundError("role not found")
 	}
 
 	// Check if assignment already exists
-	exists, err := s.userRoleRepo.ExistsByUserAndRole(ctx, userID, roleID)
-	if err != nil {
-		s.logger.Error("Failed to check existing role assignment", zap.Error(err))
-		return fmt.Errorf("failed to check role assignment: %w", err)
-	}
-
-	if exists {
+	existingAssignment, err := s.userRoleRepo.GetByUserAndRole(ctx, userID, roleID)
+	if err == nil && existingAssignment != nil {
 		s.logger.Warn("Role already assigned to user", zap.String("userID", userID), zap.String("roleID", roleID))
-		return fmt.Errorf("role already assigned to user")
+		return errors.NewConflictError("role already assigned to user")
 	}
 
-	// Create user-role assignment
+	// Create user role assignment
 	userRole := models.NewUserRole(userID, roleID)
-
 	if err := s.userRoleRepo.Create(ctx, userRole); err != nil {
-		s.logger.Error("Failed to assign role to user", zap.Error(err))
-		return fmt.Errorf("failed to assign role: %w", err)
+		s.logger.Error("Failed to create user role assignment", zap.Error(err))
+		return errors.NewInternalError(err)
 	}
 
-	s.logger.Info("Role assigned to user successfully",
-		zap.String("userID", userID),
-		zap.String("roleID", roleID),
-		zap.String("roleName", role.Name))
+	// Clear cache
+	if err := s.cacheService.Delete(fmt.Sprintf("user_roles:%s", userID)); err != nil {
+		s.logger.Error("Failed to clear user roles cache", zap.Error(err))
+	}
+
+	s.logger.Info("Role assigned to user successfully", zap.String("userID", userID), zap.String("roleID", roleID))
 	return nil
 }
 
@@ -233,17 +236,27 @@ func (s *RoleService) AssignRoleToUser(ctx context.Context, userID, roleID strin
 func (s *RoleService) RemoveRoleFromUser(ctx context.Context, userID, roleID string) error {
 	s.logger.Info("Removing role from user", zap.String("userID", userID), zap.String("roleID", roleID))
 
-	// Check if assignment exists
-	userRole, err := s.userRoleRepo.GetByUserAndRole(ctx, userID, roleID)
-	if err != nil {
-		s.logger.Error("Role assignment not found", zap.Error(err))
-		return errors.NewNotFoundError("role assignment not found")
+	if userID == "" || roleID == "" {
+		return errors.NewValidationError("user ID and role ID are required")
 	}
 
-	// Delete the assignment
-	if err := s.userRoleRepo.Delete(ctx, userRole.ID); err != nil {
-		s.logger.Error("Failed to remove role from user", zap.Error(err))
-		return fmt.Errorf("failed to remove role: %w", err)
+	// Get user role assignment
+	userRole := &models.UserRole{}
+	_, err := s.userRoleRepo.GetByUserAndRole(ctx, userID, roleID)
+	if err != nil {
+		s.logger.Error("Failed to get user role assignment for removal", zap.Error(err))
+		return errors.NewNotFoundError("role not assigned to user")
+	}
+
+	// Remove the assignment
+	if err := s.userRoleRepo.Delete(ctx, userRole.ID, userRole); err != nil {
+		s.logger.Error("Failed to remove user role assignment", zap.Error(err))
+		return errors.NewInternalError(err)
+	}
+
+	// Clear cache
+	if err := s.cacheService.Delete(fmt.Sprintf("user_roles:%s", userID)); err != nil {
+		s.logger.Error("Failed to clear user roles cache", zap.Error(err))
 	}
 
 	s.logger.Info("Role removed from user successfully", zap.String("userID", userID), zap.String("roleID", roleID))

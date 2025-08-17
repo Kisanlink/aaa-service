@@ -1,8 +1,7 @@
 package models
 
 import (
-	"time"
-
+	"github.com/Kisanlink/kisanlink-db/pkg/base"
 	"github.com/Kisanlink/kisanlink-db/pkg/core/hash"
 	"gorm.io/gorm"
 )
@@ -10,14 +9,7 @@ import (
 // ResourcePermission represents a permission granted to a role for a specific resource and action
 // This replaces PostgreSQL RBAC's permission checking
 type ResourcePermission struct {
-	// Base fields - made optional for migration compatibility
-	ID        string     `json:"id" gorm:"primaryKey;type:varchar(255)"`
-	CreatedAt *time.Time `json:"created_at" gorm:"autoCreateTime"`
-	UpdatedAt *time.Time `json:"updated_at" gorm:"autoUpdateTime"`
-	CreatedBy string     `json:"created_by" gorm:"type:varchar(255)"`
-	UpdatedBy string     `json:"updated_by" gorm:"type:varchar(255)"`
-	DeletedAt *time.Time `json:"deleted_at" gorm:"index"`
-	DeletedBy string     `json:"deleted_by" gorm:"type:varchar(255)"`
+	*base.BaseModel
 
 	RoleID       string `json:"role_id" gorm:"type:varchar(255);not null;index"`
 	ResourceType string `json:"resource_type" gorm:"size:100;not null;index"` // e.g., "aaa/user", "aaa/role"
@@ -32,9 +24,8 @@ type ResourcePermission struct {
 
 // NewResourcePermission creates a new ResourcePermission instance
 func NewResourcePermission(resourceID, resourceType, roleID, actionID string) *ResourcePermission {
-	id, _ := hash.GenerateRandomID("rsp", hash.Small)
 	return &ResourcePermission{
-		ID:           id,
+		BaseModel:    base.NewBaseModel("RSP", hash.Small),
 		ResourceID:   resourceID,
 		ResourceType: resourceType,
 		RoleID:       roleID,
@@ -45,38 +36,27 @@ func NewResourcePermission(resourceID, resourceType, roleID, actionID string) *R
 
 // BeforeCreate is called before creating a new resource permission
 func (rp *ResourcePermission) BeforeCreate() error {
-	if rp.ID == "" {
-		id, _ := hash.GenerateRandomID("rsp", hash.Small)
-		rp.ID = id
-	}
-	now := time.Now()
-	if rp.CreatedAt == nil {
-		rp.CreatedAt = &now
-	}
-	if rp.UpdatedAt == nil {
-		rp.UpdatedAt = &now
+	if rp.BaseModel == nil {
+		rp.BaseModel = base.NewBaseModel("RSP", hash.Small)
 	}
 	return nil
 }
 
 // BeforeUpdate is called before updating a resource permission
 func (rp *ResourcePermission) BeforeUpdate() error {
-	now := time.Now()
-	rp.UpdatedAt = &now
+	// Base model handles this automatically
 	return nil
 }
 
 // BeforeDelete is called before deleting a resource permission
 func (rp *ResourcePermission) BeforeDelete() error {
-	now := time.Now()
-	rp.DeletedAt = &now
+	// Base model handles this automatically
 	return nil
 }
 
 // BeforeSoftDelete is called before soft deleting a resource permission
 func (rp *ResourcePermission) BeforeSoftDelete() error {
-	now := time.Now()
-	rp.DeletedAt = &now
+	// Base model handles this automatically
 	return nil
 }
 
@@ -102,7 +82,3 @@ func (rp *ResourcePermission) GetTableIdentifier() string {
 func (rp *ResourcePermission) GetTableSize() hash.TableSize {
 	return hash.Small
 }
-
-// Explicit method implementations to satisfy linter
-func (rp *ResourcePermission) GetID() string   { return rp.ID }
-func (rp *ResourcePermission) SetID(id string) { rp.ID = id }

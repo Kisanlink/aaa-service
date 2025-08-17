@@ -3,16 +3,21 @@ package permissions
 import (
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/Kisanlink/aaa-service/internal/entities/models"
+	"github.com/Kisanlink/aaa-service/internal/entities/responses"
 	"github.com/Kisanlink/aaa-service/internal/interfaces"
 	"github.com/Kisanlink/aaa-service/pkg/errors"
+	"github.com/Kisanlink/kisanlink-db/pkg/base"
+	"github.com/Kisanlink/kisanlink-db/pkg/db"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
 
 // PermissionHandler handles permission-related HTTP requests
 type PermissionHandler struct {
+	dbManager db.DBManager
 	validator interfaces.Validator
 	responder interfaces.Responder
 	logger    *zap.Logger
@@ -20,11 +25,13 @@ type PermissionHandler struct {
 
 // NewPermissionHandler creates a new PermissionHandler instance
 func NewPermissionHandler(
+	dbManager db.DBManager,
 	validator interfaces.Validator,
 	responder interfaces.Responder,
 	logger *zap.Logger,
 ) *PermissionHandler {
 	return &PermissionHandler{
+		dbManager: dbManager,
 		validator: validator,
 		responder: responder,
 		logger:    logger,
@@ -236,9 +243,9 @@ func (h *PermissionHandler) DeletePermissionV2(c *gin.Context) {
 // @Produce json
 // @Param limit query int false "Number of permissions to return" default(10)
 // @Param offset query int false "Number of permissions to skip" default(0)
-// @Success 200 {object} map[string]interface{}
-// @Failure 400 {object} map[string]interface{}
-// @Failure 500 {object} map[string]interface{}
+// @Success 200 {object} responses.PermissionsListResponse
+// @Failure 400 {object} responses.ErrorResponseSwagger
+// @Failure 500 {object} responses.ErrorResponseSwagger
 // @Router /api/v2/permissions [get]
 func (h *PermissionHandler) ListPermissionsV2(c *gin.Context) {
 	h.logger.Info("Listing permissions")
@@ -259,18 +266,98 @@ func (h *PermissionHandler) ListPermissionsV2(c *gin.Context) {
 		return
 	}
 
-	// TODO: List permissions through service when PermissionService is available
-	// For now, return mock response
-	result := map[string]interface{}{
-		"permissions": []interface{}{},
-		"total":       0,
-		"limit":       limit,
-		"offset":      offset,
-		"message":     "Permissions listed successfully",
+	// Query permissions from database using the unified Filter interface
+	var permissions []models.Permission
+
+	// Create filter for active permissions with pagination and sorting
+	filter := &base.Filter{
+		Group: base.FilterGroup{
+			Conditions: []base.FilterCondition{
+				{Field: "is_active", Operator: base.OpEqual, Value: true},
+			},
+			Logic: base.LogicAnd,
+		},
+		Sort: []base.SortField{
+			{Field: "id", Direction: "asc"},
+			{Field: "created_at", Direction: "desc"},
+		},
+		Limit:  limit,
+		Offset: offset,
 	}
 
-	h.logger.Info("Permissions listed successfully")
-	h.responder.SendSuccess(c, http.StatusOK, result)
+	// Get total count first - we need to specify the table for GORM
+	total, err := h.dbManager.Count(c.Request.Context(), filter, &permissions)
+	if err != nil {
+		h.logger.Error("Failed to count permissions", zap.Error(err))
+		h.responder.SendError(c, http.StatusInternalServerError, "Failed to retrieve permissions", err)
+		return
+	}
+
+	// Get paginated permissions - we need to specify the table for GORM
+	if err := h.dbManager.List(c.Request.Context(), filter, &permissions); err != nil {
+		h.logger.Error("Failed to retrieve permissions", zap.Error(err))
+		h.responder.SendError(c, http.StatusInternalServerError, "Failed to retrieve permissions", err)
+		return
+	}
+
+	// Convert to response format
+	permissionInfos := make([]responses.PermissionInfo, 0, len(permissions))
+	for _, perm := range permissions {
+		permissionInfo := responses.PermissionInfo{
+			ID:          perm.ID,
+			Name:        perm.Name,
+			Description: perm.Description,
+			Resource:    "",
+			Action:      "",
+			CreatedAt:   perm.CreatedAt,
+			UpdatedAt:   perm.UpdatedAt,
+		}
+
+		// Set resource and action names if available
+		if perm.Resource != nil {
+			permissionInfo.Resource = perm.Resource.Name
+		}
+		if perm.Action != nil {
+			permissionInfo.Action = perm.Action.Name
+		}
+
+		permissionInfos = append(permissionInfos, permissionInfo)
+	}
+
+	// Calculate pagination info
+	page := (offset / limit) + 1
+	totalPages := int((total + int64(limit) - 1) / int64(limit))
+
+	// Create response data
+	data := responses.PermissionsListData{
+		Permissions: permissionInfos,
+	}
+
+	// Create pagination info
+	pagination := responses.PaginationInfo{
+		Page:       page,
+		PerPage:    limit,
+		Total:      int(total),
+		TotalPages: totalPages,
+	}
+
+	// Create full response
+	response := responses.PermissionsListResponse{
+		Success:    true,
+		Message:    "Permissions retrieved successfully",
+		Data:       data,
+		Pagination: pagination,
+		Timestamp:  time.Now(),
+		RequestID:  c.GetString("request_id"),
+	}
+
+	h.logger.Info("Permissions listed successfully",
+		zap.Int("count", len(permissionInfos)),
+		zap.Int64("total", total),
+		zap.Int("limit", limit),
+		zap.Int("offset", offset))
+
+	c.JSON(http.StatusOK, response)
 }
 
 // EvaluatePermissionV2 handles POST /v2/permissions/evaluate

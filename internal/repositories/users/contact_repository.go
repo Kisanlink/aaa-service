@@ -30,7 +30,8 @@ func (r *ContactRepository) Create(ctx context.Context, contact *models.Contact)
 
 // GetByID retrieves a contact by ID using the base repository
 func (r *ContactRepository) GetByID(ctx context.Context, id string) (*models.Contact, error) {
-	return r.BaseFilterableRepository.GetByID(ctx, id)
+	contact := &models.Contact{}
+	return r.BaseFilterableRepository.GetByID(ctx, id, contact)
 }
 
 // GetByUserID retrieves contacts by user ID using database-level filtering
@@ -67,7 +68,8 @@ func (r *ContactRepository) Update(ctx context.Context, contact *models.Contact)
 
 // Delete deletes a contact by ID using the base repository
 func (r *ContactRepository) Delete(ctx context.Context, id string) error {
-	return r.BaseFilterableRepository.Delete(ctx, id)
+	contact := &models.Contact{}
+	return r.BaseFilterableRepository.Delete(ctx, id, contact)
 }
 
 // List retrieves a list of contacts with pagination using database-level filtering

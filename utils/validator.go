@@ -8,17 +8,17 @@ import (
 
 	"github.com/Kisanlink/aaa-service/internal/interfaces"
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
+	v10 "github.com/go-playground/validator/v10"
 )
 
 // Validator implements the Validator interface
 type Validator struct {
-	validate *validator.Validate
+	validate *v10.Validate
 }
 
 // NewValidator creates a new Validator instance
 func NewValidator() interfaces.Validator {
-	validate := validator.New()
+	validate := v10.New()
 
 	// Register custom validators
 	if err := validate.RegisterValidation("phone", validatePhoneNumber); err != nil {
@@ -26,6 +26,9 @@ func NewValidator() interfaces.Validator {
 	}
 	if err := validate.RegisterValidation("aadhaar", validateAadhaarNumber); err != nil {
 		panic(fmt.Sprintf("failed to register aadhaar validation: %v", err))
+	}
+	if err := validate.RegisterValidation("username", validateUsername); err != nil {
+		panic(fmt.Sprintf("failed to register username validation: %v", err))
 	}
 
 	return &Validator{
@@ -220,7 +223,7 @@ func (v *Validator) ParseListFilters(c *gin.Context) (interface{}, error) {
 
 // Custom validation functions
 
-func validatePhoneNumber(fl validator.FieldLevel) bool {
+func validatePhoneNumber(fl v10.FieldLevel) bool {
 	phone := fl.Field().String()
 	if phone == "" {
 		return false
@@ -242,7 +245,7 @@ func validatePhoneNumber(fl validator.FieldLevel) bool {
 	return false
 }
 
-func validateAadhaarNumber(fl validator.FieldLevel) bool {
+func validateAadhaarNumber(fl v10.FieldLevel) bool {
 	aadhaar := fl.Field().String()
 	if aadhaar == "" {
 		return false
@@ -267,4 +270,20 @@ func validateAadhaarNumber(fl validator.FieldLevel) bool {
 	}
 
 	return !allSame
+}
+
+func validateUsername(fl v10.FieldLevel) bool {
+	username := fl.Field().String()
+	if username == "" {
+		return true // Allow empty values (omitempty should handle this)
+	}
+
+	// Username must be between 3 and 100 characters
+	if len(username) < 3 || len(username) > 100 {
+		return false
+	}
+
+	// Username can only contain letters, numbers, and underscores
+	usernameRegex := regexp.MustCompile(`^[a-zA-Z0-9_]+$`)
+	return usernameRegex.MatchString(username)
 }

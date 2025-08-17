@@ -36,6 +36,13 @@ func NewCacheService(redisAddr, redisPassword string, redisDB int, logger interf
 // Get retrieves a value from cache
 func (c *CacheService) Get(key string) (interface{}, bool) {
 	ctx := context.Background()
+
+	// Check if Redis is connected
+	if err := c.client.Ping(ctx).Err(); err != nil {
+		c.logger.Warn("Redis not available, skipping cache operation", zap.String("key", key), zap.Error(err))
+		return nil, false // Return cache miss when Redis is not available
+	}
+
 	val, err := c.client.Get(ctx, key).Result()
 	if err != nil {
 		if err == redis.Nil {
@@ -60,6 +67,12 @@ func (c *CacheService) Get(key string) (interface{}, bool) {
 func (c *CacheService) Set(key string, value interface{}, ttl int) error {
 	ctx := context.Background()
 
+	// Check if Redis is connected
+	if err := c.client.Ping(ctx).Err(); err != nil {
+		c.logger.Warn("Redis not available, skipping cache operation", zap.String("key", key), zap.Error(err))
+		return nil // Don't fail the operation, just skip caching
+	}
+
 	// Marshal value to JSON
 	data, err := json.Marshal(value)
 	if err != nil {
@@ -79,6 +92,13 @@ func (c *CacheService) Set(key string, value interface{}, ttl int) error {
 // Delete removes a key from cache
 func (c *CacheService) Delete(key string) error {
 	ctx := context.Background()
+
+	// Check if Redis is connected
+	if err := c.client.Ping(ctx).Err(); err != nil {
+		c.logger.Warn("Redis not available, skipping cache operation", zap.String("key", key), zap.Error(err))
+		return nil // Don't fail the operation, just skip caching
+	}
+
 	if err := c.client.Del(ctx, key).Err(); err != nil {
 		c.logger.Error("Failed to delete from cache", zap.String("key", key), zap.Error(err))
 		return fmt.Errorf("failed to delete from cache: %w", err)
@@ -89,6 +109,13 @@ func (c *CacheService) Delete(key string) error {
 // Exists checks if a key exists in cache
 func (c *CacheService) Exists(key string) bool {
 	ctx := context.Background()
+
+	// Check if Redis is connected
+	if err := c.client.Ping(ctx).Err(); err != nil {
+		c.logger.Warn("Redis not available, skipping cache operation", zap.String("key", key), zap.Error(err))
+		return false // Return false when Redis is not available
+	}
+
 	count, err := c.client.Exists(ctx, key).Result()
 	if err != nil {
 		c.logger.Error("Failed to check existence in cache", zap.String("key", key), zap.Error(err))

@@ -32,8 +32,8 @@ func (r *UserRepository) Create(ctx context.Context, user *models.User) error {
 }
 
 // GetByID retrieves a user by ID using the base repository
-func (r *UserRepository) GetByID(ctx context.Context, id string) (*models.User, error) {
-	return r.BaseFilterableRepository.GetByID(ctx, id)
+func (r *UserRepository) GetByID(ctx context.Context, id string, user *models.User) (*models.User, error) {
+	return r.BaseFilterableRepository.GetByID(ctx, id, user)
 }
 
 // Update updates an existing user using the base repository
@@ -42,8 +42,8 @@ func (r *UserRepository) Update(ctx context.Context, user *models.User) error {
 }
 
 // Delete deletes a user by ID using the base repository
-func (r *UserRepository) Delete(ctx context.Context, id string) error {
-	return r.BaseFilterableRepository.Delete(ctx, id)
+func (r *UserRepository) Delete(ctx context.Context, id string, user *models.User) error {
+	return r.BaseFilterableRepository.Delete(ctx, id, user)
 }
 
 // List retrieves users with pagination using database-level filtering
@@ -136,7 +136,13 @@ func (r *UserRepository) GetByUsername(ctx context.Context, username string) (*m
 	}
 
 	var users []models.User
-	if err := r.dbManager.List(ctx, filters, &users); err != nil {
+	filter := &base.Filter{
+		Group: base.FilterGroup{
+			Conditions: filters,
+			Logic:      base.LogicAnd,
+		},
+	}
+	if err := r.dbManager.List(ctx, filter, &users); err != nil {
 		return nil, fmt.Errorf("failed to get user by username: %w", err)
 	}
 
@@ -155,7 +161,13 @@ func (r *UserRepository) GetByPhoneNumber(ctx context.Context, phoneNumber strin
 	}
 
 	var users []models.User
-	if err := r.dbManager.List(ctx, filters, &users); err != nil {
+	filter := &base.Filter{
+		Group: base.FilterGroup{
+			Conditions: filters,
+			Logic:      base.LogicAnd,
+		},
+	}
+	if err := r.dbManager.List(ctx, filter, &users); err != nil {
 		return nil, fmt.Errorf("failed to get user by phone number: %w", err)
 	}
 

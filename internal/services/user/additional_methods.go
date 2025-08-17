@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/Kisanlink/aaa-service/internal/entities/models"
 	userResponses "github.com/Kisanlink/aaa-service/internal/entities/responses/users"
 	"github.com/Kisanlink/aaa-service/pkg/errors"
 	"go.uber.org/zap"
@@ -18,6 +19,7 @@ func (s *Service) GetUserByUsername(ctx context.Context, username string) (*user
 		return nil, errors.NewValidationError("username cannot be empty")
 	}
 
+	// Get user by username using repository
 	user, err := s.userRepo.GetByUsername(ctx, username)
 	if err != nil {
 		s.logger.Error("Failed to get user by username", zap.String("username", username), zap.Error(err))
@@ -39,7 +41,7 @@ func (s *Service) GetUserByUsername(ctx context.Context, username string) (*user
 
 // GetUserByMobileNumber retrieves a user by mobile number
 func (s *Service) GetUserByMobileNumber(ctx context.Context, mobileNumber uint64) (*userResponses.UserResponse, error) {
-	s.logger.Info("Getting user by mobile number", zap.Uint64("mobile", mobileNumber))
+	s.logger.Info("Getting user by mobile", zap.Uint64("mobile", mobileNumber))
 
 	phoneStr := fmt.Sprintf("%d", mobileNumber)
 	user, err := s.userRepo.GetByPhoneNumber(ctx, phoneStr, "+91") // default country code
@@ -65,7 +67,7 @@ func (s *Service) GetUserByMobileNumber(ctx context.Context, mobileNumber uint64
 func (s *Service) GetUserByAadhaarNumber(ctx context.Context, aadhaarNumber string) (*userResponses.UserResponse, error) {
 	s.logger.Info("Getting user by Aadhaar", zap.String("aadhaar", aadhaarNumber))
 	// This would require aadhaar field in user model - stub for now
-	return nil, errors.NewNotFoundError("feature not implemented")
+	return nil, errors.NewValidationError("Aadhaar lookup not implemented")
 }
 
 // ListActiveUsers retrieves only active users
@@ -128,23 +130,33 @@ func (s *Service) ValidateUser(ctx context.Context, userID string) error {
 		return errors.NewValidationError("user ID cannot be empty")
 	}
 
-	user, err := s.userRepo.GetByID(ctx, userID)
+	// Get user to validate
+	user := &models.User{}
+	_, err := s.userRepo.GetByID(ctx, userID, user)
 	if err != nil {
+		s.logger.Error("Failed to get user for validation", zap.String("user_id", userID), zap.Error(err))
 		return errors.NewNotFoundError("user not found")
 	}
 
+	// Mark user as validated
 	user.IsValidated = true
-	err = s.userRepo.Update(ctx, user)
-	if err != nil {
-		s.logger.Error("Failed to validate user", zap.String("user_id", userID), zap.Error(err))
+	status := "active"
+	user.Status = &status
+
+	// Update user
+	if err := s.userRepo.Update(ctx, user); err != nil {
+		s.logger.Error("Failed to update user validation status", zap.String("user_id", userID), zap.Error(err))
 		return errors.NewInternalError(err)
 	}
 
+	// Clear cache
 	s.clearUserCache(userID)
+
+	s.logger.Info("User validated successfully", zap.String("user_id", userID))
 	return nil
 }
 
-// DeductTokens deducts tokens from user account
+// DeductTokens deducts tokens from user's balance
 func (s *Service) DeductTokens(ctx context.Context, userID string, amount int) error {
 	s.logger.Info("Deducting tokens", zap.String("user_id", userID), zap.Int("amount", amount))
 
@@ -155,27 +167,33 @@ func (s *Service) DeductTokens(ctx context.Context, userID string, amount int) e
 		return errors.NewValidationError("amount must be positive")
 	}
 
-	user, err := s.userRepo.GetByID(ctx, userID)
+	// Get user to deduct tokens from
+	user := &models.User{}
+	_, err := s.userRepo.GetByID(ctx, userID, user)
 	if err != nil {
+		s.logger.Error("Failed to get user for token deduction", zap.String("user_id", userID), zap.Error(err))
 		return errors.NewNotFoundError("user not found")
 	}
 
-	if user.Tokens < amount {
-		return errors.NewBadRequestError("insufficient tokens")
+	// Check if user has enough tokens
+	if !user.DeductTokens(amount) {
+		return errors.NewValidationError("insufficient token balance")
 	}
 
-	user.Tokens -= amount
-	err = s.userRepo.Update(ctx, user)
-	if err != nil {
-		s.logger.Error("Failed to deduct tokens", zap.String("user_id", userID), zap.Error(err))
+	// Update user
+	if err := s.userRepo.Update(ctx, user); err != nil {
+		s.logger.Error("Failed to update user tokens", zap.String("user_id", userID), zap.Error(err))
 		return errors.NewInternalError(err)
 	}
 
+	// Clear cache
 	s.clearUserCache(userID)
+
+	s.logger.Info("Tokens deducted successfully", zap.String("user_id", userID), zap.Int("amount", amount))
 	return nil
 }
 
-// AddTokens adds tokens to user account
+// AddTokens adds tokens to user's balance
 func (s *Service) AddTokens(ctx context.Context, userID string, amount int) error {
 	s.logger.Info("Adding tokens", zap.String("user_id", userID), zap.Int("amount", amount))
 
@@ -186,19 +204,27 @@ func (s *Service) AddTokens(ctx context.Context, userID string, amount int) erro
 		return errors.NewValidationError("amount must be positive")
 	}
 
-	user, err := s.userRepo.GetByID(ctx, userID)
+	// Get user to add tokens to
+	user := &models.User{}
+	_, err := s.userRepo.GetByID(ctx, userID, user)
 	if err != nil {
+		s.logger.Error("Failed to get user for token addition", zap.String("user_id", userID), zap.Error(err))
 		return errors.NewNotFoundError("user not found")
 	}
 
-	user.Tokens += amount
-	err = s.userRepo.Update(ctx, user)
-	if err != nil {
-		s.logger.Error("Failed to add tokens", zap.String("user_id", userID), zap.Error(err))
+	// Add tokens
+	user.AddTokens(amount)
+
+	// Update user
+	if err := s.userRepo.Update(ctx, user); err != nil {
+		s.logger.Error("Failed to update user tokens", zap.String("user_id", userID), zap.Error(err))
 		return errors.NewInternalError(err)
 	}
 
+	// Clear cache
 	s.clearUserCache(userID)
+
+	s.logger.Info("Tokens added successfully", zap.String("user_id", userID), zap.Int("amount", amount))
 	return nil
 }
 
@@ -286,7 +312,8 @@ func (s *Service) SetMPin(ctx context.Context, userID string, mPin string) error
 		return errors.NewValidationError("user ID and mPin are required")
 	}
 
-	user, err := s.userRepo.GetByID(ctx, userID)
+	user := &models.User{}
+	_, err := s.userRepo.GetByID(ctx, userID, user)
 	if err != nil {
 		return errors.NewNotFoundError("user not found")
 	}
@@ -316,7 +343,8 @@ func (s *Service) VerifyMPin(ctx context.Context, userID string, mPin string) er
 		return errors.NewValidationError("user ID and mPin are required")
 	}
 
-	user, err := s.userRepo.GetByID(ctx, userID)
+	user := &models.User{}
+	_, err := s.userRepo.GetByID(ctx, userID, user)
 	if err != nil {
 		return errors.NewNotFoundError("user not found")
 	}
@@ -363,5 +391,7 @@ func (s *Service) GetUserByPhoneNumber(ctx context.Context, phoneNumber, country
 // clearUserCache removes user data from cache
 func (s *Service) clearUserCache(userID string) {
 	cacheKey := fmt.Sprintf("user:%s", userID)
-	s.cacheService.Delete(cacheKey)
+	if err := s.cacheService.Delete(cacheKey); err != nil {
+		s.logger.Warn("Failed to delete user cache", zap.Error(err))
+	}
 }

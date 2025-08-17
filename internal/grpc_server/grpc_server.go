@@ -177,7 +177,9 @@ func (s *GRPCServer) Stop() {
 		s.server.GracefulStop()
 	}
 	if s.listener != nil {
-		s.listener.Close()
+		if err := s.listener.Close(); err != nil {
+			s.logger.Warn("Failed to close listener", zap.Error(err))
+		}
 	}
 }
 

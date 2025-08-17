@@ -437,7 +437,13 @@ func seedCoreResourcesDM(ctx context.Context, primary db.DBManager, logger *zap.
 	for _, r := range core {
 		var existing []models.Resource
 		filters := []base.FilterCondition{{Field: "name", Operator: base.OpEqual, Value: r.Name}}
-		if err := primary.List(ctx, filters, &existing); err != nil {
+		filter := &base.Filter{
+			Group: base.FilterGroup{
+				Conditions: filters,
+				Logic:      base.LogicAnd,
+			},
+		}
+		if err := primary.List(ctx, filter, &existing); err != nil {
 			return err
 		}
 		if len(existing) > 0 {
@@ -456,7 +462,13 @@ func seedCoreResourcesDM(ctx context.Context, primary db.DBManager, logger *zap.
 
 func buildActionIndexDM(ctx context.Context, primary db.DBManager) (*actionIndex, error) {
 	var actions []models.Action
-	if err := primary.List(ctx, []base.FilterCondition{}, &actions); err != nil {
+	emptyFilter := &base.Filter{
+		Group: base.FilterGroup{
+			Conditions: []base.FilterCondition{},
+			Logic:      base.LogicAnd,
+		},
+	}
+	if err := primary.List(ctx, emptyFilter, &actions); err != nil {
 		return nil, err
 	}
 	idx := &actionIndex{byName: make(map[string]models.Action, len(actions))}
@@ -470,7 +482,13 @@ func seedAdminAndSuperAdminPermissionsDM(ctx context.Context, primary db.DBManag
 	// Ensure roles exist
 	findRoleByName := func(name string) (*models.Role, error) {
 		var roles []models.Role
-		if err := primary.List(ctx, []base.FilterCondition{{Field: "name", Operator: base.OpEqual, Value: name}}, &roles); err != nil {
+		roleFilter := &base.Filter{
+			Group: base.FilterGroup{
+				Conditions: []base.FilterCondition{{Field: "name", Operator: base.OpEqual, Value: name}},
+				Logic:      base.LogicAnd,
+			},
+		}
+		if err := primary.List(ctx, roleFilter, &roles); err != nil {
 			return nil, err
 		}
 		if len(roles) > 0 {
@@ -494,7 +512,13 @@ func seedAdminAndSuperAdminPermissionsDM(ctx context.Context, primary db.DBManag
 
 	// Load resources
 	var resources []models.Resource
-	if err := primary.List(ctx, []base.FilterCondition{}, &resources); err != nil {
+	emptyFilter := &base.Filter{
+		Group: base.FilterGroup{
+			Conditions: []base.FilterCondition{},
+			Logic:      base.LogicAnd,
+		},
+	}
+	if err := primary.List(ctx, emptyFilter, &resources); err != nil {
 		return err
 	}
 	resByName := map[string]*models.Resource{}
@@ -534,7 +558,13 @@ func seedAdminAndSuperAdminPermissionsDM(ctx context.Context, primary db.DBManag
 		}
 		permName := fmt.Sprintf("%s:%s", resourceName, actionName)
 		var perms []models.Permission
-		if err := primary.List(ctx, []base.FilterCondition{{Field: "name", Operator: base.OpEqual, Value: permName}}, &perms); err != nil {
+		permFilter := &base.Filter{
+			Group: base.FilterGroup{
+				Conditions: []base.FilterCondition{{Field: "name", Operator: base.OpEqual, Value: permName}},
+				Logic:      base.LogicAnd,
+			},
+		}
+		if err := primary.List(ctx, permFilter, &perms); err != nil {
 			return err
 		}
 		var perm models.Permission
@@ -557,7 +587,13 @@ func seedAdminAndSuperAdminPermissionsDM(ctx context.Context, primary db.DBManag
 			{Field: "permission_id", Operator: base.OpEqual, Value: perm.ID},
 			{Field: "is_active", Operator: base.OpEqual, Value: true},
 		}
-		if err := primary.List(ctx, filters, &existingRPs); err != nil {
+		filter := &base.Filter{
+			Group: base.FilterGroup{
+				Conditions: filters,
+				Logic:      base.LogicAnd,
+			},
+		}
+		if err := primary.List(ctx, filter, &existingRPs); err != nil {
 			return err
 		}
 
@@ -576,7 +612,13 @@ func seedAdminAndSuperAdminPermissionsDM(ctx context.Context, primary db.DBManag
 	createUserIfMissing := func(username, phone, country, plainPassword string) (*models.User, error) {
 		var users []models.User
 		filters := []base.FilterCondition{{Field: "phone_number", Operator: base.OpEqual, Value: phone}, {Field: "country_code", Operator: base.OpEqual, Value: country}}
-		if err := primary.List(ctx, filters, &users); err == nil && len(users) > 0 {
+		filter := &base.Filter{
+			Group: base.FilterGroup{
+				Conditions: filters,
+				Logic:      base.LogicAnd,
+			},
+		}
+		if err := primary.List(ctx, filter, &users); err == nil && len(users) > 0 {
 			return &users[0], nil
 		}
 		hashed, err := bcrypt.GenerateFromPassword([]byte(plainPassword), bcrypt.DefaultCost)
@@ -605,7 +647,13 @@ func seedAdminAndSuperAdminPermissionsDM(ctx context.Context, primary db.DBManag
 	attachRole := func(userID, roleID string) error {
 		var urs []models.UserRole
 		filters := []base.FilterCondition{{Field: "user_id", Operator: base.OpEqual, Value: userID}, {Field: "role_id", Operator: base.OpEqual, Value: roleID}, {Field: "is_active", Operator: base.OpEqual, Value: true}}
-		if err := primary.List(ctx, filters, &urs); err != nil {
+		filter := &base.Filter{
+			Group: base.FilterGroup{
+				Conditions: filters,
+				Logic:      base.LogicAnd,
+			},
+		}
+		if err := primary.List(ctx, filter, &urs); err != nil {
 			return err
 		}
 		if len(urs) > 0 {

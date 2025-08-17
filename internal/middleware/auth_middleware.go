@@ -352,7 +352,9 @@ func (m *AuthMiddleware) RequirePermission(resource, action string) gin.HandlerF
 				zap.String("action", action),
 				zap.Error(err))
 			// Treat backend failure as server error
-			c.Error(err)
+			if err := c.Error(err); err != nil {
+				m.logger.Warn("Failed to add error to context", zap.Error(err))
+			}
 			c.Abort()
 			return
 		}

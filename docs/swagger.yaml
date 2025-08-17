@@ -131,6 +131,297 @@ definitions:
     required:
     - id
     type: object
+  contacts.CreateContactRequest:
+    description: Request structure for creating a new contact
+    properties:
+      user_id:
+        description: ID of the user this contact belongs to
+        example: "USER123456789"
+        minLength: 1
+        type: string
+      type:
+        description: Type of contact (e.g., email, phone, address)
+        example: "email"
+        maxLength: 50
+        minLength: 1
+        type: string
+      value:
+        description: The actual contact value (e.g., email address, phone number)
+        example: "john.doe@example.com"
+        maxLength: 255
+        minLength: 1
+        type: string
+      description:
+        description: Optional description of the contact
+        example: "Primary email address"
+        maxLength: 1000
+        type: string
+      is_primary:
+        description: Whether this is the primary contact for the user
+        example: true
+        type: boolean
+      is_active:
+        description: Whether this contact is currently active
+        example: true
+        type: boolean
+      country_code:
+        description: Country code for phone numbers
+        example: "+1"
+        maxLength: 10
+        type: string
+    required:
+    - user_id
+    - type
+    - value
+    type: object
+  contacts.UpdateContactRequest:
+    description: Request structure for updating an existing contact
+    properties:
+      type:
+        description: Type of contact
+        example: "email"
+        maxLength: 50
+        type: string
+      value:
+        description: The actual contact value
+        example: "john.doe@example.com"
+        maxLength: 255
+        type: string
+      description:
+        description: Optional description of the contact
+        example: "Primary email address"
+        maxLength: 1000
+        type: string
+      is_primary:
+        description: Whether this is the primary contact
+        example: true
+        type: boolean
+      is_active:
+        description: Whether this contact is currently active
+        example: true
+        type: boolean
+      country_code:
+        description: Country code for phone numbers
+        example: "+1"
+        maxLength: 10
+        type: string
+    type: object
+  contacts.ContactResponse:
+    description: Contact information in API responses
+    properties:
+      id:
+        description: Unique identifier for the contact
+        example: "CONTACT123456789"
+        type: string
+      user_id:
+        description: ID of the user this contact belongs to
+        example: "USER123456789"
+        type: string
+      type:
+        description: Type of contact
+        example: "email"
+        type: string
+      value:
+        description: The actual contact value
+        example: "john.doe@example.com"
+        type: string
+      description:
+        description: Optional description of the contact
+        example: "Primary email address"
+        type: string
+      is_primary:
+        description: Whether this is the primary contact
+        example: true
+        type: boolean
+      is_active:
+        description: Whether this contact is currently active
+        example: true
+        type: boolean
+      is_verified:
+        description: Whether this contact has been verified
+        example: true
+        type: boolean
+      verified_at:
+        description: Timestamp when the contact was verified
+        example: "2024-01-01T00:00:00Z"
+        type: string
+      verified_by:
+        description: ID of the user who verified this contact
+        example: "USER123456789"
+        type: string
+      country_code:
+        description: Country code for phone numbers
+        example: "+1"
+        type: string
+      created_at:
+        description: Timestamp when the contact was created
+        example: "2024-01-01T00:00:00Z"
+        type: string
+      updated_at:
+        description: Timestamp when the contact was last updated
+        example: "2024-01-01T00:00:00Z"
+        type: string
+      deleted_at:
+        description: Timestamp when the contact was deleted (if applicable)
+        example: "2024-01-01T00:00:00Z"
+        type: string
+    type: object
+  contacts.ContactListResponse:
+    description: Paginated list of contacts
+    properties:
+      contacts:
+        description: Array of contact objects
+        items:
+          $ref: '#/definitions/contacts.ContactResponse'
+        type: array
+      total:
+        description: Total number of contacts
+        example: 100
+        type: integer
+      limit:
+        description: Number of contacts per page
+        example: 20
+        type: integer
+      offset:
+        description: Number of contacts skipped
+        example: 0
+        type: integer
+    type: object
+  groups.CreateGroupRequest:
+    description: Request structure for creating a new group
+    properties:
+      name:
+        description: Name of the group
+        example: "Administrators"
+        maxLength: 100
+        minLength: 1
+        type: string
+      description:
+        description: Optional description of the group
+        example: "System administrators group"
+        maxLength: 1000
+        type: string
+      organization_id:
+        description: ID of the organization this group belongs to
+        example: "ORG123456789"
+        type: string
+      parent_id:
+        description: ID of the parent group (if this is a subgroup)
+        example: "GROUP123456789"
+        type: string
+    required:
+    - name
+    - organization_id
+    type: object
+  groups.UpdateGroupRequest:
+    description: Request structure for updating an existing group
+    properties:
+      name:
+        description: Name of the group
+        example: "Administrators"
+        maxLength: 100
+        type: string
+      description:
+        description: Optional description of the group
+        example: "System administrators group"
+        maxLength: 1000
+        type: string
+      parent_id:
+        description: ID of the parent group
+        example: "GROUP123456789"
+        type: string
+    type: object
+  organizations.CreateOrganizationRequest:
+    description: Request structure for creating a new organization
+    properties:
+      name:
+        description: Name of the organization
+        example: "Acme Corp"
+        maxLength: 255
+        minLength: 1
+        type: string
+      description:
+        description: Optional description of the organization
+        example: "A leading technology company"
+        maxLength: 1000
+        type: string
+      parent_id:
+        description: ID of the parent organization (if this is a subsidiary)
+        example: "ORG123456789"
+        type: string
+      status:
+        description: Status of the organization
+        example: "active"
+        type: string
+    required:
+    - name
+    type: object
+  organizations.UpdateOrganizationRequest:
+    description: Request structure for updating an existing organization
+    properties:
+      name:
+        description: Name of the organization
+        example: "Acme Corp"
+        maxLength: 255
+        type: string
+      description:
+        description: Optional description of the organization
+        example: "A leading technology company"
+        maxLength: 1000
+        type: string
+      parent_id:
+        description: ID of the parent organization
+        example: "ORG123456789"
+        type: string
+      status:
+        description: Status of the organization
+        example: "active"
+        type: string
+    type: object
+  principals.CreatePrincipalRequest:
+    description: Request structure for creating a new principal
+    properties:
+      name:
+        description: Name of the principal
+        example: "John Doe"
+        maxLength: 255
+        minLength: 1
+        type: string
+      type:
+        description: Type of principal (user, service, etc.)
+        example: "user"
+        type: string
+      description:
+        description: Optional description of the principal
+        example: "System user account"
+        maxLength: 1000
+        type: string
+      metadata:
+        description: Additional metadata for the principal
+        additionalProperties: true
+        type: object
+    required:
+    - name
+    - type
+    type: object
+  principals.UpdatePrincipalRequest:
+    description: Request structure for updating an existing principal
+    properties:
+      name:
+        description: Name of the principal
+        example: "John Doe"
+        maxLength: 255
+        type: string
+      description:
+        description: Optional description of the principal
+        example: "System user account"
+        maxLength: 1000
+        type: string
+      metadata:
+        description: Additional metadata for the principal
+        additionalProperties: true
+        type: object
+    type: object
   permissions.CreatePermissionRequest:
     properties:
       actions:
@@ -2371,6 +2662,230 @@ paths:
       summary: Search users
       tags:
       - users
+  /api/v2/contacts:
+    post:
+      consumes:
+      - application/json
+      description: Create a new contact for a user
+      parameters:
+      - description: Contact creation data
+        in: body
+        name: contact
+        required: true
+        schema:
+          $ref: '#/definitions/contacts.CreateContactRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/contacts.ContactResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
+      security:
+      - BearerAuth: []
+      summary: Create a new contact
+      tags:
+      - contacts
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all contacts with pagination
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/contacts.ContactListResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
+      security:
+      - BearerAuth: []
+      summary: List all contacts
+      tags:
+      - contacts
+  /api/v2/contacts/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get detailed information about a specific contact
+      parameters:
+      - description: Contact ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/contacts.ContactResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
+      security:
+      - BearerAuth: []
+      summary: Get contact by ID
+      tags:
+      - contacts
+    put:
+      consumes:
+      - application/json
+      description: Update contact information
+      parameters:
+      - description: Contact ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Contact update data
+        in: body
+        name: contact
+        required: true
+        schema:
+          $ref: '#/definitions/contacts.UpdateContactRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/contacts.ContactResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
+      security:
+      - BearerAuth: []
+      summary: Update contact
+      tags:
+      - contacts
+    delete:
+      consumes:
+      - application/json
+      description: Delete a contact by its unique identifier
+      parameters:
+      - description: Contact ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
+      security:
+      - BearerAuth: []
+      summary: Delete contact
+      tags:
+      - contacts
+  /api/v2/contacts/user/{userID}:
+    get:
+      consumes:
+      - application/json
+      description: Get all contacts for a specific user
+      parameters:
+      - description: User ID
+        in: path
+        name: userID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/contacts.ContactListResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
+      security:
+      - BearerAuth: []
+      summary: Get contacts by user
+      tags:
+      - contacts
   /health:
     get:
       consumes:

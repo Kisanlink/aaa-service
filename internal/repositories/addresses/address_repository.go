@@ -32,12 +32,11 @@ func (r *AddressRepository) Create(ctx context.Context, address *models.Address)
 }
 
 // GetByID retrieves an address by ID
-func (r *AddressRepository) GetByID(ctx context.Context, id string) (*models.Address, error) {
-	var address models.Address
-	if err := r.dbManager.GetByID(ctx, id, &address); err != nil {
+func (r *AddressRepository) GetByID(ctx context.Context, id string, address *models.Address) (*models.Address, error) {
+	if err := r.dbManager.GetByID(ctx, id, address); err != nil {
 		return nil, fmt.Errorf("failed to get address by ID: %w", err)
 	}
-	return &address, nil
+	return address, nil
 }
 
 // Update updates an existing address
@@ -49,8 +48,8 @@ func (r *AddressRepository) Update(ctx context.Context, address *models.Address)
 }
 
 // Delete deletes an address by ID
-func (r *AddressRepository) Delete(ctx context.Context, id string) error {
-	return r.dbManager.Delete(ctx, id)
+func (r *AddressRepository) Delete(ctx context.Context, id string, address *models.Address) error {
+	return r.BaseFilterableRepository.Delete(ctx, id, address)
 }
 
 // List retrieves a list of addresses with pagination using database-level filtering

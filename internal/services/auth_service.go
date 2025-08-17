@@ -407,7 +407,8 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshToken string, mPi
 	}
 
 	// Get user
-	user, err := s.userRepository.GetByID(ctx, claims.UserID)
+	user := &models.User{}
+	_, err = s.userRepository.GetByID(ctx, claims.UserID, user)
 	if err != nil {
 		return nil, errors.NewUnauthorizedError("user not found")
 	}
@@ -697,7 +698,8 @@ func (s *AuthService) validateEmailCode(ctx context.Context, userID, code string
 // SetMPin sets or updates the user's mPin
 func (s *AuthService) SetMPin(ctx context.Context, userID string, mPin string, currentPassword string) error {
 	// Get user
-	user, err := s.userRepository.GetByID(ctx, userID)
+	user := &models.User{}
+	_, err := s.userRepository.GetByID(ctx, userID, user)
 	if err != nil {
 		return errors.NewNotFoundError("user not found")
 	}
@@ -733,7 +735,8 @@ func (s *AuthService) SetMPin(ctx context.Context, userID string, mPin string, c
 // VerifyMPin verifies a user's mPin
 func (s *AuthService) VerifyMPin(ctx context.Context, userID string, mPin string) error {
 	// Get user
-	user, err := s.userRepository.GetByID(ctx, userID)
+	user := &models.User{}
+	_, err := s.userRepository.GetByID(ctx, userID, user)
 	if err != nil {
 		return errors.NewNotFoundError("user not found")
 	}
