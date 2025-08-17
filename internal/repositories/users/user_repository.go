@@ -49,8 +49,22 @@ func (r *UserRepository) Delete(ctx context.Context, id string, user *models.Use
 // List retrieves users with pagination using database-level filtering
 func (r *UserRepository) List(ctx context.Context, limit, offset int) ([]*models.User, error) {
 	// Use base filterable repository for optimized database-level filtering
+	// The database manager expects Page/PageSize for pagination, not Limit/Offset
 	filter := base.NewFilterBuilder().
-		Limit(limit, offset).
+		Page(1, limit). // Use Page instead of Limit for database manager compatibility
+		Build()
+
+	fmt.Printf("DEBUG: Created filter: %+v\n", filter)
+	result, err := r.BaseFilterableRepository.Find(ctx, filter)
+	fmt.Printf("DEBUG: Find result: %d users, error: %v\n", len(result), err)
+	return result, err
+}
+
+// ListAll retrieves all users directly from database (simple implementation)
+func (r *UserRepository) ListAll(ctx context.Context) ([]*models.User, error) {
+	// Use a large page size to get all users
+	filter := base.NewFilterBuilder().
+		Page(1, 1000). // Get up to 1000 users
 		Build()
 
 	return r.BaseFilterableRepository.Find(ctx, filter)
@@ -135,14 +149,17 @@ func (r *UserRepository) GetByUsername(ctx context.Context, username string) (*m
 		{Field: "username", Operator: base.OpEqual, Value: username},
 	}
 
-	var users []models.User
+	var users []*models.User
 	filter := &base.Filter{
 		Group: base.FilterGroup{
 			Conditions: filters,
 			Logic:      base.LogicAnd,
 		},
 	}
-	if err := r.dbManager.List(ctx, filter, &users); err != nil {
+
+	// Use the base repository's Find method instead of trying to call List on GORM DB
+	users, err := r.BaseFilterableRepository.Find(ctx, filter)
+	if err != nil {
 		return nil, fmt.Errorf("failed to get user by username: %w", err)
 	}
 
@@ -150,7 +167,7 @@ func (r *UserRepository) GetByUsername(ctx context.Context, username string) (*m
 		return nil, fmt.Errorf("user not found with username: %s", username)
 	}
 
-	return &users[0], nil
+	return users[0], nil
 }
 
 // GetByPhoneNumber retrieves a user by phone number using kisanlink-db filters
@@ -160,14 +177,17 @@ func (r *UserRepository) GetByPhoneNumber(ctx context.Context, phoneNumber strin
 		{Field: "country_code", Operator: base.OpEqual, Value: countryCode},
 	}
 
-	var users []models.User
+	var users []*models.User
 	filter := &base.Filter{
 		Group: base.FilterGroup{
 			Conditions: filters,
 			Logic:      base.LogicAnd,
 		},
 	}
-	if err := r.dbManager.List(ctx, filter, &users); err != nil {
+
+	// Use the base repository's Find method instead of trying to call List on GORM DB
+	users, err := r.BaseFilterableRepository.Find(ctx, filter)
+	if err != nil {
 		return nil, fmt.Errorf("failed to get user by phone number: %w", err)
 	}
 
@@ -175,7 +195,7 @@ func (r *UserRepository) GetByPhoneNumber(ctx context.Context, phoneNumber strin
 		return nil, fmt.Errorf("user not found with phone number: %s%s", countryCode, phoneNumber)
 	}
 
-	return &users[0], nil
+	return users[0], nil
 }
 
 // GetByMobileNumber retrieves a user by mobile number using database-level filtering
@@ -441,13 +461,41 @@ func (r *UserRepository) Search(ctx context.Context, keyword string, limit, offs
 		return r.List(ctx, limit, offset)
 	}
 
-	// Build filter for case-insensitive contains and pagination
+	// Use database-level search with BaseFilterableRepository
+	// Create a filter that searches in username and phone_number fields (only fields that exist)
+	// Since we need OR logic, we'll create multiple conditions and use the Or method
 	filter := base.NewFilterBuilder().
-		Where("username", base.OpContains, keyword).
-		Limit(limit, offset).
+		Or(
+			base.FilterCondition{Field: "username", Operator: base.OpContains, Value: keyword},
+			base.FilterCondition{Field: "phone_number", Operator: base.OpContains, Value: keyword},
+		).
+		Page(1, limit). // Use page-based pagination for database manager compatibility
 		Build()
 
-	return r.BaseFilterableRepository.Find(ctx, filter)
+	fmt.Printf("DEBUG: Search filter created: %+v\n", filter)
+	fmt.Printf("DEBUG: Searching for keyword: '%s' with limit: %d, offset: %d\n", keyword, limit, offset)
+
+	// Use the base repository's Find method for database-level search
+	users, err := r.BaseFilterableRepository.Find(ctx, filter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to search users: %w", err)
+	}
+
+	fmt.Printf("DEBUG: Search found %d users\n", len(users))
+
+	// Apply offset manually since the database manager uses page-based pagination
+	// and we need offset-based pagination for the API
+	if offset > 0 && len(users) > offset {
+		users = users[offset:]
+	}
+
+	// Apply limit to the result
+	if len(users) > limit {
+		users = users[:limit]
+	}
+
+	fmt.Printf("DEBUG: After pagination: %d users\n", len(users))
+	return users, nil
 }
 
 // GetUsersWithRelationships efficiently loads multiple users with their relationships using goroutines

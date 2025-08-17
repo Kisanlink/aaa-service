@@ -150,6 +150,7 @@ type UserRepository interface {
 	ListActive(ctx context.Context, limit, offset int) ([]*models.User, error)
 	CountActive(ctx context.Context) (int64, error)
 	Search(ctx context.Context, keyword string, limit, offset int) ([]*models.User, error)
+	ListAll(ctx context.Context) ([]*models.User, error)
 	GetWithRoles(ctx context.Context, userID string) (*models.User, error)
 	GetWithAddress(ctx context.Context, userID string) (*models.User, error)
 	GetWithProfile(ctx context.Context, userID string) (*models.User, error)

@@ -2,6 +2,7 @@ package actions
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/Kisanlink/aaa-service/internal/entities/models"
 	"github.com/Kisanlink/kisanlink-db/pkg/base"
@@ -104,25 +105,25 @@ func (r *ActionRepository) GetByUpdatedBy(ctx context.Context, updatedBy string,
 // GetByName retrieves an action by name
 func (r *ActionRepository) GetByName(ctx context.Context, name string) (*models.Action, error) {
 	filter := base.NewFilterBuilder().
-		Where("name", "=", name).
+		Where("name", base.OpEqual, name).
 		Build()
 
 	actions, err := r.BaseFilterableRepository.Find(ctx, filter)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get action by name: %w", err)
 	}
 
 	if len(actions) == 0 {
-		return nil, nil
+		return nil, fmt.Errorf("action not found with name: %s", name)
 	}
 
 	return actions[0], nil
 }
 
-// GetByService retrieves actions by service name
-func (r *ActionRepository) GetByService(ctx context.Context, serviceName string, limit, offset int) ([]*models.Action, error) {
+// GetByServiceName retrieves actions by service name
+func (r *ActionRepository) GetByServiceName(ctx context.Context, serviceName string, limit, offset int) ([]*models.Action, error) {
 	filter := base.NewFilterBuilder().
-		Where("service_name", "=", serviceName).
+		Where("service_name", base.OpEqual, serviceName).
 		Limit(limit, offset).
 		Build()
 

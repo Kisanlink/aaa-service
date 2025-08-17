@@ -2,6 +2,7 @@ package user_profiles
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/Kisanlink/aaa-service/internal/entities/models"
 	"github.com/Kisanlink/kisanlink-db/pkg/base"
@@ -101,37 +102,37 @@ func (r *UserProfileRepository) GetByUpdatedBy(ctx context.Context, updatedBy st
 	return r.BaseFilterableRepository.GetByUpdatedBy(ctx, updatedBy, limit, offset)
 }
 
-// GetByUserID retrieves user profile by user ID
+// GetByUserID retrieves a user profile by user ID
 func (r *UserProfileRepository) GetByUserID(ctx context.Context, userID string) (*models.UserProfile, error) {
 	filter := base.NewFilterBuilder().
-		Where("user_id", "=", userID).
+		Where("user_id", base.OpEqual, userID).
 		Build()
 
 	profiles, err := r.BaseFilterableRepository.Find(ctx, filter)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get user profile by user ID: %w", err)
 	}
 
 	if len(profiles) == 0 {
-		return nil, nil
+		return nil, fmt.Errorf("user profile not found with user ID: %s", userID)
 	}
 
 	return profiles[0], nil
 }
 
-// GetByAadhaarNumber retrieves user profile by Aadhaar number
+// GetByAadhaarNumber retrieves a user profile by Aadhaar number
 func (r *UserProfileRepository) GetByAadhaarNumber(ctx context.Context, aadhaarNumber string) (*models.UserProfile, error) {
 	filter := base.NewFilterBuilder().
-		Where("aadhaar_number", "=", aadhaarNumber).
+		Where("aadhaar_number", base.OpEqual, aadhaarNumber).
 		Build()
 
 	profiles, err := r.BaseFilterableRepository.Find(ctx, filter)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get user profile by Aadhaar number: %w", err)
 	}
 
 	if len(profiles) == 0 {
-		return nil, nil
+		return nil, fmt.Errorf("user profile not found with Aadhaar number: %s", aadhaarNumber)
 	}
 
 	return profiles[0], nil

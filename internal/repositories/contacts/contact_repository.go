@@ -104,7 +104,7 @@ func (r *ContactRepository) GetByUpdatedBy(ctx context.Context, updatedBy string
 // GetByUserID retrieves contacts by user ID
 func (r *ContactRepository) GetByUserID(ctx context.Context, userID string, limit, offset int) ([]*models.Contact, error) {
 	filter := base.NewFilterBuilder().
-		Where("user_id", "=", userID).
+		Where("user_id", base.OpEqual, userID).
 		Limit(limit, offset).
 		Build()
 
@@ -114,7 +114,7 @@ func (r *ContactRepository) GetByUserID(ctx context.Context, userID string, limi
 // GetByType retrieves contacts by type
 func (r *ContactRepository) GetByType(ctx context.Context, contactType string, limit, offset int) ([]*models.Contact, error) {
 	filter := base.NewFilterBuilder().
-		Where("type", "=", contactType).
+		Where("type", base.OpEqual, contactType).
 		Limit(limit, offset).
 		Build()
 

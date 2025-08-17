@@ -156,3 +156,7 @@ public
 # Temporary folders
 tmp/
 temp/
+
+# Binary files
+server
+bin/

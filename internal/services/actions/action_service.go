@@ -295,7 +295,7 @@ func (s *ActionService) GetActionsByService(ctx context.Context, serviceName str
 	s.logger.Info("Getting actions by service", zap.String("service", serviceName))
 
 	// Get actions from repository
-	actions, err := s.actionRepo.GetByService(ctx, serviceName, limit, offset)
+	actions, err := s.actionRepo.GetByServiceName(ctx, serviceName, limit, offset)
 	if err != nil {
 		s.logger.Error("Failed to get actions by service", zap.Error(err))
 		return nil, errors.NewInternalError(err)

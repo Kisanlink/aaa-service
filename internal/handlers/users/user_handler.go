@@ -290,7 +290,8 @@ func (h *UserHandler) ListUsers(c *gin.Context) {
 // @Tags users
 // @Accept json
 // @Produce json
-// @Param q query string true "Search query"
+// @Param q query string false "Search query"
+// @Param query query string false "Search query (alternative parameter)"
 // @Param limit query int false "Number of users to return" default(10)
 // @Param offset query int false "Number of users to skip" default(0)
 // @Success 200 {object} map[string]interface{}
@@ -298,11 +299,16 @@ func (h *UserHandler) ListUsers(c *gin.Context) {
 // @Failure 500 {object} map[string]interface{}
 // @Router /api/v2/users/search [get]
 func (h *UserHandler) SearchUsers(c *gin.Context) {
+	// Accept both 'q' and 'query' parameters for flexibility
 	query := c.Query("q")
+	if query == "" {
+		query = c.Query("query")
+	}
+
 	h.logger.Info("Searching users", zap.String("query", query))
 
 	if query == "" {
-		h.responder.SendValidationError(c, []string{"search query is required"})
+		h.responder.SendValidationError(c, []string{"search query is required (use 'q' or 'query' parameter)"})
 		return
 	}
 

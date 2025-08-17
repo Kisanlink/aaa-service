@@ -2,6 +2,7 @@ package organizations
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/Kisanlink/aaa-service/internal/entities/models"
 	"github.com/Kisanlink/kisanlink-db/pkg/base"
@@ -104,25 +105,25 @@ func (r *OrganizationRepository) GetByUpdatedBy(ctx context.Context, updatedBy s
 // GetByName retrieves an organization by name
 func (r *OrganizationRepository) GetByName(ctx context.Context, name string) (*models.Organization, error) {
 	filter := base.NewFilterBuilder().
-		Where("name", "=", name).
+		Where("name", base.OpEqual, name).
 		Build()
 
-	orgs, err := r.BaseFilterableRepository.Find(ctx, filter)
+	organizations, err := r.BaseFilterableRepository.Find(ctx, filter)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get organization by name: %w", err)
 	}
 
-	if len(orgs) == 0 {
-		return nil, nil
+	if len(organizations) == 0 {
+		return nil, fmt.Errorf("organization not found with name: %s", name)
 	}
 
-	return orgs[0], nil
+	return organizations[0], nil
 }
 
 // GetByType retrieves organizations by type
 func (r *OrganizationRepository) GetByType(ctx context.Context, orgType string, limit, offset int) ([]*models.Organization, error) {
 	filter := base.NewFilterBuilder().
-		Where("type", "=", orgType).
+		Where("type", base.OpEqual, orgType).
 		Limit(limit, offset).
 		Build()
 

@@ -65,8 +65,8 @@ func (s *Service) ListUsers(ctx context.Context, limit, offset int) (interface{}
 		limit = 20
 	}
 
-	// Get from repository
-	users, err := s.userRepo.List(ctx, limit, offset)
+	// Get all users first (simple approach to fix empty results)
+	allUsers, err := s.userRepo.ListAll(ctx)
 	if err != nil {
 		s.logger.Error("Failed to list users",
 			zap.Int("limit", limit),
@@ -75,9 +75,27 @@ func (s *Service) ListUsers(ctx context.Context, limit, offset int) (interface{}
 		return nil, errors.NewInternalError(err)
 	}
 
+	// Apply pagination manually
+	totalUsers := len(allUsers)
+	start := offset
+	end := start + limit
+
+	if start >= totalUsers {
+		// No users in this range
+		s.logger.Info("Users retrieved successfully", zap.Int("count", 0))
+		return []*userResponses.UserResponse{}, nil
+	}
+
+	if end > totalUsers {
+		end = totalUsers
+	}
+
+	// Get the paginated subset
+	paginatedUsers := allUsers[start:end]
+
 	// Convert to response format
-	responses := make([]*userResponses.UserResponse, len(users))
-	for i, user := range users {
+	responses := make([]*userResponses.UserResponse, len(paginatedUsers))
+	for i, user := range paginatedUsers {
 		responses[i] = &userResponses.UserResponse{
 			ID:          user.ID,
 			Username:    user.Username,

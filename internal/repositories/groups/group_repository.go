@@ -105,23 +105,23 @@ func (r *GroupRepository) GetByUpdatedBy(ctx context.Context, updatedBy string, 
 // GetByName retrieves a group by name
 func (r *GroupRepository) GetByName(ctx context.Context, name string) (*models.Group, error) {
 	filter := base.NewFilterBuilder().
-		Where("name", "=", name).
+		Where("name", base.OpEqual, name).
 		Build()
 
 	groups, err := r.BaseFilterableRepository.Find(ctx, filter)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get group by name: %w", err)
 	}
 
 	if len(groups) == 0 {
-		return nil, nil
+		return nil, fmt.Errorf("group not found with name: %s", name)
 	}
 
 	return groups[0], nil
 }
 
-// GetByService retrieves groups by service name
-func (r *GroupRepository) GetByService(ctx context.Context, serviceName string, limit, offset int) ([]*models.Group, error) {
+// GetByServiceName retrieves groups by service name
+func (r *GroupRepository) GetByServiceName(ctx context.Context, serviceName string, limit, offset int) ([]*models.Group, error) {
 	filter := base.NewFilterBuilder().
 		Where("service_name", base.OpEqual, serviceName).
 		Limit(limit, offset).
@@ -133,7 +133,7 @@ func (r *GroupRepository) GetByService(ctx context.Context, serviceName string, 
 // GetByType retrieves groups by type
 func (r *GroupRepository) GetByType(ctx context.Context, groupType string, limit, offset int) ([]*models.Group, error) {
 	filter := base.NewFilterBuilder().
-		Where("type", "=", groupType).
+		Where("type", base.OpEqual, groupType).
 		Limit(limit, offset).
 		Build()
 

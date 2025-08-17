@@ -2,6 +2,7 @@ package resources
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/Kisanlink/aaa-service/internal/entities/models"
 	"github.com/Kisanlink/kisanlink-db/pkg/base"
@@ -104,25 +105,25 @@ func (r *ResourceRepository) GetByUpdatedBy(ctx context.Context, updatedBy strin
 // GetByName retrieves a resource by name
 func (r *ResourceRepository) GetByName(ctx context.Context, name string) (*models.Resource, error) {
 	filter := base.NewFilterBuilder().
-		Where("name", "=", name).
+		Where("name", base.OpEqual, name).
 		Build()
 
 	resources, err := r.BaseFilterableRepository.Find(ctx, filter)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get resource by name: %w", err)
 	}
 
 	if len(resources) == 0 {
-		return nil, nil
+		return nil, fmt.Errorf("resource not found with name: %s", name)
 	}
 
 	return resources[0], nil
 }
 
-// GetByService retrieves resources by service name
-func (r *ResourceRepository) GetByService(ctx context.Context, serviceName string, limit, offset int) ([]*models.Resource, error) {
+// GetByServiceName retrieves resources by service name
+func (r *ResourceRepository) GetByServiceName(ctx context.Context, serviceName string, limit, offset int) ([]*models.Resource, error) {
 	filter := base.NewFilterBuilder().
-		Where("service_name", "=", serviceName).
+		Where("service_name", base.OpEqual, serviceName).
 		Limit(limit, offset).
 		Build()
 
@@ -132,7 +133,7 @@ func (r *ResourceRepository) GetByService(ctx context.Context, serviceName strin
 // GetByType retrieves resources by type
 func (r *ResourceRepository) GetByType(ctx context.Context, resourceType string, limit, offset int) ([]*models.Resource, error) {
 	filter := base.NewFilterBuilder().
-		Where("type", "=", resourceType).
+		Where("type", base.OpEqual, resourceType).
 		Limit(limit, offset).
 		Build()
 

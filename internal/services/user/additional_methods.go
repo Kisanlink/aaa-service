@@ -100,12 +100,16 @@ func (s *Service) ListActiveUsers(ctx context.Context, limit, offset int) (inter
 func (s *Service) SearchUsers(ctx context.Context, keyword string, limit, offset int) (interface{}, error) {
 	s.logger.Info("Searching users", zap.String("keyword", keyword), zap.Int("limit", limit))
 
+	// Use the repository's Search method which has database-level pagination
 	users, err := s.userRepo.Search(ctx, keyword, limit, offset)
 	if err != nil {
-		s.logger.Error("Failed to search users", zap.String("keyword", keyword), zap.Error(err))
+		s.logger.Error("Failed to search users", zap.Error(err))
 		return nil, errors.NewInternalError(err)
 	}
 
+	s.logger.Info("Search completed", zap.Int("result_count", len(users)))
+
+	// Convert to response format
 	responses := make([]*userResponses.UserResponse, len(users))
 	for i, user := range users {
 		responses[i] = &userResponses.UserResponse{

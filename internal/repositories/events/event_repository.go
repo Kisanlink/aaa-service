@@ -104,17 +104,17 @@ func (r *EventRepository) GetByUpdatedBy(ctx context.Context, updatedBy string, 
 // GetByType retrieves events by type
 func (r *EventRepository) GetByType(ctx context.Context, eventType string, limit, offset int) ([]*models.Event, error) {
 	filter := base.NewFilterBuilder().
-		Where("type", "=", eventType).
+		Where("type", base.OpEqual, eventType).
 		Limit(limit, offset).
 		Build()
 
 	return r.BaseFilterableRepository.Find(ctx, filter)
 }
 
-// GetByService retrieves events by service name
-func (r *EventRepository) GetByService(ctx context.Context, serviceName string, limit, offset int) ([]*models.Event, error) {
+// GetByServiceName retrieves events by service name
+func (r *EventRepository) GetByServiceName(ctx context.Context, serviceName string, limit, offset int) ([]*models.Event, error) {
 	filter := base.NewFilterBuilder().
-		Where("service_name", "=", serviceName).
+		Where("service_name", base.OpEqual, serviceName).
 		Limit(limit, offset).
 		Build()
 
@@ -124,7 +124,7 @@ func (r *EventRepository) GetByService(ctx context.Context, serviceName string, 
 // GetByUserID retrieves events by user ID
 func (r *EventRepository) GetByUserID(ctx context.Context, userID string, limit, offset int) ([]*models.Event, error) {
 	filter := base.NewFilterBuilder().
-		Where("user_id", "=", userID).
+		Where("user_id", base.OpEqual, userID).
 		Limit(limit, offset).
 		Build()
 
@@ -134,8 +134,8 @@ func (r *EventRepository) GetByUserID(ctx context.Context, userID string, limit,
 // GetByDateRange retrieves events within a date range
 func (r *EventRepository) GetByDateRange(ctx context.Context, startDate, endDate string, limit, offset int) ([]*models.Event, error) {
 	filter := base.NewFilterBuilder().
-		Where("created_at", ">=", startDate).
-		Where("created_at", "<=", endDate).
+		Where("created_at", base.OpGreaterEqual, startDate).
+		Where("created_at", base.OpLessEqual, endDate).
 		Limit(limit, offset).
 		Build()
 
