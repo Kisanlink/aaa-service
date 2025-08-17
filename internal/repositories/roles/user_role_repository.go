@@ -15,12 +15,17 @@ type UserRoleRepository struct {
 	dbManager db.DBManager
 }
 
-// NewUserRoleRepository creates a new UserRoleRepository
+// NewUserRoleRepository creates a new user role repository
 func NewUserRoleRepository(dbManager db.DBManager) *UserRoleRepository {
-	return &UserRoleRepository{
+	repo := &UserRoleRepository{
 		BaseFilterableRepository: base.NewBaseFilterableRepository[*models.UserRole](),
 		dbManager:                dbManager,
 	}
+
+	// Set the database manager on the BaseFilterableRepository so it can use database-level operations
+	repo.BaseFilterableRepository.SetDBManager(dbManager)
+
+	return repo
 }
 
 // Create creates a new user role
@@ -79,7 +84,9 @@ func (r *UserRoleRepository) List(ctx context.Context, limit, offset int) ([]*mo
 
 // Count returns the total number of user roles
 func (r *UserRoleRepository) Count(ctx context.Context) (int64, error) {
-	return r.BaseFilterableRepository.Count(ctx)
+	// Create an empty filter to count all user roles
+	filter := base.NewFilter()
+	return r.BaseFilterableRepository.CountWithFilter(ctx, filter)
 }
 
 // GetByUserID retrieves all roles for a user using kisanlink-db filters

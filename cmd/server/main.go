@@ -250,8 +250,7 @@ func initializeServer(
 	// Get primary database manager
 	primaryDBManager := dbManager.GetManager(db.BackendGorm)
 	if primaryDBManager == nil {
-		logger.Warn("No database manager available, using in-memory fallback")
-		primaryDBManager = &InMemoryDBManager{logger: loggerAdapter}
+		logger.Fatal("No database manager available, exiting")
 	}
 
 	// Initialize repositories with the DatabaseManager for advanced operations

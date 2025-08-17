@@ -17,10 +17,15 @@ type RoleRepository struct {
 
 // NewRoleRepository creates a new role repository
 func NewRoleRepository(dbManager db.DBManager) *RoleRepository {
-	return &RoleRepository{
+	repo := &RoleRepository{
 		BaseFilterableRepository: base.NewBaseFilterableRepository[*models.Role](),
 		dbManager:                dbManager,
 	}
+
+	// Set the database manager on the BaseFilterableRepository so it can use database-level operations
+	repo.BaseFilterableRepository.SetDBManager(dbManager)
+
+	return repo
 }
 
 // Create creates a new role in the database
@@ -50,7 +55,9 @@ func (r *RoleRepository) Delete(ctx context.Context, id string, role *models.Rol
 // List retrieves all roles with pagination using database-level filtering
 func (r *RoleRepository) List(ctx context.Context, limit, offset int) ([]*models.Role, error) {
 	// Use base filterable repository for optimized database-level filtering
+	// Only return active roles (not deleted)
 	filter := base.NewFilterBuilder().
+		Where("is_active", base.OpEqual, true).
 		Limit(limit, offset).
 		Build()
 

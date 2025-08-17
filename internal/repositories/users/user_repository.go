@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/Kisanlink/aaa-service/internal/entities/models"
 	"github.com/Kisanlink/kisanlink-db/pkg/base"
 	"github.com/Kisanlink/kisanlink-db/pkg/db"
+	"gorm.io/gorm"
 )
 
 // UserRepository handles database operations for User entities
@@ -46,6 +48,44 @@ func (r *UserRepository) Delete(ctx context.Context, id string, user *models.Use
 	return r.BaseFilterableRepository.Delete(ctx, id, user)
 }
 
+// SoftDelete soft deletes a user by setting deleted_at and deleted_by fields
+func (r *UserRepository) SoftDelete(ctx context.Context, id string, deletedBy string) error {
+	// Use the database manager directly for this operation
+	// Since we know we're working with the users table, we can implement this properly
+	db, err := r.getDB(ctx, false)
+	if err != nil {
+		return fmt.Errorf("failed to get database connection: %w", err)
+	}
+
+	// First check if the user exists and is not already deleted
+	var count int64
+	if err := db.WithContext(ctx).Table("users").Where("id = ? AND deleted_at IS NULL", id).Count(&count).Error; err != nil {
+		return fmt.Errorf("failed to check user existence: %w", err)
+	}
+
+	if count == 0 {
+		return fmt.Errorf("user with id %s not found", id)
+	}
+
+	// Update the user to mark as deleted
+	result := db.WithContext(ctx).Table("users").Where("id = ? AND deleted_at IS NULL", id).Updates(map[string]interface{}{
+		"deleted_at": time.Now(),
+		"deleted_by": deletedBy,
+		"updated_at": time.Now(),
+	})
+
+	if result.Error != nil {
+		return fmt.Errorf("failed to soft delete user: %w", result.Error)
+	}
+
+	return nil
+}
+
+// Restore restores a soft-deleted user using the base repository
+func (r *UserRepository) Restore(ctx context.Context, id string) error {
+	return r.BaseFilterableRepository.Restore(ctx, id)
+}
+
 // List retrieves users with pagination using database-level filtering
 func (r *UserRepository) List(ctx context.Context, limit, offset int) ([]*models.User, error) {
 	// Use base filterable repository for optimized database-level filtering
@@ -81,24 +121,9 @@ func (r *UserRepository) Exists(ctx context.Context, id string) (bool, error) {
 	return r.BaseFilterableRepository.Exists(ctx, id)
 }
 
-// SoftDelete soft deletes a user by ID using the base repository
-func (r *UserRepository) SoftDelete(ctx context.Context, id string, deletedBy string) error {
-	return r.BaseFilterableRepository.SoftDelete(ctx, id, deletedBy)
-}
-
-// Restore restores a soft-deleted user using the base repository
-func (r *UserRepository) Restore(ctx context.Context, id string) error {
-	return r.BaseFilterableRepository.Restore(ctx, id)
-}
-
-// ListWithDeleted retrieves users including soft-deleted ones using the base repository
-func (r *UserRepository) ListWithDeleted(ctx context.Context, limit, offset int) ([]*models.User, error) {
-	return r.BaseFilterableRepository.ListWithDeleted(ctx, limit, offset)
-}
-
-// CountWithDeleted returns count including soft-deleted users using the base repository
-func (r *UserRepository) CountWithDeleted(ctx context.Context) (int64, error) {
-	return r.BaseFilterableRepository.CountWithDeleted(ctx)
+// SoftDeleteMany soft deletes multiple users using the base repository's concurrent processing
+func (r *UserRepository) SoftDeleteMany(ctx context.Context, ids []string, deletedBy string) error {
+	return r.BaseFilterableRepository.SoftDeleteMany(ctx, ids, deletedBy)
 }
 
 // ExistsWithDeleted checks if user exists including soft-deleted ones using the base repository
@@ -138,9 +163,16 @@ func (r *UserRepository) DeleteMany(ctx context.Context, ids []string) error {
 	return r.BaseFilterableRepository.DeleteMany(ctx, ids)
 }
 
-// SoftDeleteMany soft deletes multiple users using the base repository's concurrent processing
-func (r *UserRepository) SoftDeleteMany(ctx context.Context, ids []string, deletedBy string) error {
-	return r.BaseFilterableRepository.SoftDeleteMany(ctx, ids, deletedBy)
+// getDB is a helper method to get the database connection from the database manager
+func (r *UserRepository) getDB(ctx context.Context, readOnly bool) (*gorm.DB, error) {
+	// Try to get the database from the database manager
+	if postgresMgr, ok := r.dbManager.(interface {
+		GetDB(context.Context, bool) (*gorm.DB, error)
+	}); ok {
+		return postgresMgr.GetDB(ctx, readOnly)
+	}
+
+	return nil, fmt.Errorf("database manager does not support GetDB method")
 }
 
 // GetByUsername retrieves a user by username using kisanlink-db filters

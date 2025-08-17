@@ -1,7 +1,7 @@
 buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.6-20250613105001-9f2d3c737feb.1 h1:AUL6VF5YWL01j/1H/DQbPUSDkEwYqwVCNw7yhbpOxSQ=
 buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.6-20250613105001-9f2d3c737feb.1/go.mod h1:avRlCjnFzl98VPaeCtJ24RrV/wwHFzB8sWXhj26+n/U=
-github.com/Kisanlink/kisanlink-db v0.1.7 h1:bB0wM50zvrTrnOB1YHVXMDzv85NgGzZVXP0f2573jmM=
-github.com/Kisanlink/kisanlink-db v0.1.7/go.mod h1:2n6w4zdbHmmzMmxDOFGQOsUW8U8srz0GgoL5k2Kbbmo=
+github.com/Kisanlink/kisanlink-db v0.1.8 h1:ICA+/CDIV6yukAFnA87ykqsTvOKZmrhjVl1mp0IRUns=
+github.com/Kisanlink/kisanlink-db v0.1.8/go.mod h1:2n6w4zdbHmmzMmxDOFGQOsUW8U8srz0GgoL5k2Kbbmo=
 github.com/KyleBanks/depth v1.2.1 h1:5h8fQADFrWtarTdtDudMmGsC7GPbOAu6RVB3ffsVFHc=
 github.com/KyleBanks/depth v1.2.1/go.mod h1:jzSb9d0L43HxTQfT+oSA1EEp2q+ne2uh6XgeJcm8brE=
 github.com/MarceloPetrucio/go-scalar-api-reference v0.0.0-20240521013641-ce5d2efe0e06 h1:W4Yar1SUsPmmA51qoIRb174uDO/Xt3C48MB1YX9Y3vM=

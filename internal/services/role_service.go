@@ -164,6 +164,9 @@ func (s *RoleService) DeleteRole(ctx context.Context, roleID string) error {
 func (s *RoleService) ListRoles(ctx context.Context, limit, offset int) ([]*models.Role, error) {
 	s.logger.Info("Listing roles", zap.Int("limit", limit), zap.Int("offset", offset))
 
+	// Add debug logging to see what's happening
+	s.logger.Debug("Calling role repository List method")
+
 	roles, err := s.roleRepo.List(ctx, limit, offset)
 	if err != nil {
 		s.logger.Error("Failed to list roles", zap.Error(err))
@@ -171,6 +174,16 @@ func (s *RoleService) ListRoles(ctx context.Context, limit, offset int) ([]*mode
 	}
 
 	s.logger.Info("Role listing completed", zap.Int("count", len(roles)))
+
+	// Add debug logging to see what roles were returned
+	for i, role := range roles {
+		s.logger.Debug("Role found",
+			zap.Int("index", i),
+			zap.String("role_id", role.ID),
+			zap.String("role_name", role.Name),
+			zap.Bool("is_active", role.IsActive))
+	}
+
 	return roles, nil
 }
 
