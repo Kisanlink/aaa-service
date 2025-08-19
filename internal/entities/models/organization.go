@@ -28,7 +28,7 @@ const (
 // NewOrganization creates a new Organization instance
 func NewOrganization(name, description string) *Organization {
 	return &Organization{
-		BaseModel:   base.NewBaseModel("org", hash.Medium),
+		BaseModel:   base.NewBaseModel(OrgTable, hash.Medium),
 		Name:        name,
 		Description: description,
 		IsActive:    true,

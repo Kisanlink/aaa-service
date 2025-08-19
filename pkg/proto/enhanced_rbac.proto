@@ -1,0 +1,418 @@
+syntax = "proto3";
+
+package enhanced_rbac;
+
+option go_package = "github.com/Kisanlink/aaa-service/pb";
+
+// Enhanced RBAC Service using existing models for comprehensive permission management
+
+// Action represents what can be done (using existing Action model)
+message Action {
+    string id = 1;
+    string name = 2;           // e.g., "create", "read", "update", "delete"
+    string description = 3;    // Human-readable description
+    string category = 4;       // e.g., "crud", "business", "admin"
+    bool is_active = 5;
+    string created_at = 6;
+    string updated_at = 7;
+}
+
+// Resource represents what can be acted upon (using existing Resource model)
+message Resource {
+    string id = 1;
+    string name = 2;           // e.g., "product", "order", "user"
+    string type = 3;           // e.g., "aaa/user", "aaa/role"
+    string description = 4;    // Human-readable description
+    string parent_id = 5;      // For resource hierarchy
+    string owner_id = 6;       // Resource owner
+    bool is_active = 7;
+    string created_at = 8;
+    string updated_at = 9;
+}
+
+// Permission represents a combination of action and resource (using existing Permission model)
+message Permission {
+    string id = 1;
+    string name = 2;           // e.g., "product.create", "order.read"
+    string description = 3;    // Human-readable description
+    string resource_id = 4;    // Reference to Resource
+    string action_id = 5;      // Reference to Action
+    bool is_active = 6;
+    string created_at = 7;
+    string updated_at = 8;
+
+    // Embedded objects for convenience
+    Action action = 9;
+    Resource resource = 10;
+}
+
+// Role represents a collection of permissions (using existing Role model)
+message Role {
+    string id = 1;
+    string name = 2;           // e.g., "buyer", "seller", "admin"
+    string description = 3;    // Human-readable description
+    string status = 4;         // e.g., "active", "inactive"
+    string parent_role_id = 5; // For role inheritance
+    bool is_active = 6;
+    string created_at = 7;
+    string updated_at = 8;
+
+    // Embedded objects for convenience
+    repeated Permission permissions = 9;
+    repeated Role child_roles = 10;
+}
+
+// UserRole represents the assignment of a role to a user (using existing UserRole model)
+message UserRole {
+    string id = 1;
+    string user_id = 2;
+    string role_id = 3;
+    bool is_active = 4;
+    string created_at = 5;
+    string updated_at = 6;
+
+    // Embedded objects for convenience
+    Role role = 7;
+}
+
+// Permission Evaluation Request
+message EvaluatePermissionRequest {
+    string user_id = 1;
+    string resource = 2;        // Resource name (e.g., "product")
+    string action = 3;          // Action name (e.g., "create")
+    string resource_id = 4;     // Optional, specific resource instance
+    map<string, string> context = 5; // Additional context for evaluation
+}
+
+// Permission Evaluation Response
+message EvaluatePermissionResponse {
+    int32 status_code = 1;
+    string message = 2;
+    bool allowed = 3;
+    string reason = 4;         // Why permission was granted/denied
+    repeated string permissions = 5; // Permissions that granted access
+    repeated string roles = 6;       // Roles that granted access
+}
+
+// Bulk Permission Evaluation Request
+message BulkEvaluatePermissionRequest {
+    string user_id = 1;
+    repeated PermissionCheck checks = 2;
+}
+
+// Individual permission check
+message PermissionCheck {
+    string resource = 1;
+    string action = 2;
+    string resource_id = 3;
+    map<string, string> context = 4;
+}
+
+// Bulk Permission Evaluation Response
+message BulkEvaluatePermissionResponse {
+    int32 status_code = 1;
+    string message = 2;
+    repeated PermissionCheckResult results = 3;
+}
+
+// Result of individual permission check
+message PermissionCheckResult {
+    string resource = 1;
+    string action = 2;
+    string resource_id = 3;
+    bool allowed = 4;
+    string reason = 5;
+}
+
+// Create Action Request
+message CreateActionRequest {
+    string name = 1;
+    string description = 2;
+    string category = 3;
+}
+
+// Create Action Response
+message CreateActionResponse {
+    int32 status_code = 1;
+    string message = 2;
+    Action action = 3;
+}
+
+// Create Resource Request
+message CreateResourceRequest {
+    string name = 1;
+    string type = 2;
+    string description = 3;
+    string parent_id = 4;
+    string owner_id = 5;
+}
+
+// Create Resource Response
+message CreateResourceResponse {
+    int32 status_code = 1;
+    string message = 2;
+    Resource resource = 3;
+}
+
+// Create Permission Request
+message CreatePermissionRequest {
+    string name = 1;
+    string description = 2;
+    string resource_id = 3;
+    string action_id = 4;
+}
+
+// Create Permission Response
+message CreatePermissionResponse {
+    int32 status_code = 1;
+    string message = 2;
+    Permission permission = 3;
+}
+
+// Create Role Request
+message CreateRoleRequest {
+    string name = 1;
+    string description = 2;
+    string parent_role_id = 3;
+    repeated string permission_ids = 4;
+}
+
+// Create Role Response
+message CreateRoleResponse {
+    int32 status_code = 1;
+    string message = 2;
+    Role role = 3;
+}
+
+// Assign Role to User Request
+message AssignRoleToUserRequest {
+    string user_id = 1;
+    string role_id = 2;
+}
+
+// Assign Role to User Response
+message AssignRoleToUserResponse {
+    int32 status_code = 1;
+    string message = 2;
+    UserRole user_role = 3;
+}
+
+// Get User Roles Request
+message GetUserRolesRequest {
+    string user_id = 1;
+    bool include_permissions = 2;
+    bool include_inactive = 3;
+}
+
+// Get User Roles Response
+message GetUserRolesResponse {
+    int32 status_code = 1;
+    string message = 2;
+    repeated UserRole user_roles = 3;
+}
+
+// Get Role Users Request
+message GetRoleUsersRequest {
+    string role_id = 1;
+    bool include_inactive = 2;
+}
+
+// Get Role Users Response
+message GetRoleUsersResponse {
+    int32 status_code = 1;
+    string message = 2;
+    repeated UserRole user_roles = 3;
+}
+
+// Additional request/response messages for service methods
+
+// Get Action Request
+message GetActionRequest {
+    string id = 1;
+}
+
+// Get All Actions Request
+message GetAllActionsRequest {
+    string category = 1;
+}
+
+// Update Action Request
+message UpdateActionRequest {
+    Action action = 1;
+}
+
+// Delete Action Request
+message DeleteActionRequest {
+    string id = 1;
+}
+
+// Delete Action Response
+message DeleteActionResponse {
+    int32 status_code = 1;
+    string message = 2;
+    bool success = 3;
+}
+
+// Get Resource Request
+message GetResourceRequest {
+    string id = 1;
+}
+
+// Get All Resources Request
+message GetAllResourcesRequest {
+    string type = 1;
+}
+
+// Update Resource Request
+message UpdateResourceRequest {
+    Resource resource = 1;
+}
+
+// Delete Resource Request
+message DeleteResourceRequest {
+    string id = 1;
+}
+
+// Delete Resource Response
+message DeleteResourceResponse {
+    int32 status_code = 1;
+    string message = 2;
+    bool success = 3;
+}
+
+// Get Permission Request
+message GetPermissionRequest {
+    string id = 1;
+}
+
+// Get All Permissions Request
+message GetAllPermissionsRequest {
+    string resource_type = 1;
+}
+
+// Update Permission Request
+message UpdatePermissionRequest {
+    Permission permission = 1;
+}
+
+// Delete Permission Request
+message DeletePermissionRequest {
+    string id = 1;
+}
+
+// Delete Permission Response
+message DeletePermissionResponse {
+    int32 status_code = 1;
+    string message = 2;
+    bool success = 3;
+}
+
+// Get Role Request
+message GetRoleRequest {
+    string id = 1;
+}
+
+// Get All Roles Request
+message GetAllRolesRequest {
+    string status = 1;
+}
+
+// Update Role Request
+message UpdateRoleRequest {
+    Role role = 1;
+}
+
+// Delete Role Request
+message DeleteRoleRequest {
+    string id = 1;
+}
+
+// Delete Role Response
+message DeleteRoleResponse {
+    int32 status_code = 1;
+    string message = 2;
+    bool success = 3;
+}
+
+// Remove Role From User Request
+message RemoveRoleFromUserRequest {
+    string user_id = 1;
+    string role_id = 2;
+}
+
+// Remove Role From User Response
+message RemoveRoleFromUserResponse {
+    int32 status_code = 1;
+    string message = 2;
+    bool success = 3;
+}
+
+// Get User Permissions Request
+message GetUserPermissionsRequest {
+    string user_id = 1;
+}
+
+// Get Role Permissions Request
+message GetRolePermissionsRequest {
+    string role_id = 1;
+}
+
+// Validate Permission Request
+message ValidatePermissionRequest {
+    string user_id = 1;
+    string resource = 2;
+    string action = 3;
+}
+
+// Validate Permission Response
+message ValidatePermissionResponse {
+    int32 status_code = 1;
+    string message = 2;
+    bool valid = 3;
+}
+
+// Enhanced RBAC Service using existing models
+service EnhancedRBACService {
+    // Action Management
+    rpc CreateAction(CreateActionRequest) returns (CreateActionResponse);
+    rpc GetAction(GetActionRequest) returns (Action);
+    rpc GetAllActions(GetAllActionsRequest) returns (stream Action);
+    rpc UpdateAction(UpdateActionRequest) returns (Action);
+    rpc DeleteAction(DeleteActionRequest) returns (DeleteActionResponse);
+
+    // Resource Management
+    rpc CreateResource(CreateResourceRequest) returns (CreateResourceResponse);
+    rpc GetResource(GetResourceRequest) returns (Resource);
+    rpc GetAllResources(GetAllResourcesRequest) returns (stream Resource);
+    rpc UpdateResource(UpdateResourceRequest) returns (Resource);
+    rpc DeleteResource(DeleteResourceRequest) returns (DeleteResourceResponse);
+
+    // Permission Management
+    rpc CreatePermission(CreatePermissionRequest) returns (CreatePermissionResponse);
+    rpc GetPermission(GetPermissionRequest) returns (Permission);
+    rpc GetAllPermissions(GetAllPermissionsRequest) returns (stream Permission);
+    rpc UpdatePermission(UpdatePermissionRequest) returns (Permission);
+    rpc DeletePermission(DeletePermissionRequest) returns (DeletePermissionResponse);
+
+    // Role Management
+    rpc CreateRole(CreateRoleRequest) returns (CreateRoleResponse);
+    rpc GetRole(GetRoleRequest) returns (Role);
+    rpc GetAllRoles(GetAllRolesRequest) returns (stream Role);
+    rpc UpdateRole(UpdateRoleRequest) returns (Role);
+    rpc DeleteRole(DeleteRoleRequest) returns (DeleteRoleResponse);
+
+    // User-Role Management
+    rpc AssignRoleToUser(AssignRoleToUserRequest) returns (AssignRoleToUserResponse);
+    rpc RemoveRoleFromUser(RemoveRoleFromUserRequest) returns (RemoveRoleFromUserResponse);
+    rpc GetUserRoles(GetUserRolesRequest) returns (GetUserRolesResponse);
+    rpc GetRoleUsers(GetRoleUsersRequest) returns (GetRoleUsersResponse);
+
+    // Permission Evaluation
+    rpc EvaluatePermission(EvaluatePermissionRequest) returns (EvaluatePermissionResponse);
+    rpc BulkEvaluatePermission(BulkEvaluatePermissionRequest) returns (BulkEvaluatePermissionResponse);
+
+    // Utility Methods
+    rpc GetUserPermissions(GetUserPermissionsRequest) returns (stream Permission);
+    rpc GetRolePermissions(GetRolePermissionsRequest) returns (stream Permission);
+    rpc ValidatePermission(ValidatePermissionRequest) returns (ValidatePermissionResponse);
+}
