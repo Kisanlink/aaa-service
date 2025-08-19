@@ -199,6 +199,9 @@ func (a *Action) GetTableSize() hash.TableSize {
 	return hash.Small
 }
 
+// TableName returns the GORM table name for this model
+func (a *Action) TableName() string { return "actions" }
+
 // Explicit method implementations to satisfy linter
 func (a *Action) GetID() string   { return a.BaseModel.GetID() }
 func (a *Action) SetID(id string) { a.BaseModel.SetID(id) }
@@ -211,4 +214,14 @@ func (a *Action) IsCategory(category string) bool {
 // GetSpiceDBPermission returns the SpiceDB permission name for this action
 func (a *Action) GetSpiceDBPermission() string {
 	return a.Name
+}
+
+// GetResourceType returns the PostgreSQL RBAC resource type for actions
+func (a *Action) GetResourceType() string {
+	return "aaa/action"
+}
+
+// GetObjectID returns the PostgreSQL RBAC object ID for this action
+func (a *Action) GetObjectID() string {
+	return a.GetID()
 }

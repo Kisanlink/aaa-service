@@ -80,6 +80,9 @@ func (a *Address) GetTableSize() hash.TableSize {
 	return AddressTableSize
 }
 
+// TableName returns the GORM table name for this model
+func (a *Address) TableName() string { return "addresses" }
+
 // Explicit method implementations to satisfy linter
 func (a *Address) GetID() string   { return a.BaseModel.GetID() }
 func (a *Address) SetID(id string) { a.BaseModel.SetID(id) }
@@ -144,4 +147,14 @@ func (a *Address) BuildFullAddress() string {
 func (a *Address) IsComplete() bool {
 	return a.House != nil && a.Street != nil && a.District != nil &&
 		a.State != nil && a.Country != nil && a.Pincode != nil
+}
+
+// GetResourceType returns the PostgreSQL RBAC resource type for addresses
+func (a *Address) GetResourceType() string {
+	return "aaa/address"
+}
+
+// GetObjectID returns the PostgreSQL RBAC object ID for this address
+func (a *Address) GetObjectID() string {
+	return a.GetID()
 }

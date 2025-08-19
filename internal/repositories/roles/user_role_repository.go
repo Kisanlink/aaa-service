@@ -34,15 +34,12 @@ func (r *UserRoleRepository) Create(ctx context.Context, userRole *models.UserRo
 		return fmt.Errorf("failed to prepare user role for creation: %w", err)
 	}
 
-	return r.dbManager.Create(ctx, userRole)
+	return r.BaseFilterableRepository.Create(ctx, userRole)
 }
 
 // GetByID retrieves a user role by ID
 func (r *UserRoleRepository) GetByID(ctx context.Context, id string, userRole *models.UserRole) (*models.UserRole, error) {
-	if err := r.dbManager.GetByID(ctx, id, userRole); err != nil {
-		return nil, fmt.Errorf("failed to get user role by ID: %w", err)
-	}
-	return userRole, nil
+	return r.BaseFilterableRepository.GetByID(ctx, id, userRole)
 }
 
 // Update updates an existing user role
@@ -51,7 +48,7 @@ func (r *UserRoleRepository) Update(ctx context.Context, userRole *models.UserRo
 		return fmt.Errorf("failed to prepare user role for update: %w", err)
 	}
 
-	return r.dbManager.Update(ctx, userRole)
+	return r.BaseFilterableRepository.Update(ctx, userRole)
 }
 
 // Delete deletes a user role by ID
@@ -61,25 +58,11 @@ func (r *UserRoleRepository) Delete(ctx context.Context, id string, userRole *mo
 
 // List retrieves user roles with pagination
 func (r *UserRoleRepository) List(ctx context.Context, limit, offset int) ([]*models.UserRole, error) {
-	var userRoles []models.UserRole
+	filter := base.NewFilterBuilder().
+		Limit(limit, offset).
+		Build()
 
-	emptyFilter := &base.Filter{
-		Group: base.FilterGroup{
-			Conditions: []base.FilterCondition{},
-			Logic:      base.LogicAnd,
-		},
-	}
-	if err := r.dbManager.List(ctx, emptyFilter, &userRoles); err != nil {
-		return nil, fmt.Errorf("failed to list user roles: %w", err)
-	}
-
-	// Convert []models.UserRole to []*models.UserRole
-	result := make([]*models.UserRole, len(userRoles))
-	for i := range userRoles {
-		result[i] = &userRoles[i]
-	}
-
-	return result, nil
+	return r.BaseFilterableRepository.Find(ctx, filter)
 }
 
 // Count returns the total number of user roles
@@ -89,31 +72,14 @@ func (r *UserRoleRepository) Count(ctx context.Context) (int64, error) {
 	return r.BaseFilterableRepository.CountWithFilter(ctx, filter)
 }
 
-// GetByUserID retrieves all roles for a user using kisanlink-db filters
+// GetByUserID retrieves all roles for a user using base filterable repository
 func (r *UserRoleRepository) GetByUserID(ctx context.Context, userID string) ([]*models.UserRole, error) {
-	filters := []base.FilterCondition{
-		{Field: "user_id", Operator: base.OpEqual, Value: userID},
-		{Field: "is_active", Operator: base.OpEqual, Value: true},
-	}
+	filter := base.NewFilterBuilder().
+		Where("user_id", base.OpEqual, userID).
+		Where("is_active", base.OpEqual, true).
+		Build()
 
-	var userRoles []models.UserRole
-	filter := &base.Filter{
-		Group: base.FilterGroup{
-			Conditions: filters,
-			Logic:      base.LogicAnd,
-		},
-	}
-	if err := r.dbManager.List(ctx, filter, &userRoles); err != nil {
-		return nil, fmt.Errorf("failed to get user roles: %w", err)
-	}
-
-	// Convert to pointer slice
-	result := make([]*models.UserRole, len(userRoles))
-	for i := range userRoles {
-		result[i] = &userRoles[i]
-	}
-
-	return result, nil
+	return r.BaseFilterableRepository.Find(ctx, filter)
 }
 
 // GetByRoleID retrieves all users for a role using database-level filtering

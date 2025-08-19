@@ -72,6 +72,19 @@ func (ur *UserRole) GetTableIdentifier() string {
 // GetTableSize returns the table size for UserRole
 func (ur *UserRole) GetTableSize() hash.TableSize { return hash.Small }
 
+// TableName returns the GORM table name for this model
+func (ur *UserRole) TableName() string { return "user_roles" }
+
+// GetResourceType returns the PostgreSQL RBAC resource type for user roles
+func (ur *UserRole) GetResourceType() string {
+	return "aaa/user_role"
+}
+
+// GetObjectID returns the PostgreSQL RBAC object ID for this user role
+func (ur *UserRole) GetObjectID() string {
+	return ur.GetID()
+}
+
 // Explicit method implementations to satisfy linter
 func (ur *UserRole) GetID() string   { return ur.BaseModel.GetID() }
 func (ur *UserRole) SetID(id string) { ur.BaseModel.SetID(id) }

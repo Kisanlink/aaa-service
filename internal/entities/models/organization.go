@@ -28,7 +28,7 @@ const (
 // NewOrganization creates a new Organization instance
 func NewOrganization(name, description string) *Organization {
 	return &Organization{
-		BaseModel:   base.NewBaseModel("org", hash.Medium),
+		BaseModel:   base.NewBaseModel("ORG", hash.Medium),
 		Name:        name,
 		Description: description,
 		IsActive:    true,
@@ -61,13 +61,16 @@ func (o *Organization) BeforeSoftDelete() error { return o.BaseModel.BeforeSoftD
 func (o *Organization) GetTableIdentifier() string   { return "ORG" }
 func (o *Organization) GetTableSize() hash.TableSize { return hash.Medium }
 
+// TableName returns the GORM table name for this model
+func (o *Organization) TableName() string { return "organizations" }
+
 // Explicit method implementations to satisfy linter
 func (o *Organization) GetID() string   { return o.BaseModel.GetID() }
 func (o *Organization) SetID(id string) { o.BaseModel.SetID(id) }
 
-// GetResourceType returns the resource type for organizations
+// GetResourceType returns the PostgreSQL RBAC resource type for organizations
 func (o *Organization) GetResourceType() string {
-	return ResourceTypeOrganization
+	return "aaa/organization"
 }
 
 // GetObjectID returns the object ID for this organization

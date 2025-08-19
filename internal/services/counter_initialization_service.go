@@ -273,7 +273,7 @@ func (cis *CounterInitializationService) initializeAddressCounters(ctx context.C
 			zap.Int("count", len(existingIDs)),
 			zap.String("sample_id", existingIDs[0]))
 
-		hash.InitializeGlobalCountersFromDatabase("ADDR", existingIDs, hash.Medium)
+		hash.InitializeGlobalCountersFromDatabase("ADDR", existingIDs, hash.Large)
 	} else {
 		cis.logger.Info("No existing addresses found, skipping address counter initialization")
 	}

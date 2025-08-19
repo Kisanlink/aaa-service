@@ -38,3 +38,20 @@ func (rp *RolePermission) GetTableIdentifier() string {
 func (rp *RolePermission) GetTableSize() hash.TableSize {
 	return hash.Small
 }
+
+// TableName returns the GORM table name for this model
+func (rp *RolePermission) TableName() string { return "role_permissions" }
+
+// GetResourceType returns the PostgreSQL RBAC resource type for role permissions
+func (rp *RolePermission) GetResourceType() string {
+	return "aaa/role_permission"
+}
+
+// GetObjectID returns the PostgreSQL RBAC object ID for this role permission
+func (rp *RolePermission) GetObjectID() string {
+	return rp.GetID()
+}
+
+// Explicit method implementations to satisfy linter
+func (rp *RolePermission) GetID() string   { return rp.BaseModel.GetID() }
+func (rp *RolePermission) SetID(id string) { rp.BaseModel.SetID(id) }

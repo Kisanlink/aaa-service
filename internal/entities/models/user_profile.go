@@ -56,6 +56,19 @@ func (p *UserProfile) BeforeDeleteGORM(tx *gorm.DB) error {
 func (p *UserProfile) GetTableIdentifier() string   { return "USR_PROF" }
 func (p *UserProfile) GetTableSize() hash.TableSize { return hash.Small }
 
+// TableName returns the GORM table name for this model
+func (p *UserProfile) TableName() string { return "user_profiles" }
+
+// GetResourceType returns the PostgreSQL RBAC resource type for user profiles
+func (p *UserProfile) GetResourceType() string {
+	return "aaa/user_profile"
+}
+
+// GetObjectID returns the PostgreSQL RBAC object ID for this user profile
+func (p *UserProfile) GetObjectID() string {
+	return p.GetID()
+}
+
 // Explicit method implementations to satisfy linter
 func (p *UserProfile) GetID() string   { return p.BaseModel.GetID() }
 func (p *UserProfile) SetID(id string) { p.BaseModel.SetID(id) }

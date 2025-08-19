@@ -42,7 +42,7 @@ const (
 // NewRole creates a new Role instance with specified name and description
 func NewRole(name, description string, scope RoleScope) *Role {
 	return &Role{
-		BaseModel:   base.NewBaseModel("ROLE", hash.Small),
+		BaseModel:   base.NewBaseModel("ROLE", hash.Medium),
 		Name:        name,
 		Description: description,
 		Scope:       scope,
@@ -107,8 +107,11 @@ func (r *Role) BeforeDeleteGORM(tx *gorm.DB) error {
 }
 
 // Helper methods
-func (r *Role) GetTableIdentifier() string   { return "ROL" }
+func (r *Role) GetTableIdentifier() string   { return "ROLE" }
 func (r *Role) GetTableSize() hash.TableSize { return hash.Medium }
+
+// TableName returns the GORM table name for this model
+func (r *Role) TableName() string { return "roles" }
 
 // Explicit method implementations to satisfy linter
 func (r *Role) GetID() string   { return r.BaseModel.GetID() }
@@ -239,10 +242,27 @@ func (p *Permission) BeforeDeleteGORM(tx *gorm.DB) error {
 
 // GetTableIdentifier returns the table identifier for Permission
 func (p *Permission) GetTableIdentifier() string {
-	return "perm"
+	return "PERM"
 }
 
 // GetTableSize returns the table size for Permission
 func (p *Permission) GetTableSize() hash.TableSize {
-	return hash.Small
+	return hash.Medium
 }
+
+// TableName returns the GORM table name for this model
+func (p *Permission) TableName() string { return "permissions" }
+
+// GetResourceType returns the PostgreSQL RBAC resource type for permissions
+func (p *Permission) GetResourceType() string {
+	return "aaa/permission"
+}
+
+// GetObjectID returns the PostgreSQL RBAC object ID for this permission
+func (p *Permission) GetObjectID() string {
+	return p.GetID()
+}
+
+// Explicit method implementations to satisfy linter
+func (p *Permission) GetID() string   { return p.BaseModel.GetID() }
+func (p *Permission) SetID(id string) { p.BaseModel.SetID(id) }

@@ -114,7 +114,7 @@ func (bh *BindingHistory) TableName() string {
 func NewBinding(subjectID string, subjectType BindingSubjectType, bindingType BindingType,
 	resourceType string, organizationID string, createdByID string) *Binding {
 	return &Binding{
-		BaseModel:      base.NewBaseModel("bnd", hash.Medium),
+		BaseModel:      base.NewBaseModel("BND", hash.Medium),
 		SubjectID:      subjectID,
 		SubjectType:    subjectType,
 		BindingType:    bindingType,
@@ -253,5 +253,16 @@ func (b *Binding) CreateHistoryRecord(action string, changedByID string) *Bindin
 		Action:         action,
 		ChangedByID:    changedByID,
 		ChangedAt:      time.Now(),
+	}
+}
+
+// NewBindingHistory creates a new BindingHistory instance
+func NewBindingHistory(bindingID string, action string, changedByID string) *BindingHistory {
+	return &BindingHistory{
+		BaseModel:   base.NewBaseModel("BNH", hash.Medium),
+		BindingID:   bindingID,
+		Action:      action,
+		ChangedByID: changedByID,
+		ChangedAt:   time.Now(),
 	}
 }

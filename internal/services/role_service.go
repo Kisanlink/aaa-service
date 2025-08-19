@@ -145,9 +145,15 @@ func (s *RoleService) DeleteRole(ctx context.Context, roleID string) error {
 		return fmt.Errorf("failed to get role: %w", err)
 	}
 
-	// Delete role
-	if err := s.roleRepo.Delete(ctx, roleID, role); err != nil {
-		s.logger.Error("Failed to delete role", zap.String("roleID", roleID), zap.Error(err))
+	// Get user ID from context for audit trail
+	userID := "system" // Default fallback
+	if ctxUserID, ok := ctx.Value("user_id").(string); ok && ctxUserID != "" {
+		userID = ctxUserID
+	}
+
+	// Soft delete role instead of hard delete
+	if err := s.roleRepo.SoftDelete(ctx, roleID, userID); err != nil {
+		s.logger.Error("Failed to soft delete role", zap.String("roleID", roleID), zap.Error(err))
 		return fmt.Errorf("failed to delete role: %w", err)
 	}
 
@@ -156,7 +162,40 @@ func (s *RoleService) DeleteRole(ctx context.Context, roleID string) error {
 		s.logger.Error("Failed to delete role from cache", zap.Error(err))
 	}
 
-	s.logger.Info("Role deleted successfully", zap.String("roleID", roleID))
+	s.logger.Info("Role soft deleted successfully", zap.String("roleID", roleID), zap.String("deletedBy", userID))
+	return nil
+}
+
+// HardDeleteRole permanently deletes a role (admin only)
+func (s *RoleService) HardDeleteRole(ctx context.Context, roleID string) error {
+	s.logger.Info("Hard deleting role", zap.String("roleID", roleID))
+
+	// Get role to delete
+	role := &models.Role{}
+	_, err := s.roleRepo.GetByID(ctx, roleID, role)
+	if err != nil {
+		s.logger.Error("Failed to get role for hard deletion", zap.String("roleID", roleID), zap.Error(err))
+		return fmt.Errorf("failed to get role: %w", err)
+	}
+
+	// Get user ID from context for audit trail
+	userID := "system" // Default fallback
+	if ctxUserID, ok := ctx.Value("user_id").(string); ok && ctxUserID != "" {
+		userID = ctxUserID
+	}
+
+	// Hard delete role
+	if err := s.roleRepo.Delete(ctx, roleID, role); err != nil {
+		s.logger.Error("Failed to hard delete role", zap.String("roleID", roleID), zap.Error(err))
+		return fmt.Errorf("failed to hard delete role: %w", err)
+	}
+
+	// Clear cache
+	if err := s.cacheService.Delete(fmt.Sprintf("role:%s", roleID)); err != nil {
+		s.logger.Error("Failed to delete role from cache", zap.Error(err))
+	}
+
+	s.logger.Info("Role hard deleted successfully", zap.String("roleID", roleID), zap.String("deletedBy", userID))
 	return nil
 }
 

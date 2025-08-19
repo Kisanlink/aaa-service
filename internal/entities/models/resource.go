@@ -114,6 +114,9 @@ func (r *Resource) BeforeDeleteGORM(tx *gorm.DB) error {
 func (r *Resource) GetTableIdentifier() string   { return "RES" }
 func (r *Resource) GetTableSize() hash.TableSize { return hash.Medium }
 
+// TableName returns the GORM table name for this model
+func (r *Resource) TableName() string { return "resources" }
+
 // Explicit method implementations to satisfy linter
 func (r *Resource) GetID() string   { return r.BaseModel.GetID() }
 func (r *Resource) SetID(id string) { r.BaseModel.SetID(id) }
@@ -136,6 +139,11 @@ func (r *Resource) IsResourceType(resourceType string) bool {
 // GetObjectType returns the PostgreSQL RBAC object type for this resource
 func (r *Resource) GetObjectType() string {
 	return r.Type
+}
+
+// GetResourceType returns the PostgreSQL RBAC resource type for resources
+func (r *Resource) GetResourceType() string {
+	return "aaa/resource"
 }
 
 // GetObjectID returns the PostgreSQL RBAC object ID for this resource

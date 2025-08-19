@@ -74,7 +74,7 @@ func (gi *GroupInheritance) TableName() string {
 // NewGroup creates a new Group instance
 func NewGroup(name, description, organizationID string) *Group {
 	return &Group{
-		BaseModel:      base.NewBaseModel("grp", hash.Medium),
+		BaseModel:      base.NewBaseModel("GRP", hash.Medium),
 		Name:           name,
 		Description:    description,
 		OrganizationID: organizationID,
@@ -85,7 +85,7 @@ func NewGroup(name, description, organizationID string) *Group {
 // NewGroupMembership creates a new GroupMembership instance
 func NewGroupMembership(groupID, principalID, principalType, addedByID string) *GroupMembership {
 	return &GroupMembership{
-		BaseModel:     base.NewBaseModel("GROUPMEM", hash.Small),
+		BaseModel:     base.NewBaseModel("GRPM", hash.Small),
 		GroupID:       groupID,
 		PrincipalID:   principalID,
 		PrincipalType: principalType,
@@ -97,7 +97,7 @@ func NewGroupMembership(groupID, principalID, principalType, addedByID string) *
 // NewGroupInheritance creates a new GroupInheritance instance
 func NewGroupInheritance(parentGroupID, childGroupID string) *GroupInheritance {
 	return &GroupInheritance{
-		BaseModel:     base.NewBaseModel("GROUPINV", hash.Small),
+		BaseModel:     base.NewBaseModel("GRPI", hash.Small),
 		ParentGroupID: parentGroupID,
 		ChildGroupID:  childGroupID,
 		IsActive:      true,
@@ -138,11 +138,11 @@ func (g *Group) GetTableSize() hash.TableSize { return hash.Medium }
 func (g *Group) GetID() string   { return g.BaseModel.GetID() }
 func (g *Group) SetID(id string) { g.BaseModel.SetID(id) }
 
-func (gm *GroupMembership) GetTableIdentifier() string   { return "GRM" }
+func (gm *GroupMembership) GetTableIdentifier() string   { return "GRPM" }
 func (gm *GroupMembership) GetTableSize() hash.TableSize { return hash.Medium }
 
-func (gi *GroupInheritance) GetTableIdentifier() string   { return "GRI" }
-func (gi *GroupInheritance) GetTableSize() hash.TableSize { return hash.Medium }
+func (gi *GroupInheritance) GetTableIdentifier() string   { return "GRPI" }
+func (gi *GroupInheritance) GetTableSize() hash.TableSize { return hash.Small }
 
 // IsEffective checks if the membership is currently effective based on time bounds
 func (gm *GroupMembership) IsEffective(at time.Time) bool {

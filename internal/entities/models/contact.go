@@ -124,6 +124,9 @@ func (c *Contact) BeforeDeleteGORM(tx *gorm.DB) error {
 func (c *Contact) GetTableIdentifier() string   { return ContactTable }
 func (c *Contact) GetTableSize() hash.TableSize { return ContactTableSize }
 
+// TableName returns the GORM table name for this model
+func (c *Contact) TableName() string { return "contacts" }
+
 // Explicit method implementations to satisfy linter
 func (c *Contact) GetID() string   { return c.BaseModel.GetID() }
 func (c *Contact) SetID(id string) { c.BaseModel.SetID(id) }
@@ -176,6 +179,16 @@ func (c *Contact) IsEmail() bool {
 // IsPhone checks if this is a phone contact
 func (c *Contact) IsPhone() bool {
 	return c.Type == "phone"
+}
+
+// GetResourceType returns the PostgreSQL RBAC resource type for contacts
+func (c *Contact) GetResourceType() string {
+	return "aaa/contact"
+}
+
+// GetObjectID returns the PostgreSQL RBAC object ID for this contact
+func (c *Contact) GetObjectID() string {
+	return c.GetID()
 }
 
 // GetDisplayValue returns a formatted display value for the contact

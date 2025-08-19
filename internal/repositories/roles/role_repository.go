@@ -30,26 +30,35 @@ func NewRoleRepository(dbManager db.DBManager) *RoleRepository {
 
 // Create creates a new role in the database
 func (r *RoleRepository) Create(ctx context.Context, role *models.Role) error {
-	return r.dbManager.Create(ctx, role)
+	return r.BaseFilterableRepository.Create(ctx, role)
 }
 
 // GetByID retrieves a role by ID
 func (r *RoleRepository) GetByID(ctx context.Context, id string, role *models.Role) (*models.Role, error) {
-	err := r.dbManager.GetByID(ctx, id, role)
-	if err != nil {
-		return nil, err
-	}
-	return role, nil
+	return r.BaseFilterableRepository.GetByID(ctx, id, role)
 }
 
 // Update updates an existing role
 func (r *RoleRepository) Update(ctx context.Context, role *models.Role) error {
-	return r.dbManager.Update(ctx, role)
+	return r.BaseFilterableRepository.Update(ctx, role)
 }
 
-// Delete deletes a role by ID
+// Delete deletes a role by ID (hard delete)
 func (r *RoleRepository) Delete(ctx context.Context, id string, role *models.Role) error {
+	// Use the BaseFilterableRepository directly - it now properly handles table names
 	return r.BaseFilterableRepository.Delete(ctx, id, role)
+}
+
+// SoftDelete soft deletes a role by setting deleted_at and deleted_by fields
+func (r *RoleRepository) SoftDelete(ctx context.Context, id string, deletedBy string) error {
+	// Use the BaseFilterableRepository directly - it now properly handles soft delete
+	return r.BaseFilterableRepository.SoftDelete(ctx, id, deletedBy)
+}
+
+// Restore restores a soft-deleted role
+func (r *RoleRepository) Restore(ctx context.Context, id string) error {
+	// Use the BaseFilterableRepository directly - it now properly handles restore
+	return r.BaseFilterableRepository.Restore(ctx, id)
 }
 
 // List retrieves all roles with pagination using database-level filtering
@@ -70,20 +79,14 @@ func (r *RoleRepository) Count(ctx context.Context) (int64, error) {
 	return r.BaseFilterableRepository.CountWithFilter(ctx, filter)
 }
 
-// GetByName retrieves a role by name using kisanlink-db filters
+// GetByName retrieves a role by name using base filterable repository
 func (r *RoleRepository) GetByName(ctx context.Context, name string) (*models.Role, error) {
-	filters := []base.FilterCondition{
-		{Field: "name", Operator: base.OpEqual, Value: name},
-	}
+	filter := base.NewFilterBuilder().
+		Where("name", base.OpEqual, name).
+		Build()
 
-	var roles []models.Role
-	filter := &base.Filter{
-		Group: base.FilterGroup{
-			Conditions: filters,
-			Logic:      base.LogicAnd,
-		},
-	}
-	if err := r.dbManager.List(ctx, filter, &roles); err != nil {
+	roles, err := r.BaseFilterableRepository.Find(ctx, filter)
+	if err != nil {
 		return nil, fmt.Errorf("failed to get role by name: %w", err)
 	}
 
@@ -91,7 +94,7 @@ func (r *RoleRepository) GetByName(ctx context.Context, name string) (*models.Ro
 		return nil, fmt.Errorf("role not found")
 	}
 
-	return &roles[0], nil
+	return roles[0], nil
 }
 
 // GetActive retrieves all active roles with pagination using database-level filtering

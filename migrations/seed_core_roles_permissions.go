@@ -81,26 +81,42 @@ func buildActionIndex(ctx context.Context, db *gorm.DB) (*actionIndex, error) {
 }
 
 func seedAdminAndSuperAdminPermissions(ctx context.Context, db *gorm.DB, logger *zap.Logger) error {
-	// Ensure roles exist
-	var superAdmin models.Role
-	if err := db.WithContext(ctx).Where("name = ?", "super_admin").First(&superAdmin).Error; err != nil {
-		if err != gorm.ErrRecordNotFound {
-			return err
-		}
-		superAdmin = *models.NewGlobalRole("super_admin", "Super Administrator with global access")
-		if err := db.WithContext(ctx).Create(&superAdmin).Error; err != nil {
-			return err
-		}
+	// Ensure all default roles exist
+	defaultRoles := []struct {
+		name        string
+		description string
+		scope       models.RoleScope
+	}{
+		{"super_admin", "Super Administrator with global access", models.RoleScopeGlobal},
+		{"admin", "Administrator with organization-level access", models.RoleScopeOrg},
+		{"user", "Regular user with basic access", models.RoleScopeOrg},
+		{"viewer", "Read-only access user", models.RoleScopeOrg},
+		{"aaa_admin", "AAA service administrator", models.RoleScopeGlobal},
+		{"module_admin", "Module administrator for service management", models.RoleScopeOrg},
 	}
-	var admin models.Role
-	if err := db.WithContext(ctx).Where("name = ?", "admin").First(&admin).Error; err != nil {
-		if err != gorm.ErrRecordNotFound {
-			return err
+
+	// Create roles if they don't exist
+	createdRoles := make(map[string]*models.Role)
+	for _, roleData := range defaultRoles {
+		var role models.Role
+		if err := db.WithContext(ctx).Where("name = ?", roleData.name).First(&role).Error; err != nil {
+			if err != gorm.ErrRecordNotFound {
+				return fmt.Errorf("error checking role %s: %w", roleData.name, err)
+			}
+			// Create new role
+			if roleData.scope == models.RoleScopeGlobal {
+				role = *models.NewGlobalRole(roleData.name, roleData.description)
+			} else {
+				role = *models.NewOrgRole(roleData.name, roleData.description, "")
+			}
+			if err := db.WithContext(ctx).Create(&role).Error; err != nil {
+				return fmt.Errorf("error creating role %s: %w", roleData.name, err)
+			}
+			if logger != nil {
+				logger.Info("Created default role", zap.String("name", roleData.name))
+			}
 		}
-		admin = *models.NewGlobalRole("admin", "Administrator with elevated access")
-		if err := db.WithContext(ctx).Create(&admin).Error; err != nil {
-			return err
-		}
+		createdRoles[roleData.name] = &role
 	}
 
 	// Load resources
@@ -137,6 +153,37 @@ func seedAdminAndSuperAdminPermissions(ctx context.Context, db *gorm.DB, logger 
 		"role":       {"read", "assign"},
 		"permission": {"read"},
 		"audit_log":  {"view"},
+	}
+
+	// User: basic access
+	userMatrix := map[string][]string{
+		"user":     {"read", "update"},
+		"resource": {"read"},
+	}
+
+	// Viewer: read-only access
+	viewerMatrix := map[string][]string{
+		"user":     {"read"},
+		"resource": {"read"},
+	}
+
+	// AAA Admin: AAA service management
+	aaaAdminMatrix := map[string][]string{
+		"user":         {"manage", "create", "read", "update", "delete"},
+		"role":         {"manage", "create", "read", "update", "delete"},
+		"permission":   {"manage", "create", "read", "update", "delete"},
+		"audit_log":    {"read", "export"},
+		"system":       {"manage"},
+		"api_endpoint": {"call"},
+		"resource":     {"manage", "read", "update"},
+	}
+
+	// Module Admin: module management
+	moduleAdminMatrix := map[string][]string{
+		"user":       {"read", "update"},
+		"role":       {"read", "assign"},
+		"permission": {"read"},
+		"resource":   {"read", "update"},
 	}
 
 	// Helper to upsert permission and attach to role
@@ -220,32 +267,74 @@ func seedAdminAndSuperAdminPermissions(ctx context.Context, db *gorm.DB, logger 
 		return db.WithContext(ctx).Create(ur).Error
 	}
 
-	if err := attachRole(superAdminUser.ID, superAdmin.ID); err != nil {
+	if err := attachRole(superAdminUser.ID, createdRoles["super_admin"].ID); err != nil {
 		return err
 	}
-	if err := attachRole(adminUser.ID, admin.ID); err != nil {
+	if err := attachRole(adminUser.ID, createdRoles["admin"].ID); err != nil {
 		return err
 	}
 
 	// Seed for super_admin
+	superAdmin := createdRoles["super_admin"]
 	for resName, actions := range superAdminMatrix {
 		for _, act := range actions {
-			if err := upsertAndAttach(&superAdmin, resName, act); err != nil {
+			if err := upsertAndAttach(superAdmin, resName, act); err != nil {
 				return err
 			}
 		}
 	}
 	// Seed for admin
+	admin := createdRoles["admin"]
 	for resName, actions := range adminMatrix {
 		for _, act := range actions {
-			if err := upsertAndAttach(&admin, resName, act); err != nil {
+			if err := upsertAndAttach(admin, resName, act); err != nil {
+				return err
+			}
+		}
+	}
+
+	// Seed for user
+	user := createdRoles["user"]
+	for resName, actions := range userMatrix {
+		for _, act := range actions {
+			if err := upsertAndAttach(user, resName, act); err != nil {
+				return err
+			}
+		}
+	}
+
+	// Seed for viewer
+	viewer := createdRoles["viewer"]
+	for resName, actions := range viewerMatrix {
+		for _, act := range actions {
+			if err := upsertAndAttach(viewer, resName, act); err != nil {
+				return err
+			}
+		}
+	}
+
+	// Seed for aaa_admin
+	aaaAdmin := createdRoles["aaa_admin"]
+	for resName, actions := range aaaAdminMatrix {
+		for _, act := range actions {
+			if err := upsertAndAttach(aaaAdmin, resName, act); err != nil {
+				return err
+			}
+		}
+	}
+
+	// Seed for module_admin
+	moduleAdmin := createdRoles["module_admin"]
+	for resName, actions := range moduleAdminMatrix {
+		for _, act := range actions {
+			if err := upsertAndAttach(moduleAdmin, resName, act); err != nil {
 				return err
 			}
 		}
 	}
 
 	if logger != nil {
-		logger.Info("Seeded core role permissions for admin and super_admin")
+		logger.Info("Seeded core role permissions for all default roles")
 	}
 	return nil
 }
@@ -479,35 +568,47 @@ func buildActionIndexDM(ctx context.Context, primary db.DBManager) (*actionIndex
 }
 
 func seedAdminAndSuperAdminPermissionsDM(ctx context.Context, primary db.DBManager, gormDB *gorm.DB, logger *zap.Logger) error {
-	// Ensure roles exist
-	findRoleByName := func(name string) (*models.Role, error) {
-		var roles []models.Role
-		roleFilter := &base.Filter{
-			Group: base.FilterGroup{
-				Conditions: []base.FilterCondition{{Field: "name", Operator: base.OpEqual, Value: name}},
-				Logic:      base.LogicAnd,
-			},
-		}
-		if err := primary.List(ctx, roleFilter, &roles); err != nil {
-			return nil, err
-		}
-		if len(roles) > 0 {
-			return &roles[0], nil
-		}
-		role := models.NewGlobalRole(name, fmt.Sprintf("%s role", name))
-		if err := primary.Create(ctx, role); err != nil {
-			return nil, err
-		}
-		return role, nil
+	// Ensure all default roles exist
+	defaultRoles := []struct {
+		name        string
+		description string
+		scope       models.RoleScope
+	}{
+		{"super_admin", "Super Administrator with global access", models.RoleScopeGlobal},
+		{"admin", "Administrator with organization-level access", models.RoleScopeOrg},
+		{"user", "Regular user with basic access", models.RoleScopeOrg},
+		{"viewer", "Read-only access user", models.RoleScopeOrg},
+		{"aaa_admin", "AAA service administrator", models.RoleScopeGlobal},
+		{"module_admin", "Module administrator for service management", models.RoleScopeOrg},
 	}
 
-	superAdmin, err := findRoleByName("super_admin")
-	if err != nil {
-		return err
-	}
-	admin, err := findRoleByName("admin")
-	if err != nil {
-		return err
+	// Create roles if they don't exist
+	createdRoles := make(map[string]*models.Role)
+	for _, roleData := range defaultRoles {
+		var roles []models.Role
+		if err := primary.List(ctx, &base.Filter{Group: base.FilterGroup{Conditions: []base.FilterCondition{{Field: "name", Operator: base.OpEqual, Value: roleData.name}}}}, &roles); err != nil {
+			return fmt.Errorf("error checking role %s: %w", roleData.name, err)
+		}
+
+		var role models.Role
+		if len(roles) > 0 {
+			// Role exists, use it
+			role = roles[0]
+		} else {
+			// Create new role
+			if roleData.scope == models.RoleScopeGlobal {
+				role = *models.NewGlobalRole(roleData.name, roleData.description)
+			} else {
+				role = *models.NewOrgRole(roleData.name, roleData.description, "")
+			}
+			if err := primary.Create(ctx, &role); err != nil {
+				return fmt.Errorf("error creating role %s: %w", roleData.name, err)
+			}
+			if logger != nil {
+				logger.Info("Created default role", zap.String("name", roleData.name))
+			}
+		}
+		createdRoles[roleData.name] = &role
 	}
 
 	// Load resources
@@ -547,6 +648,37 @@ func seedAdminAndSuperAdminPermissionsDM(ctx context.Context, primary db.DBManag
 		"role":       {"read", "assign"},
 		"permission": {"read"},
 		"audit_log":  {"read"},
+	}
+
+	// User: basic access
+	userMatrix := map[string][]string{
+		"user":     {"read", "update"},
+		"resource": {"read"},
+	}
+
+	// Viewer: read-only access
+	viewerMatrix := map[string][]string{
+		"user":     {"read"},
+		"resource": {"read"},
+	}
+
+	// AAA Admin: AAA service management
+	aaaAdminMatrix := map[string][]string{
+		"user":         {"manage", "create", "read", "update", "delete"},
+		"role":         {"manage", "create", "read", "update", "delete"},
+		"permission":   {"manage", "create", "read", "update", "delete"},
+		"audit_log":    {"read", "export"},
+		"system":       {"manage"},
+		"api_endpoint": {"call"},
+		"resource":     {"manage", "read", "update"},
+	}
+
+	// Module Admin: module management
+	moduleAdminMatrix := map[string][]string{
+		"user":       {"read", "update"},
+		"role":       {"read", "assign"},
+		"permission": {"read"},
+		"resource":   {"read", "update"},
 	}
 
 	// Upsert permission using DM; attach using GORM association
@@ -662,13 +794,15 @@ func seedAdminAndSuperAdminPermissionsDM(ctx context.Context, primary db.DBManag
 		ur := models.NewUserRole(userID, roleID)
 		return primary.Create(ctx, ur)
 	}
-	if err := attachRole(su.ID, superAdmin.ID); err != nil {
+	if err := attachRole(su.ID, createdRoles["super_admin"].ID); err != nil {
 		return err
 	}
-	if err := attachRole(ad.ID, admin.ID); err != nil {
+	if err := attachRole(ad.ID, createdRoles["admin"].ID); err != nil {
 		return err
 	}
 
+	// Seed permissions for all roles
+	superAdmin := createdRoles["super_admin"]
 	for resName, actions := range superAdminMatrix {
 		for _, act := range actions {
 			if err := upsertAndAttach(superAdmin, resName, act); err != nil {
@@ -676,6 +810,7 @@ func seedAdminAndSuperAdminPermissionsDM(ctx context.Context, primary db.DBManag
 			}
 		}
 	}
+	admin := createdRoles["admin"]
 	for resName, actions := range adminMatrix {
 		for _, act := range actions {
 			if err := upsertAndAttach(admin, resName, act); err != nil {
@@ -684,8 +819,48 @@ func seedAdminAndSuperAdminPermissionsDM(ctx context.Context, primary db.DBManag
 		}
 	}
 
+	// Seed for user
+	user := createdRoles["user"]
+	for resName, actions := range userMatrix {
+		for _, act := range actions {
+			if err := upsertAndAttach(user, resName, act); err != nil {
+				return err
+			}
+		}
+	}
+
+	// Seed for viewer
+	viewer := createdRoles["viewer"]
+	for resName, actions := range viewerMatrix {
+		for _, act := range actions {
+			if err := upsertAndAttach(viewer, resName, act); err != nil {
+				return err
+			}
+		}
+	}
+
+	// Seed for aaa_admin
+	aaaAdmin := createdRoles["aaa_admin"]
+	for resName, actions := range aaaAdminMatrix {
+		for _, act := range actions {
+			if err := upsertAndAttach(aaaAdmin, resName, act); err != nil {
+				return err
+			}
+		}
+	}
+
+	// Seed for module_admin
+	moduleAdmin := createdRoles["module_admin"]
+	for resName, actions := range moduleAdminMatrix {
+		for _, act := range actions {
+			if err := upsertAndAttach(moduleAdmin, resName, act); err != nil {
+				return err
+			}
+		}
+	}
+
 	if logger != nil {
-		logger.Info("Seeded core role permissions for admin and super_admin")
+		logger.Info("Seeded core role permissions for all default roles")
 	}
 	return nil
 }

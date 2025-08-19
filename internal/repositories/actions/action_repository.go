@@ -18,32 +18,42 @@ type ActionRepository struct {
 // NewActionRepository creates a new ActionRepository instance
 func NewActionRepository(dbManager db.DBManager) *ActionRepository {
 	baseRepo := base.NewBaseFilterableRepository[*models.Action]()
-	baseRepo.SetDBManager(dbManager)
+	baseRepo.SetDBManager(dbManager) // Connect the base repository to the actual database
 	return &ActionRepository{
 		BaseFilterableRepository: baseRepo,
 		dbManager:                dbManager,
 	}
 }
 
-// Create creates a new action using the base repository
+// Create creates a new action using the database manager
 func (r *ActionRepository) Create(ctx context.Context, action *models.Action) error {
-	return r.BaseFilterableRepository.Create(ctx, action)
+	return r.dbManager.Create(ctx, action)
 }
 
-// GetByID retrieves an action by ID using the base repository
+// GetByID retrieves an action by ID using the database manager
 func (r *ActionRepository) GetByID(ctx context.Context, id string) (*models.Action, error) {
 	action := &models.Action{}
-	return r.BaseFilterableRepository.GetByID(ctx, id, action)
+	err := r.dbManager.GetByID(ctx, id, action)
+	if err != nil {
+		return nil, err
+	}
+	return action, nil
 }
 
-// Update updates an existing action using the base repository
+// Update updates an existing action using the database manager
 func (r *ActionRepository) Update(ctx context.Context, action *models.Action) error {
-	return r.BaseFilterableRepository.Update(ctx, action)
+	return r.dbManager.Update(ctx, action)
 }
 
-// Delete deletes an action by ID using the base repository
+// Delete deletes an action by ID using the database manager
 func (r *ActionRepository) Delete(ctx context.Context, id string) error {
-	action := &models.Action{}
+	// Get the action first to pass as model parameter
+	action, err := r.GetByID(ctx, id)
+	if err != nil {
+		return fmt.Errorf("failed to get action for deletion: %w", err)
+	}
+
+	// Use the BaseFilterableRepository which now properly handles table names
 	return r.BaseFilterableRepository.Delete(ctx, id, action)
 }
 
