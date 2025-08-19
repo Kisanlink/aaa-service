@@ -189,9 +189,11 @@ func (s *GRPCServer) registerServices() {
 	authHandler := NewAuthHandler(s.authService, s.logger)
 	pb.RegisterUserServiceV2Server(s.server, authHandler)
 
-	// Authorization and audit handlers are available but not registered
-	// until the corresponding proto services are defined
-	//
+	// TODO: Register enhanced RBAC service when protobuf compilation is fixed
+	// enhancedRBACHandler := NewEnhancedRBACHandler(s.logger, nil, nil)
+	// s.server.RegisterService(&pb.EnhancedRBACService_ServiceDesc, enhancedRBACHandler)
+
+	// TODO: Register RoleServiceV2 and PermissionServiceV2 when their handlers are ready
 	// For now, they can be accessed through the gRPC interceptors
 	// or as separate service methods called from the auth handler
 
