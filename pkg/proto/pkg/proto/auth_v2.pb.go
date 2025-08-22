@@ -4,7 +4,7 @@
 // 	protoc        v5.29.3
 // source: pkg/proto/auth_v2.proto
 
-package proto
+package pb
 
 import (
 	reflect "reflect"

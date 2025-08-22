@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/Kisanlink/aaa-service/internal/interfaces"
@@ -45,16 +46,30 @@ func Logger(logger interfaces.Logger) gin.HandlerFunc {
 // CORS handles Cross-Origin Resource Sharing
 func CORS() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.Header("Access-Control-Allow-Origin", "*")
-		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, X-Request-ID")
-		c.Header("Access-Control-Expose-Headers", "Content-Length, X-Request-ID")
-		c.Header("Access-Control-Allow-Credentials", "true")
+		// Get allowed origins from environment variable
+		allowedOrigins := os.Getenv("AAA_CORS_ALLOWED_ORIGINS")
+		if allowedOrigins == "" {
+			allowedOrigins = "*" // Default to allow all origins
+		}
 
+		// Handle preflight requests
 		if c.Request.Method == "OPTIONS" {
+			c.Header("Access-Control-Allow-Origin", allowedOrigins)
+			c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH")
+			c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, X-Request-ID, Accept, Cache-Control, X-Requested-With")
+			c.Header("Access-Control-Expose-Headers", "Content-Length, X-Request-ID, X-Total-Count")
+			c.Header("Access-Control-Allow-Credentials", "true")
+			c.Header("Access-Control-Max-Age", "86400") // 24 hours
 			c.AbortWithStatus(http.StatusNoContent)
 			return
 		}
+
+		// Handle actual requests
+		c.Header("Access-Control-Allow-Origin", allowedOrigins)
+		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH")
+		c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, X-Request-ID, Accept, Cache-Control, X-Requested-With")
+		c.Header("Access-Control-Expose-Headers", "Content-Length, X-Request-ID, X-Total-Count")
+		c.Header("Access-Control-Allow-Credentials", "true")
 
 		c.Next()
 	}

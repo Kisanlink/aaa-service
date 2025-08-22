@@ -1,0 +1,138 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "github.com/Kisanlink/aaa-service/pb";
+
+import "google/protobuf/timestamp.proto";
+
+// UserProfile model
+message UserProfile {
+    string id = 1;
+    string user_id = 2;
+    string first_name = 3;
+    string middle_name = 4;
+    string last_name = 5;
+    string display_name = 6;
+    string avatar_url = 7;
+    string bio = 8;
+    string date_of_birth = 9; // ISO date format
+    string gender = 10;
+    string occupation = 11;
+    string education = 12;
+    string marital_status = 13;
+    string language_preference = 14;
+    string timezone = 15;
+    map<string, string> preferences = 16;
+    map<string, string> metadata = 17;
+    bool is_active = 18;
+    google.protobuf.Timestamp created_at = 19;
+    google.protobuf.Timestamp updated_at = 20;
+}
+
+// Create UserProfile Request
+message CreateUserProfileRequest {
+    string user_id = 1;
+    string first_name = 2;
+    string middle_name = 3;
+    string last_name = 4;
+    string display_name = 5;
+    string avatar_url = 6;
+    string bio = 7;
+    string date_of_birth = 8;
+    string gender = 9;
+    string occupation = 10;
+    string education = 11;
+    string marital_status = 12;
+    string language_preference = 13;
+    string timezone = 14;
+    map<string, string> preferences = 15;
+    map<string, string> metadata = 16;
+}
+
+// Create UserProfile Response
+message CreateUserProfileResponse {
+    int32 status_code = 1;
+    string message = 2;
+    UserProfile profile = 3;
+}
+
+// Get UserProfile Request
+message GetUserProfileRequest {
+    string user_id = 1;
+}
+
+// Get UserProfile Response
+message GetUserProfileResponse {
+    int32 status_code = 1;
+    string message = 2;
+    UserProfile profile = 3;
+}
+
+// Update UserProfile Request
+message UpdateUserProfileRequest {
+    string user_id = 1;
+    string first_name = 2;
+    string middle_name = 3;
+    string last_name = 4;
+    string display_name = 5;
+    string avatar_url = 6;
+    string bio = 7;
+    string date_of_birth = 8;
+    string gender = 9;
+    string occupation = 10;
+    string education = 11;
+    string marital_status = 12;
+    string language_preference = 13;
+    string timezone = 14;
+    map<string, string> preferences = 15;
+    map<string, string> metadata = 16;
+    bool is_active = 17;
+}
+
+// Update UserProfile Response
+message UpdateUserProfileResponse {
+    int32 status_code = 1;
+    string message = 2;
+    UserProfile profile = 3;
+}
+
+// Delete UserProfile Request
+message DeleteUserProfileRequest {
+    string user_id = 1;
+    bool soft_delete = 2; // If true, mark as inactive instead of deleting
+}
+
+// Delete UserProfile Response
+message DeleteUserProfileResponse {
+    int32 status_code = 1;
+    string message = 2;
+}
+
+// Search UserProfiles Request
+message SearchUserProfilesRequest {
+    string query = 1;
+    int32 page = 2;
+    int32 page_size = 3;
+    string organization_id = 4; // Optional filter by organization
+    bool active_only = 5;
+}
+
+// Search UserProfiles Response
+message SearchUserProfilesResponse {
+    int32 status_code = 1;
+    string message = 2;
+    repeated UserProfile profiles = 3;
+    int32 total_count = 4;
+    int32 page = 5;
+    int32 page_size = 6;
+}
+
+// UserProfile Service
+service UserProfileService {
+    rpc CreateUserProfile(CreateUserProfileRequest) returns (CreateUserProfileResponse);
+    rpc GetUserProfile(GetUserProfileRequest) returns (GetUserProfileResponse);
+    rpc UpdateUserProfile(UpdateUserProfileRequest) returns (UpdateUserProfileResponse);
+    rpc DeleteUserProfile(DeleteUserProfileRequest) returns (DeleteUserProfileResponse);
+    rpc SearchUserProfiles(SearchUserProfilesRequest) returns (SearchUserProfilesResponse);
+}

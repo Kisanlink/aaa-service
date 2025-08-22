@@ -57,9 +57,11 @@ type Permission struct {
 
 // PermissionResult represents the result of a permission check
 type PermissionResult struct {
-	Allowed     bool     `json:"allowed"`
-	Reason      string   `json:"reason,omitempty"`
-	Permissions []string `json:"permissions,omitempty"`
+	Allowed          bool     `json:"allowed"`
+	Reason           string   `json:"reason,omitempty"`
+	Permissions      []string `json:"permissions,omitempty"`
+	DecisionID       string   `json:"decision_id,omitempty"`
+	ConsistencyToken string   `json:"consistency_token,omitempty"`
 }
 
 // BulkPermissionRequest represents a bulk permission check request

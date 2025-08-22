@@ -1,0 +1,155 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "github.com/Kisanlink/aaa-service/pb";
+
+import "google/protobuf/timestamp.proto";
+
+// Contact model
+message Contact {
+    string id = 1;
+    string user_id = 2;
+    string type = 3; // PHONE, EMAIL, MOBILE, WHATSAPP, etc.
+    string value = 4; // The actual contact value (phone number, email, etc.)
+    string country_code = 5; // For phone numbers
+    bool is_primary = 6;
+    bool is_verified = 7;
+    bool is_active = 8;
+    map<string, string> metadata = 9;
+    google.protobuf.Timestamp created_at = 10;
+    google.protobuf.Timestamp updated_at = 11;
+    google.protobuf.Timestamp verified_at = 12;
+}
+
+// Create Contact Request
+message CreateContactRequest {
+    string user_id = 1;
+    string type = 2;
+    string value = 3;
+    string country_code = 4;
+    bool is_primary = 5;
+    map<string, string> metadata = 6;
+}
+
+// Create Contact Response
+message CreateContactResponse {
+    int32 status_code = 1;
+    string message = 2;
+    Contact contact = 3;
+}
+
+// Get Contact Request
+message GetContactRequest {
+    string id = 1;
+}
+
+// Get Contact Response
+message GetContactResponse {
+    int32 status_code = 1;
+    string message = 2;
+    Contact contact = 3;
+}
+
+// Get Contacts By User Request
+message GetContactsByUserRequest {
+    string user_id = 1;
+    string type = 2; // Optional filter by type
+    bool active_only = 3;
+    bool verified_only = 4;
+}
+
+// Get Contacts By User Response
+message GetContactsByUserResponse {
+    int32 status_code = 1;
+    string message = 2;
+    repeated Contact contacts = 3;
+}
+
+// Update Contact Request
+message UpdateContactRequest {
+    string id = 1;
+    string type = 2;
+    string value = 3;
+    string country_code = 4;
+    bool is_primary = 5;
+    bool is_verified = 6;
+    bool is_active = 7;
+    map<string, string> metadata = 8;
+}
+
+// Update Contact Response
+message UpdateContactResponse {
+    int32 status_code = 1;
+    string message = 2;
+    Contact contact = 3;
+}
+
+// Delete Contact Request
+message DeleteContactRequest {
+    string id = 1;
+    bool soft_delete = 2; // If true, mark as inactive instead of deleting
+}
+
+// Delete Contact Response
+message DeleteContactResponse {
+    int32 status_code = 1;
+    string message = 2;
+}
+
+// Verify Contact Request
+message VerifyContactRequest {
+    string id = 1;
+    string verification_code = 2;
+}
+
+// Verify Contact Response
+message VerifyContactResponse {
+    int32 status_code = 1;
+    string message = 2;
+    Contact contact = 3;
+}
+
+// Send Verification Request
+message SendVerificationRequest {
+    string id = 1;
+}
+
+// Send Verification Response
+message SendVerificationResponse {
+    int32 status_code = 1;
+    string message = 2;
+}
+
+// List Contacts Request
+message ListContactsRequest {
+    int32 page = 1;
+    int32 page_size = 2;
+    string search = 3;
+    string user_id = 4; // Filter by user
+    string type = 5;    // Filter by type
+    bool active_only = 6;
+    bool verified_only = 7;
+}
+
+// List Contacts Response
+message ListContactsResponse {
+    int32 status_code = 1;
+    string message = 2;
+    repeated Contact contacts = 3;
+    int32 total_count = 4;
+    int32 page = 5;
+    int32 page_size = 6;
+}
+
+// Contact Service
+service ContactService {
+    rpc CreateContact(CreateContactRequest) returns (CreateContactResponse);
+    rpc GetContact(GetContactRequest) returns (GetContactResponse);
+    rpc GetContactsByUser(GetContactsByUserRequest) returns (GetContactsByUserResponse);
+    rpc UpdateContact(UpdateContactRequest) returns (UpdateContactResponse);
+    rpc DeleteContact(DeleteContactRequest) returns (DeleteContactResponse);
+    rpc VerifyContact(VerifyContactRequest) returns (VerifyContactResponse);
+    rpc SendVerification(SendVerificationRequest) returns (SendVerificationResponse);
+    rpc ListContacts(ListContactsRequest) returns (ListContactsResponse);
+}

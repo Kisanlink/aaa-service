@@ -1,0 +1,135 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "github.com/Kisanlink/aaa-service/pb";
+
+import "google/protobuf/timestamp.proto";
+
+// Address model
+message Address {
+    string id = 1;
+    string user_id = 2;
+    string type = 3; // HOME, WORK, OTHER
+    string address_line_1 = 4;
+    string address_line_2 = 5;
+    string city = 6;
+    string state = 7;
+    string postal_code = 8;
+    string country = 9;
+    bool is_primary = 10;
+    bool is_active = 11;
+    map<string, string> metadata = 12;
+    google.protobuf.Timestamp created_at = 13;
+    google.protobuf.Timestamp updated_at = 14;
+}
+
+// Create Address Request
+message CreateAddressRequest {
+    string user_id = 1;
+    string type = 2;
+    string address_line_1 = 3;
+    string address_line_2 = 4;
+    string city = 5;
+    string state = 6;
+    string postal_code = 7;
+    string country = 8;
+    bool is_primary = 9;
+    map<string, string> metadata = 10;
+}
+
+// Create Address Response
+message CreateAddressResponse {
+    int32 status_code = 1;
+    string message = 2;
+    Address address = 3;
+}
+
+// Get Address Request
+message GetAddressRequest {
+    string id = 1;
+}
+
+// Get Address Response
+message GetAddressResponse {
+    int32 status_code = 1;
+    string message = 2;
+    Address address = 3;
+}
+
+// Get Addresses By User Request
+message GetAddressesByUserRequest {
+    string user_id = 1;
+    bool active_only = 2;
+}
+
+// Get Addresses By User Response
+message GetAddressesByUserResponse {
+    int32 status_code = 1;
+    string message = 2;
+    repeated Address addresses = 3;
+}
+
+// Update Address Request
+message UpdateAddressRequest {
+    string id = 1;
+    string type = 2;
+    string address_line_1 = 3;
+    string address_line_2 = 4;
+    string city = 5;
+    string state = 6;
+    string postal_code = 7;
+    string country = 8;
+    bool is_primary = 9;
+    bool is_active = 10;
+    map<string, string> metadata = 11;
+}
+
+// Update Address Response
+message UpdateAddressResponse {
+    int32 status_code = 1;
+    string message = 2;
+    Address address = 3;
+}
+
+// Delete Address Request
+message DeleteAddressRequest {
+    string id = 1;
+    bool soft_delete = 2; // If true, mark as inactive instead of deleting
+}
+
+// Delete Address Response
+message DeleteAddressResponse {
+    int32 status_code = 1;
+    string message = 2;
+}
+
+// List Addresses Request
+message ListAddressesRequest {
+    int32 page = 1;
+    int32 page_size = 2;
+    string search = 3;
+    string user_id = 4; // Filter by user
+    string type = 5;    // Filter by type
+    bool active_only = 6;
+}
+
+// List Addresses Response
+message ListAddressesResponse {
+    int32 status_code = 1;
+    string message = 2;
+    repeated Address addresses = 3;
+    int32 total_count = 4;
+    int32 page = 5;
+    int32 page_size = 6;
+}
+
+// Address Service
+service AddressService {
+    rpc CreateAddress(CreateAddressRequest) returns (CreateAddressResponse);
+    rpc GetAddress(GetAddressRequest) returns (GetAddressResponse);
+    rpc GetAddressesByUser(GetAddressesByUserRequest) returns (GetAddressesByUserResponse);
+    rpc UpdateAddress(UpdateAddressRequest) returns (UpdateAddressResponse);
+    rpc DeleteAddress(DeleteAddressRequest) returns (DeleteAddressResponse);
+    rpc ListAddresses(ListAddressesRequest) returns (ListAddressesResponse);
+}

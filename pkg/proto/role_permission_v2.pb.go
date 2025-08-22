@@ -4,7 +4,7 @@
 // 	protoc        v5.29.3
 // source: role_permission_v2.proto
 
-package pb
+package proto
 
 import (
 	reflect "reflect"

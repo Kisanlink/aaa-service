@@ -10,7 +10,7 @@ import (
 	"github.com/Kisanlink/aaa-service/internal/interfaces"
 	"github.com/Kisanlink/aaa-service/internal/middleware"
 	"github.com/Kisanlink/aaa-service/internal/services"
-	pb "github.com/Kisanlink/aaa-service/pkg/proto"
+	"github.com/Kisanlink/aaa-service/pkg/proto"
 	"github.com/Kisanlink/kisanlink-db/pkg/db"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -185,18 +185,17 @@ func (s *GRPCServer) Stop() {
 
 // registerServices registers all gRPC services
 func (s *GRPCServer) registerServices() {
-	// Register authentication service (UserServiceV2)
-	authHandler := NewAuthHandler(s.authService, s.logger)
-	pb.RegisterUserServiceV2Server(s.server, authHandler)
+	// Create a combined handler that implements both auth and user methods
+	combinedHandler := NewCombinedUserHandler(s.authService, s.userService, s.logger)
+	proto.RegisterUserServiceV2Server(s.server, combinedHandler)
 
-	// Authorization and audit handlers are available but not registered
-	// until the corresponding proto services are defined
-	//
-	// For now, they can be accessed through the gRPC interceptors
-	// or as separate service methods called from the auth handler
+	// Register authorization service
+	authzHandler := NewAuthorizationHandler(s.authzService, s.logger)
+	proto.RegisterAuthorizationServiceServer(s.server, authzHandler)
 
-	_ = NewAuthorizationHandler(s.authzService, s.logger) // Available for future use
-	_ = NewAuditHandler(s.auditService, s.logger)         // Available for future use
+	// Audit handler is available but not registered
+	// until the corresponding proto service is defined
+	_ = NewAuditHandler(s.auditService, s.logger) // Available for future use
 
 	s.logger.Info("gRPC services registered successfully")
 }

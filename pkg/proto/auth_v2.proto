@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package pb;
 
-option go_package = "github.com/Kisanlink/aaa-service/pb";
+option go_package = "github.com/Kisanlink/aaa-service/pkg/proto";
 
 // V2 User model with enhanced fields
 message UserV2 {
@@ -155,6 +155,28 @@ message LogoutResponseV2 {
     string message = 2;
 }
 
+// V2 Get User By Phone Request
+message GetUserByPhoneRequestV2 {
+    string phone_number = 1;
+    string country_code = 2;
+    bool include_roles = 3;
+    bool include_permissions = 4;
+}
+
+// V2 Verify Password Request
+message VerifyPasswordRequestV2 {
+    string username = 1;
+    string password = 2;
+}
+
+// V2 Verify Password Response
+message VerifyPasswordResponseV2 {
+    int32 status_code = 1;
+    string message = 2;
+    bool valid = 3;
+    UserV2 user = 4;
+}
+
 // V2 User Service
 service UserServiceV2 {
     rpc Login(LoginRequestV2) returns (LoginResponseV2);
@@ -165,4 +187,6 @@ service UserServiceV2 {
     rpc DeleteUser(DeleteUserRequestV2) returns (DeleteUserResponseV2);
     rpc RefreshToken(RefreshTokenRequestV2) returns (RefreshTokenResponseV2);
     rpc Logout(LogoutRequestV2) returns (LogoutResponseV2);
+    rpc GetUserByPhone(GetUserByPhoneRequestV2) returns (GetUserResponseV2);
+    rpc VerifyUserPassword(VerifyPasswordRequestV2) returns (VerifyPasswordResponseV2);
 }

@@ -33,7 +33,6 @@ import (
 	"github.com/Kisanlink/kisanlink-db/pkg/base"
 	"github.com/Kisanlink/kisanlink-db/pkg/db"
 	scalar "github.com/MarceloPetrucio/go-scalar-api-reference"
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"go.uber.org/zap"
@@ -456,7 +455,7 @@ func setupHTTPMiddleware(
 ) {
 	loggerAdapter := utils.NewLoggerAdapter(logger)
 	routes.SetupMiddleware(router,
-		cors.Default(),
+		middleware.CORS(), // Use our custom CORS middleware instead of cors.Default()
 		middleware.RequestID(),
 		middleware.Logger(loggerAdapter),
 		middleware.ResponseContextHeaders(),
