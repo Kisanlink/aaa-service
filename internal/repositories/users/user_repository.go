@@ -9,6 +9,7 @@ import (
 	"github.com/Kisanlink/aaa-service/internal/entities/models"
 	"github.com/Kisanlink/kisanlink-db/pkg/base"
 	"github.com/Kisanlink/kisanlink-db/pkg/db"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -904,6 +905,152 @@ func (r *UserRepository) GetByValidationStatusAndDeletedDateRange(ctx context.Co
 		Build()
 
 	return r.BaseFilterableRepository.Find(ctx, filter)
+}
+
+// SoftDeleteWithCascade performs a soft delete of a user with proper cascade operations for related entities
+// This method handles role cleanup, contact deactivation, and profile archiving in a transaction
+func (r *UserRepository) SoftDeleteWithCascade(ctx context.Context, userID, deletedBy string) error {
+	// Get the GORM DB instance for transaction support
+	db, err := r.getDB(ctx, false)
+	if err != nil {
+		return fmt.Errorf("failed to get database connection: %w", err)
+	}
+
+	// Use transaction to ensure all cascade operations succeed or fail together
+	return db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// First check if the user exists and is not already deleted
+		var count int64
+		if err := tx.Table("users").Where("id = ? AND deleted_at IS NULL", userID).Count(&count).Error; err != nil {
+			return fmt.Errorf("failed to check user existence: %w", err)
+		}
+
+		if count == 0 {
+			return fmt.Errorf("user with id %s not found or already deleted", userID)
+		}
+
+		now := time.Now()
+
+		// 1. Deactivate all user role assignments
+		if err := tx.Table("user_roles").
+			Where("user_id = ? AND is_active = ?", userID, true).
+			Updates(map[string]interface{}{
+				"is_active":  false,
+				"updated_at": now,
+				"deleted_by": deletedBy,
+			}).Error; err != nil {
+			return fmt.Errorf("failed to deactivate user roles: %w", err)
+		}
+
+		// 2. Soft delete user contacts
+		if err := tx.Table("contacts").
+			Where("user_id = ? AND deleted_at IS NULL", userID).
+			Updates(map[string]interface{}{
+				"deleted_at": now,
+				"deleted_by": deletedBy,
+				"updated_at": now,
+			}).Error; err != nil {
+			return fmt.Errorf("failed to soft delete user contacts: %w", err)
+		}
+
+		// 3. Soft delete user profile
+		if err := tx.Table("user_profiles").
+			Where("user_id = ? AND deleted_at IS NULL", userID).
+			Updates(map[string]interface{}{
+				"deleted_at": now,
+				"deleted_by": deletedBy,
+				"updated_at": now,
+			}).Error; err != nil {
+			return fmt.Errorf("failed to soft delete user profile: %w", err)
+		}
+
+		// 4. Finally, soft delete the user
+		if err := tx.Table("users").
+			Where("id = ? AND deleted_at IS NULL", userID).
+			Updates(map[string]interface{}{
+				"deleted_at": now,
+				"deleted_by": deletedBy,
+				"updated_at": now,
+			}).Error; err != nil {
+			return fmt.Errorf("failed to soft delete user: %w", err)
+		}
+
+		return nil
+	})
+}
+
+// GetWithActiveRoles retrieves a user with their active roles and role details efficiently loaded
+// This method uses optimized queries with proper preloading to minimize database round trips
+func (r *UserRepository) GetWithActiveRoles(ctx context.Context, userID string) (*models.User, error) {
+	// Get the GORM DB instance for complex queries with preloading
+	db, err := r.getDB(ctx, false)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get database connection: %w", err)
+	}
+
+	var user models.User
+
+	// Use a single query with preloading to efficiently load user and active roles
+	err = db.WithContext(ctx).
+		Preload("Roles", "is_active = ?", true).
+		Preload("Roles.Role", "is_active = ?", true).
+		Where("id = ? AND deleted_at IS NULL", userID).
+		First(&user).Error
+
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("user with id %s not found", userID)
+		}
+		return nil, fmt.Errorf("failed to get user with active roles: %w", err)
+	}
+
+	// Filter out any user roles where the role itself is inactive
+	// This is a safety check in case the preload condition doesn't work as expected
+	activeUserRoles := make([]models.UserRole, 0, len(user.Roles))
+	for _, userRole := range user.Roles {
+		if userRole.IsActive && userRole.Role.IsActive {
+			activeUserRoles = append(activeUserRoles, userRole)
+		}
+	}
+	user.Roles = activeUserRoles
+
+	return &user, nil
+}
+
+// VerifyMPin verifies a user's MPIN against the stored hash
+// This method uses secure comparison and proper error handling for authentication
+func (r *UserRepository) VerifyMPin(ctx context.Context, userID, plainMPin string) error {
+	// Get the GORM DB instance for direct query
+	db, err := r.getDB(ctx, true) // Use read-only connection for verification
+	if err != nil {
+		return fmt.Errorf("failed to get database connection: %w", err)
+	}
+
+	var user models.User
+	err = db.WithContext(ctx).
+		Select("id, m_pin").
+		Where("id = ? AND deleted_at IS NULL", userID).
+		First(&user).Error
+
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return fmt.Errorf("user with id %s not found", userID)
+		}
+		return fmt.Errorf("failed to get user for MPIN verification: %w", err)
+	}
+
+	// Check if user has MPIN set
+	if !user.HasMPin() {
+		return fmt.Errorf("user does not have MPIN set")
+	}
+
+	// Use bcrypt to compare the plain MPIN with the stored hash
+	// Note: This assumes MPIN is stored as a bcrypt hash like passwords
+	// If a different hashing method is used, this should be updated accordingly
+	if err := bcrypt.CompareHashAndPassword([]byte(*user.MPin), []byte(plainMPin)); err != nil {
+		return fmt.Errorf("invalid MPIN")
+	}
+
+	return nil
 }
 
 // GetByUsernameAndStatusAndValidationStatus retrieves users by username, status and validation status using database-level filtering

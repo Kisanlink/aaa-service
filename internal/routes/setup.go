@@ -40,7 +40,15 @@ func SetupAAA(router *gin.Engine, handlers RouteHandlers) {
 
 	// Setup route groups
 	SetupHealthRoutes(publicAPI, handlers.Logger)
-	SetupAuthRoutes(publicAPI, protectedAPI, handlers.AuthService, handlers.Logger)
+
+	// Setup V2 auth routes with AuthHandler for MPIN management (replaces old auth routes)
+	if handlers.UserService != nil && handlers.Validator != nil && handlers.Responder != nil {
+		SetupAuthV2Routes(publicAPI, protectedAPI, handlers.AuthMiddleware, handlers.UserService, handlers.Validator, handlers.Responder, handlers.Logger)
+	} else {
+		// Fallback to old auth routes if V2 dependencies are not available
+		SetupAuthRoutes(publicAPI, protectedAPI, handlers.AuthService, handlers.Logger)
+	}
+
 	SetupUserRoutes(protectedAPI, handlers.AuthMiddleware, handlers.UserService, handlers.RoleService, handlers.Validator, handlers.Responder, handlers.Logger)
 	SetupRoleRoutes(protectedAPI, handlers.AuthMiddleware, handlers.RoleHandler, handlers.Logger)
 	SetupPermissionRoutes(protectedAPI, handlers.AuthMiddleware, handlers.PermissionHandler, handlers.Logger)

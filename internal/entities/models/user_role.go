@@ -88,3 +88,8 @@ func (ur *UserRole) GetObjectID() string {
 // Explicit method implementations to satisfy linter
 func (ur *UserRole) GetID() string   { return ur.BaseModel.GetID() }
 func (ur *UserRole) SetID(id string) { ur.BaseModel.SetID(id) }
+
+// IsActiveAssignment checks if both the user role and the role itself are active
+func (ur *UserRole) IsActiveAssignment() bool {
+	return ur.IsActive && ur.Role.IsActive
+}

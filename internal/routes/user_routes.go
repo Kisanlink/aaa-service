@@ -34,8 +34,25 @@ func SetupUserRoutes(
 		users.GET("/search", authMiddleware.RequirePermission("user", "read"), userHandler.SearchUsers)
 		users.POST("/:id/validate", authMiddleware.RequirePermission("user", "update"), userHandler.ValidateUser)
 
-		// User role management
-		users.POST("/:id/roles/:roleId", authMiddleware.RequirePermission("user", "update"), userHandler.AssignRole)
-		users.DELETE("/:id/roles/:roleId", authMiddleware.RequirePermission("user", "update"), userHandler.RemoveRole)
+		// User role management - New bulk-style endpoints with rate limiting for sensitive operations
+		users.GET("/:id/roles", authMiddleware.RequirePermission("user", "view"), userHandler.GetUserRoles)
+		users.POST("/:id/roles",
+			middleware.SensitiveOperationRateLimit(),
+			authMiddleware.RequirePermission("user", "update"),
+			userHandler.AssignRoleToUser)
+		users.DELETE("/:id/roles/:roleId",
+			middleware.SensitiveOperationRateLimit(),
+			authMiddleware.RequirePermission("user", "update"),
+			userHandler.RemoveRoleFromUser)
+
+		// Legacy individual role management endpoints (kept for backward compatibility)
+		users.POST("/:id/roles/:roleId",
+			middleware.SensitiveOperationRateLimit(),
+			authMiddleware.RequirePermission("user", "update"),
+			userHandler.AssignRole)
+		users.DELETE("/:id/roles/:roleId/legacy",
+			middleware.SensitiveOperationRateLimit(),
+			authMiddleware.RequirePermission("user", "update"),
+			userHandler.RemoveRole)
 	}
 }

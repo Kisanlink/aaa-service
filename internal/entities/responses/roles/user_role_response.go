@@ -14,6 +14,7 @@ type UserRoleResponse struct {
 	UserID    string        `json:"user_id"`
 	RoleID    string        `json:"role_id"`
 	Role      *RoleResponse `json:"role,omitempty"`
+	IsActive  bool          `json:"is_active"`
 	CreatedAt string        `json:"created_at"`
 	UpdatedAt string        `json:"updated_at"`
 }
@@ -24,6 +25,7 @@ func NewUserRoleResponse(userRole *models.UserRole) *UserRoleResponse {
 		ID:        userRole.ID,
 		UserID:    userRole.UserID,
 		RoleID:    userRole.RoleID,
+		IsActive:  userRole.IsActive,
 		CreatedAt: userRole.CreatedAt.Format(time.RFC3339),
 		UpdatedAt: userRole.UpdatedAt.Format(time.RFC3339),
 	}

@@ -13,6 +13,7 @@ type RoleResponse struct {
 	ID          string   `json:"id"`
 	Name        string   `json:"name"`
 	Description string   `json:"description,omitempty"`
+	IsActive    bool     `json:"is_active"`
 	Permissions []string `json:"permissions,omitempty"`
 	CreatedAt   string   `json:"created_at"`
 	UpdatedAt   string   `json:"updated_at"`
@@ -30,6 +31,7 @@ func NewRoleResponse(role *models.Role) *RoleResponse {
 		ID:          role.ID,
 		Name:        role.Name,
 		Description: role.Description,
+		IsActive:    role.IsActive,
 		Permissions: permissionNames,
 		CreatedAt:   role.CreatedAt.Format(time.RFC3339),
 		UpdatedAt:   role.UpdatedAt.Format(time.RFC3339),

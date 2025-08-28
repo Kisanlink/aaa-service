@@ -5,11 +5,16 @@ import (
 	"regexp"
 )
 
-// LoginRequest represents a user login request
+// LoginRequest represents a user login request supporting both password and MPIN authentication
 type LoginRequest struct {
-	PhoneNumber string `json:"phone_number" validate:"required"`
-	CountryCode string `json:"country_code" validate:"required"`
-	Password    string `json:"password" validate:"required"`
+	PhoneNumber     string  `json:"phone_number" validate:"required"`
+	CountryCode     string  `json:"country_code" validate:"required"`
+	Password        *string `json:"password,omitempty" validate:"omitempty,min=8"`
+	MPin            *string `json:"mpin,omitempty" validate:"omitempty,len=4|len=6"`
+	MFACode         *string `json:"mfa_code,omitempty"`
+	IncludeProfile  *bool   `json:"include_profile,omitempty"`
+	IncludeRoles    *bool   `json:"include_roles,omitempty"`
+	IncludeContacts *bool   `json:"include_contacts,omitempty"`
 }
 
 // Validate validates the LoginRequest
@@ -20,15 +25,77 @@ func (r *LoginRequest) Validate() error {
 	if r.CountryCode == "" {
 		return fmt.Errorf("country code is required")
 	}
-	if r.Password == "" {
-		return fmt.Errorf("password is required")
+
+	// At least one authentication method must be provided
+	if (r.Password == nil || *r.Password == "") && (r.MPin == nil || *r.MPin == "") {
+		return fmt.Errorf("either password or mpin is required")
 	}
+
+	// Validate password if provided
+	if r.Password != nil && *r.Password != "" {
+		if len(*r.Password) < 8 {
+			return fmt.Errorf("password must be at least 8 characters long")
+		}
+	}
+
+	// Validate MPIN if provided
+	if r.MPin != nil && *r.MPin != "" {
+		if len(*r.MPin) != 4 && len(*r.MPin) != 6 {
+			return fmt.Errorf("mpin must be 4 or 6 digits")
+		}
+		mPinRegex := regexp.MustCompile(`^\d+$`)
+		if !mPinRegex.MatchString(*r.MPin) {
+			return fmt.Errorf("mpin must contain only digits")
+		}
+	}
+
 	return nil
 }
 
 // GetType returns the request type
 func (r *LoginRequest) GetType() string {
 	return "login"
+}
+
+// HasPassword checks if password is provided
+func (r *LoginRequest) HasPassword() bool {
+	return r.Password != nil && *r.Password != ""
+}
+
+// HasMPin checks if MPIN is provided
+func (r *LoginRequest) HasMPin() bool {
+	return r.MPin != nil && *r.MPin != ""
+}
+
+// GetPassword returns the password value or empty string if not provided
+func (r *LoginRequest) GetPassword() string {
+	if r.Password == nil {
+		return ""
+	}
+	return *r.Password
+}
+
+// GetMPin returns the MPIN value or empty string if not provided
+func (r *LoginRequest) GetMPin() string {
+	if r.MPin == nil {
+		return ""
+	}
+	return *r.MPin
+}
+
+// ShouldIncludeProfile returns true if profile should be included in response
+func (r *LoginRequest) ShouldIncludeProfile() bool {
+	return r.IncludeProfile != nil && *r.IncludeProfile
+}
+
+// ShouldIncludeRoles returns true if roles should be included in response
+func (r *LoginRequest) ShouldIncludeRoles() bool {
+	return r.IncludeRoles != nil && *r.IncludeRoles
+}
+
+// ShouldIncludeContacts returns true if contacts should be included in response
+func (r *LoginRequest) ShouldIncludeContacts() bool {
+	return r.IncludeContacts != nil && *r.IncludeContacts
 }
 
 // RegisterRequest represents a user registration request
@@ -196,4 +263,45 @@ func (r *SetMPinRequest) Validate() error {
 // GetType returns the request type
 func (r *SetMPinRequest) GetType() string {
 	return "set_mpin"
+}
+
+// UpdateMPinRequest represents a request to update existing mPin
+type UpdateMPinRequest struct {
+	CurrentMPin string `json:"current_mpin" validate:"required,len=4|len=6"`
+	NewMPin     string `json:"new_mpin" validate:"required,len=4|len=6"`
+}
+
+// Validate validates the UpdateMPinRequest
+func (r *UpdateMPinRequest) Validate() error {
+	if r.CurrentMPin == "" {
+		return fmt.Errorf("current mPin is required")
+	}
+	if len(r.CurrentMPin) != 4 && len(r.CurrentMPin) != 6 {
+		return fmt.Errorf("current mPin must be 4 or 6 digits")
+	}
+	mPinRegex := regexp.MustCompile(`^\d+$`)
+	if !mPinRegex.MatchString(r.CurrentMPin) {
+		return fmt.Errorf("current mPin must contain only digits")
+	}
+
+	if r.NewMPin == "" {
+		return fmt.Errorf("new mPin is required")
+	}
+	if len(r.NewMPin) != 4 && len(r.NewMPin) != 6 {
+		return fmt.Errorf("new mPin must be 4 or 6 digits")
+	}
+	if !mPinRegex.MatchString(r.NewMPin) {
+		return fmt.Errorf("new mPin must contain only digits")
+	}
+
+	if r.CurrentMPin == r.NewMPin {
+		return fmt.Errorf("new mPin must be different from current mPin")
+	}
+
+	return nil
+}
+
+// GetType returns the request type
+func (r *UpdateMPinRequest) GetType() string {
+	return "update_mpin"
 }

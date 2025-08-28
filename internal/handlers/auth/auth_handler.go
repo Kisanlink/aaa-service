@@ -5,9 +5,11 @@ import (
 	"net/http"
 
 	"github.com/Kisanlink/aaa-service/helper"
+	"github.com/Kisanlink/aaa-service/internal/entities/models"
 	"github.com/Kisanlink/aaa-service/internal/entities/requests"
 	"github.com/Kisanlink/aaa-service/internal/entities/requests/users"
 	"github.com/Kisanlink/aaa-service/internal/entities/responses"
+	userResponses "github.com/Kisanlink/aaa-service/internal/entities/responses/users"
 	"github.com/Kisanlink/aaa-service/internal/interfaces"
 	"github.com/Kisanlink/aaa-service/pkg/errors"
 	"github.com/gin-gonic/gin"
@@ -37,8 +39,7 @@ func NewAuthHandler(
 	}
 }
 
-// LoginV2 handles POST /v2/auth/login
-
+// LoginV2 handles POST /v2/auth/login with enhanced MPIN support
 func (h *AuthHandler) LoginV2(c *gin.Context) {
 	h.logger.Info("Processing login request")
 
@@ -63,56 +64,85 @@ func (h *AuthHandler) LoginV2(c *gin.Context) {
 		return
 	}
 
-	// Get user by phone number and verify password using the service
-	userResponse, err := h.userService.VerifyUserPasswordByPhone(c.Request.Context(), req.PhoneNumber, req.CountryCode, req.Password)
+	// Use enhanced credential verification that supports both password and MPIN
+	var password, mpin *string
+	if req.HasPassword() {
+		pwd := req.GetPassword()
+		password = &pwd
+	}
+	if req.HasMPin() {
+		mp := req.GetMPin()
+		mpin = &mp
+	}
+
+	userResponse, err := h.userService.VerifyUserCredentials(c.Request.Context(), req.PhoneNumber, req.CountryCode, password, mpin)
 	if err != nil {
 		h.logger.Error("Failed to verify user credentials", zap.Error(err))
 		if notFoundErr, ok := err.(*errors.NotFoundError); ok {
 			h.responder.SendError(c, http.StatusUnauthorized, "Invalid credentials", notFoundErr)
 			return
 		}
+		if unauthorizedErr, ok := err.(*errors.UnauthorizedError); ok {
+			h.responder.SendError(c, http.StatusUnauthorized, "Invalid credentials", unauthorizedErr)
+			return
+		}
+		if badRequestErr, ok := err.(*errors.BadRequestError); ok {
+			h.responder.SendError(c, http.StatusBadRequest, badRequestErr.Error(), badRequestErr)
+			return
+		}
 		h.responder.SendInternalError(c, err)
 		return
 	}
 
-	// Generate tokens using helper functions (from existing controller logic)
-	// Note: Passing nil for roles since helper expects []model.UserRole but we have []RoleDetail
-	// TODO: Implement proper role conversion or update helper functions
+	// Convert user roles for token generation
+	var userRoles []models.UserRole
+	for _, role := range userResponse.Roles {
+		userRole := models.NewUserRole(role.UserID, role.RoleID)
+		userRole.SetID(role.ID)
+		userRole.IsActive = role.IsActive
+		userRoles = append(userRoles, *userRole)
+	}
+
+	// Generate tokens with role information
 	username := ""
 	if userResponse.Username != nil {
 		username = *userResponse.Username
 	}
-	accessToken, err := helper.GenerateAccessToken(userResponse.ID, nil, username, userResponse.IsValidated)
+	accessToken, err := helper.GenerateAccessToken(userResponse.ID, userRoles, username, userResponse.IsValidated)
 	if err != nil {
 		h.logger.Error("Failed to generate access token", zap.Error(err))
 		h.responder.SendInternalError(c, err)
 		return
 	}
 
-	refreshToken, err := helper.GenerateRefreshToken(userResponse.ID, nil, username, userResponse.IsValidated)
+	refreshToken, err := helper.GenerateRefreshToken(userResponse.ID, userRoles, username, userResponse.IsValidated)
 	if err != nil {
 		h.logger.Error("Failed to generate refresh token", zap.Error(err))
 		h.responder.SendInternalError(c, err)
 		return
 	}
 
-	// Create login response
+	// Convert user service response to auth response format
+	authUserInfo := h.convertToAuthUserInfo(userResponse)
+
+	// Create enhanced login response
 	loginResponse := &responses.LoginResponse{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 		TokenType:    "Bearer",
 		ExpiresIn:    3600, // 1 hour
-		User: &responses.UserInfo{
-			ID:          userResponse.ID,
-			PhoneNumber: userResponse.PhoneNumber,
-			CountryCode: userResponse.CountryCode,
-			Username:    username,
-			IsValidated: userResponse.IsValidated,
-		},
-		Message: "Login successful",
+		User:         authUserInfo,
+		Message:      "Login successful",
 	}
 
-	h.logger.Info("User logged in successfully", zap.String("userID", userResponse.ID))
+	authMethod := "password"
+	if mpin != nil {
+		authMethod = "mpin"
+	}
+	h.logger.Info("User logged in successfully",
+		zap.String("userID", userResponse.ID),
+		zap.String("method", authMethod),
+		zap.Int("role_count", len(userResponse.Roles)))
 	h.responder.SendSuccess(c, http.StatusOK, loginResponse)
 }
 
@@ -167,7 +197,7 @@ func (h *AuthHandler) RegisterV2(c *gin.Context) {
 	registerResponse := &responses.RegisterResponse{
 		User: &responses.UserInfo{
 			ID:          userResponse.ID,
-			Username:    username,
+			Username:    &username,
 			PhoneNumber: userResponse.PhoneNumber,
 			CountryCode: userResponse.CountryCode,
 			IsValidated: userResponse.IsValidated,
@@ -363,6 +393,13 @@ func (h *AuthHandler) SetMPinV2(c *gin.Context) {
 		return
 	}
 
+	// Additional validation using validator service
+	if err := h.validator.ValidateStruct(&req); err != nil {
+		h.logger.Error("Struct validation failed", zap.Error(err))
+		h.responder.SendValidationError(c, []string{err.Error()})
+		return
+	}
+
 	// Verify current password first
 	userIDStr, ok := userID.(string)
 	if !ok {
@@ -370,22 +407,107 @@ func (h *AuthHandler) SetMPinV2(c *gin.Context) {
 		return
 	}
 
-	// Removed userResponse as it's not needed
-
 	// Set mPin
 	err := h.userService.SetMPin(c.Request.Context(), userIDStr, req.MPin)
 	if err != nil {
 		h.logger.Error("Failed to set mPin", zap.Error(err))
+		if unauthorizedErr, ok := err.(*errors.UnauthorizedError); ok {
+			h.responder.SendError(c, http.StatusUnauthorized, "Invalid password", unauthorizedErr)
+			return
+		}
+		if validationErr, ok := err.(*errors.ValidationError); ok {
+			h.responder.SendValidationError(c, []string{validationErr.Error()})
+			return
+		}
 		h.responder.SendInternalError(c, err)
 		return
 	}
 
-	response := map[string]interface{}{
+	response := map[string]any{
 		"success": true,
 		"message": "mPin set successfully",
 	}
 
 	h.logger.Info("mPin set successfully", zap.String("userID", userIDStr))
+	h.responder.SendSuccess(c, http.StatusOK, response)
+}
+
+// UpdateMPinV2 handles POST /v2/auth/update-mpin
+// @Summary Update user's existing mPin
+// @Description Update existing mPin with current mPin verification
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param request body requests.UpdateMPinRequest true "Update mPin request"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} responses.ErrorResponse
+// @Failure 401 {object} responses.ErrorResponse
+// @Failure 500 {object} responses.ErrorResponse
+// @Router /api/v2/auth/update-mpin [post]
+// @Security Bearer
+func (h *AuthHandler) UpdateMPinV2(c *gin.Context) {
+	h.logger.Info("Processing update mPin request")
+
+	// Get user ID from context (set by auth middleware)
+	userID, exists := c.Get("user_id")
+	if !exists {
+		h.responder.SendError(c, http.StatusUnauthorized, "User not authenticated", nil)
+		return
+	}
+
+	var req requests.UpdateMPinRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		h.logger.Error("Failed to bind update mPin request", zap.Error(err))
+		h.responder.SendValidationError(c, []string{err.Error()})
+		return
+	}
+
+	// Validate request
+	if err := req.Validate(); err != nil {
+		h.logger.Error("Update mPin request validation failed", zap.Error(err))
+		h.responder.SendValidationError(c, []string{err.Error()})
+		return
+	}
+
+	// Additional validation using validator service
+	if err := h.validator.ValidateStruct(&req); err != nil {
+		h.logger.Error("Struct validation failed", zap.Error(err))
+		h.responder.SendValidationError(c, []string{err.Error()})
+		return
+	}
+
+	userIDStr, ok := userID.(string)
+	if !ok {
+		h.responder.SendInternalError(c, fmt.Errorf("invalid user ID type"))
+		return
+	}
+
+	// Update mPin using service method that verifies current mPin
+	err := h.userService.UpdateMPin(c.Request.Context(), userIDStr, req.CurrentMPin, req.NewMPin)
+	if err != nil {
+		h.logger.Error("Failed to update mPin", zap.Error(err))
+		if unauthorizedErr, ok := err.(*errors.UnauthorizedError); ok {
+			h.responder.SendError(c, http.StatusUnauthorized, "Invalid current mPin", unauthorizedErr)
+			return
+		}
+		if validationErr, ok := err.(*errors.ValidationError); ok {
+			h.responder.SendValidationError(c, []string{validationErr.Error()})
+			return
+		}
+		if notFoundErr, ok := err.(*errors.NotFoundError); ok {
+			h.responder.SendError(c, http.StatusNotFound, "User not found or mPin not set", notFoundErr)
+			return
+		}
+		h.responder.SendInternalError(c, err)
+		return
+	}
+
+	response := map[string]any{
+		"success": true,
+		"message": "mPin updated successfully",
+	}
+
+	h.logger.Info("mPin updated successfully", zap.String("userID", userIDStr))
 	h.responder.SendSuccess(c, http.StatusOK, response)
 }
 
@@ -398,5 +520,38 @@ func (h *AuthHandler) convertToCreateUserRequest(req *requests.RegisterRequest) 
 		Username:      req.Username,
 		AadhaarNumber: req.AadhaarNumber,
 		Name:          req.Name,
+	}
+}
+
+// convertToAuthUserInfo converts user service response to auth response format
+func (h *AuthHandler) convertToAuthUserInfo(userResponse *userResponses.UserResponse) *responses.UserInfo {
+	// Convert roles from user service format to auth response format
+	authRoles := make([]responses.UserRoleDetail, len(userResponse.Roles))
+	for i, role := range userResponse.Roles {
+		authRoles[i] = responses.UserRoleDetail{
+			ID:       role.ID,
+			UserID:   role.UserID,
+			RoleID:   role.RoleID,
+			IsActive: role.IsActive,
+			Role: responses.RoleDetail{
+				ID:          role.Role.ID,
+				Name:        role.Role.Name,
+				Description: role.Role.Description,
+				IsActive:    role.Role.IsActive,
+			},
+		}
+	}
+
+	return &responses.UserInfo{
+		ID:          userResponse.ID,
+		PhoneNumber: userResponse.PhoneNumber,
+		CountryCode: userResponse.CountryCode,
+		Username:    userResponse.Username,
+		IsValidated: userResponse.IsValidated,
+		CreatedAt:   userResponse.CreatedAt,
+		UpdatedAt:   userResponse.UpdatedAt,
+		Tokens:      userResponse.Tokens,
+		HasMPin:     userResponse.HasMPin,
+		Roles:       authRoles,
 	}
 }

@@ -76,7 +76,10 @@ type UserService interface {
 	VerifyUserPasswordByPhone(ctx context.Context, phoneNumber, countryCode, password string) (*userResponses.UserResponse, error)
 	SetMPin(ctx context.Context, userID string, mPin string) error
 	VerifyMPin(ctx context.Context, userID string, mPin string) error
+	UpdateMPin(ctx context.Context, userID, currentMPin, newMPin string) error
+	VerifyUserCredentials(ctx context.Context, phone, countryCode string, password, mpin *string) (*userResponses.UserResponse, error)
 	GetUserByPhoneNumber(ctx context.Context, phoneNumber, countryCode string) (*userResponses.UserResponse, error)
+	SoftDeleteUserWithCascade(ctx context.Context, userID, deletedBy string) error
 }
 
 // AddressService interface for address-related operations
@@ -180,6 +183,11 @@ type UserRoleRepository interface {
 	GetByUserAndRole(ctx context.Context, userID, roleID string) (*models.UserRole, error)
 	DeleteByUserAndRole(ctx context.Context, userID, roleID string) error
 	ExistsByUserAndRole(ctx context.Context, userID, roleID string) (bool, error)
+	// Enhanced methods for role management operations
+	GetActiveRolesByUserID(ctx context.Context, userID string) ([]*models.UserRole, error)
+	AssignRole(ctx context.Context, userID, roleID string) error
+	RemoveRole(ctx context.Context, userID, roleID string) error
+	IsRoleAssigned(ctx context.Context, userID, roleID string) (bool, error)
 }
 
 // ContactRepository interface for contact data operations

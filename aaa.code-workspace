@@ -1,10 +1,16 @@
 {
-	"folders": [
-		{
-			"path": "."
-		},
-		{
-			"path": "../kisanlink-db"
-		}
-	]
+  "folders": [
+    {
+      "path": "."
+    },
+    {
+      "path": "../kisanlink-db"
+    },
+    {
+      "path": "../farmers-module"
+    },
+    {
+      "path": "../kisanlink-ecom"
+    }
+  ]
 }

@@ -1,12 +1,131 @@
 package responses
 
-// UserInfo represents minimal user information in auth responses
+import (
+	"time"
+)
+
+// UserInfo represents comprehensive user information in auth responses
 type UserInfo struct {
+	ID          string           `json:"id"`
+	PhoneNumber string           `json:"phone_number"`
+	CountryCode string           `json:"country_code"`
+	Username    *string          `json:"username,omitempty"`
+	IsValidated bool             `json:"is_validated"`
+	Status      *string          `json:"status,omitempty"`
+	CreatedAt   time.Time        `json:"created_at"`
+	UpdatedAt   time.Time        `json:"updated_at"`
+	Tokens      int              `json:"tokens"`
+	HasMPin     bool             `json:"has_mpin"`
+	Roles       []UserRoleDetail `json:"roles,omitempty"`
+	Profile     *UserProfileInfo `json:"profile,omitempty"`
+	Contacts    []ContactInfo    `json:"contacts,omitempty"`
+}
+
+// UserRoleDetail represents detailed user role information
+type UserRoleDetail struct {
+	ID       string     `json:"id"`
+	UserID   string     `json:"user_id"`
+	RoleID   string     `json:"role_id"`
+	Role     RoleDetail `json:"role"`
+	IsActive bool       `json:"is_active"`
+}
+
+// RoleDetail represents detailed role information
+type RoleDetail struct {
 	ID          string `json:"id"`
-	Username    string `json:"username"`
-	PhoneNumber string `json:"phone_number"`
-	CountryCode string `json:"country_code"`
-	IsValidated bool   `json:"is_validated"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Scope       string `json:"scope"`
+	IsActive    bool   `json:"is_active"`
+	Version     int    `json:"version"`
+}
+
+// Helper methods for UserInfo
+
+// HasRoles checks if user has any roles
+func (u *UserInfo) HasRoles() bool {
+	return len(u.Roles) > 0
+}
+
+// HasProfile checks if user has profile information
+func (u *UserInfo) HasProfile() bool {
+	return u.Profile != nil
+}
+
+// HasContacts checks if user has contact information
+func (u *UserInfo) HasContacts() bool {
+	return len(u.Contacts) > 0
+}
+
+// GetActiveRoles returns only active roles
+func (u *UserInfo) GetActiveRoles() []UserRoleDetail {
+	var activeRoles []UserRoleDetail
+	for _, role := range u.Roles {
+		if role.IsActive && role.Role.IsActive {
+			activeRoles = append(activeRoles, role)
+		}
+	}
+	return activeRoles
+}
+
+// HasRole checks if user has a specific role by name
+func (u *UserInfo) HasRole(roleName string) bool {
+	for _, role := range u.Roles {
+		if role.IsActive && role.Role.IsActive && role.Role.Name == roleName {
+			return true
+		}
+	}
+	return false
+}
+
+// GetRoleNames returns a list of active role names
+func (u *UserInfo) GetRoleNames() []string {
+	var roleNames []string
+	for _, role := range u.Roles {
+		if role.IsActive && role.Role.IsActive {
+			roleNames = append(roleNames, role.Role.Name)
+		}
+	}
+	return roleNames
+}
+
+// UserProfileInfo represents user profile information in responses
+type UserProfileInfo struct {
+	ID            string       `json:"id"`
+	Name          *string      `json:"name,omitempty"`
+	CareOf        *string      `json:"care_of,omitempty"`
+	DateOfBirth   *string      `json:"date_of_birth,omitempty"`
+	YearOfBirth   *string      `json:"year_of_birth,omitempty"`
+	AadhaarNumber *string      `json:"aadhaar_number,omitempty"`
+	EmailHash     *string      `json:"email_hash,omitempty"`
+	ShareCode     *string      `json:"share_code,omitempty"`
+	Address       *AddressInfo `json:"address,omitempty"`
+}
+
+// AddressInfo represents address information in responses
+type AddressInfo struct {
+	ID          string  `json:"id"`
+	House       *string `json:"house,omitempty"`
+	Street      *string `json:"street,omitempty"`
+	Landmark    *string `json:"landmark,omitempty"`
+	PostOffice  *string `json:"post_office,omitempty"`
+	Subdistrict *string `json:"subdistrict,omitempty"`
+	District    *string `json:"district,omitempty"`
+	VTC         *string `json:"vtc,omitempty"` // Village/Town/City
+	State       *string `json:"state,omitempty"`
+	Country     *string `json:"country,omitempty"`
+	Pincode     *string `json:"pincode,omitempty"`
+	FullAddress *string `json:"full_address,omitempty"`
+}
+
+// ContactInfo represents contact information in responses
+type ContactInfo struct {
+	ID          string  `json:"id"`
+	Type        string  `json:"type"`
+	Value       string  `json:"value"`
+	IsPrimary   bool    `json:"is_primary"`
+	IsVerified  bool    `json:"is_verified"`
+	Description *string `json:"description,omitempty"`
 }
 
 // LoginResponse represents the response for a successful login
@@ -128,4 +247,90 @@ func (r *TokenValidationResponse) GetType() string {
 // IsSuccess returns whether the response indicates success
 func (r *TokenValidationResponse) IsSuccess() bool {
 	return r.Valid
+}
+
+// SetMPinResponse represents the response for setting MPIN
+type SetMPinResponse struct {
+	Message string `json:"message"`
+	Success bool   `json:"success"`
+}
+
+// GetType returns the response type
+func (r *SetMPinResponse) GetType() string {
+	return "set_mpin"
+}
+
+// IsSuccess returns whether the response indicates success
+func (r *SetMPinResponse) IsSuccess() bool {
+	return r.Success
+}
+
+// UpdateMPinResponse represents the response for updating MPIN
+type UpdateMPinResponse struct {
+	Message string `json:"message"`
+	Success bool   `json:"success"`
+}
+
+// GetType returns the response type
+func (r *UpdateMPinResponse) GetType() string {
+	return "update_mpin"
+}
+
+// IsSuccess returns whether the response indicates success
+func (r *UpdateMPinResponse) IsSuccess() bool {
+	return r.Success
+}
+
+// AssignRoleResponse represents the response for role assignment
+type AssignRoleResponse struct {
+	Message string     `json:"message"`
+	UserID  string     `json:"user_id"`
+	Role    RoleDetail `json:"role"`
+	Success bool       `json:"success"`
+}
+
+// GetType returns the response type
+func (r *AssignRoleResponse) GetType() string {
+	return "assign_role"
+}
+
+// IsSuccess returns whether the response indicates success
+func (r *AssignRoleResponse) IsSuccess() bool {
+	return r.Success
+}
+
+// RemoveRoleResponse represents the response for role removal
+type RemoveRoleResponse struct {
+	Message string `json:"message"`
+	UserID  string `json:"user_id"`
+	RoleID  string `json:"role_id"`
+	Success bool   `json:"success"`
+}
+
+// GetType returns the response type
+func (r *RemoveRoleResponse) GetType() string {
+	return "remove_role"
+}
+
+// IsSuccess returns whether the response indicates success
+func (r *RemoveRoleResponse) IsSuccess() bool {
+	return r.Success
+}
+
+// GetUserRolesResponse represents the response for getting user roles
+type GetUserRolesResponse struct {
+	UserID  string           `json:"user_id"`
+	Roles   []UserRoleDetail `json:"roles"`
+	Message string           `json:"message"`
+	Success bool             `json:"success"`
+}
+
+// GetType returns the response type
+func (r *GetUserRolesResponse) GetType() string {
+	return "get_user_roles"
+}
+
+// IsSuccess returns whether the response indicates success
+func (r *GetUserRolesResponse) IsSuccess() bool {
+	return r.Success
 }

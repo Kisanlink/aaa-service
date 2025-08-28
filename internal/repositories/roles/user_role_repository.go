@@ -7,6 +7,7 @@ import (
 	"github.com/Kisanlink/aaa-service/internal/entities/models"
 	"github.com/Kisanlink/kisanlink-db/pkg/base"
 	"github.com/Kisanlink/kisanlink-db/pkg/db"
+	"gorm.io/gorm"
 )
 
 // UserRoleRepository handles database operations for UserRole entities
@@ -158,4 +159,114 @@ func (r *UserRoleRepository) ExistsByUserAndRole(ctx context.Context, userID, ro
 		return false, nil // User role doesn't exist
 	}
 	return true, nil
+}
+
+// GetActiveRolesByUserID retrieves all active user roles with role details preloaded
+func (r *UserRoleRepository) GetActiveRolesByUserID(ctx context.Context, userID string) ([]*models.UserRole, error) {
+	// Get the GORM DB instance for complex queries with preloading
+	db, err := r.getDB(ctx, false)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get database connection: %w", err)
+	}
+
+	var userRoles []models.UserRole
+	err = db.WithContext(ctx).
+		Preload("Role").
+		Where("user_id = ? AND is_active = ?", userID, true).
+		Find(&userRoles).Error
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get active roles for user %s: %w", userID, err)
+	}
+
+	// Filter out roles that are not active and convert to pointers
+	activeUserRoles := make([]*models.UserRole, 0, len(userRoles))
+	for i := range userRoles {
+		if userRoles[i].Role.IsActive {
+			activeUserRoles = append(activeUserRoles, &userRoles[i])
+		}
+	}
+
+	return activeUserRoles, nil
+}
+
+// AssignRole creates a new user role assignment with transaction support and validation
+func (r *UserRoleRepository) AssignRole(ctx context.Context, userID, roleID string) error {
+	// Check if role is already assigned
+	exists, err := r.IsRoleAssigned(ctx, userID, roleID)
+	if err != nil {
+		return fmt.Errorf("failed to check existing role assignment: %w", err)
+	}
+	if exists {
+		return fmt.Errorf("role %s is already assigned to user %s", roleID, userID)
+	}
+
+	// Create new user role assignment
+	userRole := models.NewUserRole(userID, roleID)
+
+	// Use GORM transaction for consistency
+	db, err := r.getDB(ctx, false)
+	if err != nil {
+		return fmt.Errorf("failed to get database connection: %w", err)
+	}
+
+	return db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(userRole).Error; err != nil {
+			return fmt.Errorf("failed to create user role assignment: %w", err)
+		}
+		return nil
+	})
+}
+
+// RemoveRole removes a user role assignment with proper constraint handling
+func (r *UserRoleRepository) RemoveRole(ctx context.Context, userID, roleID string) error {
+	// Find the user role assignment
+	userRole, err := r.GetByUserAndRole(ctx, userID, roleID)
+	if err != nil {
+		return fmt.Errorf("user role assignment not found for user %s and role %s: %w", userID, roleID, err)
+	}
+
+	// Use GORM transaction for consistency
+	db, err := r.getDB(ctx, false)
+	if err != nil {
+		return fmt.Errorf("failed to get database connection: %w", err)
+	}
+
+	return db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// Soft delete by setting is_active to false instead of hard delete
+		// This maintains audit trail and handles foreign key constraints
+		userRole.IsActive = false
+		if err := tx.Save(userRole).Error; err != nil {
+			return fmt.Errorf("failed to deactivate user role assignment: %w", err)
+		}
+		return nil
+	})
+}
+
+// IsRoleAssigned checks if a role is currently assigned to a user (active assignment)
+func (r *UserRoleRepository) IsRoleAssigned(ctx context.Context, userID, roleID string) (bool, error) {
+	filter := base.NewFilterBuilder().
+		Where("user_id", base.OpEqual, userID).
+		Where("role_id", base.OpEqual, roleID).
+		Where("is_active", base.OpEqual, true).
+		Build()
+
+	userRoles, err := r.BaseFilterableRepository.Find(ctx, filter)
+	if err != nil {
+		return false, fmt.Errorf("failed to check role assignment: %w", err)
+	}
+
+	return len(userRoles) > 0, nil
+}
+
+// getDB is a helper method to get the database connection from the database manager
+func (r *UserRoleRepository) getDB(ctx context.Context, readOnly bool) (*gorm.DB, error) {
+	// Try to get the database from the database manager
+	if postgresMgr, ok := r.dbManager.(interface {
+		GetDB(context.Context, bool) (*gorm.DB, error)
+	}); ok {
+		return postgresMgr.GetDB(ctx, readOnly)
+	}
+
+	return nil, fmt.Errorf("database manager does not support GetDB method")
 }

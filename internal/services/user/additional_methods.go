@@ -239,11 +239,65 @@ func (s *Service) GetUserWithProfile(ctx context.Context, userID string) (*userR
 	return s.GetUserByID(ctx, userID)
 }
 
-// GetUserWithRoles retrieves user with role information
+// GetUserWithRoles retrieves user with complete role information
 func (s *Service) GetUserWithRoles(ctx context.Context, userID string) (*userResponses.UserResponse, error) {
 	s.logger.Info("Getting user with roles", zap.String("user_id", userID))
-	// This would require role joins - stub for now
-	return s.GetUserByID(ctx, userID)
+
+	if userID == "" {
+		return nil, errors.NewValidationError("user ID cannot be empty")
+	}
+
+	// Get user from repository
+	user := &models.User{}
+	_, err := s.userRepo.GetByID(ctx, userID, user)
+	if err != nil {
+		s.logger.Error("Failed to get user by ID", zap.String("user_id", userID), zap.Error(err))
+		return nil, errors.NewNotFoundError("user not found")
+	}
+
+	// Get user roles with role details
+	userRoles, err := s.userRoleRepo.GetActiveRolesByUserID(ctx, userID)
+	if err != nil {
+		s.logger.Error("Failed to get user roles", zap.String("user_id", userID), zap.Error(err))
+		return nil, errors.NewInternalError(err)
+	}
+
+	// Convert to response format with roles
+	response := &userResponses.UserResponse{
+		ID:          user.ID,
+		Username:    user.Username,
+		PhoneNumber: user.PhoneNumber,
+		CountryCode: user.CountryCode,
+		IsValidated: user.IsValidated,
+		CreatedAt:   user.CreatedAt,
+		UpdatedAt:   user.UpdatedAt,
+		Tokens:      user.Tokens,
+		HasMPin:     user.HasMPin(),
+	}
+
+	// Add roles to response
+	roles := make([]userResponses.UserRoleDetail, len(userRoles))
+	for i, userRole := range userRoles {
+		roles[i] = userResponses.UserRoleDetail{
+			ID:       userRole.ID,
+			UserID:   userRole.UserID,
+			RoleID:   userRole.RoleID,
+			IsActive: userRole.IsActive,
+			Role: userResponses.RoleDetail{
+				ID:          userRole.Role.ID,
+				Name:        userRole.Role.Name,
+				Description: userRole.Role.Description,
+				IsActive:    userRole.Role.IsActive,
+				AssignedAt:  userRole.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+			},
+		}
+	}
+	response.Roles = roles
+
+	s.logger.Info("User with roles retrieved successfully",
+		zap.String("user_id", userID),
+		zap.Int("role_count", len(roles)))
+	return response, nil
 }
 
 // VerifyUserPassword verifies user password by username
@@ -308,34 +362,49 @@ func (s *Service) VerifyUserPasswordByPhone(ctx context.Context, phoneNumber, co
 	return response, nil
 }
 
-// SetMPin sets user's mPin
+// SetMPin sets user's MPIN with secure hashing and validation
 func (s *Service) SetMPin(ctx context.Context, userID string, mPin string) error {
-	s.logger.Info("Setting mPin", zap.String("user_id", userID))
+	s.logger.Info("Setting MPIN", zap.String("user_id", userID))
 
 	if userID == "" || mPin == "" {
-		return errors.NewValidationError("user ID and mPin are required")
+		return errors.NewValidationError("user ID and MPIN are required")
+	}
+
+	// Validate MPIN format (4-6 digits)
+	if len(mPin) < 4 || len(mPin) > 6 {
+		return errors.NewValidationError("MPIN must be 4-6 digits")
+	}
+
+	// Validate MPIN contains only digits
+	for _, char := range mPin {
+		if char < '0' || char > '9' {
+			return errors.NewValidationError("MPIN must contain only digits")
+		}
 	}
 
 	user := &models.User{}
 	_, err := s.userRepo.GetByID(ctx, userID, user)
 	if err != nil {
+		s.logger.Error("Failed to get user for MPIN setting", zap.String("user_id", userID), zap.Error(err))
 		return errors.NewNotFoundError("user not found")
 	}
 
-	// Hash the mPin
+	// Hash the MPIN with appropriate cost
 	hashedMPin, err := bcrypt.GenerateFromPassword([]byte(mPin), bcrypt.DefaultCost)
 	if err != nil {
+		s.logger.Error("Failed to hash MPIN", zap.String("user_id", userID), zap.Error(err))
 		return errors.NewInternalError(err)
 	}
 
 	user.SetMPin(string(hashedMPin))
 	err = s.userRepo.Update(ctx, user)
 	if err != nil {
-		s.logger.Error("Failed to set mPin", zap.String("user_id", userID), zap.Error(err))
+		s.logger.Error("Failed to set MPIN", zap.String("user_id", userID), zap.Error(err))
 		return errors.NewInternalError(err)
 	}
 
 	s.clearUserCache(userID)
+	s.logger.Info("MPIN set successfully", zap.String("user_id", userID))
 	return nil
 }
 
@@ -390,6 +459,105 @@ func (s *Service) GetUserByPhoneNumber(ctx context.Context, phoneNumber, country
 	}
 
 	return response, nil
+}
+
+// VerifyUserCredentials verifies user credentials supporting both password and MPIN authentication
+func (s *Service) VerifyUserCredentials(ctx context.Context, phone, countryCode string, password, mpin *string) (*userResponses.UserResponse, error) {
+	s.logger.Info("Verifying user credentials", zap.String("phone", phone), zap.String("country", countryCode))
+
+	if phone == "" || countryCode == "" {
+		return nil, errors.NewValidationError("phone number and country code are required")
+	}
+
+	if password == nil && mpin == nil {
+		return nil, errors.NewValidationError("either password or mpin must be provided")
+	}
+
+	// Get user by phone number
+	user, err := s.userRepo.GetByPhoneNumber(ctx, phone, countryCode)
+	if err != nil {
+		s.logger.Error("Failed to get user by phone", zap.String("phone", phone), zap.Error(err))
+		return nil, errors.NewNotFoundError("user not found")
+	}
+
+	// Prioritize password authentication if both are provided
+	if password != nil && *password != "" {
+		err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(*password))
+		if err != nil {
+			s.logger.Error("Password verification failed", zap.String("user_id", user.ID))
+			return nil, errors.NewUnauthorizedError("invalid credentials")
+		}
+	} else if mpin != nil && *mpin != "" {
+		if !user.HasMPin() {
+			s.logger.Error("MPIN not set for user", zap.String("user_id", user.ID))
+			return nil, errors.NewBadRequestError("mpin not set for user")
+		}
+
+		err = bcrypt.CompareHashAndPassword([]byte(*user.MPin), []byte(*mpin))
+		if err != nil {
+			s.logger.Error("MPIN verification failed", zap.String("user_id", user.ID))
+			return nil, errors.NewUnauthorizedError("invalid mpin")
+		}
+	} else {
+		return nil, errors.NewValidationError("no valid credentials provided")
+	}
+
+	// Get user with roles for complete response
+	return s.GetUserWithRoles(ctx, user.ID)
+}
+
+// UpdateMPin updates user's MPIN with current MPIN verification
+func (s *Service) UpdateMPin(ctx context.Context, userID, currentMPin, newMPin string) error {
+	s.logger.Info("Updating MPIN", zap.String("user_id", userID))
+
+	if userID == "" || currentMPin == "" || newMPin == "" {
+		return errors.NewValidationError("user ID, current MPIN, and new MPIN are required")
+	}
+
+	// Validate new MPIN format (4-6 digits)
+	if len(newMPin) < 4 || len(newMPin) > 6 {
+		return errors.NewValidationError("MPIN must be 4-6 digits")
+	}
+
+	// Get user
+	user := &models.User{}
+	_, err := s.userRepo.GetByID(ctx, userID, user)
+	if err != nil {
+		s.logger.Error("Failed to get user for MPIN update", zap.String("user_id", userID), zap.Error(err))
+		return errors.NewNotFoundError("user not found")
+	}
+
+	// Verify current MPIN
+	if !user.HasMPin() {
+		return errors.NewBadRequestError("current MPIN not set")
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(*user.MPin), []byte(currentMPin))
+	if err != nil {
+		s.logger.Error("Current MPIN verification failed", zap.String("user_id", userID))
+		return errors.NewUnauthorizedError("invalid current MPIN")
+	}
+
+	// Hash new MPIN
+	hashedNewMPin, err := bcrypt.GenerateFromPassword([]byte(newMPin), bcrypt.DefaultCost)
+	if err != nil {
+		s.logger.Error("Failed to hash new MPIN", zap.String("user_id", userID), zap.Error(err))
+		return errors.NewInternalError(err)
+	}
+
+	// Update MPIN
+	user.SetMPin(string(hashedNewMPin))
+	err = s.userRepo.Update(ctx, user)
+	if err != nil {
+		s.logger.Error("Failed to update MPIN", zap.String("user_id", userID), zap.Error(err))
+		return errors.NewInternalError(err)
+	}
+
+	// Clear cache
+	s.clearUserCache(userID)
+
+	s.logger.Info("MPIN updated successfully", zap.String("user_id", userID))
+	return nil
 }
 
 // clearUserCache removes user data from cache

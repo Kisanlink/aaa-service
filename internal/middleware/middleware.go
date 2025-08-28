@@ -102,6 +102,64 @@ func RateLimit() gin.HandlerFunc {
 	}
 }
 
+// SensitiveOperationRateLimit implements stricter rate limiting for sensitive operations
+func SensitiveOperationRateLimit() gin.HandlerFunc {
+	// Create a rate limiter: 10 requests per minute per IP for sensitive operations
+	limiters := make(map[string]*rate.Limiter)
+
+	return func(c *gin.Context) {
+		clientIP := c.ClientIP()
+
+		limiter, exists := limiters[clientIP]
+		if !exists {
+			// 10 requests per minute with burst of 5
+			limiter = rate.NewLimiter(rate.Every(time.Minute/10), 5)
+			limiters[clientIP] = limiter
+		}
+
+		if !limiter.Allow() {
+			c.JSON(http.StatusTooManyRequests, gin.H{
+				"error":       "Rate limit exceeded for sensitive operation",
+				"message":     "Too many sensitive requests from this IP. Please try again later.",
+				"retry_after": "60", // seconds
+			})
+			c.Abort()
+			return
+		}
+
+		c.Next()
+	}
+}
+
+// AuthenticationRateLimit implements rate limiting specifically for authentication attempts
+func AuthenticationRateLimit() gin.HandlerFunc {
+	// Create a rate limiter: 5 login attempts per minute per IP
+	limiters := make(map[string]*rate.Limiter)
+
+	return func(c *gin.Context) {
+		clientIP := c.ClientIP()
+
+		limiter, exists := limiters[clientIP]
+		if !exists {
+			// 5 requests per minute with burst of 3
+			limiter = rate.NewLimiter(rate.Every(time.Minute/5), 3)
+			limiters[clientIP] = limiter
+		}
+
+		if !limiter.Allow() {
+			c.JSON(http.StatusTooManyRequests, gin.H{
+				"error":       "Authentication rate limit exceeded",
+				"message":     "Too many authentication attempts from this IP. Please try again later.",
+				"retry_after": "60", // seconds
+			})
+			c.Abort()
+			return
+		}
+
+		c.Next()
+	}
+}
+
 // Timeout adds a timeout to requests
 func Timeout(timeout time.Duration) gin.HandlerFunc {
 	return func(c *gin.Context) {

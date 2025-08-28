@@ -39,7 +39,7 @@ func NewOrganizationHandler(
 // @Accept json
 // @Produce json
 // @Param organization body organizations.CreateOrganizationRequest true "Organization creation data"
-// @Success 201 {object} organizationResponses.OrganizationResponse
+// @Success 201 {object} organizations.OrganizationResponse
 // @Failure 400 {object} responses.ErrorResponse
 // @Failure 409 {object} responses.ErrorResponse
 // @Failure 500 {object} responses.ErrorResponse
@@ -89,7 +89,7 @@ func (h *Handler) CreateOrganization(c *gin.Context) {
 // @Tags organizations
 // @Produce json
 // @Param id path string true "Organization ID"
-// @Success 200 {object} organizationResponses.OrganizationResponse
+// @Success 200 {object} organizations.OrganizationResponse
 // @Failure 400 {object} responses.ErrorResponse
 // @Failure 404 {object} responses.ErrorResponse
 // @Failure 500 {object} responses.ErrorResponse
@@ -124,7 +124,7 @@ func (h *Handler) GetOrganization(c *gin.Context) {
 // @Produce json
 // @Param id path string true "Organization ID"
 // @Param organization body organizations.UpdateOrganizationRequest true "Organization update data"
-// @Success 200 {object} organizationResponses.OrganizationResponse
+// @Success 200 {object} organizations.OrganizationResponse
 // @Failure 400 {object} responses.ErrorResponse
 // @Failure 404 {object} responses.ErrorResponse
 // @Failure 409 {object} responses.ErrorResponse
@@ -236,7 +236,7 @@ func (h *Handler) DeleteOrganization(c *gin.Context) {
 // @Param limit query int false "Number of organizations to return (default: 10, max: 100)"
 // @Param offset query int false "Number of organizations to skip (default: 0)"
 // @Param include_inactive query bool false "Include inactive organizations (default: false)"
-// @Success 200 {array} organizationResponses.OrganizationResponse
+// @Success 200 {array} organizations.OrganizationResponse
 // @Failure 500 {object} responses.ErrorResponse
 // @Router /api/v2/organizations [get]
 func (h *Handler) ListOrganizations(c *gin.Context) {
@@ -282,7 +282,7 @@ func (h *Handler) ListOrganizations(c *gin.Context) {
 // @Tags organizations
 // @Produce json
 // @Param id path string true "Organization ID"
-// @Success 200 {object} organizationResponses.OrganizationHierarchyResponse
+// @Success 200 {object} organizations.OrganizationHierarchyResponse
 // @Failure 400 {object} responses.ErrorResponse
 // @Failure 404 {object} responses.ErrorResponse
 // @Failure 500 {object} responses.ErrorResponse
@@ -415,7 +415,7 @@ func (h *Handler) DeactivateOrganization(c *gin.Context) {
 // @Tags organizations
 // @Produce json
 // @Param id path string true "Organization ID"
-// @Success 200 {object} organizationResponses.OrganizationStatsResponse
+// @Success 200 {object} organizations.OrganizationStatsResponse
 // @Failure 400 {object} responses.ErrorResponse
 // @Failure 404 {object} responses.ErrorResponse
 // @Failure 500 {object} responses.ErrorResponse

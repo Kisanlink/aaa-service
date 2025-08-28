@@ -289,14 +289,13 @@ func initializeServer(
 	contactServiceInstance := contactService.NewContactService(contactRepository, cacheService, loggerAdapter, validator)
 
 	// Initialize handlers
-	roleHandler := roles.NewRoleHandler(roleService, validator, responder, logger)
 	permissionHandler := permissions.NewPermissionHandler(primaryDBManager, validator, responder, logger)
 
 	// Initialize HTTP server
 	httpServer, err := initializeHTTPServer(
 		httpPort, jwtSecret,
 		primaryDBManager, userService, roleService, userRepository, userRoleRepository,
-		cacheService, validator, responder, maintenanceService, logger, roleHandler, permissionHandler, contactServiceInstance,
+		cacheService, validator, responder, maintenanceService, logger, permissionHandler, contactServiceInstance,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize HTTP server: %w", err)
@@ -339,7 +338,6 @@ func initializeHTTPServer(
 	responder interfaces.Responder,
 	maintenanceService interfaces.MaintenanceService,
 	logger *zap.Logger,
-	roleHandler *roles.RoleHandler,
 	permissionHandler *permissions.PermissionHandler,
 	contactServiceInstance *contactService.ContactService,
 ) (*HTTPServer, error) {
@@ -358,6 +356,9 @@ func initializeHTTPServer(
 	if err != nil {
 		return nil, err
 	}
+
+	// Initialize roleHandler now that auditService is available
+	roleHandler := roles.NewRoleHandler(roleService, validator, responder, auditService, logger)
 
 	// Create gin router
 	router := gin.New()
