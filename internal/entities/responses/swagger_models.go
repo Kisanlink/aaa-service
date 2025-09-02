@@ -95,16 +95,54 @@ type LogoutSuccessResponse struct {
 	RequestID string    `json:"request_id,omitempty" example:"req-123456789"`
 }
 
+// MPIN Management Response Models
+
+// SetMPinSuccessResponse represents successful MPIN set response
+// @Description Successful MPIN set response
+type SetMPinSuccessResponse struct {
+	Success   bool      `json:"success" example:"true"`
+	Message   string    `json:"message" example:"MPIN set successfully"`
+	Timestamp time.Time `json:"timestamp" example:"2024-01-01T00:00:00Z"`
+	RequestID string    `json:"request_id,omitempty" example:"req-123456789"`
+}
+
+// UpdateMPinSuccessResponse represents successful MPIN update response
+// @Description Successful MPIN update response
+type UpdateMPinSuccessResponse struct {
+	Success   bool      `json:"success" example:"true"`
+	Message   string    `json:"message" example:"MPIN updated successfully"`
+	Timestamp time.Time `json:"timestamp" example:"2024-01-01T00:00:00Z"`
+	RequestID string    `json:"request_id,omitempty" example:"req-123456789"`
+}
+
 // User Management Response Models
 
 // UserInfoSwagger represents user information in responses for Swagger docs
-// @Description User information structure
+// @Description Enhanced user information structure with roles and profile
 type UserInfoSwagger struct {
-	ID          string `json:"id" example:"USER123456789"`
-	Username    string `json:"username" example:"john_doe"`
-	PhoneNumber string `json:"phone_number" example:"+1234567890"`
-	CountryCode string `json:"country_code" example:"US"`
-	IsValidated bool   `json:"is_validated" example:"true"`
+	ID          string               `json:"id" example:"USER123456789"`
+	Username    string               `json:"username" example:"john_doe"`
+	PhoneNumber string               `json:"phone_number" example:"+1234567890"`
+	CountryCode string               `json:"country_code" example:"US"`
+	IsValidated bool                 `json:"is_validated" example:"true"`
+	Status      string               `json:"status,omitempty" example:"active"`
+	CreatedAt   time.Time            `json:"created_at" example:"2024-01-01T00:00:00Z"`
+	UpdatedAt   time.Time            `json:"updated_at" example:"2024-01-01T00:00:00Z"`
+	Tokens      int                  `json:"tokens" example:"100"`
+	HasMPin     bool                 `json:"has_mpin" example:"true"`
+	Roles       []UserRoleDetailInfo `json:"roles,omitempty"`
+	Profile     *UserProfileInfo     `json:"profile,omitempty"`
+	Contacts    []ContactInfo        `json:"contacts,omitempty"`
+}
+
+// UserRoleDetailInfo represents user role detail information
+// @Description User role detail information structure
+type UserRoleDetailInfo struct {
+	ID       string     `json:"id" example:"USERROLE123456789"`
+	UserID   string     `json:"user_id" example:"USER123456789"`
+	RoleID   string     `json:"role_id" example:"ROLE123456789"`
+	Role     RoleDetail `json:"role"`
+	IsActive bool       `json:"is_active" example:"true"`
 }
 
 // UserDetailResponse represents detailed user response
@@ -352,16 +390,7 @@ type HealthCheckData struct {
 	Version string `json:"version" example:"2.0"`
 }
 
-// Utility Response Models
-
-// PaginationInfo represents pagination information
-// @Description Pagination information structure
-type PaginationInfo struct {
-	Page       int `json:"page" example:"1"`
-	PerPage    int `json:"per_page" example:"20"`
-	Total      int `json:"total" example:"100"`
-	TotalPages int `json:"total_pages" example:"5"`
-}
+// Utility Response Model
 
 // MessageResponse represents a simple message response
 // @Description Simple message response structure

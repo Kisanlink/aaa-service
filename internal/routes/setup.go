@@ -1,6 +1,8 @@
 package routes
 
 import (
+	"time"
+
 	"github.com/Kisanlink/aaa-service/internal/handlers/admin"
 	"github.com/Kisanlink/aaa-service/internal/handlers/permissions"
 	"github.com/Kisanlink/aaa-service/internal/handlers/roles"
@@ -31,12 +33,27 @@ type RouteHandlers struct {
 
 // SetupAAA configures all AAA routes with proper authentication and authorization
 func SetupAAA(router *gin.Engine, handlers RouteHandlers) {
+	// Apply global security middleware
+	router.Use(middleware.SecurityHeaders())
+	router.Use(middleware.CORS())
+	router.Use(middleware.RequestID())
+	router.Use(middleware.RequestSizeLimit(10 * 1024 * 1024)) // 10MB limit
+	router.Use(middleware.Timeout(30 * time.Second))
+	if handlers.Logger != nil {
+		// Note: Using gin's default logger for now, can be enhanced later
+		router.Use(gin.Logger())
+		router.Use(gin.Recovery())
+		router.Use(middleware.SecureErrorHandler(middleware.NewErrorHandlerConfig(handlers.Logger)))
+	}
+
 	// Public routes (no authentication required)
 	publicAPI := router.Group("/api/v2")
+	publicAPI.Use(middleware.RateLimit()) // General rate limiting for public endpoints
 
 	// Protected routes (authentication and authorization required)
 	protectedAPI := router.Group("/api/v2")
 	protectedAPI.Use(handlers.AuthMiddleware.HTTPAuthMiddleware())
+	protectedAPI.Use(middleware.SensitiveOperationRateLimit()) // More restrictive rate limiting
 
 	// Setup route groups
 	SetupHealthRoutes(publicAPI, handlers.Logger)

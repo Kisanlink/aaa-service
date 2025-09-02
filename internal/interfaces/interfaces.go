@@ -116,6 +116,12 @@ type GroupService interface {
 	AddMemberToGroup(ctx context.Context, req interface{}) (interface{}, error)
 	RemoveMemberFromGroup(ctx context.Context, groupID, principalID string, removedBy string) error
 	GetGroupMembers(ctx context.Context, groupID string, limit, offset int) (interface{}, error)
+
+	// Role assignment methods for organization-scoped group operations
+	AssignRoleToGroup(ctx context.Context, groupID, roleID, assignedBy string) (interface{}, error)
+	RemoveRoleFromGroup(ctx context.Context, groupID, roleID string) error
+	GetGroupRoles(ctx context.Context, groupID string) (interface{}, error)
+	GetUserEffectiveRoles(ctx context.Context, orgID, userID string) (interface{}, error)
 }
 
 // OrganizationService interface for organization management operations
@@ -129,6 +135,26 @@ type OrganizationService interface {
 	ActivateOrganization(ctx context.Context, orgID string) error
 	DeactivateOrganization(ctx context.Context, orgID string) error
 	GetOrganizationStats(ctx context.Context, orgID string) (interface{}, error)
+
+	// New group management methods within organization context
+	GetOrganizationGroups(ctx context.Context, orgID string, limit, offset int, includeInactive bool) (interface{}, error)
+	CreateGroupInOrganization(ctx context.Context, orgID string, req interface{}) (interface{}, error)
+	GetGroupInOrganization(ctx context.Context, orgID, groupID string) (interface{}, error)
+	UpdateGroupInOrganization(ctx context.Context, orgID, groupID string, req interface{}) (interface{}, error)
+	DeleteGroupInOrganization(ctx context.Context, orgID, groupID string, deletedBy string) error
+	GetGroupHierarchyInOrganization(ctx context.Context, orgID, groupID string) (interface{}, error)
+
+	// User-group management within organization context
+	AddUserToGroupInOrganization(ctx context.Context, orgID, groupID, userID string, req interface{}) (interface{}, error)
+	RemoveUserFromGroupInOrganization(ctx context.Context, orgID, groupID, userID string, removedBy string) error
+	GetGroupUsersInOrganization(ctx context.Context, orgID, groupID string, limit, offset int) (interface{}, error)
+	GetUserGroupsInOrganization(ctx context.Context, orgID, userID string, limit, offset int) (interface{}, error)
+
+	// Role-group management within organization context
+	AssignRoleToGroupInOrganization(ctx context.Context, orgID, groupID, roleID string, req interface{}) (interface{}, error)
+	RemoveRoleFromGroupInOrganization(ctx context.Context, orgID, groupID, roleID string, removedBy string) error
+	GetGroupRolesInOrganization(ctx context.Context, orgID, groupID string, limit, offset int) (interface{}, error)
+	GetUserEffectiveRolesInOrganization(ctx context.Context, orgID, userID string) (interface{}, error)
 }
 
 // AuthService interface for authentication operations
@@ -199,6 +225,34 @@ type ContactRepository interface {
 	GetPrimaryContact(ctx context.Context, userID string) (*models.Contact, error)
 }
 
+// GroupRepository interface for group data operations
+type GroupRepository interface {
+	base.Repository[*models.Group]
+	GetByName(ctx context.Context, name string) (*models.Group, error)
+	GetByNameAndOrganization(ctx context.Context, name, organizationID string) (*models.Group, error)
+	GetByOrganization(ctx context.Context, organizationID string, limit, offset int, includeInactive bool) ([]*models.Group, error)
+	ListActive(ctx context.Context, limit, offset int) ([]*models.Group, error)
+	GetChildren(ctx context.Context, parentID string) ([]*models.Group, error)
+	HasActiveMembers(ctx context.Context, groupID string) (bool, error)
+	CreateMembership(ctx context.Context, membership *models.GroupMembership) error
+	UpdateMembership(ctx context.Context, membership *models.GroupMembership) error
+	GetMembership(ctx context.Context, groupID, principalID string) (*models.GroupMembership, error)
+	GetGroupMembers(ctx context.Context, groupID string, limit, offset int) ([]*models.GroupMembership, error)
+}
+
+// GroupRoleRepository interface for group-role relationship operations
+type GroupRoleRepository interface {
+	base.Repository[*models.GroupRole]
+	GetByGroupID(ctx context.Context, groupID string) ([]*models.GroupRole, error)
+	GetByRoleID(ctx context.Context, roleID string) ([]*models.GroupRole, error)
+	GetByGroupAndRole(ctx context.Context, groupID, roleID string) (*models.GroupRole, error)
+	GetByOrganizationID(ctx context.Context, organizationID string, limit, offset int) ([]*models.GroupRole, error)
+	ExistsByGroupAndRole(ctx context.Context, groupID, roleID string) (bool, error)
+	DeactivateByGroupAndRole(ctx context.Context, groupID, roleID string) error
+	GetEffectiveRolesForUser(ctx context.Context, organizationID, userID string) ([]*models.GroupRole, error)
+	GetByGroupIDWithRoles(ctx context.Context, groupID string) ([]*models.GroupRole, error)
+}
+
 // TokenManager interface for token operations
 type TokenManager interface {
 	GenerateAccessToken(userID string, claims map[string]interface{}) (string, error)
@@ -259,4 +313,111 @@ type HealthService interface {
 	CheckCacheHealth(ctx context.Context) error
 	CheckExternalServiceHealth(ctx context.Context) error
 	GetOverallHealth(ctx context.Context) (interface{}, error)
+}
+
+// TransformOptions defines options for response transformation
+type TransformOptions struct {
+	// Include flags for nested objects
+	IncludeProfile  bool
+	IncludeContacts bool
+	IncludeRole     bool
+	IncludeUser     bool
+	IncludeAddress  bool
+
+	// Exclusion flags
+	ExcludeDeleted  bool
+	ExcludeInactive bool
+	OnlyActiveRoles bool
+
+	// Field control
+	MaskSensitiveData bool
+	IncludeTimestamps bool
+}
+
+// ResponseTransformer interface for transforming models to standardized responses
+type ResponseTransformer interface {
+	// User transformations
+	TransformUser(user *models.User, options TransformOptions) interface{}
+	TransformUsers(users []models.User, options TransformOptions) []interface{}
+
+	// Role transformations
+	TransformRole(role *models.Role, options TransformOptions) interface{}
+	TransformRoles(roles []models.Role, options TransformOptions) []interface{}
+
+	// UserRole transformations
+	TransformUserRole(userRole *models.UserRole, options TransformOptions) interface{}
+	TransformUserRoles(userRoles []models.UserRole, options TransformOptions) []interface{}
+
+	// Other entity transformations
+	TransformOrganization(org *models.Organization, options TransformOptions) interface{}
+	TransformOrganizations(orgs []models.Organization, options TransformOptions) []interface{}
+	TransformGroup(group *models.Group, options TransformOptions) interface{}
+	TransformGroups(groups []models.Group, options TransformOptions) []interface{}
+	TransformContact(contact *models.Contact, options TransformOptions) interface{}
+	TransformContacts(contacts []models.Contact, options TransformOptions) []interface{}
+	TransformAddress(address *models.Address, options TransformOptions) interface{}
+	TransformAddresses(addresses []models.Address, options TransformOptions) []interface{}
+	TransformPermission(permission *models.Permission, options TransformOptions) interface{}
+	TransformPermissions(permissions []models.Permission, options TransformOptions) []interface{}
+}
+
+// QueryParameterHandler interface for parsing query parameters
+type QueryParameterHandler interface {
+	ParseTransformOptions(c *gin.Context) TransformOptions
+	ValidateQueryParameters(c *gin.Context) error
+	GetDefaultOptions() TransformOptions
+	GetPaginationParams(c *gin.Context) (limit, offset int, err error)
+	GetSortParams(c *gin.Context) (sortBy, order string)
+	GetSearchParam(c *gin.Context) string
+	GetFilterParams(c *gin.Context) map[string]string
+}
+
+// ResponseValidator interface for validating response structures
+type ResponseValidator interface {
+	ValidateUserResponse(response interface{}) error
+	ValidateRoleResponse(response interface{}) error
+	ValidateUserRoleResponse(response interface{}) error
+	ValidateResponseConsistency(responses []interface{}) error
+	ValidateNoSensitiveData(response interface{}) error
+}
+
+// AuditService interface for audit logging operations
+type AuditService interface {
+	// Basic audit logging
+	LogUserAction(ctx context.Context, userID, action, resource, resourceID string, details map[string]interface{})
+	LogUserActionWithError(ctx context.Context, userID, action, resource, resourceID string, err error, details map[string]interface{})
+	LogAPIAccess(ctx context.Context, userID, method, endpoint, ipAddress, userAgent string, success bool, err error)
+	LogAccessDenied(ctx context.Context, userID, action, resource, resourceID, reason string)
+	LogPermissionChange(ctx context.Context, userID, action, resource, resourceID, permission string, details map[string]interface{})
+	LogRoleChange(ctx context.Context, userID, action, roleID string, details map[string]interface{})
+	LogDataAccess(ctx context.Context, userID, action, resource, resourceID string, oldData, newData map[string]interface{})
+	LogSecurityEvent(ctx context.Context, userID, action, resource string, success bool, details map[string]interface{})
+	LogAuthenticationAttempt(ctx context.Context, userID, method, ipAddress, userAgent string, success bool, failureReason string)
+	LogRoleOperation(ctx context.Context, actorUserID, targetUserID, roleID, operation string, success bool, details map[string]interface{})
+	LogMPINOperation(ctx context.Context, userID, operation, ipAddress, userAgent string, success bool, failureReason string)
+	LogUserLifecycleEvent(ctx context.Context, actorUserID, targetUserID, operation string, success bool, details map[string]interface{})
+	LogSuspiciousActivity(ctx context.Context, userID, activityType, description, ipAddress, userAgent string, details map[string]interface{})
+	LogRateLimitViolation(ctx context.Context, userID, endpoint, ipAddress, userAgent string, details map[string]interface{})
+	LogSystemEvent(ctx context.Context, action, resource string, success bool, details map[string]interface{})
+
+	// Organization-specific audit logging
+	LogOrganizationOperation(ctx context.Context, userID, action, orgID, message string, success bool, details map[string]interface{})
+	LogGroupOperation(ctx context.Context, userID, action, orgID, groupID, message string, success bool, details map[string]interface{})
+	LogGroupMembershipChange(ctx context.Context, actorUserID, action, orgID, groupID, targetUserID, message string, success bool, details map[string]interface{})
+	LogGroupRoleAssignment(ctx context.Context, actorUserID, action, orgID, groupID, roleID, message string, success bool, details map[string]interface{})
+	LogHierarchyChange(ctx context.Context, userID, action, resourceType, resourceID, oldParentID, newParentID, message string, success bool, details map[string]interface{})
+
+	// Audit query operations
+	QueryAuditLogs(ctx context.Context, query interface{}) (interface{}, error)
+	QueryOrganizationAuditLogs(ctx context.Context, orgID string, query interface{}) (interface{}, error)
+	GetUserAuditTrail(ctx context.Context, userID string, days int, page, perPage int) (interface{}, error)
+	GetResourceAuditTrail(ctx context.Context, resource, resourceID string, days int, page, perPage int) (interface{}, error)
+	GetOrganizationAuditTrail(ctx context.Context, orgID string, days int, page, perPage int) (interface{}, error)
+	GetGroupAuditTrail(ctx context.Context, orgID, groupID string, days int, page, perPage int) (interface{}, error)
+	GetSecurityEvents(ctx context.Context, days int, page, perPage int) (interface{}, error)
+
+	// Audit integrity and management
+	ValidateAuditLogIntegrity(ctx context.Context, auditLogID string) (bool, error)
+	GetAuditStatistics(ctx context.Context, days int) (map[string]interface{}, error)
+	ArchiveOldLogs(ctx context.Context, days int) error
 }

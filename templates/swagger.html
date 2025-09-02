@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>{{.Title}}</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <script
+      id="api-reference"
+      data-url="{{.SpecURL}}"
+      data-configuration='{
+            "theme": "{{.Theme}}",
+            "layout": "modern",
+            "showSidebar": true,
+            "hideDownloadButton": false,
+            "searchHotKey": "k"
+        }'
+    ></script>
+    <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
+  </body>
+</html>

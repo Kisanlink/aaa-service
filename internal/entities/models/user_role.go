@@ -9,9 +9,9 @@ import (
 // UserRole represents the relationship between users and roles
 type UserRole struct {
 	*base.BaseModel
-	UserID   string `gorm:"type:varchar(255);not null"`
-	RoleID   string `gorm:"type:varchar(255);not null"`
-	IsActive bool   `json:"is_active" gorm:"default:true"`
+	UserID   string `gorm:"type:varchar(255);not null;index:idx_user_roles_user_id;index:idx_user_roles_user_id_is_active,priority:1;index:idx_user_roles_user_role_assignment,priority:1"`
+	RoleID   string `gorm:"type:varchar(255);not null;index:idx_user_roles_role_id;index:idx_user_roles_user_role_assignment,priority:2"`
+	IsActive bool   `json:"is_active" gorm:"default:true;index:idx_user_roles_is_active;index:idx_user_roles_user_id_is_active,priority:2"`
 
 	// Relationships
 	User User `json:"user" gorm:"foreignKey:UserID;references:ID"`

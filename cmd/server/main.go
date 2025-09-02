@@ -519,10 +519,16 @@ func setupRoutesAndDocs(
 		router.GET("/", func(c *gin.Context) {
 			c.Redirect(http.StatusMovedPermanently, "/docs")
 		})
+
+		// Add favicon route to avoid 401 errors
+		router.GET("/favicon.ico", func(c *gin.Context) {
+			c.Status(http.StatusNoContent)
+		})
 	} else {
 		router.GET("/", func(c *gin.Context) {
 			c.String(http.StatusOK, "aaa-service running")
 		})
+		logger.Info("Documentation endpoints disabled (AAA_ENABLE_DOCS=false)")
 	}
 }
 

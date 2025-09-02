@@ -24,6 +24,18 @@ func SetupOrganizationRoutes(router *gin.Engine, orgHandler *organizations.Handl
 			orgV1.POST("/:id/activate", orgHandler.ActivateOrganization)
 			orgV1.POST("/:id/deactivate", orgHandler.DeactivateOrganization)
 			orgV1.GET("/:id/stats", orgHandler.GetOrganizationStats)
+
+			// Organization-scoped group management routes
+			orgV1.GET("/:orgId/groups", orgHandler.GetOrganizationGroups)
+			orgV1.POST("/:orgId/groups", orgHandler.CreateGroupInOrganization)
+			orgV1.GET("/:orgId/groups/:groupId", orgHandler.GetGroupInOrganization)
+
+			// User-group management within organization context
+			orgV1.POST("/:orgId/groups/:groupId/users", orgHandler.AddUserToGroupInOrganization)
+			orgV1.DELETE("/:orgId/groups/:groupId/users/:userId", orgHandler.RemoveUserFromGroupInOrganization)
+			orgV1.GET("/:orgId/groups/:groupId/users", orgHandler.GetGroupUsersInOrganization)
+			orgV1.GET("/:orgId/users/:userId/groups", orgHandler.GetUserGroupsInOrganization)
+			orgV1.GET("/:orgId/users/:userId/effective-roles", orgHandler.GetUserEffectiveRolesInOrganization)
 		}
 	}
 
@@ -43,6 +55,18 @@ func SetupOrganizationRoutes(router *gin.Engine, orgHandler *organizations.Handl
 			orgV2.POST("/:id/activate", orgHandler.ActivateOrganization)
 			orgV2.POST("/:id/deactivate", orgHandler.DeactivateOrganization)
 			orgV2.GET("/:id/stats", orgHandler.GetOrganizationStats)
+
+			// Organization-scoped group management routes
+			orgV2.GET("/:orgId/groups", orgHandler.GetOrganizationGroups)
+			orgV2.POST("/:orgId/groups", orgHandler.CreateGroupInOrganization)
+			orgV2.GET("/:orgId/groups/:groupId", orgHandler.GetGroupInOrganization)
+
+			// User-group management within organization context
+			orgV2.POST("/:orgId/groups/:groupId/users", orgHandler.AddUserToGroupInOrganization)
+			orgV2.DELETE("/:orgId/groups/:groupId/users/:userId", orgHandler.RemoveUserFromGroupInOrganization)
+			orgV2.GET("/:orgId/groups/:groupId/users", orgHandler.GetGroupUsersInOrganization)
+			orgV2.GET("/:orgId/users/:userId/groups", orgHandler.GetUserGroupsInOrganization)
+			orgV2.GET("/:orgId/users/:userId/effective-roles", orgHandler.GetUserEffectiveRolesInOrganization)
 		}
 	}
 }

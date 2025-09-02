@@ -259,10 +259,8 @@ func (s *RoleService) AssignRole(ctx context.Context, userID, roleID string) err
 		return fmt.Errorf("failed to assign role: %w", err)
 	}
 
-	// Clear cache
-	if err := s.cacheService.Delete(fmt.Sprintf("user_roles:%s", userID)); err != nil {
-		s.logger.Error("Failed to clear user roles cache", zap.Error(err))
-	}
+	// Invalidate all user role-related cache entries
+	s.invalidateUserRoleCache(userID)
 
 	s.logger.Info("Role assigned to user successfully", zap.String("userID", userID), zap.String("roleID", roleID))
 	return nil
@@ -287,10 +285,8 @@ func (s *RoleService) RemoveRole(ctx context.Context, userID, roleID string) err
 		return fmt.Errorf("failed to remove role: %w", err)
 	}
 
-	// Clear cache
-	if err := s.cacheService.Delete(fmt.Sprintf("user_roles:%s", userID)); err != nil {
-		s.logger.Error("Failed to clear user roles cache", zap.Error(err))
-	}
+	// Invalidate all user role-related cache entries
+	s.invalidateUserRoleCache(userID)
 
 	s.logger.Info("Role removed from user successfully", zap.String("userID", userID), zap.String("roleID", roleID))
 	return nil
@@ -301,7 +297,7 @@ func (s *RoleService) RemoveRoleFromUser(ctx context.Context, userID, roleID str
 	return s.RemoveRole(ctx, userID, roleID)
 }
 
-// GetUserRoles retrieves all active roles for a user with complete role details
+// GetUserRoles retrieves all active roles for a user with complete role details and caching
 func (s *RoleService) GetUserRoles(ctx context.Context, userID string) ([]*models.UserRole, error) {
 	s.logger.Info("Getting user roles with details", zap.String("userID", userID))
 
@@ -309,11 +305,25 @@ func (s *RoleService) GetUserRoles(ctx context.Context, userID string) ([]*model
 		return nil, errors.NewValidationError("user ID cannot be empty")
 	}
 
+	// Try to get from cache first
+	cacheKey := fmt.Sprintf("user_roles:%s", userID)
+	if cachedRoles, exists := s.cacheService.Get(cacheKey); exists {
+		if roles, ok := cachedRoles.([]*models.UserRole); ok {
+			s.logger.Debug("User roles found in cache", zap.String("userID", userID))
+			return roles, nil
+		}
+	}
+
 	// Use the enhanced repository method that preloads role details
 	userRoles, err := s.userRoleRepo.GetActiveRolesByUserID(ctx, userID)
 	if err != nil {
 		s.logger.Error("Failed to get user roles with details", zap.String("userID", userID), zap.Error(err))
 		return nil, fmt.Errorf("failed to get user roles: %w", err)
+	}
+
+	// Cache the result for 15 minutes
+	if err := s.cacheService.Set(cacheKey, userRoles, 900); err != nil {
+		s.logger.Warn("Failed to cache user roles", zap.Error(err))
 	}
 
 	s.logger.Info("User roles with details retrieved", zap.String("userID", userID), zap.Int("count", len(userRoles)))
@@ -377,4 +387,20 @@ func (s *RoleService) validateRole(role *models.Role) error {
 	}
 
 	return nil
+}
+
+// invalidateUserRoleCache removes user role-related cache entries
+func (s *RoleService) invalidateUserRoleCache(userID string) {
+	cacheKeys := []string{
+		fmt.Sprintf("user_roles:%s", userID),
+		fmt.Sprintf("user_with_roles:%s", userID),
+	}
+
+	for _, key := range cacheKeys {
+		if err := s.cacheService.Delete(key); err != nil {
+			s.logger.Warn("Failed to delete role cache key", zap.String("key", key), zap.Error(err))
+		}
+	}
+
+	s.logger.Debug("User role cache invalidated", zap.String("user_id", userID))
 }

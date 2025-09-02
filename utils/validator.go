@@ -79,6 +79,10 @@ func (v *Validator) ValidatePassword(password string) error {
 		return fmt.Errorf("password must be at least 8 characters long")
 	}
 
+	if len(password) > 128 {
+		return fmt.Errorf("password must not exceed 128 characters")
+	}
+
 	// Check for at least one uppercase letter
 	hasUpper := regexp.MustCompile(`[A-Z]`).MatchString(password)
 	// Check for at least one lowercase letter
@@ -101,7 +105,177 @@ func (v *Validator) ValidatePassword(password string) error {
 		return fmt.Errorf("password must contain at least one special character")
 	}
 
+	// Check for common weak patterns
+	if v.isCommonWeakPassword(password) {
+		return fmt.Errorf("password is too common or weak")
+	}
+
 	return nil
+}
+
+// ValidateMPin validates MPIN format and security requirements
+func (v *Validator) ValidateMPin(mpin string) error {
+	if mpin == "" {
+		return fmt.Errorf("MPIN cannot be empty")
+	}
+
+	// MPIN must be 4 or 6 digits
+	if len(mpin) != 4 && len(mpin) != 6 {
+		return fmt.Errorf("MPIN must be 4 or 6 digits")
+	}
+
+	// Check if all characters are digits
+	if !regexp.MustCompile(`^\d+$`).MatchString(mpin) {
+		return fmt.Errorf("MPIN must contain only digits")
+	}
+
+	// Check for weak patterns
+	if v.isWeakMPin(mpin) {
+		return fmt.Errorf("MPIN is too weak - avoid sequential or repeated digits")
+	}
+
+	return nil
+}
+
+// SanitizeInput sanitizes user input to prevent injection attacks
+func (v *Validator) SanitizeInput(input string) string {
+	// Remove null bytes
+	input = strings.ReplaceAll(input, "\x00", "")
+
+	// Remove control characters except newline, carriage return, and tab
+	sanitized := ""
+	for _, r := range input {
+		if r >= 32 || r == '\n' || r == '\r' || r == '\t' {
+			sanitized += string(r)
+		}
+	}
+
+	// Trim whitespace
+	return strings.TrimSpace(sanitized)
+}
+
+// ValidateAndSanitizeString validates and sanitizes string input
+func (v *Validator) ValidateAndSanitizeString(input string, fieldName string, minLen, maxLen int) (string, error) {
+	if input == "" && minLen > 0 {
+		return "", fmt.Errorf("%s cannot be empty", fieldName)
+	}
+
+	sanitized := v.SanitizeInput(input)
+
+	if len(sanitized) < minLen {
+		return "", fmt.Errorf("%s must be at least %d characters", fieldName, minLen)
+	}
+
+	if len(sanitized) > maxLen {
+		return "", fmt.Errorf("%s must not exceed %d characters", fieldName, maxLen)
+	}
+
+	// Check for potential SQL injection patterns
+	if v.containsSQLInjectionPatterns(sanitized) {
+		return "", fmt.Errorf("%s contains invalid characters", fieldName)
+	}
+
+	return sanitized, nil
+}
+
+// isCommonWeakPassword checks for common weak password patterns
+func (v *Validator) isCommonWeakPassword(password string) bool {
+	commonPasswords := []string{
+		"password", "123456", "12345678", "qwerty", "abc123",
+		"password123", "admin", "letmein", "welcome", "monkey",
+		"1234567890", "password1", "123456789", "welcome123",
+	}
+
+	lowerPassword := strings.ToLower(password)
+	for _, common := range commonPasswords {
+		if strings.Contains(lowerPassword, common) {
+			return true
+		}
+	}
+
+	// Check for keyboard patterns
+	keyboardPatterns := []string{
+		"qwertyuiop", "asdfghjkl", "zxcvbnm", "1234567890",
+		"qwerty", "asdfgh", "zxcvbn", "123456", "abcdef",
+	}
+
+	for _, pattern := range keyboardPatterns {
+		if strings.Contains(lowerPassword, pattern) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// isWeakMPin checks for weak MPIN patterns
+func (v *Validator) isWeakMPin(mpin string) bool {
+	// Check for all same digits
+	firstDigit := mpin[0]
+	allSame := true
+	for i := 1; i < len(mpin); i++ {
+		if mpin[i] != firstDigit {
+			allSame = false
+			break
+		}
+	}
+	if allSame {
+		return true
+	}
+
+	// Check for sequential patterns (ascending)
+	isSequential := true
+	for i := 1; i < len(mpin); i++ {
+		if int(mpin[i]) != int(mpin[i-1])+1 {
+			isSequential = false
+			break
+		}
+	}
+	if isSequential {
+		return true
+	}
+
+	// Check for sequential patterns (descending)
+	isReverseSequential := true
+	for i := 1; i < len(mpin); i++ {
+		if int(mpin[i]) != int(mpin[i-1])-1 {
+			isReverseSequential = false
+			break
+		}
+	}
+	if isReverseSequential {
+		return true
+	}
+
+	// Check for common weak patterns
+	weakPatterns := []string{"1234", "4321", "0000", "1111", "2222", "3333", "4444", "5555", "6666", "7777", "8888", "9999", "123456", "654321", "000000", "111111", "222222", "333333", "444444", "555555", "666666", "777777", "888888", "999999"}
+	for _, pattern := range weakPatterns {
+		if mpin == pattern {
+			return true
+		}
+	}
+
+	return false
+}
+
+// containsSQLInjectionPatterns checks for potential SQL injection patterns
+func (v *Validator) containsSQLInjectionPatterns(input string) bool {
+	lowerInput := strings.ToLower(input)
+
+	// Common SQL injection patterns
+	sqlPatterns := []string{
+		"'", "\"", ";", "--", "/*", "*/", "xp_", "sp_",
+		"union", "select", "insert", "update", "delete", "drop",
+		"create", "alter", "exec", "execute", "script",
+	}
+
+	for _, pattern := range sqlPatterns {
+		if strings.Contains(lowerInput, pattern) {
+			return true
+		}
+	}
+
+	return false
 }
 
 // ValidatePhoneNumber validates a phone number format

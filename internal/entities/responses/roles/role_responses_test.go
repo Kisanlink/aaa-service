@@ -107,7 +107,7 @@ func TestRoleErrorResponses(t *testing.T) {
 
 		assert.Equal(t, RoleErrorTypeNotFound, err.ErrorType)
 		assert.Equal(t, roleID, err.RoleID)
-		assert.Equal(t, 404, err.ErrorResponse.Code)
+		assert.Equal(t, "404", err.ErrorResponse.Code)
 		assert.Contains(t, err.ErrorResponse.Message, roleID)
 		assert.False(t, err.IsSuccess())
 	})
@@ -118,7 +118,7 @@ func TestRoleErrorResponses(t *testing.T) {
 
 		assert.Equal(t, RoleErrorTypeUserNotFound, err.ErrorType)
 		assert.Equal(t, userID, err.UserID)
-		assert.Equal(t, 404, err.ErrorResponse.Code)
+		assert.Equal(t, "404", err.ErrorResponse.Code)
 		assert.Contains(t, err.ErrorResponse.Message, userID)
 	})
 
@@ -130,7 +130,7 @@ func TestRoleErrorResponses(t *testing.T) {
 		assert.Equal(t, RoleErrorTypeDuplicateAssignment, err.ErrorType)
 		assert.Equal(t, userID, err.UserID)
 		assert.Equal(t, roleID, err.RoleID)
-		assert.Equal(t, 409, err.ErrorResponse.Code)
+		assert.Equal(t, "409", err.ErrorResponse.Code)
 		assert.Contains(t, err.ErrorResponse.Message, userID)
 		assert.Contains(t, err.ErrorResponse.Message, roleID)
 	})
@@ -143,7 +143,7 @@ func TestRoleErrorResponses(t *testing.T) {
 		assert.Equal(t, RoleErrorTypeAssignmentNotFound, err.ErrorType)
 		assert.Equal(t, userID, err.UserID)
 		assert.Equal(t, roleID, err.RoleID)
-		assert.Equal(t, 404, err.ErrorResponse.Code)
+		assert.Equal(t, "404", err.ErrorResponse.Code)
 	})
 
 	t.Run("NewInactiveRoleError", func(t *testing.T) {
@@ -152,7 +152,7 @@ func TestRoleErrorResponses(t *testing.T) {
 
 		assert.Equal(t, RoleErrorTypeInactiveRole, err.ErrorType)
 		assert.Equal(t, roleID, err.RoleID)
-		assert.Equal(t, 400, err.ErrorResponse.Code)
+		assert.Equal(t, "400", err.ErrorResponse.Code)
 		assert.Contains(t, err.ErrorResponse.Message, "inactive")
 	})
 
@@ -162,7 +162,7 @@ func TestRoleErrorResponses(t *testing.T) {
 		err := NewRoleValidationError(field, message)
 
 		assert.Equal(t, RoleErrorTypeValidationFailed, err.ErrorType)
-		assert.Equal(t, 400, err.ErrorResponse.Code)
+		assert.Equal(t, "400", err.ErrorResponse.Code)
 		assert.Contains(t, err.ErrorResponse.Message, field)
 		assert.Contains(t, err.ErrorResponse.Message, message)
 		assert.NotNil(t, err.Details)
@@ -175,7 +175,7 @@ func TestRoleErrorResponses(t *testing.T) {
 		err := NewRolePermissionDeniedError(operation)
 
 		assert.Equal(t, RoleErrorTypePermissionDenied, err.ErrorType)
-		assert.Equal(t, 403, err.ErrorResponse.Code)
+		assert.Equal(t, "403", err.ErrorResponse.Code)
 		assert.Contains(t, err.ErrorResponse.Message, operation)
 	})
 }

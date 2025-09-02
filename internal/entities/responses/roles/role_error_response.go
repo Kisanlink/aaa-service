@@ -2,6 +2,7 @@ package roles
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/Kisanlink/aaa-service/internal/entities/responses"
@@ -36,7 +37,7 @@ func NewRoleErrorResponse(errorType RoleErrorType, message string, code int) *Ro
 		ErrorResponse: responses.ErrorResponse{
 			Error:     string(errorType),
 			Message:   message,
-			Code:      code,
+			Code:      strconv.Itoa(code),
 			Timestamp: time.Now(),
 		},
 		ErrorType: errorType,

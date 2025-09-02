@@ -46,6 +46,7 @@ const (
 	ResourceTypeTable                = "aaa/table"
 	ResourceTypeDatabase             = "aaa/database"
 	ResourceTypeGroup                = "aaa/group"
+	ResourceTypeGroupRole            = "aaa/group_role"
 	ResourceTypeOrganization         = "aaa/organization"
 )
 

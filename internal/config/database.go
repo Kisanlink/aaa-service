@@ -119,6 +119,7 @@ func runAutomigration(dm *db.DatabaseManager, logger *zap.Logger) error {
 		&models.Group{},
 		&models.GroupMembership{},
 		&models.GroupInheritance{},
+		&models.GroupRole{},
 
 		// Roles and permissions
 		&models.Role{},

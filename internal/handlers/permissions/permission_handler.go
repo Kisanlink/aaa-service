@@ -336,7 +336,7 @@ func (h *PermissionHandler) ListPermissionsV2(c *gin.Context) {
 	// Create pagination info
 	pagination := responses.PaginationInfo{
 		Page:       page,
-		PerPage:    limit,
+		Limit:      limit,
 		Total:      int(total),
 		TotalPages: totalPages,
 	}

@@ -1,6 +1,10 @@
 package organizations
 
-import "time"
+import (
+	"time"
+
+	groupResponses "github.com/Kisanlink/aaa-service/internal/entities/responses/groups"
+)
 
 // OrganizationResponse represents the response for organization operations
 type OrganizationResponse struct {
@@ -13,11 +17,19 @@ type OrganizationResponse struct {
 	UpdatedAt   *time.Time `json:"updated_at"`
 }
 
+// GroupHierarchyNode represents a group with its hierarchy information
+type GroupHierarchyNode struct {
+	Group    *groupResponses.GroupResponse     `json:"group"`
+	Roles    []*groupResponses.GroupRoleDetail `json:"roles"`
+	Children []*GroupHierarchyNode             `json:"children"`
+}
+
 // OrganizationHierarchyResponse represents the response for organization hierarchy
 type OrganizationHierarchyResponse struct {
 	Organization *OrganizationResponse   `json:"organization"`
 	Parents      []*OrganizationResponse `json:"parents"`
 	Children     []*OrganizationResponse `json:"children"`
+	Groups       []*GroupHierarchyNode   `json:"groups"`
 }
 
 // OrganizationStatsResponse represents statistics about an organization

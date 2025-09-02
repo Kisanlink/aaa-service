@@ -4318,6 +4318,40 @@ const docTemplate = `{
                 }
             }
         },
+        "requests.LoginRequest": {
+            "type": "object",
+            "required": [
+                "country_code",
+                "phone_number"
+            ],
+            "properties": {
+                "country_code": {
+                    "type": "string"
+                },
+                "include_contacts": {
+                    "type": "boolean"
+                },
+                "include_profile": {
+                    "type": "boolean"
+                },
+                "include_roles": {
+                    "type": "boolean"
+                },
+                "mfa_code": {
+                    "type": "string"
+                },
+                "mpin": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string",
+                    "minLength": 8
+                },
+                "phone_number": {
+                    "type": "string"
+                }
+            }
+        },
         "requests.ModuleActionDefinition": {
             "description": "Action definition structure for module registration",
             "type": "object",
@@ -4449,6 +4483,35 @@ const docTemplate = `{
                 }
             }
         },
+        "requests.RegisterRequest": {
+            "type": "object",
+            "required": [
+                "country_code",
+                "password",
+                "phone_number"
+            ],
+            "properties": {
+                "aadhaar_number": {
+                    "type": "string"
+                },
+                "country_code": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string",
+                    "minLength": 8
+                },
+                "phone_number": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
         "requests.SetMPinRequest": {
             "type": "object",
             "required": [
@@ -4480,84 +4543,116 @@ const docTemplate = `{
             }
         },
         "responses.AddressInfo": {
+            "description": "Address information structure",
             "type": "object",
             "properties": {
                 "country": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Country"
                 },
                 "district": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Metro"
                 },
                 "full_address": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "123 Main Street, Near Park, Metro City"
                 },
                 "house": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "123"
                 },
                 "id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "ADDR123456789"
                 },
                 "landmark": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Near Park"
                 },
                 "pincode": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "123456"
                 },
                 "post_office": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Central PO"
                 },
                 "state": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "State"
                 },
                 "street": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Main Street"
                 },
                 "subdistrict": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Central"
                 },
                 "vtc": {
                     "description": "Village/Town/City",
-                    "type": "string"
+                    "type": "string",
+                    "example": "Metro City"
                 }
             }
         },
         "responses.AssignRoleResponse": {
+            "description": "Role assignment response structure",
             "type": "object",
             "properties": {
                 "message": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Role assigned successfully"
+                },
+                "request_id": {
+                    "type": "string",
+                    "example": "req-123456789"
                 },
                 "role": {
                     "$ref": "#/definitions/responses.RoleDetail"
                 },
                 "success": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "example": true
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
                 },
                 "user_id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "USER123456789"
                 }
             }
         },
         "responses.ContactInfo": {
+            "description": "Contact information structure",
             "type": "object",
             "properties": {
                 "description": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Primary email address"
                 },
                 "id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "CONTACT123456789"
                 },
                 "is_primary": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "example": true
                 },
                 "is_verified": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "example": true
                 },
                 "type": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "email"
                 },
                 "value": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "john@example.com"
                 }
             }
         },
@@ -4565,7 +4660,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "code": {
-                    "type": "integer"
+                    "type": "string"
                 },
                 "details": {
                     "type": "object",
@@ -4579,6 +4674,9 @@ const docTemplate = `{
                 },
                 "request_id": {
                     "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
                 },
                 "timestamp": {
                     "type": "string"
@@ -5049,42 +5147,62 @@ const docTemplate = `{
             }
         },
         "responses.RemoveRoleResponse": {
+            "description": "Role removal response structure",
             "type": "object",
             "properties": {
                 "message": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Role removed successfully"
+                },
+                "request_id": {
+                    "type": "string",
+                    "example": "req-123456789"
                 },
                 "role_id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "ROLE123456789"
                 },
                 "success": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "example": true
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
                 },
                 "user_id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "USER123456789"
                 }
             }
         },
         "responses.RoleDetail": {
+            "description": "Detailed role information structure",
             "type": "object",
             "properties": {
                 "description": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Administrator role with full access"
                 },
                 "id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "ROLE123456789"
                 },
                 "is_active": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "example": true
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "admin"
                 },
                 "scope": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "organization"
                 },
                 "version": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 1
                 }
             }
         },
@@ -5196,12 +5314,26 @@ const docTemplate = `{
             }
         },
         "responses.UserInfoSwagger": {
-            "description": "User information structure",
+            "description": "Enhanced user information structure with roles and profile",
             "type": "object",
             "properties": {
+                "contacts": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.ContactInfo"
+                    }
+                },
                 "country_code": {
                     "type": "string",
                     "example": "US"
+                },
+                "created_at": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                },
+                "has_mpin": {
+                    "type": "boolean",
+                    "example": true
                 },
                 "id": {
                     "type": "string",
@@ -5215,6 +5347,27 @@ const docTemplate = `{
                     "type": "string",
                     "example": "+1234567890"
                 },
+                "profile": {
+                    "$ref": "#/definitions/responses.UserProfileInfo"
+                },
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/responses.UserRoleDetailInfo"
+                    }
+                },
+                "status": {
+                    "type": "string",
+                    "example": "active"
+                },
+                "tokens": {
+                    "type": "integer",
+                    "example": 100
+                },
+                "updated_at": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                },
                 "username": {
                     "type": "string",
                     "example": "john_doe"
@@ -5222,34 +5375,43 @@ const docTemplate = `{
             }
         },
         "responses.UserProfileInfo": {
+            "description": "User profile information structure",
             "type": "object",
             "properties": {
                 "aadhaar_number": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "123456789012"
                 },
                 "address": {
                     "$ref": "#/definitions/responses.AddressInfo"
                 },
                 "care_of": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "S/O Jane Doe"
                 },
                 "date_of_birth": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "1990-01-01"
                 },
                 "email_hash": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "hash123"
                 },
                 "id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "PROFILE123456789"
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "John Doe"
                 },
                 "share_code": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "SHARE123"
                 },
                 "year_of_birth": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "1990"
                 }
             }
         },
@@ -5270,6 +5432,31 @@ const docTemplate = `{
                 },
                 "user_id": {
                     "type": "string"
+                }
+            }
+        },
+        "responses.UserRoleDetailInfo": {
+            "description": "User role detail information structure",
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "example": "USERROLE123456789"
+                },
+                "is_active": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "role": {
+                    "$ref": "#/definitions/responses.RoleDetail"
+                },
+                "role_id": {
+                    "type": "string",
+                    "example": "ROLE123456789"
+                },
+                "user_id": {
+                    "type": "string",
+                    "example": "USER123456789"
                 }
             }
         },

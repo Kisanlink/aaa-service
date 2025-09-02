@@ -11,19 +11,19 @@ import (
 // User represents a user in the AAA service
 type User struct {
 	*base.BaseModel
-	PhoneNumber string  `json:"phone_number" gorm:"unique;not null;size:10" validate:"required,phone"`
-	CountryCode string  `json:"country_code" gorm:"not null;size:10;default:'+91'" validate:"required"`
+	PhoneNumber string  `json:"phone_number" gorm:"unique;not null;size:10;index:idx_users_phone_number;index:idx_users_phone_country_auth,priority:1;index:idx_users_phone_country_validated,priority:1" validate:"required,phone"`
+	CountryCode string  `json:"country_code" gorm:"not null;size:10;default:'+91';index:idx_users_country_code;index:idx_users_phone_country_auth,priority:2;index:idx_users_phone_country_validated,priority:2" validate:"required"`
 	Username    *string `json:"username" gorm:"unique;size:100" validate:"omitempty,username"`
 	Password    string  `json:"password" gorm:"not null;size:255" validate:"required,min=8,max=128"`
 	MPin        *string `json:"mpin" gorm:"column:m_pin;size:255"`
-	IsValidated bool    `json:"is_validated" gorm:"default:false"`
+	IsValidated bool    `json:"is_validated" gorm:"default:false;index:idx_users_is_validated;index:idx_users_phone_country_validated,priority:3"`
 	// Status represents the current state of the user account
 	// Possible values:
 	// - "pending": Initial state when user is created but not validated
 	// - "active": User is validated and can access all features
 	// - "suspended": User access is temporarily suspended
 	// - "blocked": User access is permanently blocked
-	Status *string `json:"status" gorm:"type:varchar(50);default:'pending'"`
+	Status *string `json:"status" gorm:"type:varchar(50);default:'pending';index:idx_users_status"`
 	Tokens int     `json:"tokens" gorm:"default:1000"`
 
 	// Relationships

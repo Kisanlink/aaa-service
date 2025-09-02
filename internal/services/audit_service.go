@@ -251,6 +251,203 @@ func (s *AuditService) LogSecurityEvent(ctx context.Context, userID, action, res
 		auditLog = models.NewAuditLogWithUser(userID, models.AuditActionSecurityEvent, resource, status, message)
 	}
 
+	// Add security-specific details
+	if details == nil {
+		details = make(map[string]interface{})
+	}
+	details["security_action"] = action
+	details["success"] = success
+
+	s.logEvent(ctx, auditLog, details)
+}
+
+// LogAuthenticationAttempt logs authentication attempts with detailed context
+func (s *AuditService) LogAuthenticationAttempt(ctx context.Context, userID, method, ipAddress, userAgent string, success bool, failureReason string) {
+	status := models.AuditStatusSuccess
+	message := "Authentication successful"
+	action := models.AuditActionLogin
+
+	if !success {
+		status = models.AuditStatusFailure
+		message = "Authentication failed"
+		if failureReason != "" {
+			message = fmt.Sprintf("Authentication failed: %s", failureReason)
+		}
+	}
+
+	var auditLog *models.AuditLog
+	if isAnonymousUser(userID) || !success {
+		// For anonymous users or failed attempts, don't set UserID
+		auditLog = models.NewAuditLog(action, models.ResourceTypeUser, status, message)
+	} else {
+		auditLog = models.NewAuditLogWithUser(userID, action, models.ResourceTypeUser, status, message)
+	}
+
+	auditLog.IPAddress = ipAddress
+	auditLog.UserAgent = userAgent
+
+	details := map[string]interface{}{
+		"authentication_method": method,
+		"success":               success,
+	}
+
+	if !success && failureReason != "" {
+		details["failure_reason"] = failureReason
+	}
+
+	s.logEvent(ctx, auditLog, details)
+}
+
+// LogRoleOperation logs role assignment/removal operations
+func (s *AuditService) LogRoleOperation(ctx context.Context, actorUserID, targetUserID, roleID, operation string, success bool, details map[string]interface{}) {
+	status := models.AuditStatusSuccess
+	message := fmt.Sprintf("Role %s completed successfully", operation)
+	action := fmt.Sprintf("role_%s", operation)
+
+	if !success {
+		status = models.AuditStatusFailure
+		message = fmt.Sprintf("Role %s failed", operation)
+	}
+
+	var auditLog *models.AuditLog
+	if isAnonymousUser(actorUserID) {
+		auditLog = models.NewAuditLog(action, models.ResourceTypeRole, status, message)
+		if roleID != "" {
+			auditLog.ResourceID = &roleID
+		}
+	} else {
+		auditLog = models.NewAuditLogWithUserAndResource(actorUserID, action, models.ResourceTypeRole, roleID, status, message)
+	}
+
+	// Add role operation specific details
+	if details == nil {
+		details = make(map[string]interface{})
+	}
+	details["target_user_id"] = targetUserID
+	details["role_id"] = roleID
+	details["operation"] = operation
+	details["success"] = success
+
+	s.logEvent(ctx, auditLog, details)
+}
+
+// LogMPINOperation logs MPIN-related operations
+func (s *AuditService) LogMPINOperation(ctx context.Context, userID, operation, ipAddress, userAgent string, success bool, failureReason string) {
+	status := models.AuditStatusSuccess
+	message := fmt.Sprintf("MPIN %s completed successfully", operation)
+	action := fmt.Sprintf("mpin_%s", operation)
+
+	if !success {
+		status = models.AuditStatusFailure
+		message = fmt.Sprintf("MPIN %s failed", operation)
+		if failureReason != "" {
+			message = fmt.Sprintf("MPIN %s failed: %s", operation, failureReason)
+		}
+	}
+
+	var auditLog *models.AuditLog
+	if isAnonymousUser(userID) {
+		auditLog = models.NewAuditLog(action, models.ResourceTypeUser, status, message)
+	} else {
+		auditLog = models.NewAuditLogWithUser(userID, action, models.ResourceTypeUser, status, message)
+	}
+
+	auditLog.IPAddress = ipAddress
+	auditLog.UserAgent = userAgent
+
+	details := map[string]interface{}{
+		"mpin_operation": operation,
+		"success":        success,
+	}
+
+	if !success && failureReason != "" {
+		details["failure_reason"] = failureReason
+	}
+
+	s.logEvent(ctx, auditLog, details)
+}
+
+// LogUserLifecycleEvent logs user creation, update, deletion events
+func (s *AuditService) LogUserLifecycleEvent(ctx context.Context, actorUserID, targetUserID, operation string, success bool, details map[string]interface{}) {
+	status := models.AuditStatusSuccess
+	message := fmt.Sprintf("User %s completed successfully", operation)
+	action := fmt.Sprintf("user_%s", operation)
+
+	if !success {
+		status = models.AuditStatusFailure
+		message = fmt.Sprintf("User %s failed", operation)
+	}
+
+	var auditLog *models.AuditLog
+	if isAnonymousUser(actorUserID) {
+		auditLog = models.NewAuditLog(action, models.ResourceTypeUser, status, message)
+		if targetUserID != "" {
+			auditLog.ResourceID = &targetUserID
+		}
+	} else {
+		auditLog = models.NewAuditLogWithUserAndResource(actorUserID, action, models.ResourceTypeUser, targetUserID, status, message)
+	}
+
+	// Add user lifecycle specific details
+	if details == nil {
+		details = make(map[string]interface{})
+	}
+	details["target_user_id"] = targetUserID
+	details["operation"] = operation
+	details["success"] = success
+
+	s.logEvent(ctx, auditLog, details)
+}
+
+// LogSuspiciousActivity logs potentially suspicious or malicious activity
+func (s *AuditService) LogSuspiciousActivity(ctx context.Context, userID, activityType, description, ipAddress, userAgent string, details map[string]interface{}) {
+	auditLog := models.NewAuditLog("suspicious_activity", "security", models.AuditStatusWarning, description)
+
+	if !isAnonymousUser(userID) {
+		auditLog.UserID = &userID
+	}
+
+	auditLog.IPAddress = ipAddress
+	auditLog.UserAgent = userAgent
+
+	// Add suspicious activity specific details
+	if details == nil {
+		details = make(map[string]interface{})
+	}
+	details["activity_type"] = activityType
+	details["description"] = description
+	details["severity"] = "warning"
+
+	s.logEvent(ctx, auditLog, details)
+
+	// Also log to application logger for immediate attention
+	s.logger.Warn("Suspicious activity detected",
+		zap.String("user_id", userID),
+		zap.String("activity_type", activityType),
+		zap.String("description", description),
+		zap.String("ip_address", ipAddress),
+		zap.String("user_agent", userAgent),
+		zap.Any("details", details))
+}
+
+// LogRateLimitViolation logs rate limit violations
+func (s *AuditService) LogRateLimitViolation(ctx context.Context, userID, endpoint, ipAddress, userAgent string, details map[string]interface{}) {
+	auditLog := models.NewAuditLog("rate_limit_violation", "security", models.AuditStatusWarning, "Rate limit exceeded")
+
+	if !isAnonymousUser(userID) {
+		auditLog.UserID = &userID
+	}
+
+	auditLog.IPAddress = ipAddress
+	auditLog.UserAgent = userAgent
+
+	// Add rate limit specific details
+	if details == nil {
+		details = make(map[string]interface{})
+	}
+	details["endpoint"] = endpoint
+	details["violation_type"] = "rate_limit"
+
 	s.logEvent(ctx, auditLog, details)
 }
 
@@ -445,6 +642,27 @@ func (s *AuditService) logEvent(ctx context.Context, auditLog *models.AuditLog, 
 		}
 	}
 
+	// Add request ID for traceability
+	if requestID := ctx.Value("request_id"); requestID != nil {
+		if rid, ok := requestID.(string); ok {
+			auditLog.AddDetail("request_id", rid)
+		}
+	}
+
+	// Add session information if available
+	if sessionID := ctx.Value("session_id"); sessionID != nil {
+		if sid, ok := sessionID.(string); ok {
+			auditLog.AddDetail("session_id", sid)
+		}
+	}
+
+	// Add correlation ID for distributed tracing
+	if correlationID := ctx.Value("correlation_id"); correlationID != nil {
+		if cid, ok := correlationID.(string); ok {
+			auditLog.AddDetail("correlation_id", cid)
+		}
+	}
+
 	// Save audit log to database
 	err := s.dbManager.Create(ctx, auditLog)
 	if err != nil {
@@ -453,9 +671,27 @@ func (s *AuditService) logEvent(ctx context.Context, auditLog *models.AuditLog, 
 			zap.Error(err),
 			zap.String("audit_id", auditLog.ID),
 			zap.String("action", auditLog.Action))
+
+		// Try to cache the audit log for later retry
+		s.cacheFailedAuditLog(auditLog)
 	}
 
-	// Also log to application logger for real-time monitoring
+	// Log to application logger with structured information
+	s.logToApplicationLogger(auditLog)
+
+	// Log security events with enhanced monitoring
+	if s.isSecuritySensitiveAction(auditLog.Action) {
+		s.logSecuritySensitiveEvent(auditLog)
+	}
+
+	// Log performance metrics for slow operations
+	if s.isPerformanceSensitiveAction(auditLog.Action) {
+		s.logPerformanceMetrics(auditLog)
+	}
+}
+
+// logToApplicationLogger logs audit events to the application logger with structured format
+func (s *AuditService) logToApplicationLogger(auditLog *models.AuditLog) {
 	userID := ""
 	if auditLog.UserID != nil {
 		userID = *auditLog.UserID
@@ -464,24 +700,466 @@ func (s *AuditService) logEvent(ctx context.Context, auditLog *models.AuditLog, 
 	if auditLog.ResourceID != nil {
 		resourceID = *auditLog.ResourceID
 	}
-	s.logger.Info("Audit event",
+
+	baseFields := []zap.Field{
 		zap.String("audit_id", auditLog.ID),
 		zap.String("user_id", userID),
 		zap.String("action", auditLog.Action),
 		zap.String("resource_type", auditLog.ResourceType),
 		zap.String("resource_id", resourceID),
-		zap.String("status", auditLog.Status))
-
-	// Also log to application logs for critical security events
-	if auditLog.Action == models.AuditActionAccessDenied || auditLog.Action == "login_failed" || auditLog.IsFailure() {
-		s.logger.Warn("Security event logged",
-			zap.String("user_id", userID),
-			zap.String("action", auditLog.Action),
-			zap.String("resource_type", auditLog.ResourceType),
-			zap.String("resource_id", resourceID),
-			zap.String("status", auditLog.Status),
-			zap.String("message", auditLog.Message))
+		zap.String("status", auditLog.Status),
+		zap.Time("timestamp", auditLog.Timestamp),
+		zap.String("ip_address", auditLog.IPAddress),
+		zap.String("user_agent", auditLog.UserAgent),
 	}
+
+	// Add details as structured fields
+	if auditLog.Details != nil {
+		for key, value := range auditLog.Details {
+			baseFields = append(baseFields, zap.Any(fmt.Sprintf("detail_%s", key), value))
+		}
+	}
+
+	// Log with appropriate level based on status and action
+	switch {
+	case auditLog.IsFailure():
+		s.logger.Error("Audit event - failure", baseFields...)
+	case auditLog.IsWarning():
+		s.logger.Warn("Audit event - warning", baseFields...)
+	case s.isSecuritySensitiveAction(auditLog.Action):
+		s.logger.Info("Audit event - security", baseFields...)
+	default:
+		s.logger.Debug("Audit event", baseFields...)
+	}
+}
+
+// logSecuritySensitiveEvent provides enhanced logging for security-sensitive events
+func (s *AuditService) logSecuritySensitiveEvent(auditLog *models.AuditLog) {
+	userID := ""
+	if auditLog.UserID != nil {
+		userID = *auditLog.UserID
+	}
+	resourceID := ""
+	if auditLog.ResourceID != nil {
+		resourceID = *auditLog.ResourceID
+	}
+
+	securityFields := []zap.Field{
+		zap.String("security_event_type", "audit_log"),
+		zap.String("audit_id", auditLog.ID),
+		zap.String("user_id", userID),
+		zap.String("action", auditLog.Action),
+		zap.String("resource_type", auditLog.ResourceType),
+		zap.String("resource_id", resourceID),
+		zap.String("status", auditLog.Status),
+		zap.String("message", auditLog.Message),
+		zap.Time("timestamp", auditLog.Timestamp),
+		zap.String("ip_address", auditLog.IPAddress),
+		zap.String("user_agent", auditLog.UserAgent),
+	}
+
+	// Add security-specific context
+	if auditLog.Details != nil {
+		if requestID, exists := auditLog.Details["request_id"]; exists {
+			securityFields = append(securityFields, zap.Any("request_id", requestID))
+		}
+		if sessionID, exists := auditLog.Details["session_id"]; exists {
+			securityFields = append(securityFields, zap.Any("session_id", sessionID))
+		}
+		if failureReason, exists := auditLog.Details["failure_reason"]; exists {
+			securityFields = append(securityFields, zap.Any("failure_reason", failureReason))
+		}
+	}
+
+	// Determine security severity
+	severity := "info"
+	if auditLog.IsFailure() {
+		severity = "warning"
+		if s.isCriticalSecurityAction(auditLog.Action) {
+			severity = "critical"
+		}
+	}
+
+	securityFields = append(securityFields, zap.String("security_severity", severity))
+
+	// Log with appropriate level
+	switch severity {
+	case "critical":
+		s.logger.Error("Critical security event", securityFields...)
+	case "warning":
+		s.logger.Warn("Security warning event", securityFields...)
+	default:
+		s.logger.Info("Security event", securityFields...)
+	}
+}
+
+// logPerformanceMetrics logs performance metrics for performance-sensitive operations
+func (s *AuditService) logPerformanceMetrics(auditLog *models.AuditLog) {
+	if auditLog.Details == nil {
+		return
+	}
+
+	performanceFields := []zap.Field{
+		zap.String("performance_event_type", "audit_log"),
+		zap.String("audit_id", auditLog.ID),
+		zap.String("action", auditLog.Action),
+		zap.String("resource_type", auditLog.ResourceType),
+		zap.Time("timestamp", auditLog.Timestamp),
+	}
+
+	// Extract performance metrics from details
+	if duration, exists := auditLog.Details["duration_ms"]; exists {
+		performanceFields = append(performanceFields, zap.Any("duration_ms", duration))
+	}
+	if responseSize, exists := auditLog.Details["response_size"]; exists {
+		performanceFields = append(performanceFields, zap.Any("response_size", responseSize))
+	}
+	if dbQueries, exists := auditLog.Details["db_queries"]; exists {
+		performanceFields = append(performanceFields, zap.Any("db_queries", dbQueries))
+	}
+
+	s.logger.Debug("Performance metrics", performanceFields...)
+}
+
+// cacheFailedAuditLog caches audit logs that failed to save to database for retry
+func (s *AuditService) cacheFailedAuditLog(auditLog *models.AuditLog) {
+	if s.cacheService == nil {
+		return
+	}
+
+	cacheKey := fmt.Sprintf("failed_audit_log:%s", auditLog.ID)
+
+	// Cache for 24 hours (86400 seconds)
+	err := s.cacheService.Set(cacheKey, auditLog, 86400)
+	if err != nil {
+		s.logger.Error("Failed to cache failed audit log",
+			zap.Error(err),
+			zap.String("audit_id", auditLog.ID))
+	} else {
+		s.logger.Info("Cached failed audit log for retry",
+			zap.String("audit_id", auditLog.ID))
+	}
+}
+
+// isSecuritySensitiveAction checks if an action is security-sensitive
+func (s *AuditService) isSecuritySensitiveAction(action string) bool {
+	securityActions := []string{
+		models.AuditActionLogin,
+		models.AuditActionLogout,
+		models.AuditActionRegister,
+		models.AuditActionAssignRole,
+		models.AuditActionRemoveRole,
+		models.AuditActionGrantPermission,
+		models.AuditActionRevokePermission,
+		models.AuditActionAccessDenied,
+		models.AuditActionSecurityEvent,
+		"mpin_setup",
+		"mpin_update",
+		"mpin_verification",
+		"password_reset",
+		"account_locked",
+		"suspicious_activity",
+		"rate_limit_violation",
+	}
+
+	for _, securityAction := range securityActions {
+		if action == securityAction {
+			return true
+		}
+	}
+
+	return false
+}
+
+// isCriticalSecurityAction checks if an action is critically security-sensitive
+func (s *AuditService) isCriticalSecurityAction(action string) bool {
+	criticalActions := []string{
+		models.AuditActionAccessDenied,
+		models.AuditActionSecurityEvent,
+		"account_locked",
+		"suspicious_activity",
+		"multiple_failed_logins",
+		"privilege_escalation_attempt",
+	}
+
+	for _, criticalAction := range criticalActions {
+		if action == criticalAction {
+			return true
+		}
+	}
+
+	return false
+}
+
+// isPerformanceSensitiveAction checks if an action should have performance metrics logged
+func (s *AuditService) isPerformanceSensitiveAction(action string) bool {
+	performanceActions := []string{
+		models.AuditActionAPICall,
+		models.AuditActionDatabaseOperation,
+		models.AuditActionLogin,
+		models.AuditActionCheckPermission,
+		"bulk_operation",
+		"data_export",
+		"report_generation",
+	}
+
+	for _, performanceAction := range performanceActions {
+		if action == performanceAction {
+			return true
+		}
+	}
+
+	return false
+}
+
+// LogOrganizationOperation logs organization-related operations with organization context
+func (s *AuditService) LogOrganizationOperation(ctx context.Context, userID, action, orgID, message string, success bool, details map[string]interface{}) {
+	status := models.AuditStatusSuccess
+	if !success {
+		status = models.AuditStatusFailure
+	}
+
+	var auditLog *models.AuditLog
+	if isAnonymousUser(userID) {
+		auditLog = models.NewAuditLog(action, models.ResourceTypeOrganization, status, message)
+		if orgID != "" {
+			auditLog.ResourceID = &orgID
+		}
+	} else {
+		auditLog = models.NewAuditLogWithUserAndResource(userID, action, models.ResourceTypeOrganization, orgID, status, message)
+	}
+
+	// Add organization-specific details
+	if details == nil {
+		details = make(map[string]interface{})
+	}
+	details["organization_id"] = orgID
+	details["operation_type"] = "organization"
+
+	s.logEvent(ctx, auditLog, details)
+}
+
+// LogGroupOperation logs group-related operations with organization and group context
+func (s *AuditService) LogGroupOperation(ctx context.Context, userID, action, orgID, groupID, message string, success bool, details map[string]interface{}) {
+	status := models.AuditStatusSuccess
+	if !success {
+		status = models.AuditStatusFailure
+	}
+
+	var auditLog *models.AuditLog
+	if isAnonymousUser(userID) {
+		auditLog = models.NewAuditLog(action, models.ResourceTypeGroup, status, message)
+		if groupID != "" {
+			auditLog.ResourceID = &groupID
+		}
+	} else {
+		auditLog = models.NewAuditLogWithUserAndResource(userID, action, models.ResourceTypeGroup, groupID, status, message)
+	}
+
+	// Add group-specific details
+	if details == nil {
+		details = make(map[string]interface{})
+	}
+	details["organization_id"] = orgID
+	details["group_id"] = groupID
+	details["operation_type"] = "group"
+
+	s.logEvent(ctx, auditLog, details)
+}
+
+// LogGroupMembershipChange logs group membership changes with full context
+func (s *AuditService) LogGroupMembershipChange(ctx context.Context, actorUserID, action, orgID, groupID, targetUserID, message string, success bool, details map[string]interface{}) {
+	status := models.AuditStatusSuccess
+	if !success {
+		status = models.AuditStatusFailure
+	}
+
+	var auditLog *models.AuditLog
+	if isAnonymousUser(actorUserID) {
+		auditLog = models.NewAuditLog(action, models.ResourceTypeGroup, status, message)
+		if groupID != "" {
+			auditLog.ResourceID = &groupID
+		}
+	} else {
+		auditLog = models.NewAuditLogWithUserAndResource(actorUserID, action, models.ResourceTypeGroup, groupID, status, message)
+	}
+
+	// Add membership-specific details
+	if details == nil {
+		details = make(map[string]interface{})
+	}
+	details["organization_id"] = orgID
+	details["group_id"] = groupID
+	details["target_user_id"] = targetUserID
+	details["actor_user_id"] = actorUserID
+	details["operation_type"] = "group_membership"
+
+	s.logEvent(ctx, auditLog, details)
+}
+
+// LogGroupRoleAssignment logs group role assignment/removal operations
+func (s *AuditService) LogGroupRoleAssignment(ctx context.Context, actorUserID, action, orgID, groupID, roleID, message string, success bool, details map[string]interface{}) {
+	status := models.AuditStatusSuccess
+	if !success {
+		status = models.AuditStatusFailure
+	}
+
+	var auditLog *models.AuditLog
+	if isAnonymousUser(actorUserID) {
+		auditLog = models.NewAuditLog(action, models.ResourceTypeGroupRole, status, message)
+		if groupID != "" {
+			auditLog.ResourceID = &groupID
+		}
+	} else {
+		auditLog = models.NewAuditLogWithUserAndResource(actorUserID, action, models.ResourceTypeGroupRole, groupID, status, message)
+	}
+
+	// Add role assignment specific details
+	if details == nil {
+		details = make(map[string]interface{})
+	}
+	details["organization_id"] = orgID
+	details["group_id"] = groupID
+	details["role_id"] = roleID
+	details["actor_user_id"] = actorUserID
+	details["operation_type"] = "group_role"
+
+	s.logEvent(ctx, auditLog, details)
+}
+
+// LogHierarchyChange logs organization or group hierarchy changes
+func (s *AuditService) LogHierarchyChange(ctx context.Context, userID, action, resourceType, resourceID, oldParentID, newParentID, message string, success bool, details map[string]interface{}) {
+	status := models.AuditStatusSuccess
+	if !success {
+		status = models.AuditStatusFailure
+	}
+
+	var auditLog *models.AuditLog
+	if isAnonymousUser(userID) {
+		auditLog = models.NewAuditLog(action, resourceType, status, message)
+		if resourceID != "" {
+			auditLog.ResourceID = &resourceID
+		}
+	} else {
+		auditLog = models.NewAuditLogWithUserAndResource(userID, action, resourceType, resourceID, status, message)
+	}
+
+	// Add hierarchy-specific details
+	if details == nil {
+		details = make(map[string]interface{})
+	}
+	details["old_parent_id"] = oldParentID
+	details["new_parent_id"] = newParentID
+	details["operation_type"] = "hierarchy_change"
+
+	s.logEvent(ctx, auditLog, details)
+}
+
+// QueryOrganizationAuditLogs queries audit logs scoped to a specific organization
+func (s *AuditService) QueryOrganizationAuditLogs(ctx context.Context, orgID string, query *AuditQuery) (*AuditQueryResult, error) {
+	// Validate and set defaults for pagination
+	if query.Page <= 0 {
+		query.Page = 1
+	}
+	if query.PerPage <= 0 {
+		query.PerPage = 50
+	}
+	if query.PerPage > 1000 {
+		query.PerPage = 1000
+	}
+
+	// Build filters for organization-scoped query
+	filters := make(map[string]interface{})
+	filters["organization_id"] = orgID
+
+	if query.UserID != "" {
+		filters["user_id"] = query.UserID
+	}
+	if query.Action != "" {
+		filters["action"] = query.Action
+	}
+	if query.Resource != "" {
+		filters["resource_type"] = query.Resource
+	}
+	if query.ResourceID != "" {
+		filters["resource_id"] = query.ResourceID
+	}
+	if query.Success != nil {
+		if *query.Success {
+			filters["status"] = models.AuditStatusSuccess
+		} else {
+			filters["status"] = models.AuditStatusFailure
+		}
+	}
+	if query.StartTime != nil {
+		filters["timestamp_gte"] = *query.StartTime
+	}
+	if query.EndTime != nil {
+		filters["timestamp_lte"] = *query.EndTime
+	}
+
+	// For now, return empty results as a placeholder
+	// In a real implementation, you'd query the database with proper filtering
+	logs := []models.AuditLog{}
+	totalCount := int64(0)
+
+	s.logger.Debug("Querying organization audit logs",
+		zap.String("org_id", orgID),
+		zap.String("user_id", query.UserID),
+		zap.String("action", query.Action),
+		zap.String("resource", query.Resource),
+		zap.Int("page", query.Page),
+		zap.Int("per_page", query.PerPage))
+
+	return &AuditQueryResult{
+		Logs:       logs,
+		TotalCount: totalCount,
+		Page:       query.Page,
+		PerPage:    query.PerPage,
+	}, nil
+}
+
+// GetOrganizationAuditTrail gets audit trail for a specific organization
+func (s *AuditService) GetOrganizationAuditTrail(ctx context.Context, orgID string, days int, page, perPage int) (*AuditQueryResult, error) {
+	startTime := time.Now().AddDate(0, 0, -days)
+
+	query := &AuditQuery{
+		StartTime: &startTime,
+		Page:      page,
+		PerPage:   perPage,
+	}
+
+	return s.QueryOrganizationAuditLogs(ctx, orgID, query)
+}
+
+// GetGroupAuditTrail gets audit trail for a specific group
+func (s *AuditService) GetGroupAuditTrail(ctx context.Context, orgID, groupID string, days int, page, perPage int) (*AuditQueryResult, error) {
+	startTime := time.Now().AddDate(0, 0, -days)
+
+	query := &AuditQuery{
+		Resource:   models.ResourceTypeGroup,
+		ResourceID: groupID,
+		StartTime:  &startTime,
+		Page:       page,
+		PerPage:    perPage,
+	}
+
+	return s.QueryOrganizationAuditLogs(ctx, orgID, query)
+}
+
+// ValidateAuditLogIntegrity validates that audit logs haven't been tampered with
+func (s *AuditService) ValidateAuditLogIntegrity(ctx context.Context, auditLogID string) (bool, error) {
+	// This is a placeholder for tamper-proof validation
+	// In a real implementation, you might:
+	// 1. Use cryptographic hashes to verify log integrity
+	// 2. Check against external audit systems
+	// 3. Validate log sequence numbers
+	// 4. Check digital signatures
+
+	s.logger.Debug("Validating audit log integrity", zap.String("audit_log_id", auditLogID))
+
+	// For now, always return true (valid)
+	return true, nil
 }
 
 // GetAuditStatistics gets audit statistics

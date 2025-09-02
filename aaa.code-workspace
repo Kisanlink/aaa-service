@@ -11,6 +11,11 @@
     },
     {
       "path": "../kisanlink-ecom"
+    },
+    {
+      "path": "../aadhaar-verification"
     }
-  ]
+  ],
+  "settings": {
+  }
 }

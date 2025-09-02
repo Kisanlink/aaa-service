@@ -403,6 +403,29 @@ definitions:
     required:
     - id
     type: object
+  requests.LoginRequest:
+    properties:
+      country_code:
+        type: string
+      include_contacts:
+        type: boolean
+      include_profile:
+        type: boolean
+      include_roles:
+        type: boolean
+      mfa_code:
+        type: string
+      mpin:
+        type: string
+      password:
+        minLength: 8
+        type: string
+      phone_number:
+        type: string
+    required:
+    - country_code
+    - phone_number
+    type: object
   requests.ModuleActionDefinition:
     description: Action definition structure for module registration
     properties:
@@ -496,6 +519,26 @@ definitions:
     - mpin
     - refresh_token
     type: object
+  requests.RegisterRequest:
+    properties:
+      aadhaar_number:
+        type: string
+      country_code:
+        type: string
+      name:
+        type: string
+      password:
+        minLength: 8
+        type: string
+      phone_number:
+        type: string
+      username:
+        type: string
+    required:
+    - country_code
+    - password
+    - phone_number
+    type: object
   requests.SetMPinRequest:
     properties:
       mpin:
@@ -517,63 +560,93 @@ definitions:
     - new_mpin
     type: object
   responses.AddressInfo:
+    description: Address information structure
     properties:
       country:
+        example: Country
         type: string
       district:
+        example: Metro
         type: string
       full_address:
+        example: 123 Main Street, Near Park, Metro City
         type: string
       house:
+        example: "123"
         type: string
       id:
+        example: ADDR123456789
         type: string
       landmark:
+        example: Near Park
         type: string
       pincode:
+        example: "123456"
         type: string
       post_office:
+        example: Central PO
         type: string
       state:
+        example: State
         type: string
       street:
+        example: Main Street
         type: string
       subdistrict:
+        example: Central
         type: string
       vtc:
         description: Village/Town/City
+        example: Metro City
         type: string
     type: object
   responses.AssignRoleResponse:
+    description: Role assignment response structure
     properties:
       message:
+        example: Role assigned successfully
+        type: string
+      request_id:
+        example: req-123456789
         type: string
       role:
         $ref: '#/definitions/responses.RoleDetail'
       success:
+        example: true
         type: boolean
+      timestamp:
+        example: "2024-01-01T00:00:00Z"
+        type: string
       user_id:
+        example: USER123456789
         type: string
     type: object
   responses.ContactInfo:
+    description: Contact information structure
     properties:
       description:
+        example: Primary email address
         type: string
       id:
+        example: CONTACT123456789
         type: string
       is_primary:
+        example: true
         type: boolean
       is_verified:
+        example: true
         type: boolean
       type:
+        example: email
         type: string
       value:
+        example: john@example.com
         type: string
     type: object
   responses.ErrorResponse:
     properties:
       code:
-        type: integer
+        type: string
       details:
         additionalProperties: true
         type: object
@@ -583,6 +656,8 @@ definitions:
         type: string
       request_id:
         type: string
+      success:
+        type: boolean
       timestamp:
         type: string
     type: object
@@ -920,29 +995,47 @@ definitions:
         type: string
     type: object
   responses.RemoveRoleResponse:
+    description: Role removal response structure
     properties:
       message:
+        example: Role removed successfully
+        type: string
+      request_id:
+        example: req-123456789
         type: string
       role_id:
+        example: ROLE123456789
         type: string
       success:
+        example: true
         type: boolean
+      timestamp:
+        example: "2024-01-01T00:00:00Z"
+        type: string
       user_id:
+        example: USER123456789
         type: string
     type: object
   responses.RoleDetail:
+    description: Detailed role information structure
     properties:
       description:
+        example: Administrator role with full access
         type: string
       id:
+        example: ROLE123456789
         type: string
       is_active:
+        example: true
         type: boolean
       name:
+        example: admin
         type: string
       scope:
+        example: organization
         type: string
       version:
+        example: 1
         type: integer
     type: object
   responses.SuccessResponse:
@@ -1020,11 +1113,21 @@ definitions:
         type: string
     type: object
   responses.UserInfoSwagger:
-    description: User information structure
+    description: Enhanced user information structure with roles and profile
     properties:
+      contacts:
+        items:
+          $ref: '#/definitions/responses.ContactInfo'
+        type: array
       country_code:
         example: US
         type: string
+      created_at:
+        example: "2024-01-01T00:00:00Z"
+        type: string
+      has_mpin:
+        example: true
+        type: boolean
       id:
         example: USER123456789
         type: string
@@ -1034,29 +1137,53 @@ definitions:
       phone_number:
         example: "+1234567890"
         type: string
+      profile:
+        $ref: '#/definitions/responses.UserProfileInfo'
+      roles:
+        items:
+          $ref: '#/definitions/responses.UserRoleDetailInfo'
+        type: array
+      status:
+        example: active
+        type: string
+      tokens:
+        example: 100
+        type: integer
+      updated_at:
+        example: "2024-01-01T00:00:00Z"
+        type: string
       username:
         example: john_doe
         type: string
     type: object
   responses.UserProfileInfo:
+    description: User profile information structure
     properties:
       aadhaar_number:
+        example: "123456789012"
         type: string
       address:
         $ref: '#/definitions/responses.AddressInfo'
       care_of:
+        example: S/O Jane Doe
         type: string
       date_of_birth:
+        example: "1990-01-01"
         type: string
       email_hash:
+        example: hash123
         type: string
       id:
+        example: PROFILE123456789
         type: string
       name:
+        example: John Doe
         type: string
       share_code:
+        example: SHARE123
         type: string
       year_of_birth:
+        example: "1990"
         type: string
     type: object
   responses.UserRoleDetail:
@@ -1070,6 +1197,24 @@ definitions:
       role_id:
         type: string
       user_id:
+        type: string
+    type: object
+  responses.UserRoleDetailInfo:
+    description: User role detail information structure
+    properties:
+      id:
+        example: USERROLE123456789
+        type: string
+      is_active:
+        example: true
+        type: boolean
+      role:
+        $ref: '#/definitions/responses.RoleDetail'
+      role_id:
+        example: ROLE123456789
+        type: string
+      user_id:
+        example: USER123456789
         type: string
     type: object
   roles.AssignRoleRequest:

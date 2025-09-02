@@ -49,11 +49,13 @@ The service follows a clean architecture pattern with:
 ### Environment Setup
 
 1. Copy the environment file:
+
    ```bash
    cp env.example .env
    ```
 
 2. Update the database configuration in `.env`:
+
    ```bash
    DB_POSTGRES_HOST=localhost
    DB_POSTGRES_PORT=5432
@@ -63,6 +65,7 @@ The service follows a clean architecture pattern with:
    ```
 
 3. Start the required services:
+
    ```bash
    docker-compose up -d postgres redis
    ```
@@ -75,15 +78,49 @@ The service follows a clean architecture pattern with:
 ### Database Setup
 
 The service will automatically:
+
 - Connect to PostgreSQL using kisanlink-db manager
 - Run migrations if `AAA_AUTO_MIGRATE=true`
 - Seed initial data if `AAA_RUN_SEED=true`
 
 ## API Documentation
 
+### Interactive Documentation
+
 - **Swagger UI**: Available at `/swagger/index.html` when `AAA_ENABLE_DOCS=true`
+- **OpenAPI Spec**: Available at `/swagger/doc.json` and `/swagger/swagger.yaml`
+
+### Comprehensive Guides
+
+- **[API Usage Examples](docs/API_EXAMPLES.md)** - Complete examples for all endpoints including:
+
+  - Enhanced login with password and MPIN support
+  - Role assignment and management
+  - MPIN management (set/update)
+  - User lifecycle management
+  - Error handling scenarios
+
+- **[Error Response Documentation](docs/ERROR_RESPONSES.md)** - Detailed error handling guide:
+  - Standardized error response format
+  - Authentication and authorization errors
+  - Validation error examples
+  - Role management error scenarios
+  - MPIN management error cases
+  - System error responses
+
+### Key API Features
+
+- **Enhanced Authentication**: Login with phone/password or phone/MPIN
+- **Role Management**: Assign/remove roles with comprehensive audit logging
+- **MPIN Support**: Set and update MPIN for secure mobile authentication
+- **User Management**: Complete user lifecycle including soft deletion
+- **Comprehensive Error Handling**: Consistent error responses with detailed context
+
+### Additional Resources
+
 - **gRPC**: Reflection enabled for development tools
 - **Health Check**: `/health` endpoint for monitoring
+- **Audit Logging**: All operations logged with request tracing
 
 ## Configuration
 
@@ -110,6 +147,7 @@ DB_S3_REGION=us-east-1
 ### Authorization Configuration
 
 PostgreSQL RBAC is used for authorization:
+
 - No external authorization service required
 - Permissions stored in PostgreSQL tables
 - Real-time permission evaluation
