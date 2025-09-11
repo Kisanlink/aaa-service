@@ -49,8 +49,8 @@ func (m *MockUserService) GetUserByID(ctx context.Context, userID string) (*user
 	return args.Get(0).(*userResponses.UserResponse), args.Error(1)
 }
 
-func (m *MockUserService) SetMPin(ctx context.Context, userID, mPin string) error {
-	args := m.Called(ctx, userID, mPin)
+func (m *MockUserService) SetMPin(ctx context.Context, userID, mPin, currentPassword string) error {
+	args := m.Called(ctx, userID, mPin, currentPassword)
 	return args.Error(0)
 }
 
@@ -536,7 +536,7 @@ func TestSetMPinV2_Success(t *testing.T) {
 
 	// Setup mocks
 	mockValidator.On("ValidateStruct", &setMPinReq).Return(nil)
-	mockUserService.On("SetMPin", mock.Anything, "user-123", "1234").Return(nil)
+	mockUserService.On("SetMPin", mock.Anything, "user-123", "1234", "testpassword123").Return(nil)
 	mockResponder.On("SendSuccess", mock.Anything, http.StatusOK, mock.MatchedBy(func(data map[string]any) bool {
 		return data["success"] == true && data["message"] == "mPin set successfully"
 	})).Return()
@@ -634,7 +634,7 @@ func TestSetMPinV2_InvalidPassword(t *testing.T) {
 
 	// Setup mocks
 	mockValidator.On("ValidateStruct", &setMPinReq).Return(nil)
-	mockUserService.On("SetMPin", mock.Anything, "user-123", "1234").Return(errors.NewUnauthorizedError("invalid password"))
+	mockUserService.On("SetMPin", mock.Anything, "user-123", "1234", "wrongpassword").Return(errors.NewUnauthorizedError("invalid password"))
 	mockResponder.On("SendError", mock.Anything, http.StatusUnauthorized, "Invalid password", mock.AnythingOfType("*errors.UnauthorizedError")).Return()
 
 	// Create request
@@ -669,7 +669,7 @@ func TestSetMPinV2_ServiceValidationError(t *testing.T) {
 
 	// Setup mocks
 	mockValidator.On("ValidateStruct", &setMPinReq).Return(nil)
-	mockUserService.On("SetMPin", mock.Anything, "user-123", "1234").Return(errors.NewValidationError("mPin already exists"))
+	mockUserService.On("SetMPin", mock.Anything, "user-123", "1234", "testpassword123").Return(errors.NewValidationError("mPin already exists"))
 	mockResponder.On("SendValidationError", mock.Anything, []string{"mPin already exists"}).Return()
 
 	// Create request

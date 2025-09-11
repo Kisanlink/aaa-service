@@ -19,7 +19,7 @@ func TestAuditService_OrganizationOperations_Integration(t *testing.T) {
 
 	// Create a minimal audit service for testing method signatures
 	// Note: This uses nil dependencies which is only safe for method signature testing
-	auditService := NewAuditService(nil, nil, logger)
+	auditService := NewAuditService(nil, nil, nil, logger)
 
 	ctx := context.Background()
 	_ = ctx // Mark as used

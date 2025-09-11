@@ -204,7 +204,7 @@ func TestValidationErrors(t *testing.T) {
 		assert.Contains(t, models.ErrInvalidRoleID.Error(), "role_id")
 		assert.Contains(t, models.ErrInvalidOrganizationID.Error(), "organization_id")
 		assert.Contains(t, models.ErrInvalidAssignedBy.Error(), "assigned_by")
-		assert.Contains(t, models.ErrInvalidTimeRange.Error(), "starts_at cannot be after ends_at")
+		assert.Contains(t, models.ErrInvalidTimeRange.Error(), "starts_at must be before ends_at")
 	})
 }
 

@@ -36,6 +36,11 @@ func SetupOrganizationRoutes(router *gin.Engine, orgHandler *organizations.Handl
 			orgV1.GET("/:orgId/groups/:groupId/users", orgHandler.GetGroupUsersInOrganization)
 			orgV1.GET("/:orgId/users/:userId/groups", orgHandler.GetUserGroupsInOrganization)
 			orgV1.GET("/:orgId/users/:userId/effective-roles", orgHandler.GetUserEffectiveRolesInOrganization)
+
+			// Role-group management within organization context
+			orgV1.POST("/:orgId/groups/:groupId/roles", orgHandler.AssignRoleToGroupInOrganization)
+			orgV1.DELETE("/:orgId/groups/:groupId/roles/:roleId", orgHandler.RemoveRoleFromGroupInOrganization)
+			orgV1.GET("/:orgId/groups/:groupId/roles", orgHandler.GetGroupRolesInOrganization)
 		}
 	}
 
@@ -67,6 +72,11 @@ func SetupOrganizationRoutes(router *gin.Engine, orgHandler *organizations.Handl
 			orgV2.GET("/:orgId/groups/:groupId/users", orgHandler.GetGroupUsersInOrganization)
 			orgV2.GET("/:orgId/users/:userId/groups", orgHandler.GetUserGroupsInOrganization)
 			orgV2.GET("/:orgId/users/:userId/effective-roles", orgHandler.GetUserEffectiveRolesInOrganization)
+
+			// Role-group management within organization context
+			orgV2.POST("/:orgId/groups/:groupId/roles", orgHandler.AssignRoleToGroupInOrganization)
+			orgV2.DELETE("/:orgId/groups/:groupId/roles/:roleId", orgHandler.RemoveRoleFromGroupInOrganization)
+			orgV2.GET("/:orgId/groups/:groupId/roles", orgHandler.GetGroupRolesInOrganization)
 		}
 	}
 }

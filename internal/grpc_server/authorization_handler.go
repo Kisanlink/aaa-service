@@ -229,7 +229,7 @@ func (h *AuthorizationHandler) ListAllowedColumns(ctx context.Context, req *prot
 }
 
 // Explain implements the Explain RPC method for authorization
-func (h *AuthorizationHandler) Explain(ctx context.Context, req *proto.ExplainRequest) (*proto.ExplainResponse, error) {
+func (h *AuthorizationHandler) ExplainLegacy(ctx context.Context, req *proto.CheckRequest) (*proto.CheckResponse, error) {
 	h.logger.Info("gRPC Explain request",
 		zap.String("principal_id", req.PrincipalId),
 		zap.String("resource_type", req.ResourceType),
@@ -263,9 +263,9 @@ func (h *AuthorizationHandler) Explain(ctx context.Context, req *proto.ExplainRe
 		zap.String("principal_id", req.PrincipalId),
 		zap.Bool("allowed", result.Allowed))
 
-	return &proto.ExplainResponse{
-		Allowed:          result.Allowed,
-		DecisionId:       result.DecisionID,
-		HumanExplanation: explanation,
+	return &proto.CheckResponse{
+		Allowed:    result.Allowed,
+		DecisionId: result.DecisionID,
+		Reasons:    []string{explanation},
 	}, nil
 }

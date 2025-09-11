@@ -8,7 +8,8 @@ import "time"
 // Standard Response Wrapper Models
 
 // SuccessResponse represents a standardized success response wrapper
-// @Description Standard success response structure
+//
+//	@Description	Standard success response structure
 type SuccessResponse struct {
 	Success   bool        `json:"success" example:"true"`
 	Message   string      `json:"message" example:"Operation completed successfully"`
@@ -18,7 +19,8 @@ type SuccessResponse struct {
 }
 
 // ErrorResponseSwagger represents a standardized error response for Swagger
-// @Description Standard error response structure
+//
+//	@Description	Standard error response structure
 type ErrorResponseSwagger struct {
 	Success   bool                   `json:"success" example:"false"`
 	Error     string                 `json:"error" example:"VALIDATION_ERROR"`
@@ -32,7 +34,8 @@ type ErrorResponseSwagger struct {
 // Authentication Response Models
 
 // LoginSuccessResponse represents successful login response
-// @Description Successful login response with tokens and user info
+//
+//	@Description	Successful login response with tokens and user info
 type LoginSuccessResponse struct {
 	Success   bool              `json:"success" example:"true"`
 	Message   string            `json:"message" example:"Login successful"`
@@ -42,7 +45,8 @@ type LoginSuccessResponse struct {
 }
 
 // LoginResponseData represents the data section of login response
-// @Description Login response data containing tokens and user info
+//
+//	@Description	Login response data containing tokens and user info
 type LoginResponseData struct {
 	AccessToken  string   `json:"access_token" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
 	RefreshToken string   `json:"refresh_token" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
@@ -52,7 +56,8 @@ type LoginResponseData struct {
 }
 
 // RegisterSuccessResponse represents successful registration response
-// @Description Successful registration response with user info
+//
+//	@Description	Successful registration response with user info
 type RegisterSuccessResponse struct {
 	Success   bool                 `json:"success" example:"true"`
 	Message   string               `json:"message" example:"User registered successfully"`
@@ -62,13 +67,15 @@ type RegisterSuccessResponse struct {
 }
 
 // RegisterResponseData represents the data section of registration response
-// @Description Registration response data containing user info
+//
+//	@Description	Registration response data containing user info
 type RegisterResponseData struct {
 	User UserInfoSwagger `json:"user"`
 }
 
 // RefreshTokenSuccessResponse represents successful token refresh response
-// @Description Successful token refresh response
+//
+//	@Description	Successful token refresh response
 type RefreshTokenSuccessResponse struct {
 	Success   bool                     `json:"success" example:"true"`
 	Message   string                   `json:"message" example:"Token refreshed successfully"`
@@ -78,7 +85,8 @@ type RefreshTokenSuccessResponse struct {
 }
 
 // RefreshTokenResponseData represents the data section of refresh token response
-// @Description Refresh token response data
+//
+//	@Description	Refresh token response data
 type RefreshTokenResponseData struct {
 	AccessToken  string `json:"access_token" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
 	RefreshToken string `json:"refresh_token" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
@@ -87,7 +95,8 @@ type RefreshTokenResponseData struct {
 }
 
 // LogoutSuccessResponse represents successful logout response
-// @Description Successful logout response
+//
+//	@Description	Successful logout response
 type LogoutSuccessResponse struct {
 	Success   bool      `json:"success" example:"true"`
 	Message   string    `json:"message" example:"Logout successful"`
@@ -98,7 +107,8 @@ type LogoutSuccessResponse struct {
 // MPIN Management Response Models
 
 // SetMPinSuccessResponse represents successful MPIN set response
-// @Description Successful MPIN set response
+//
+//	@Description	Successful MPIN set response
 type SetMPinSuccessResponse struct {
 	Success   bool      `json:"success" example:"true"`
 	Message   string    `json:"message" example:"MPIN set successfully"`
@@ -107,7 +117,8 @@ type SetMPinSuccessResponse struct {
 }
 
 // UpdateMPinSuccessResponse represents successful MPIN update response
-// @Description Successful MPIN update response
+//
+//	@Description	Successful MPIN update response
 type UpdateMPinSuccessResponse struct {
 	Success   bool      `json:"success" example:"true"`
 	Message   string    `json:"message" example:"MPIN updated successfully"`
@@ -118,7 +129,8 @@ type UpdateMPinSuccessResponse struct {
 // User Management Response Models
 
 // UserInfoSwagger represents user information in responses for Swagger docs
-// @Description Enhanced user information structure with roles and profile
+//
+//	@Description	Enhanced user information structure with roles and profile
 type UserInfoSwagger struct {
 	ID          string               `json:"id" example:"USER123456789"`
 	Username    string               `json:"username" example:"john_doe"`
@@ -136,7 +148,8 @@ type UserInfoSwagger struct {
 }
 
 // UserRoleDetailInfo represents user role detail information
-// @Description User role detail information structure
+//
+//	@Description	User role detail information structure
 type UserRoleDetailInfo struct {
 	ID       string     `json:"id" example:"USERROLE123456789"`
 	UserID   string     `json:"user_id" example:"USER123456789"`
@@ -146,7 +159,8 @@ type UserRoleDetailInfo struct {
 }
 
 // UserDetailResponse represents detailed user response
-// @Description Detailed user response structure
+//
+//	@Description	Detailed user response structure
 type UserDetailResponse struct {
 	Success   bool           `json:"success" example:"true"`
 	Message   string         `json:"message" example:"User retrieved successfully"`
@@ -156,13 +170,15 @@ type UserDetailResponse struct {
 }
 
 // UserDetailData represents detailed user data
-// @Description Detailed user data structure
+//
+//	@Description	Detailed user data structure
 type UserDetailData struct {
 	User UserInfoSwagger `json:"user"`
 }
 
 // UsersListResponse represents list of users response
-// @Description Users list response with pagination
+//
+//	@Description	Users list response with pagination
 type UsersListResponse struct {
 	Success    bool           `json:"success" example:"true"`
 	Message    string         `json:"message" example:"Users retrieved successfully"`
@@ -173,7 +189,8 @@ type UsersListResponse struct {
 }
 
 // UsersListData represents users list data
-// @Description Users list data structure
+//
+//	@Description	Users list data structure
 type UsersListData struct {
 	Users []UserInfoSwagger `json:"users"`
 }
@@ -181,7 +198,8 @@ type UsersListData struct {
 // Role Management Response Models
 
 // RoleInfo represents role information
-// @Description Role information structure
+//
+//	@Description	Role information structure
 type RoleInfo struct {
 	ID          string    `json:"id" example:"ROLE123456789"`
 	Name        string    `json:"name" example:"admin"`
@@ -191,7 +209,8 @@ type RoleInfo struct {
 }
 
 // RoleDetailResponse represents detailed role response
-// @Description Detailed role response structure
+//
+//	@Description	Detailed role response structure
 type RoleDetailResponse struct {
 	Success   bool           `json:"success" example:"true"`
 	Message   string         `json:"message" example:"Role retrieved successfully"`
@@ -201,13 +220,15 @@ type RoleDetailResponse struct {
 }
 
 // RoleDetailData represents detailed role data
-// @Description Detailed role data structure
+//
+//	@Description	Detailed role data structure
 type RoleDetailData struct {
 	Role RoleInfo `json:"role"`
 }
 
 // RolesListResponse represents list of roles response
-// @Description Roles list response structure
+//
+//	@Description	Roles list response structure
 type RolesListResponse struct {
 	Success    bool           `json:"success" example:"true"`
 	Message    string         `json:"message" example:"Roles retrieved successfully"`
@@ -218,7 +239,8 @@ type RolesListResponse struct {
 }
 
 // RolesListData represents roles list data
-// @Description Roles list data structure
+//
+//	@Description	Roles list data structure
 type RolesListData struct {
 	Roles []RoleInfo `json:"roles"`
 }
@@ -226,7 +248,8 @@ type RolesListData struct {
 // Permission Management Response Models
 
 // PermissionInfo represents permission information
-// @Description Permission information structure
+//
+//	@Description	Permission information structure
 type PermissionInfo struct {
 	ID          string    `json:"id" example:"PERM123456789"`
 	Name        string    `json:"name" example:"users:read"`
@@ -238,7 +261,8 @@ type PermissionInfo struct {
 }
 
 // PermissionDetailResponse represents detailed permission response
-// @Description Detailed permission response structure
+//
+//	@Description	Detailed permission response structure
 type PermissionDetailResponse struct {
 	Success   bool                 `json:"success" example:"true"`
 	Message   string               `json:"message" example:"Permission retrieved successfully"`
@@ -248,13 +272,15 @@ type PermissionDetailResponse struct {
 }
 
 // PermissionDetailData represents detailed permission data
-// @Description Detailed permission data structure
+//
+//	@Description	Detailed permission data structure
 type PermissionDetailData struct {
 	Permission PermissionInfo `json:"permission"`
 }
 
 // PermissionsListResponse represents list of permissions response
-// @Description Permissions list response structure
+//
+//	@Description	Permissions list response structure
 type PermissionsListResponse struct {
 	Success    bool                `json:"success" example:"true"`
 	Message    string              `json:"message" example:"Permissions retrieved successfully"`
@@ -265,7 +291,8 @@ type PermissionsListResponse struct {
 }
 
 // PermissionsListData represents permissions list data
-// @Description Permissions list data structure
+//
+//	@Description	Permissions list data structure
 type PermissionsListData struct {
 	Permissions []PermissionInfo `json:"permissions"`
 }
@@ -273,7 +300,8 @@ type PermissionsListData struct {
 // Authorization Response Models
 
 // PermissionCheckResponse represents permission check response
-// @Description Permission check response structure
+//
+//	@Description	Permission check response structure
 type PermissionCheckResponse struct {
 	Success   bool                `json:"success" example:"true"`
 	Message   string              `json:"message" example:"Permission check completed"`
@@ -283,7 +311,8 @@ type PermissionCheckResponse struct {
 }
 
 // PermissionCheckData represents permission check result data
-// @Description Permission check result data structure
+//
+//	@Description	Permission check result data structure
 type PermissionCheckData struct {
 	Allowed    bool   `json:"allowed" example:"true"`
 	UserID     string `json:"user_id" example:"USER123456789"`
@@ -293,7 +322,8 @@ type PermissionCheckData struct {
 }
 
 // UserPermissionsResponse represents user permissions response
-// @Description User permissions response structure
+//
+//	@Description	User permissions response structure
 type UserPermissionsResponse struct {
 	Success   bool                `json:"success" example:"true"`
 	Message   string              `json:"message" example:"User permissions retrieved successfully"`
@@ -303,7 +333,8 @@ type UserPermissionsResponse struct {
 }
 
 // UserPermissionsData represents user permissions data
-// @Description User permissions data structure
+//
+//	@Description	User permissions data structure
 type UserPermissionsData struct {
 	UserID      string           `json:"user_id" example:"USER123456789"`
 	Permissions []PermissionInfo `json:"permissions"`
@@ -312,7 +343,8 @@ type UserPermissionsData struct {
 // Audit Response Models
 
 // AuditLogEntry represents a single audit log entry
-// @Description Audit log entry structure
+//
+//	@Description	Audit log entry structure
 type AuditLogEntry struct {
 	ID         string                 `json:"id" example:"AUDIT123456789"`
 	UserID     string                 `json:"user_id" example:"USER123456789"`
@@ -326,7 +358,8 @@ type AuditLogEntry struct {
 }
 
 // AuditLogsResponse represents audit logs response
-// @Description Audit logs response structure
+//
+//	@Description	Audit logs response structure
 type AuditLogsResponse struct {
 	Success    bool           `json:"success" example:"true"`
 	Message    string         `json:"message" example:"Audit logs retrieved successfully"`
@@ -337,13 +370,15 @@ type AuditLogsResponse struct {
 }
 
 // AuditLogsData represents audit logs data
-// @Description Audit logs data structure
+//
+//	@Description	Audit logs data structure
 type AuditLogsData struct {
 	Logs []AuditLogEntry `json:"logs"`
 }
 
 // AuditStatistics represents audit statistics
-// @Description Audit statistics structure
+//
+//	@Description	Audit statistics structure
 type AuditStatistics struct {
 	TotalLogs      int            `json:"total_logs" example:"1000"`
 	LogsByAction   map[string]int `json:"logs_by_action"`
@@ -355,7 +390,8 @@ type AuditStatistics struct {
 }
 
 // AuditStatisticsResponse represents audit statistics response
-// @Description Audit statistics response structure
+//
+//	@Description	Audit statistics response structure
 type AuditStatisticsResponse struct {
 	Success   bool                `json:"success" example:"true"`
 	Message   string              `json:"message" example:"Audit statistics retrieved successfully"`
@@ -365,7 +401,8 @@ type AuditStatisticsResponse struct {
 }
 
 // AuditStatisticsData represents audit statistics data
-// @Description Audit statistics data structure
+//
+//	@Description	Audit statistics data structure
 type AuditStatisticsData struct {
 	Statistics AuditStatistics `json:"statistics"`
 }
@@ -373,7 +410,8 @@ type AuditStatisticsData struct {
 // Health Response Models
 
 // HealthCheckResponse represents health check response
-// @Description Health check response structure
+//
+//	@Description	Health check response structure
 type HealthCheckResponse struct {
 	Success   bool            `json:"success" example:"true"`
 	Message   string          `json:"message" example:"Service is healthy"`
@@ -383,7 +421,8 @@ type HealthCheckResponse struct {
 }
 
 // HealthCheckData represents health check data
-// @Description Health check data structure
+//
+//	@Description	Health check data structure
 type HealthCheckData struct {
 	Status  string `json:"status" example:"healthy"`
 	Service string `json:"service" example:"aaa-service"`
@@ -393,7 +432,8 @@ type HealthCheckData struct {
 // Utility Response Model
 
 // MessageResponse represents a simple message response
-// @Description Simple message response structure
+//
+//	@Description	Simple message response structure
 type MessageResponse struct {
 	Success   bool      `json:"success" example:"true"`
 	Message   string    `json:"message" example:"Operation completed successfully"`
@@ -404,7 +444,8 @@ type MessageResponse struct {
 // Admin Response Models
 
 // AdminActionResponse represents admin action response
-// @Description Admin action response structure
+//
+//	@Description	Admin action response structure
 type AdminActionResponse struct {
 	Success   bool            `json:"success" example:"true"`
 	Message   string          `json:"message" example:"Admin action completed successfully"`
@@ -414,7 +455,8 @@ type AdminActionResponse struct {
 }
 
 // AdminActionData represents admin action data
-// @Description Admin action data structure
+//
+//	@Description	Admin action data structure
 type AdminActionData struct {
 	Action     string                 `json:"action" example:"grant_permission"`
 	Target     string                 `json:"target" example:"USER123456789"`
@@ -425,7 +467,8 @@ type AdminActionData struct {
 // Module Response Models
 
 // ModuleInfo represents module information
-// @Description Module information structure
+//
+//	@Description	Module information structure
 type ModuleInfo struct {
 	ServiceName  string    `json:"service_name" example:"user-service"`
 	Version      string    `json:"version" example:"1.0.0"`
@@ -436,7 +479,8 @@ type ModuleInfo struct {
 }
 
 // ModuleListResponse represents module list response
-// @Description Module list response structure
+//
+//	@Description	Module list response structure
 type ModuleListResponse struct {
 	Success   bool           `json:"success" example:"true"`
 	Message   string         `json:"message" example:"Modules retrieved successfully"`
@@ -446,13 +490,15 @@ type ModuleListResponse struct {
 }
 
 // ModuleListData represents module list data
-// @Description Module list data structure
+//
+//	@Description	Module list data structure
 type ModuleListData struct {
 	Modules []ModuleInfo `json:"modules"`
 }
 
 // ModuleDetailResponse represents module detail response
-// @Description Module detail response structure
+//
+//	@Description	Module detail response structure
 type ModuleDetailResponse struct {
 	Success   bool             `json:"success" example:"true"`
 	Message   string           `json:"message" example:"Module details retrieved successfully"`
@@ -462,7 +508,8 @@ type ModuleDetailResponse struct {
 }
 
 // ModuleDetailData represents module detail data
-// @Description Module detail data structure
+//
+//	@Description	Module detail data structure
 type ModuleDetailData struct {
 	Module    ModuleInfo `json:"module"`
 	ServiceID string     `json:"service_id" example:"svc_123456"`

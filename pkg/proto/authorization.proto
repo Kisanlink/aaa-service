@@ -1,0 +1,353 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "github.com/Kisanlink/aaa-service/pkg/proto;pb";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+
+// Enhanced Check Request - single authorization check
+message CheckRequest {
+    string principal_id = 1;    // User or Service ID
+    string resource_type = 2;   // e.g., "product", "order", "catalog"
+    string resource_id = 3;     // Specific resource instance
+    string action = 4;          // e.g., "view", "edit", "delete", "create"
+
+    // Context for enhanced evaluation
+    google.protobuf.Struct attributes = 5;     // Principal attributes
+    repeated string requested_columns = 6;      // For column-level checks
+    google.protobuf.Timestamp check_time = 7;   // Time for time-based rules
+    string organization_id = 8;                 // Organization context
+    string session_id = 9;                     // Session context
+    string device_id = 10;                     // Device context
+
+    // Consistency options
+    string consistency_token = 11;  // Use specific consistency point
+    bool use_strict = 12;          // Force strict consistency
+    bool explain_decision = 13;    // Include explanation in response
+}
+
+// Enhanced Check Response
+message CheckResponse {
+    bool allowed = 1;
+    string decision_id = 2;       // Unique ID for this decision
+    repeated string reasons = 3;   // Human-readable reasons
+    string consistency_token = 4;  // Current consistency point
+
+    // Enhanced response data
+    DebugInfo debug = 5;
+    repeated string required_actions = 6;    // Actions needed to gain access
+    repeated string alternative_resources = 7; // Alternative accessible resources
+    int32 confidence_score = 8;              // Decision confidence (0-100)
+    google.protobuf.Struct context_data = 9; // Additional context information
+}
+
+// Enhanced Debug information for authorization decisions
+message DebugInfo {
+    repeated string tuple_path = 1;          // Authorization path
+    repeated CaveatEvaluation caveats = 2;   // Condition evaluation details
+    int64 evaluation_time_ms = 3;           // Time taken for evaluation
+    repeated string policies_evaluated = 4;  // Policies that were checked
+    repeated string rules_matched = 5;       // Rules that matched
+    string decision_tree = 6;               // Decision tree traversal
+    repeated string data_sources = 7;        // Data sources consulted
+}
+
+// Enhanced Caveat evaluation details
+message CaveatEvaluation {
+    string caveat_name = 1;
+    google.protobuf.Struct caveat_context = 2;
+    bool result = 3;
+    string reason = 4;
+    repeated string dependencies = 5;        // Dependencies evaluated
+    int64 evaluation_time_ms = 6;           // Time for this caveat
+    string data_source = 7;                 // Source of data used
+}
+
+// Enhanced Batch Check Request - multiple authorization checks
+message BatchCheckRequest {
+    repeated CheckItem items = 1;
+
+    // Shared context for all checks
+    google.protobuf.Struct shared_attributes = 2;
+    google.protobuf.Timestamp check_time = 3;
+    string organization_id = 4;
+    string session_id = 5;
+
+    // Consistency options
+    string consistency_token = 6;
+    bool use_strict = 7;
+    bool explain_decisions = 8;
+    int32 max_concurrent_checks = 9;        // Limit concurrent evaluations
+}
+
+// Enhanced individual check item in batch
+message CheckItem {
+    string request_id = 1;      // Client-provided ID for correlation
+    string principal_id = 2;
+    string resource_type = 3;
+    string resource_id = 4;
+    string action = 5;
+    google.protobuf.Struct attributes = 6;  // Override shared attributes
+    repeated string requested_columns = 7;
+    int32 priority = 8;                     // Check priority (higher first)
+    bool fail_fast = 9;                     // Stop on first denial
+}
+
+// Enhanced Batch Check Response
+message BatchCheckResponse {
+    repeated CheckResult results = 1;
+    string consistency_token = 2;
+    int32 total_checks = 3;
+    int32 allowed_checks = 4;
+    int32 denied_checks = 5;
+    int32 error_checks = 6;
+    int64 total_evaluation_time_ms = 7;
+    repeated string global_warnings = 8;
+}
+
+// Enhanced individual check result in batch
+message CheckResult {
+    string request_id = 1;
+    bool allowed = 2;
+    string decision_id = 3;
+    repeated string reasons = 4;
+    DebugInfo debug = 5;
+    int32 confidence_score = 6;
+    repeated string required_actions = 7;
+    google.protobuf.Struct context_data = 8;
+}
+
+// Enhanced Lookup Resources Request - find resources user can access
+message LookupResourcesRequest {
+    string principal_id = 1;
+    string resource_type = 2;
+    string action = 3;
+
+    // Enhanced filters
+    string parent_resource_id = 4;
+    string organization_id = 5;
+    repeated string resource_states = 6;     // e.g., "active", "draft"
+    repeated string tags = 7;                // Resource tags to filter
+    google.protobuf.Struct resource_filters = 8; // Custom resource filters
+
+    // Context
+    google.protobuf.Struct attributes = 9;
+    google.protobuf.Timestamp check_time = 10;
+
+    // Enhanced pagination
+    int32 page = 11;
+    int32 page_size = 12;
+    string continuation_token = 13;
+    string sort_by = 14;                     // Sort field
+    string sort_order = 15;                  // "asc" or "desc"
+    repeated string include_fields = 16;      // Fields to include in response
+
+    // Consistency and performance
+    string consistency_token = 17;
+    int32 max_results = 18;                  // Maximum results to return
+    int32 timeout_ms = 19;                   // Query timeout
+}
+
+// Enhanced Lookup Resources Response
+message LookupResourcesResponse {
+    repeated ResourceAccess resources = 1;
+    string continuation_token = 2;
+    string consistency_token = 3;
+    int32 total_count = 4;
+    int32 returned_count = 5;
+    bool has_more = 6;
+    int64 query_time_ms = 7;
+    repeated string warnings = 8;
+    google.protobuf.Struct aggregations = 9;  // Aggregated data if requested
+}
+
+// Enhanced Resource access information
+message ResourceAccess {
+    string resource_id = 1;
+    string resource_type = 2;
+    repeated string allowed_actions = 3;
+    repeated string denied_actions = 4;
+    google.protobuf.Struct metadata = 5;  // Resource metadata
+    repeated string allowed_columns = 6;  // Column-level permissions
+    repeated string conditions = 7;       // Conditional access rules
+    int32 access_level = 8;              // Access level (0-100)
+    google.protobuf.Timestamp access_expires_at = 9;
+    repeated string access_sources = 10;  // Sources granting access
+}
+
+// Enhanced Check Columns Request - column-level authorization
+message CheckColumnsRequest {
+    string principal_id = 1;
+    string table_name = 2;
+    string resource_id = 3;      // Specific table instance
+    repeated string requested_columns = 4;
+    string action = 5;           // "read" or "write"
+
+    // Enhanced context
+    google.protobuf.Struct attributes = 6;
+    google.protobuf.Timestamp check_time = 7;
+    string organization_id = 8;
+    string query_context = 9;    // SQL query or operation context
+    repeated string row_filters = 10; // Row-level security filters
+
+    // Consistency
+    string consistency_token = 11;
+    bool use_strict = 12;
+}
+
+// Enhanced Check Columns Response
+message CheckColumnsResponse {
+    bool allowed = 1;                      // Overall decision
+    repeated string allowed_columns = 2;    // Subset of requested columns allowed
+    repeated string denied_columns = 3;     // Columns explicitly denied
+    repeated ColumnAccess column_access = 4; // Detailed column access info
+    repeated string row_filters = 5;        // Required row filters
+    string decision_id = 6;
+    string consistency_token = 7;
+    repeated string warnings = 8;
+    google.protobuf.Struct query_hints = 9; // Query optimization hints
+}
+
+// Detailed column access information
+message ColumnAccess {
+    string column_name = 1;
+    bool can_read = 2;
+    bool can_write = 3;
+    repeated string conditions = 4;         // Conditional access rules
+    string access_level = 5;               // "full", "masked", "hash", "none"
+    repeated string transformations = 6;    // Required data transformations
+    string reason = 7;                     // Access decision reason
+}
+
+// Enhanced List Allowed Columns Request - get all accessible columns
+message ListAllowedColumnsRequest {
+    string principal_id = 1;
+    string table_name = 2;
+    string resource_id = 3;
+    string action = 4;
+
+    // Enhanced context
+    google.protobuf.Struct attributes = 5;
+    google.protobuf.Timestamp check_time = 6;
+    string organization_id = 7;
+    bool include_metadata = 8;             // Include column metadata
+    bool include_transformations = 9;       // Include transformation rules
+
+    // Consistency
+    string consistency_token = 10;
+}
+
+// Enhanced List Allowed Columns Response
+message ListAllowedColumnsResponse {
+    repeated string allowed_columns = 1;
+    repeated ColumnGroupAccess column_groups = 2;
+    repeated ColumnAccess detailed_access = 3;
+    string consistency_token = 4;
+    repeated string table_level_filters = 5; // Table-level access rules
+    google.protobuf.Struct table_metadata = 6;
+}
+
+// Enhanced Column group access information
+message ColumnGroupAccess {
+    string group_name = 1;
+    string description = 2;
+    repeated string columns = 3;
+    string access_level = 4;
+    repeated string conditions = 5;
+    bool is_default = 6;                   // Is this the default group
+    int32 priority = 7;                    // Group priority
+}
+
+// Enhanced Permission Evaluation Request
+message EvaluatePermissionRequest {
+    string principal_id = 1;
+    string permission = 2;                 // Permission to check
+    string resource_context = 3;           // Resource context
+    string action_context = 4;             // Action context
+    google.protobuf.Struct attributes = 5;
+    string organization_id = 6;
+    google.protobuf.Timestamp check_time = 7;
+    bool include_hierarchy = 8;            // Include permission hierarchy
+}
+
+// Enhanced Permission Evaluation Response
+message EvaluatePermissionResponse {
+    bool allowed = 1;
+    string decision_id = 2;
+    repeated string reasons = 3;
+    repeated string inherited_permissions = 4; // Permissions inherited from roles
+    repeated string explicit_permissions = 5;  // Explicitly granted permissions
+    repeated string denied_permissions = 6;    // Explicitly denied permissions
+    PermissionHierarchy hierarchy = 7;         // Permission hierarchy info
+    int32 confidence_score = 8;
+}
+
+// Permission hierarchy information
+message PermissionHierarchy {
+    repeated PermissionNode nodes = 1;
+    string root_permission = 2;
+    int32 depth = 3;
+}
+
+// Permission hierarchy node
+message PermissionNode {
+    string permission = 1;
+    string source = 2;                     // "role", "direct", "inherited"
+    repeated PermissionNode children = 3;
+    bool is_granted = 4;
+    string granted_by = 5;                 // Role or user that granted it
+    google.protobuf.Timestamp granted_at = 6;
+}
+
+// Bulk Permission Evaluation Request
+message BulkEvaluatePermissionsRequest {
+    string principal_id = 1;
+    repeated PermissionCheck permissions = 2;
+    google.protobuf.Struct shared_attributes = 3;
+    string organization_id = 4;
+    google.protobuf.Timestamp check_time = 5;
+    bool fail_fast = 6;                    // Stop on first denial
+    bool include_explanations = 7;         // Include detailed explanations
+}
+
+// Individual permission check
+message PermissionCheck {
+    string permission = 1;
+    string resource_context = 2;
+    string action_context = 3;
+    google.protobuf.Struct attributes = 4; // Override shared attributes
+    int32 priority = 5;                    // Check priority
+}
+
+// Bulk Permission Evaluation Response
+message BulkEvaluatePermissionsResponse {
+    repeated PermissionResult results = 1;
+    int32 total_checks = 2;
+    int32 allowed_checks = 3;
+    int32 denied_checks = 4;
+    int64 total_evaluation_time_ms = 5;
+    repeated string global_reasons = 6;
+}
+
+// Individual permission result
+message PermissionResult {
+    string permission = 1;
+    bool allowed = 2;
+    string decision_id = 3;
+    repeated string reasons = 4;
+    int32 confidence_score = 5;
+    google.protobuf.Struct context = 6;
+}
+
+// Enhanced Authorization Service
+service AuthorizationService {
+    rpc Check(CheckRequest) returns (CheckResponse);
+    rpc BatchCheck(BatchCheckRequest) returns (BatchCheckResponse);
+    rpc LookupResources(LookupResourcesRequest) returns (LookupResourcesResponse);
+    rpc CheckColumns(CheckColumnsRequest) returns (CheckColumnsResponse);
+    rpc ListAllowedColumns(ListAllowedColumnsRequest) returns (ListAllowedColumnsResponse);
+    rpc EvaluatePermission(EvaluatePermissionRequest) returns (EvaluatePermissionResponse);
+    rpc BulkEvaluatePermissions(BulkEvaluatePermissionsRequest) returns (BulkEvaluatePermissionsResponse);
+}

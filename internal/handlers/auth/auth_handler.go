@@ -40,17 +40,18 @@ func NewAuthHandler(
 }
 
 // LoginV2 handles POST /v2/auth/login with enhanced MPIN support
-// @Summary Enhanced user login with MPIN support
-// @Description Authenticate user with phone number and either password or MPIN. Returns comprehensive user information including roles, profile, and contacts based on request flags.
-// @Tags auth
-// @Accept json
-// @Produce json
-// @Param request body requests.LoginRequest true "Login credentials with optional flags for additional data"
-// @Success 200 {object} responses.LoginSuccessResponse "Successful login with tokens and user info"
-// @Failure 400 {object} responses.ErrorResponseSwagger "Invalid request data or validation error"
-// @Failure 401 {object} responses.ErrorResponseSwagger "Invalid credentials or authentication failed"
-// @Failure 500 {object} responses.ErrorResponseSwagger "Internal server error"
-// @Router /api/v2/auth/login [post]
+//
+//	@Summary		Enhanced user login with MPIN support
+//	@Description	Authenticate user with phone number and either password or MPIN. Returns comprehensive user information including roles, profile, and contacts based on request flags.
+//	@Tags			auth
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		requests.LoginRequest			true	"Login credentials with optional flags for additional data"
+//	@Success		200		{object}	responses.LoginSuccessResponse	"Successful login with tokens and user info"
+//	@Failure		400		{object}	responses.ErrorResponseSwagger	"Invalid request data or validation error"
+//	@Failure		401		{object}	responses.ErrorResponseSwagger	"Invalid credentials or authentication failed"
+//	@Failure		500		{object}	responses.ErrorResponseSwagger	"Internal server error"
+//	@Router			/api/v2/auth/login [post]
 func (h *AuthHandler) LoginV2(c *gin.Context) {
 	h.logger.Info("Processing login request")
 
@@ -158,17 +159,18 @@ func (h *AuthHandler) LoginV2(c *gin.Context) {
 }
 
 // RegisterV2 handles POST /v2/auth/register
-// @Summary Register new user account
-// @Description Create a new user account with phone number, password, and optional profile information
-// @Tags auth
-// @Accept json
-// @Produce json
-// @Param request body requests.RegisterRequest true "User registration data"
-// @Success 201 {object} responses.RegisterSuccessResponse "User registered successfully"
-// @Failure 400 {object} responses.ErrorResponseSwagger "Invalid request data or validation error"
-// @Failure 409 {object} responses.ErrorResponseSwagger "User already exists or conflict error"
-// @Failure 500 {object} responses.ErrorResponseSwagger "Internal server error"
-// @Router /api/v2/auth/register [post]
+//
+//	@Summary		Register new user account
+//	@Description	Create a new user account with phone number, password, and optional profile information
+//	@Tags			auth
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		requests.RegisterRequest			true	"User registration data"
+//	@Success		201		{object}	responses.RegisterSuccessResponse	"User registered successfully"
+//	@Failure		400		{object}	responses.ErrorResponseSwagger		"Invalid request data or validation error"
+//	@Failure		409		{object}	responses.ErrorResponseSwagger		"User already exists or conflict error"
+//	@Failure		500		{object}	responses.ErrorResponseSwagger		"Internal server error"
+//	@Router			/api/v2/auth/register [post]
 func (h *AuthHandler) RegisterV2(c *gin.Context) {
 	h.logger.Info("Processing registration request")
 
@@ -232,17 +234,18 @@ func (h *AuthHandler) RegisterV2(c *gin.Context) {
 }
 
 // RefreshTokenV2 handles POST /v2/auth/refresh
-// @Summary Refresh access token using MPIN
-// @Description Generate new access and refresh tokens using existing refresh token and MPIN verification
-// @Tags auth
-// @Accept json
-// @Produce json
-// @Param request body requests.RefreshTokenRequest true "Refresh token and MPIN"
-// @Success 200 {object} responses.RefreshTokenSuccessResponse "Token refreshed successfully"
-// @Failure 400 {object} responses.ErrorResponseSwagger "Invalid request data"
-// @Failure 401 {object} responses.ErrorResponseSwagger "Invalid refresh token or MPIN"
-// @Failure 500 {object} responses.ErrorResponseSwagger "Internal server error"
-// @Router /api/v2/auth/refresh [post]
+//
+//	@Summary		Refresh access token using MPIN
+//	@Description	Generate new access and refresh tokens using existing refresh token and MPIN verification
+//	@Tags			auth
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		requests.RefreshTokenRequest			true	"Refresh token and MPIN"
+//	@Success		200		{object}	responses.RefreshTokenSuccessResponse	"Token refreshed successfully"
+//	@Failure		400		{object}	responses.ErrorResponseSwagger			"Invalid request data"
+//	@Failure		401		{object}	responses.ErrorResponseSwagger			"Invalid refresh token or MPIN"
+//	@Failure		500		{object}	responses.ErrorResponseSwagger			"Internal server error"
+//	@Router			/api/v2/auth/refresh [post]
 func (h *AuthHandler) RefreshTokenV2(c *gin.Context) {
 	h.logger.Info("Processing token refresh request")
 
@@ -316,15 +319,16 @@ func (h *AuthHandler) RefreshTokenV2(c *gin.Context) {
 }
 
 // LogoutV2 handles POST /v2/auth/logout
-// @Summary User logout
-// @Description Logout user and invalidate tokens (placeholder implementation)
-// @Tags auth
-// @Accept json
-// @Produce json
-// @Success 200 {object} responses.LogoutSuccessResponse "Logged out successfully"
-// @Failure 500 {object} responses.ErrorResponseSwagger "Internal server error"
-// @Router /api/v2/auth/logout [post]
-// @Security Bearer
+//
+//	@Summary		User logout
+//	@Description	Logout user and invalidate tokens (placeholder implementation)
+//	@Tags			auth
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{object}	responses.LogoutSuccessResponse	"Logged out successfully"
+//	@Failure		500	{object}	responses.ErrorResponseSwagger	"Internal server error"
+//	@Router			/api/v2/auth/logout [post]
+//	@Security		Bearer
 func (h *AuthHandler) LogoutV2(c *gin.Context) {
 	h.logger.Info("Processing logout request")
 
@@ -399,18 +403,19 @@ func (h *AuthHandler) ResetPasswordV2(c *gin.Context) {
 // Helper methods
 
 // SetMPinV2 handles POST /v2/auth/set-mpin
-// @Summary Set or update user's mPin
-// @Description Set or update mPin for secure refresh token validation
-// @Tags auth
-// @Accept json
-// @Produce json
-// @Param request body requests.SetMPinRequest true "Set mPin request"
-// @Success 200 {object} map[string]interface{}
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 401 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
-// @Router /api/v2/auth/set-mpin [post]
-// @Security Bearer
+//
+//	@Summary		Set or update user's mPin
+//	@Description	Set or update mPin for secure refresh token validation
+//	@Tags			auth
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		requests.SetMPinRequest	true	"Set mPin request"
+//	@Success		200		{object}	map[string]interface{}
+//	@Failure		400		{object}	responses.ErrorResponse
+//	@Failure		401		{object}	responses.ErrorResponse
+//	@Failure		500		{object}	responses.ErrorResponse
+//	@Router			/api/v2/auth/set-mpin [post]
+//	@Security		Bearer
 func (h *AuthHandler) SetMPinV2(c *gin.Context) {
 	h.logger.Info("Processing set mPin request")
 
@@ -449,8 +454,8 @@ func (h *AuthHandler) SetMPinV2(c *gin.Context) {
 		return
 	}
 
-	// Set mPin
-	err := h.userService.SetMPin(c.Request.Context(), userIDStr, req.MPin)
+	// Set mPin with password verification
+	err := h.userService.SetMPin(c.Request.Context(), userIDStr, req.MPin, req.Password)
 	if err != nil {
 		h.logger.Error("Failed to set mPin", zap.Error(err))
 		if unauthorizedErr, ok := err.(*errors.UnauthorizedError); ok {
@@ -459,6 +464,10 @@ func (h *AuthHandler) SetMPinV2(c *gin.Context) {
 		}
 		if validationErr, ok := err.(*errors.ValidationError); ok {
 			h.responder.SendValidationError(c, []string{validationErr.Error()})
+			return
+		}
+		if conflictErr, ok := err.(*errors.ConflictError); ok {
+			h.responder.SendError(c, http.StatusConflict, conflictErr.Error(), conflictErr)
 			return
 		}
 		h.responder.SendInternalError(c, err)
@@ -475,18 +484,19 @@ func (h *AuthHandler) SetMPinV2(c *gin.Context) {
 }
 
 // UpdateMPinV2 handles POST /v2/auth/update-mpin
-// @Summary Update user's existing mPin
-// @Description Update existing mPin with current mPin verification
-// @Tags auth
-// @Accept json
-// @Produce json
-// @Param request body requests.UpdateMPinRequest true "Update mPin request"
-// @Success 200 {object} map[string]interface{}
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 401 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
-// @Router /api/v2/auth/update-mpin [post]
-// @Security Bearer
+//
+//	@Summary		Update user's existing mPin
+//	@Description	Update existing mPin with current mPin verification
+//	@Tags			auth
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		requests.UpdateMPinRequest	true	"Update mPin request"
+//	@Success		200		{object}	map[string]interface{}
+//	@Failure		400		{object}	responses.ErrorResponse
+//	@Failure		401		{object}	responses.ErrorResponse
+//	@Failure		500		{object}	responses.ErrorResponse
+//	@Router			/api/v2/auth/update-mpin [post]
+//	@Security		Bearer
 func (h *AuthHandler) UpdateMPinV2(c *gin.Context) {
 	h.logger.Info("Processing update mPin request")
 

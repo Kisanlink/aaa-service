@@ -15,6 +15,702 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/api/v1/organizations/{orgId}/groups": {
+            "get": {
+                "description": "Retrieve all groups within an organization with pagination",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "organizations"
+                ],
+                "summary": "Get organization groups",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of groups to return (default: 10, max: 100)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of groups to skip (default: 0)",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Include inactive groups (default: false)",
+                        "name": "include_inactive",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/organizations.OrganizationGroupListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/responses.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/responses.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/responses.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a new group within a specific organization",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "organizations"
+                ],
+                "summary": "Create group in organization",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Group creation data",
+                        "name": "group",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/organizations.CreateOrganizationGroupRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/organizations.OrganizationGroupResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/responses.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/responses.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/responses.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/responses.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/organizations/{orgId}/groups/{groupId}": {
+            "get": {
+                "description": "Retrieve a specific group within an organization",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "organizations"
+                ],
+                "summary": "Get group in organization",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Group ID",
+                        "name": "groupId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/organizations.OrganizationGroupResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/responses.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/responses.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/responses.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/organizations/{orgId}/groups/{groupId}/roles": {
+            "get": {
+                "description": "Retrieve all roles assigned to a specific group within an organization",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "organizations"
+                ],
+                "summary": "Get group roles in organization",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Group ID",
+                        "name": "groupId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of roles to return (default: 10, max: 100)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of roles to skip (default: 0)",
+                        "name": "offset",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/organizations.OrganizationGroupRolesResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/responses.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/responses.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/responses.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Assign a role to a specific group within an organization",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "organizations"
+                ],
+                "summary": "Assign role to group in organization",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Group ID",
+                        "name": "groupId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Role assignment data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/organizations.AssignRoleToGroupRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/organizations.OrganizationGroupRoleResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/responses.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/responses.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/responses.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/responses.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/organizations/{orgId}/groups/{groupId}/roles/{roleId}": {
+            "delete": {
+                "description": "Remove a role from a specific group within an organization",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "organizations"
+                ],
+                "summary": "Remove role from group in organization",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Group ID",
+                        "name": "groupId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Role ID",
+                        "name": "roleId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/responses.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/responses.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/responses.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/responses.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/organizations/{orgId}/groups/{groupId}/users": {
+            "get": {
+                "description": "Retrieve all users in a specific group within an organization",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "organizations"
+                ],
+                "summary": "Get group users in organization",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Group ID",
+                        "name": "groupId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of users to return (default: 10, max: 100)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of users to skip (default: 0)",
+                        "name": "offset",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/organizations.OrganizationGroupMembersResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/responses.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/responses.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/responses.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Add a user to a specific group within an organization",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "organizations"
+                ],
+                "summary": "Add user to group in organization",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Group ID",
+                        "name": "groupId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "User assignment data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/organizations.AssignUserToGroupRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/organizations.OrganizationGroupMemberResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/responses.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/responses.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/responses.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/responses.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/organizations/{orgId}/groups/{groupId}/users/{userId}": {
+            "delete": {
+                "description": "Remove a user from a specific group within an organization",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "organizations"
+                ],
+                "summary": "Remove user from group in organization",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Group ID",
+                        "name": "groupId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "userId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/responses.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/responses.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/responses.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/responses.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/organizations/{orgId}/users/{userId}/effective-roles": {
+            "get": {
+                "description": "Retrieve all effective roles for a user within an organization, including inherited roles from group hierarchy",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "organizations"
+                ],
+                "summary": "Get user's effective roles in organization",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "userId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/organizations.UserEffectiveRolesResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/responses.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/responses.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/responses.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/organizations/{orgId}/users/{userId}/groups": {
+            "get": {
+                "description": "Retrieve all groups a user belongs to within an organization",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "organizations"
+                ],
+                "summary": "Get user groups in organization",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "userId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of groups to return (default: 10, max: 100)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of groups to skip (default: 0)",
+                        "name": "offset",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/organizations.UserOrganizationGroupsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/responses.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/responses.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/responses.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v2/actions": {
             "get": {
                 "description": "Retrieve a paginated list of actions",
@@ -4170,6 +4866,146 @@ const docTemplate = `{
                 }
             }
         },
+        "groups.GroupResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "organization_id": {
+                    "type": "string"
+                },
+                "parent_id": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "groups.GroupRoleDetail": {
+            "type": "object",
+            "properties": {
+                "assigned_by": {
+                    "type": "string"
+                },
+                "ends_at": {
+                    "type": "string"
+                },
+                "group_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "organization_id": {
+                    "type": "string"
+                },
+                "role": {
+                    "$ref": "#/definitions/groups.RoleDetail"
+                },
+                "role_id": {
+                    "type": "string"
+                },
+                "starts_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "groups.RoleDetail": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "organizations.AssignRoleToGroupRequest": {
+            "type": "object",
+            "required": [
+                "role_id"
+            ],
+            "properties": {
+                "ends_at": {
+                    "type": "string"
+                },
+                "role_id": {
+                    "type": "string"
+                },
+                "starts_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "organizations.AssignUserToGroupRequest": {
+            "type": "object",
+            "required": [
+                "principal_type",
+                "user_id"
+            ],
+            "properties": {
+                "ends_at": {
+                    "type": "string"
+                },
+                "principal_type": {
+                    "type": "string",
+                    "enum": [
+                        "user",
+                        "service"
+                    ]
+                },
+                "starts_at": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "organizations.CreateOrganizationGroupRequest": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "maxLength": 1000
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 1
+                },
+                "parent_id": {
+                    "type": "string"
+                }
+            }
+        },
         "organizations.CreateOrganizationRequest": {
             "type": "object",
             "required": [
@@ -4190,6 +5026,215 @@ const docTemplate = `{
                 }
             }
         },
+        "organizations.EffectiveRoleResponse": {
+            "type": "object",
+            "properties": {
+                "is_active": {
+                    "type": "boolean"
+                },
+                "role": {
+                    "$ref": "#/definitions/roles.RoleResponse"
+                },
+                "source": {
+                    "description": "\"direct\", \"group_direct\", \"group_inherited\"",
+                    "type": "string"
+                },
+                "source_group": {
+                    "$ref": "#/definitions/organizations.OrganizationGroupResponse"
+                }
+            }
+        },
+        "organizations.GroupHierarchyNode": {
+            "type": "object",
+            "properties": {
+                "children": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/organizations.GroupHierarchyNode"
+                    }
+                },
+                "group": {
+                    "$ref": "#/definitions/groups.GroupResponse"
+                },
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/groups.GroupRoleDetail"
+                    }
+                }
+            }
+        },
+        "organizations.OrganizationGroupListResponse": {
+            "type": "object",
+            "properties": {
+                "groups": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/organizations.OrganizationGroupResponse"
+                    }
+                },
+                "organization_id": {
+                    "type": "string"
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "page_size": {
+                    "type": "integer"
+                },
+                "total_count": {
+                    "type": "integer"
+                }
+            }
+        },
+        "organizations.OrganizationGroupMemberResponse": {
+            "type": "object",
+            "properties": {
+                "added_by": {
+                    "$ref": "#/definitions/users.UserResponse"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "ends_at": {
+                    "type": "string"
+                },
+                "group_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "principal_type": {
+                    "type": "string"
+                },
+                "starts_at": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/users.UserResponse"
+                }
+            }
+        },
+        "organizations.OrganizationGroupMembersResponse": {
+            "type": "object",
+            "properties": {
+                "group_id": {
+                    "type": "string"
+                },
+                "members": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/organizations.OrganizationGroupMemberResponse"
+                    }
+                },
+                "organization_id": {
+                    "type": "string"
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "page_size": {
+                    "type": "integer"
+                },
+                "total_count": {
+                    "type": "integer"
+                }
+            }
+        },
+        "organizations.OrganizationGroupResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "organization_id": {
+                    "type": "string"
+                },
+                "parent_id": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "organizations.OrganizationGroupRoleResponse": {
+            "type": "object",
+            "properties": {
+                "assigned_by": {
+                    "$ref": "#/definitions/users.UserResponse"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "ends_at": {
+                    "type": "string"
+                },
+                "group_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "organization_id": {
+                    "type": "string"
+                },
+                "role": {
+                    "$ref": "#/definitions/groups.RoleDetail"
+                },
+                "role_id": {
+                    "type": "string"
+                },
+                "starts_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "organizations.OrganizationGroupRolesResponse": {
+            "type": "object",
+            "properties": {
+                "group_id": {
+                    "type": "string"
+                },
+                "organization_id": {
+                    "type": "string"
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "page_size": {
+                    "type": "integer"
+                },
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/organizations.OrganizationGroupRoleResponse"
+                    }
+                },
+                "total_count": {
+                    "type": "integer"
+                }
+            }
+        },
         "organizations.OrganizationHierarchyResponse": {
             "type": "object",
             "properties": {
@@ -4197,6 +5242,12 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/organizations.OrganizationResponse"
+                    }
+                },
+                "groups": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/organizations.GroupHierarchyNode"
                     }
                 },
                 "organization": {
@@ -4269,6 +5320,73 @@ const docTemplate = `{
                     "minLength": 1
                 },
                 "parent_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "organizations.UserEffectiveRolesResponse": {
+            "type": "object",
+            "properties": {
+                "effective_roles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/organizations.EffectiveRoleResponse"
+                    }
+                },
+                "organization_id": {
+                    "type": "string"
+                },
+                "total_count": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "organizations.UserGroupMembershipResponse": {
+            "type": "object",
+            "properties": {
+                "group_id": {
+                    "type": "string"
+                },
+                "group_name": {
+                    "type": "string"
+                },
+                "group_path": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "is_direct": {
+                    "type": "boolean"
+                },
+                "principal_type": {
+                    "type": "string"
+                },
+                "source": {
+                    "description": "\"direct\", \"inherited_up\", \"inherited_down\"",
+                    "type": "string"
+                }
+            }
+        },
+        "organizations.UserOrganizationGroupsResponse": {
+            "type": "object",
+            "properties": {
+                "groups": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/organizations.UserGroupMembershipResponse"
+                    }
+                },
+                "organization_id": {
+                    "type": "string"
+                },
+                "total_count": {
+                    "type": "integer"
+                },
+                "user_id": {
                     "type": "string"
                 }
             }
@@ -4543,116 +5661,84 @@ const docTemplate = `{
             }
         },
         "responses.AddressInfo": {
-            "description": "Address information structure",
             "type": "object",
             "properties": {
                 "country": {
-                    "type": "string",
-                    "example": "Country"
+                    "type": "string"
                 },
                 "district": {
-                    "type": "string",
-                    "example": "Metro"
+                    "type": "string"
                 },
                 "full_address": {
-                    "type": "string",
-                    "example": "123 Main Street, Near Park, Metro City"
+                    "type": "string"
                 },
                 "house": {
-                    "type": "string",
-                    "example": "123"
+                    "type": "string"
                 },
                 "id": {
-                    "type": "string",
-                    "example": "ADDR123456789"
+                    "type": "string"
                 },
                 "landmark": {
-                    "type": "string",
-                    "example": "Near Park"
+                    "type": "string"
                 },
                 "pincode": {
-                    "type": "string",
-                    "example": "123456"
+                    "type": "string"
                 },
                 "post_office": {
-                    "type": "string",
-                    "example": "Central PO"
+                    "type": "string"
                 },
                 "state": {
-                    "type": "string",
-                    "example": "State"
+                    "type": "string"
                 },
                 "street": {
-                    "type": "string",
-                    "example": "Main Street"
+                    "type": "string"
                 },
                 "subdistrict": {
-                    "type": "string",
-                    "example": "Central"
+                    "type": "string"
                 },
                 "vtc": {
                     "description": "Village/Town/City",
-                    "type": "string",
-                    "example": "Metro City"
+                    "type": "string"
                 }
             }
         },
         "responses.AssignRoleResponse": {
-            "description": "Role assignment response structure",
             "type": "object",
             "properties": {
                 "message": {
-                    "type": "string",
-                    "example": "Role assigned successfully"
-                },
-                "request_id": {
-                    "type": "string",
-                    "example": "req-123456789"
+                    "type": "string"
                 },
                 "role": {
                     "$ref": "#/definitions/responses.RoleDetail"
                 },
                 "success": {
-                    "type": "boolean",
-                    "example": true
-                },
-                "timestamp": {
-                    "type": "string",
-                    "example": "2024-01-01T00:00:00Z"
+                    "type": "boolean"
                 },
                 "user_id": {
-                    "type": "string",
-                    "example": "USER123456789"
+                    "type": "string"
                 }
             }
         },
         "responses.ContactInfo": {
-            "description": "Contact information structure",
             "type": "object",
             "properties": {
                 "description": {
-                    "type": "string",
-                    "example": "Primary email address"
+                    "type": "string"
                 },
                 "id": {
-                    "type": "string",
-                    "example": "CONTACT123456789"
+                    "type": "string"
                 },
                 "is_primary": {
-                    "type": "boolean",
-                    "example": true
+                    "type": "boolean"
                 },
                 "is_verified": {
-                    "type": "boolean",
-                    "example": true
+                    "type": "boolean"
                 },
                 "type": {
-                    "type": "string",
-                    "example": "email"
+                    "type": "string"
                 },
                 "value": {
-                    "type": "string",
-                    "example": "john@example.com"
+                    "type": "string"
                 }
             }
         },
@@ -4970,24 +6056,25 @@ const docTemplate = `{
             }
         },
         "responses.PaginationInfo": {
-            "description": "Pagination information structure",
             "type": "object",
             "properties": {
-                "page": {
-                    "type": "integer",
-                    "example": 1
+                "has_next": {
+                    "type": "boolean"
                 },
-                "per_page": {
-                    "type": "integer",
-                    "example": 20
+                "has_prev": {
+                    "type": "boolean"
+                },
+                "limit": {
+                    "type": "integer"
+                },
+                "page": {
+                    "type": "integer"
                 },
                 "total": {
-                    "type": "integer",
-                    "example": 100
+                    "type": "integer"
                 },
                 "total_pages": {
-                    "type": "integer",
-                    "example": 5
+                    "type": "integer"
                 }
             }
         },
@@ -5147,62 +6234,42 @@ const docTemplate = `{
             }
         },
         "responses.RemoveRoleResponse": {
-            "description": "Role removal response structure",
             "type": "object",
             "properties": {
                 "message": {
-                    "type": "string",
-                    "example": "Role removed successfully"
-                },
-                "request_id": {
-                    "type": "string",
-                    "example": "req-123456789"
+                    "type": "string"
                 },
                 "role_id": {
-                    "type": "string",
-                    "example": "ROLE123456789"
+                    "type": "string"
                 },
                 "success": {
-                    "type": "boolean",
-                    "example": true
-                },
-                "timestamp": {
-                    "type": "string",
-                    "example": "2024-01-01T00:00:00Z"
+                    "type": "boolean"
                 },
                 "user_id": {
-                    "type": "string",
-                    "example": "USER123456789"
+                    "type": "string"
                 }
             }
         },
         "responses.RoleDetail": {
-            "description": "Detailed role information structure",
             "type": "object",
             "properties": {
                 "description": {
-                    "type": "string",
-                    "example": "Administrator role with full access"
+                    "type": "string"
                 },
                 "id": {
-                    "type": "string",
-                    "example": "ROLE123456789"
+                    "type": "string"
                 },
                 "is_active": {
-                    "type": "boolean",
-                    "example": true
+                    "type": "boolean"
                 },
                 "name": {
-                    "type": "string",
-                    "example": "admin"
+                    "type": "string"
                 },
                 "scope": {
-                    "type": "string",
-                    "example": "organization"
+                    "type": "string"
                 },
                 "version": {
-                    "type": "integer",
-                    "example": 1
+                    "type": "integer"
                 }
             }
         },
@@ -5375,43 +6442,34 @@ const docTemplate = `{
             }
         },
         "responses.UserProfileInfo": {
-            "description": "User profile information structure",
             "type": "object",
             "properties": {
                 "aadhaar_number": {
-                    "type": "string",
-                    "example": "123456789012"
+                    "type": "string"
                 },
                 "address": {
                     "$ref": "#/definitions/responses.AddressInfo"
                 },
                 "care_of": {
-                    "type": "string",
-                    "example": "S/O Jane Doe"
+                    "type": "string"
                 },
                 "date_of_birth": {
-                    "type": "string",
-                    "example": "1990-01-01"
+                    "type": "string"
                 },
                 "email_hash": {
-                    "type": "string",
-                    "example": "hash123"
+                    "type": "string"
                 },
                 "id": {
-                    "type": "string",
-                    "example": "PROFILE123456789"
+                    "type": "string"
                 },
                 "name": {
-                    "type": "string",
-                    "example": "John Doe"
+                    "type": "string"
                 },
                 "share_code": {
-                    "type": "string",
-                    "example": "SHARE123"
+                    "type": "string"
                 },
                 "year_of_birth": {
-                    "type": "string",
-                    "example": "1990"
+                    "type": "string"
                 }
             }
         },
@@ -5552,6 +6610,36 @@ const docTemplate = `{
                 }
             }
         },
+        "roles.RoleResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "permissions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "responses.Response": {},
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
         "roles.UpdateRoleRequest": {
             "type": "object",
             "required": [
@@ -5668,6 +6756,53 @@ const docTemplate = `{
                 }
             }
         },
+        "users.AddressResponse": {
+            "type": "object",
+            "properties": {
+                "country": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "district": {
+                    "type": "string"
+                },
+                "full_address": {
+                    "type": "string"
+                },
+                "house": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "landmark": {
+                    "type": "string"
+                },
+                "pincode": {
+                    "type": "string"
+                },
+                "post_office": {
+                    "type": "string"
+                },
+                "state": {
+                    "type": "string"
+                },
+                "street": {
+                    "type": "string"
+                },
+                "subdistrict": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "vtc": {
+                    "type": "string"
+                }
+            }
+        },
         "users.CreateUserRequest": {
             "type": "object",
             "required": [
@@ -5703,6 +6838,26 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "year_of_birth": {
+                    "type": "string"
+                }
+            }
+        },
+        "users.RoleDetail": {
+            "type": "object",
+            "properties": {
+                "assigned_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "name": {
                     "type": "string"
                 }
             }
@@ -5750,6 +6905,97 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "year_of_birth": {
+                    "type": "string"
+                }
+            }
+        },
+        "users.UserResponse": {
+            "type": "object",
+            "properties": {
+                "aadhaar_number": {
+                    "type": "string"
+                },
+                "address": {
+                    "$ref": "#/definitions/users.AddressResponse"
+                },
+                "care_of": {
+                    "type": "string"
+                },
+                "country_code": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "date_of_birth": {
+                    "type": "string"
+                },
+                "email_hash": {
+                    "type": "string"
+                },
+                "has_mpin": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_validated": {
+                    "type": "boolean"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "phone_number": {
+                    "type": "string"
+                },
+                "photo": {
+                    "type": "string"
+                },
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/users.UserRoleDetail"
+                    }
+                },
+                "share_code": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "tokens": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                },
+                "year_of_birth": {
+                    "type": "string"
+                }
+            }
+        },
+        "users.UserRoleDetail": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "role": {
+                    "$ref": "#/definitions/users.RoleDetail"
+                },
+                "role_id": {
+                    "type": "string"
+                },
+                "user_id": {
                     "type": "string"
                 }
             }

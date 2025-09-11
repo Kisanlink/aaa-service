@@ -87,25 +87,26 @@ func (r *UserRepository) Restore(ctx context.Context, id string) error {
 	return r.BaseFilterableRepository.Restore(ctx, id)
 }
 
-// List retrieves users with pagination using database-level filtering
+// List retrieves active (non-deleted) users with pagination using database-level filtering
 func (r *UserRepository) List(ctx context.Context, limit, offset int) ([]*models.User, error) {
-	// Use base filterable repository for optimized database-level filtering
-	// The database manager expects Page/PageSize for pagination, not Limit/Offset
+	// Use base filterable repository with explicit filter for non-deleted users
 	filter := base.NewFilterBuilder().
-		Page(1, limit). // Use Page instead of Limit for database manager compatibility
+		WhereNull("deleted_at"). // Only get users that are not soft-deleted
+		Page(1, limit).          // Use Page instead of Limit for database manager compatibility
 		Build()
 
-	fmt.Printf("DEBUG: Created filter: %+v\n", filter)
+	fmt.Printf("DEBUG: Created filter with deleted_at IS NULL: %+v\n", filter)
 	result, err := r.BaseFilterableRepository.Find(ctx, filter)
-	fmt.Printf("DEBUG: Find result: %d users, error: %v\n", len(result), err)
+	fmt.Printf("DEBUG: Find result: %d active users, error: %v\n", len(result), err)
 	return result, err
 }
 
-// ListAll retrieves all users directly from database (simple implementation)
+// ListAll retrieves all active (non-deleted) users directly from database
 func (r *UserRepository) ListAll(ctx context.Context) ([]*models.User, error) {
-	// Use a large page size to get all users
+	// Use a large page size to get all active users
 	filter := base.NewFilterBuilder().
-		Page(1, 1000). // Get up to 1000 users
+		WhereNull("deleted_at"). // Only get users that are not soft-deleted
+		Page(1, 1000).           // Get up to 1000 users
 		Build()
 
 	return r.BaseFilterableRepository.Find(ctx, filter)
@@ -176,21 +177,14 @@ func (r *UserRepository) getDB(ctx context.Context, readOnly bool) (*gorm.DB, er
 	return nil, fmt.Errorf("database manager does not support GetDB method")
 }
 
-// GetByUsername retrieves a user by username using kisanlink-db filters
+// GetByUsername retrieves an active (non-deleted) user by username using kisanlink-db filters
 func (r *UserRepository) GetByUsername(ctx context.Context, username string) (*models.User, error) {
-	filters := []base.FilterCondition{
-		{Field: "username", Operator: base.OpEqual, Value: username},
-	}
+	filter := base.NewFilterBuilder().
+		Where("username", base.OpEqual, username).
+		WhereNull("deleted_at"). // Only get users that are not soft-deleted
+		Build()
 
-	var users []*models.User
-	filter := &base.Filter{
-		Group: base.FilterGroup{
-			Conditions: filters,
-			Logic:      base.LogicAnd,
-		},
-	}
-
-	// Use the base repository's Find method instead of trying to call List on GORM DB
+	// Use the base repository's Find method
 	users, err := r.BaseFilterableRepository.Find(ctx, filter)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user by username: %w", err)
@@ -203,22 +197,15 @@ func (r *UserRepository) GetByUsername(ctx context.Context, username string) (*m
 	return users[0], nil
 }
 
-// GetByPhoneNumber retrieves a user by phone number using kisanlink-db filters
+// GetByPhoneNumber retrieves an active (non-deleted) user by phone number using kisanlink-db filters
 func (r *UserRepository) GetByPhoneNumber(ctx context.Context, phoneNumber string, countryCode string) (*models.User, error) {
-	filters := []base.FilterCondition{
-		{Field: "phone_number", Operator: base.OpEqual, Value: phoneNumber},
-		{Field: "country_code", Operator: base.OpEqual, Value: countryCode},
-	}
+	filter := base.NewFilterBuilder().
+		Where("phone_number", base.OpEqual, phoneNumber).
+		Where("country_code", base.OpEqual, countryCode).
+		WhereNull("deleted_at"). // Only get users that are not soft-deleted
+		Build()
 
-	var users []*models.User
-	filter := &base.Filter{
-		Group: base.FilterGroup{
-			Conditions: filters,
-			Logic:      base.LogicAnd,
-		},
-	}
-
-	// Use the base repository's Find method instead of trying to call List on GORM DB
+	// Use the base repository's Find method
 	users, err := r.BaseFilterableRepository.Find(ctx, filter)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user by phone number: %w", err)
@@ -502,7 +489,8 @@ func (r *UserRepository) Search(ctx context.Context, keyword string, limit, offs
 			base.FilterCondition{Field: "username", Operator: base.OpContains, Value: keyword},
 			base.FilterCondition{Field: "phone_number", Operator: base.OpContains, Value: keyword},
 		).
-		Page(1, limit). // Use page-based pagination for database manager compatibility
+		WhereNull("deleted_at"). // Only get users that are not soft-deleted
+		Page(1, limit).          // Use page-based pagination for database manager compatibility
 		Build()
 
 	fmt.Printf("DEBUG: Search filter created: %+v\n", filter)

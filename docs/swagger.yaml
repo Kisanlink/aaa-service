@@ -304,6 +304,99 @@ definitions:
         maxLength: 255
         type: string
     type: object
+  groups.GroupResponse:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      name:
+        type: string
+      organization_id:
+        type: string
+      parent_id:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  groups.GroupRoleDetail:
+    properties:
+      assigned_by:
+        type: string
+      ends_at:
+        type: string
+      group_id:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      organization_id:
+        type: string
+      role:
+        $ref: '#/definitions/groups.RoleDetail'
+      role_id:
+        type: string
+      starts_at:
+        type: string
+    type: object
+  groups.RoleDetail:
+    properties:
+      description:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      name:
+        type: string
+    type: object
+  organizations.AssignRoleToGroupRequest:
+    properties:
+      ends_at:
+        type: string
+      role_id:
+        type: string
+      starts_at:
+        type: string
+    required:
+    - role_id
+    type: object
+  organizations.AssignUserToGroupRequest:
+    properties:
+      ends_at:
+        type: string
+      principal_type:
+        enum:
+        - user
+        - service
+        type: string
+      starts_at:
+        type: string
+      user_id:
+        type: string
+    required:
+    - principal_type
+    - user_id
+    type: object
+  organizations.CreateOrganizationGroupRequest:
+    properties:
+      description:
+        maxLength: 1000
+        type: string
+      name:
+        maxLength: 100
+        minLength: 1
+        type: string
+      parent_id:
+        type: string
+    required:
+    - name
+    type: object
   organizations.CreateOrganizationRequest:
     properties:
       description:
@@ -318,11 +411,152 @@ definitions:
     required:
     - name
     type: object
+  organizations.EffectiveRoleResponse:
+    properties:
+      is_active:
+        type: boolean
+      role:
+        $ref: '#/definitions/roles.RoleResponse'
+      source:
+        description: '"direct", "group_direct", "group_inherited"'
+        type: string
+      source_group:
+        $ref: '#/definitions/organizations.OrganizationGroupResponse'
+    type: object
+  organizations.GroupHierarchyNode:
+    properties:
+      children:
+        items:
+          $ref: '#/definitions/organizations.GroupHierarchyNode'
+        type: array
+      group:
+        $ref: '#/definitions/groups.GroupResponse'
+      roles:
+        items:
+          $ref: '#/definitions/groups.GroupRoleDetail'
+        type: array
+    type: object
+  organizations.OrganizationGroupListResponse:
+    properties:
+      groups:
+        items:
+          $ref: '#/definitions/organizations.OrganizationGroupResponse'
+        type: array
+      organization_id:
+        type: string
+      page:
+        type: integer
+      page_size:
+        type: integer
+      total_count:
+        type: integer
+    type: object
+  organizations.OrganizationGroupMemberResponse:
+    properties:
+      added_by:
+        $ref: '#/definitions/users.UserResponse'
+      created_at:
+        type: string
+      ends_at:
+        type: string
+      group_id:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      principal_type:
+        type: string
+      starts_at:
+        type: string
+      user:
+        $ref: '#/definitions/users.UserResponse'
+    type: object
+  organizations.OrganizationGroupMembersResponse:
+    properties:
+      group_id:
+        type: string
+      members:
+        items:
+          $ref: '#/definitions/organizations.OrganizationGroupMemberResponse'
+        type: array
+      organization_id:
+        type: string
+      page:
+        type: integer
+      page_size:
+        type: integer
+      total_count:
+        type: integer
+    type: object
+  organizations.OrganizationGroupResponse:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      name:
+        type: string
+      organization_id:
+        type: string
+      parent_id:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  organizations.OrganizationGroupRoleResponse:
+    properties:
+      assigned_by:
+        $ref: '#/definitions/users.UserResponse'
+      created_at:
+        type: string
+      ends_at:
+        type: string
+      group_id:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      organization_id:
+        type: string
+      role:
+        $ref: '#/definitions/groups.RoleDetail'
+      role_id:
+        type: string
+      starts_at:
+        type: string
+    type: object
+  organizations.OrganizationGroupRolesResponse:
+    properties:
+      group_id:
+        type: string
+      organization_id:
+        type: string
+      page:
+        type: integer
+      page_size:
+        type: integer
+      roles:
+        items:
+          $ref: '#/definitions/organizations.OrganizationGroupRoleResponse'
+        type: array
+      total_count:
+        type: integer
+    type: object
   organizations.OrganizationHierarchyResponse:
     properties:
       children:
         items:
           $ref: '#/definitions/organizations.OrganizationResponse'
+        type: array
+      groups:
+        items:
+          $ref: '#/definitions/organizations.GroupHierarchyNode'
         type: array
       organization:
         $ref: '#/definitions/organizations.OrganizationResponse'
@@ -371,6 +605,50 @@ definitions:
         minLength: 1
         type: string
       parent_id:
+        type: string
+    type: object
+  organizations.UserEffectiveRolesResponse:
+    properties:
+      effective_roles:
+        items:
+          $ref: '#/definitions/organizations.EffectiveRoleResponse'
+        type: array
+      organization_id:
+        type: string
+      total_count:
+        type: integer
+      user_id:
+        type: string
+    type: object
+  organizations.UserGroupMembershipResponse:
+    properties:
+      group_id:
+        type: string
+      group_name:
+        type: string
+      group_path:
+        type: string
+      is_active:
+        type: boolean
+      is_direct:
+        type: boolean
+      principal_type:
+        type: string
+      source:
+        description: '"direct", "inherited_up", "inherited_down"'
+        type: string
+    type: object
+  organizations.UserOrganizationGroupsResponse:
+    properties:
+      groups:
+        items:
+          $ref: '#/definitions/organizations.UserGroupMembershipResponse'
+        type: array
+      organization_id:
+        type: string
+      total_count:
+        type: integer
+      user_id:
         type: string
     type: object
   permissions.CreatePermissionRequest:
@@ -560,87 +838,57 @@ definitions:
     - new_mpin
     type: object
   responses.AddressInfo:
-    description: Address information structure
     properties:
       country:
-        example: Country
         type: string
       district:
-        example: Metro
         type: string
       full_address:
-        example: 123 Main Street, Near Park, Metro City
         type: string
       house:
-        example: "123"
         type: string
       id:
-        example: ADDR123456789
         type: string
       landmark:
-        example: Near Park
         type: string
       pincode:
-        example: "123456"
         type: string
       post_office:
-        example: Central PO
         type: string
       state:
-        example: State
         type: string
       street:
-        example: Main Street
         type: string
       subdistrict:
-        example: Central
         type: string
       vtc:
         description: Village/Town/City
-        example: Metro City
         type: string
     type: object
   responses.AssignRoleResponse:
-    description: Role assignment response structure
     properties:
       message:
-        example: Role assigned successfully
-        type: string
-      request_id:
-        example: req-123456789
         type: string
       role:
         $ref: '#/definitions/responses.RoleDetail'
       success:
-        example: true
         type: boolean
-      timestamp:
-        example: "2024-01-01T00:00:00Z"
-        type: string
       user_id:
-        example: USER123456789
         type: string
     type: object
   responses.ContactInfo:
-    description: Contact information structure
     properties:
       description:
-        example: Primary email address
         type: string
       id:
-        example: CONTACT123456789
         type: string
       is_primary:
-        example: true
         type: boolean
       is_verified:
-        example: true
         type: boolean
       type:
-        example: email
         type: string
       value:
-        example: john@example.com
         type: string
     type: object
   responses.ErrorResponse:
@@ -868,19 +1116,18 @@ definitions:
         type: string
     type: object
   responses.PaginationInfo:
-    description: Pagination information structure
     properties:
-      page:
-        example: 1
+      has_next:
+        type: boolean
+      has_prev:
+        type: boolean
+      limit:
         type: integer
-      per_page:
-        example: 20
+      page:
         type: integer
       total:
-        example: 100
         type: integer
       total_pages:
-        example: 5
         type: integer
     type: object
   responses.PermissionInfo:
@@ -995,47 +1242,29 @@ definitions:
         type: string
     type: object
   responses.RemoveRoleResponse:
-    description: Role removal response structure
     properties:
       message:
-        example: Role removed successfully
-        type: string
-      request_id:
-        example: req-123456789
         type: string
       role_id:
-        example: ROLE123456789
         type: string
       success:
-        example: true
         type: boolean
-      timestamp:
-        example: "2024-01-01T00:00:00Z"
-        type: string
       user_id:
-        example: USER123456789
         type: string
     type: object
   responses.RoleDetail:
-    description: Detailed role information structure
     properties:
       description:
-        example: Administrator role with full access
         type: string
       id:
-        example: ROLE123456789
         type: string
       is_active:
-        example: true
         type: boolean
       name:
-        example: admin
         type: string
       scope:
-        example: organization
         type: string
       version:
-        example: 1
         type: integer
     type: object
   responses.SuccessResponse:
@@ -1157,33 +1386,24 @@ definitions:
         type: string
     type: object
   responses.UserProfileInfo:
-    description: User profile information structure
     properties:
       aadhaar_number:
-        example: "123456789012"
         type: string
       address:
         $ref: '#/definitions/responses.AddressInfo'
       care_of:
-        example: S/O Jane Doe
         type: string
       date_of_birth:
-        example: "1990-01-01"
         type: string
       email_hash:
-        example: hash123
         type: string
       id:
-        example: PROFILE123456789
         type: string
       name:
-        example: John Doe
         type: string
       share_code:
-        example: SHARE123
         type: string
       year_of_birth:
-        example: "1990"
         type: string
     type: object
   responses.UserRoleDetail:
@@ -1280,6 +1500,26 @@ definitions:
     required:
     - name
     type: object
+  roles.RoleResponse:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      name:
+        type: string
+      permissions:
+        items:
+          type: string
+        type: array
+      responses.Response: {}
+      updated_at:
+        type: string
+    type: object
   roles.UpdateRoleRequest:
     properties:
       body: {}
@@ -1361,6 +1601,37 @@ definitions:
     - password
     - phone_number
     type: object
+  users.AddressResponse:
+    properties:
+      country:
+        type: string
+      created_at:
+        type: string
+      district:
+        type: string
+      full_address:
+        type: string
+      house:
+        type: string
+      id:
+        type: string
+      landmark:
+        type: string
+      pincode:
+        type: string
+      post_office:
+        type: string
+      state:
+        type: string
+      street:
+        type: string
+      subdistrict:
+        type: string
+      updated_at:
+        type: string
+      vtc:
+        type: string
+    type: object
   users.CreateUserRequest:
     properties:
       aadhaar_number:
@@ -1387,6 +1658,19 @@ definitions:
     - country_code
     - password
     - phone_number
+    type: object
+  users.RoleDetail:
+    properties:
+      assigned_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      name:
+        type: string
     type: object
   users.UpdateUserRequest:
     properties:
@@ -1419,6 +1703,66 @@ definitions:
     required:
     - user_id
     type: object
+  users.UserResponse:
+    properties:
+      aadhaar_number:
+        type: string
+      address:
+        $ref: '#/definitions/users.AddressResponse'
+      care_of:
+        type: string
+      country_code:
+        type: string
+      created_at:
+        type: string
+      date_of_birth:
+        type: string
+      email_hash:
+        type: string
+      has_mpin:
+        type: boolean
+      id:
+        type: string
+      is_validated:
+        type: boolean
+      message:
+        type: string
+      name:
+        type: string
+      phone_number:
+        type: string
+      photo:
+        type: string
+      roles:
+        items:
+          $ref: '#/definitions/users.UserRoleDetail'
+        type: array
+      share_code:
+        type: string
+      status:
+        type: string
+      tokens:
+        type: integer
+      updated_at:
+        type: string
+      username:
+        type: string
+      year_of_birth:
+        type: string
+    type: object
+  users.UserRoleDetail:
+    properties:
+      id:
+        type: string
+      is_active:
+        type: boolean
+      role:
+        $ref: '#/definitions/users.RoleDetail'
+      role_id:
+        type: string
+      user_id:
+        type: string
+    type: object
 host: localhost:8080
 info:
   contact: {}
@@ -1427,6 +1771,472 @@ info:
   title: AAA Service API
   version: "2.0"
 paths:
+  /api/v1/organizations/{orgId}/groups:
+    get:
+      description: Retrieve all groups within an organization with pagination
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: 'Number of groups to return (default: 10, max: 100)'
+        in: query
+        name: limit
+        type: integer
+      - description: 'Number of groups to skip (default: 0)'
+        in: query
+        name: offset
+        type: integer
+      - description: 'Include inactive groups (default: false)'
+        in: query
+        name: include_inactive
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/organizations.OrganizationGroupListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+      summary: Get organization groups
+      tags:
+      - organizations
+    post:
+      consumes:
+      - application/json
+      description: Create a new group within a specific organization
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Group creation data
+        in: body
+        name: group
+        required: true
+        schema:
+          $ref: '#/definitions/organizations.CreateOrganizationGroupRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/organizations.OrganizationGroupResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+      summary: Create group in organization
+      tags:
+      - organizations
+  /api/v1/organizations/{orgId}/groups/{groupId}:
+    get:
+      description: Retrieve a specific group within an organization
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Group ID
+        in: path
+        name: groupId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/organizations.OrganizationGroupResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+      summary: Get group in organization
+      tags:
+      - organizations
+  /api/v1/organizations/{orgId}/groups/{groupId}/roles:
+    get:
+      description: Retrieve all roles assigned to a specific group within an organization
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Group ID
+        in: path
+        name: groupId
+        required: true
+        type: string
+      - description: 'Number of roles to return (default: 10, max: 100)'
+        in: query
+        name: limit
+        type: integer
+      - description: 'Number of roles to skip (default: 0)'
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/organizations.OrganizationGroupRolesResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+      summary: Get group roles in organization
+      tags:
+      - organizations
+    post:
+      consumes:
+      - application/json
+      description: Assign a role to a specific group within an organization
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Group ID
+        in: path
+        name: groupId
+        required: true
+        type: string
+      - description: Role assignment data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/organizations.AssignRoleToGroupRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/organizations.OrganizationGroupRoleResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+      summary: Assign role to group in organization
+      tags:
+      - organizations
+  /api/v1/organizations/{orgId}/groups/{groupId}/roles/{roleId}:
+    delete:
+      description: Remove a role from a specific group within an organization
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Group ID
+        in: path
+        name: groupId
+        required: true
+        type: string
+      - description: Role ID
+        in: path
+        name: roleId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/responses.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+      summary: Remove role from group in organization
+      tags:
+      - organizations
+  /api/v1/organizations/{orgId}/groups/{groupId}/users:
+    get:
+      description: Retrieve all users in a specific group within an organization
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Group ID
+        in: path
+        name: groupId
+        required: true
+        type: string
+      - description: 'Number of users to return (default: 10, max: 100)'
+        in: query
+        name: limit
+        type: integer
+      - description: 'Number of users to skip (default: 0)'
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/organizations.OrganizationGroupMembersResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+      summary: Get group users in organization
+      tags:
+      - organizations
+    post:
+      consumes:
+      - application/json
+      description: Add a user to a specific group within an organization
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Group ID
+        in: path
+        name: groupId
+        required: true
+        type: string
+      - description: User assignment data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/organizations.AssignUserToGroupRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/organizations.OrganizationGroupMemberResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+      summary: Add user to group in organization
+      tags:
+      - organizations
+  /api/v1/organizations/{orgId}/groups/{groupId}/users/{userId}:
+    delete:
+      description: Remove a user from a specific group within an organization
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Group ID
+        in: path
+        name: groupId
+        required: true
+        type: string
+      - description: User ID
+        in: path
+        name: userId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/responses.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+      summary: Remove user from group in organization
+      tags:
+      - organizations
+  /api/v1/organizations/{orgId}/users/{userId}/effective-roles:
+    get:
+      description: Retrieve all effective roles for a user within an organization,
+        including inherited roles from group hierarchy
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: User ID
+        in: path
+        name: userId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/organizations.UserEffectiveRolesResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+      summary: Get user's effective roles in organization
+      tags:
+      - organizations
+  /api/v1/organizations/{orgId}/users/{userId}/groups:
+    get:
+      description: Retrieve all groups a user belongs to within an organization
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: User ID
+        in: path
+        name: userId
+        required: true
+        type: string
+      - description: 'Number of groups to return (default: 10, max: 100)'
+        in: query
+        name: limit
+        type: integer
+      - description: 'Number of groups to skip (default: 0)'
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/organizations.UserOrganizationGroupsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+      summary: Get user groups in organization
+      tags:
+      - organizations
   /api/v2/actions:
     get:
       description: Retrieve a paginated list of actions

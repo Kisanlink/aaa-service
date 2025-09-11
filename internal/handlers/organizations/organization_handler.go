@@ -39,17 +39,18 @@ func NewOrganizationHandler(
 }
 
 // CreateOrganization handles POST /organizations
-// @Summary Create a new organization
-// @Description Create a new organization with the provided information
-// @Tags organizations
-// @Accept json
-// @Produce json
-// @Param organization body organizations.CreateOrganizationRequest true "Organization creation data"
-// @Success 201 {object} organizations.OrganizationResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 409 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
-// @Router /api/v2/organizations [post]
+//
+//	@Summary		Create a new organization
+//	@Description	Create a new organization with the provided information
+//	@Tags			organizations
+//	@Accept			json
+//	@Produce		json
+//	@Param			organization	body		organizations.CreateOrganizationRequest	true	"Organization creation data"
+//	@Success		201				{object}	organizations.OrganizationResponse
+//	@Failure		400				{object}	responses.ErrorResponse
+//	@Failure		409				{object}	responses.ErrorResponse
+//	@Failure		500				{object}	responses.ErrorResponse
+//	@Router			/api/v2/organizations [post]
 func (h *Handler) CreateOrganization(c *gin.Context) {
 	var req orgRequests.CreateOrganizationRequest
 
@@ -90,16 +91,17 @@ func (h *Handler) CreateOrganization(c *gin.Context) {
 }
 
 // GetOrganization handles GET /organizations/:id
-// @Summary Get organization by ID
-// @Description Retrieve an organization by its ID
-// @Tags organizations
-// @Produce json
-// @Param id path string true "Organization ID"
-// @Success 200 {object} organizations.OrganizationResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 404 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
-// @Router /api/v2/organizations/{id} [get]
+//
+//	@Summary		Get organization by ID
+//	@Description	Retrieve an organization by its ID
+//	@Tags			organizations
+//	@Produce		json
+//	@Param			id	path		string	true	"Organization ID"
+//	@Success		200	{object}	organizations.OrganizationResponse
+//	@Failure		400	{object}	responses.ErrorResponse
+//	@Failure		404	{object}	responses.ErrorResponse
+//	@Failure		500	{object}	responses.ErrorResponse
+//	@Router			/api/v2/organizations/{id} [get]
 func (h *Handler) GetOrganization(c *gin.Context) {
 	orgID := c.Param("id")
 	if orgID == "" {
@@ -123,19 +125,20 @@ func (h *Handler) GetOrganization(c *gin.Context) {
 }
 
 // UpdateOrganization handles PUT /organizations/:id
-// @Summary Update organization
-// @Description Update an existing organization with the provided information
-// @Tags organizations
-// @Accept json
-// @Produce json
-// @Param id path string true "Organization ID"
-// @Param organization body organizations.UpdateOrganizationRequest true "Organization update data"
-// @Success 200 {object} organizations.OrganizationResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 404 {object} responses.ErrorResponse
-// @Failure 409 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
-// @Router /api/v2/organizations/{id} [put]
+//
+//	@Summary		Update organization
+//	@Description	Update an existing organization with the provided information
+//	@Tags			organizations
+//	@Accept			json
+//	@Produce		json
+//	@Param			id				path		string									true	"Organization ID"
+//	@Param			organization	body		organizations.UpdateOrganizationRequest	true	"Organization update data"
+//	@Success		200				{object}	organizations.OrganizationResponse
+//	@Failure		400				{object}	responses.ErrorResponse
+//	@Failure		404				{object}	responses.ErrorResponse
+//	@Failure		409				{object}	responses.ErrorResponse
+//	@Failure		500				{object}	responses.ErrorResponse
+//	@Router			/api/v2/organizations/{id} [put]
 func (h *Handler) UpdateOrganization(c *gin.Context) {
 	orgID := c.Param("id")
 	if orgID == "" {
@@ -185,17 +188,18 @@ func (h *Handler) UpdateOrganization(c *gin.Context) {
 }
 
 // DeleteOrganization handles DELETE /organizations/:id
-// @Summary Delete organization
-// @Description Delete an organization by its ID
-// @Tags organizations
-// @Produce json
-// @Param id path string true "Organization ID"
-// @Success 200 {object} responses.SuccessResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 401 {object} responses.ErrorResponse
-// @Failure 404 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
-// @Router /api/v2/organizations/{id} [delete]
+//
+//	@Summary		Delete organization
+//	@Description	Delete an organization by its ID
+//	@Tags			organizations
+//	@Produce		json
+//	@Param			id	path		string	true	"Organization ID"
+//	@Success		200	{object}	responses.SuccessResponse
+//	@Failure		400	{object}	responses.ErrorResponse
+//	@Failure		401	{object}	responses.ErrorResponse
+//	@Failure		404	{object}	responses.ErrorResponse
+//	@Failure		500	{object}	responses.ErrorResponse
+//	@Router			/api/v2/organizations/{id} [delete]
 func (h *Handler) DeleteOrganization(c *gin.Context) {
 	orgID := c.Param("id")
 	if orgID == "" {
@@ -235,16 +239,17 @@ func (h *Handler) DeleteOrganization(c *gin.Context) {
 }
 
 // ListOrganizations handles GET /organizations
-// @Summary List organizations
-// @Description Retrieve a list of organizations with pagination
-// @Tags organizations
-// @Produce json
-// @Param limit query int false "Number of organizations to return (default: 10, max: 100)"
-// @Param offset query int false "Number of organizations to skip (default: 0)"
-// @Param include_inactive query bool false "Include inactive organizations (default: false)"
-// @Success 200 {array} organizations.OrganizationResponse
-// @Failure 500 {object} responses.ErrorResponse
-// @Router /api/v2/organizations [get]
+//
+//	@Summary		List organizations
+//	@Description	Retrieve a list of organizations with pagination
+//	@Tags			organizations
+//	@Produce		json
+//	@Param			limit				query		int		false	"Number of organizations to return (default: 10, max: 100)"
+//	@Param			offset				query		int		false	"Number of organizations to skip (default: 0)"
+//	@Param			include_inactive	query		bool	false	"Include inactive organizations (default: false)"
+//	@Success		200					{array}		organizations.OrganizationResponse
+//	@Failure		500					{object}	responses.ErrorResponse
+//	@Router			/api/v2/organizations [get]
 func (h *Handler) ListOrganizations(c *gin.Context) {
 	// Parse query parameters
 	limitStr := c.DefaultQuery("limit", "10")
@@ -283,16 +288,17 @@ func (h *Handler) ListOrganizations(c *gin.Context) {
 }
 
 // GetOrganizationHierarchy handles GET /organizations/:id/hierarchy
-// @Summary Get organization hierarchy
-// @Description Retrieve the hierarchical structure of an organization
-// @Tags organizations
-// @Produce json
-// @Param id path string true "Organization ID"
-// @Success 200 {object} organizations.OrganizationHierarchyResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 404 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
-// @Router /api/v2/organizations/{id}/hierarchy [get]
+//
+//	@Summary		Get organization hierarchy
+//	@Description	Retrieve the hierarchical structure of an organization
+//	@Tags			organizations
+//	@Produce		json
+//	@Param			id	path		string	true	"Organization ID"
+//	@Success		200	{object}	organizations.OrganizationHierarchyResponse
+//	@Failure		400	{object}	responses.ErrorResponse
+//	@Failure		404	{object}	responses.ErrorResponse
+//	@Failure		500	{object}	responses.ErrorResponse
+//	@Router			/api/v2/organizations/{id}/hierarchy [get]
 func (h *Handler) GetOrganizationHierarchy(c *gin.Context) {
 	orgID := c.Param("id")
 	if orgID == "" {
@@ -316,17 +322,18 @@ func (h *Handler) GetOrganizationHierarchy(c *gin.Context) {
 }
 
 // ActivateOrganization handles POST /organizations/:id/activate
-// @Summary Activate organization
-// @Description Activate an inactive organization
-// @Tags organizations
-// @Produce json
-// @Param id path string true "Organization ID"
-// @Success 200 {object} responses.SuccessResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 401 {object} responses.ErrorResponse
-// @Failure 404 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
-// @Router /api/v2/organizations/{id}/activate [post]
+//
+//	@Summary		Activate organization
+//	@Description	Activate an inactive organization
+//	@Tags			organizations
+//	@Produce		json
+//	@Param			id	path		string	true	"Organization ID"
+//	@Success		200	{object}	responses.SuccessResponse
+//	@Failure		400	{object}	responses.ErrorResponse
+//	@Failure		401	{object}	responses.ErrorResponse
+//	@Failure		404	{object}	responses.ErrorResponse
+//	@Failure		500	{object}	responses.ErrorResponse
+//	@Router			/api/v2/organizations/{id}/activate [post]
 func (h *Handler) ActivateOrganization(c *gin.Context) {
 	orgID := c.Param("id")
 	if orgID == "" {
@@ -366,17 +373,18 @@ func (h *Handler) ActivateOrganization(c *gin.Context) {
 }
 
 // DeactivateOrganization handles POST /organizations/:id/deactivate
-// @Summary Deactivate organization
-// @Description Deactivate an active organization
-// @Tags organizations
-// @Produce json
-// @Param id path string true "Organization ID"
-// @Success 200 {object} responses.SuccessResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 401 {object} responses.ErrorResponse
-// @Failure 404 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
-// @Router /api/v2/organizations/{id}/deactivate [post]
+//
+//	@Summary		Deactivate organization
+//	@Description	Deactivate an active organization
+//	@Tags			organizations
+//	@Produce		json
+//	@Param			id	path		string	true	"Organization ID"
+//	@Success		200	{object}	responses.SuccessResponse
+//	@Failure		400	{object}	responses.ErrorResponse
+//	@Failure		401	{object}	responses.ErrorResponse
+//	@Failure		404	{object}	responses.ErrorResponse
+//	@Failure		500	{object}	responses.ErrorResponse
+//	@Router			/api/v2/organizations/{id}/deactivate [post]
 func (h *Handler) DeactivateOrganization(c *gin.Context) {
 	orgID := c.Param("id")
 	if orgID == "" {
@@ -416,16 +424,17 @@ func (h *Handler) DeactivateOrganization(c *gin.Context) {
 }
 
 // GetOrganizationStats handles GET /organizations/:id/stats
-// @Summary Get organization statistics
-// @Description Retrieve statistics and metrics for an organization
-// @Tags organizations
-// @Produce json
-// @Param id path string true "Organization ID"
-// @Success 200 {object} organizations.OrganizationStatsResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 404 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
-// @Router /api/v2/organizations/{id}/stats [get]
+//
+//	@Summary		Get organization statistics
+//	@Description	Retrieve statistics and metrics for an organization
+//	@Tags			organizations
+//	@Produce		json
+//	@Param			id	path		string	true	"Organization ID"
+//	@Success		200	{object}	organizations.OrganizationStatsResponse
+//	@Failure		400	{object}	responses.ErrorResponse
+//	@Failure		404	{object}	responses.ErrorResponse
+//	@Failure		500	{object}	responses.ErrorResponse
+//	@Router			/api/v2/organizations/{id}/stats [get]
 func (h *Handler) GetOrganizationStats(c *gin.Context) {
 	orgID := c.Param("id")
 	if orgID == "" {
@@ -449,19 +458,20 @@ func (h *Handler) GetOrganizationStats(c *gin.Context) {
 }
 
 // GetOrganizationGroups handles GET /organizations/:orgId/groups
-// @Summary Get organization groups
-// @Description Retrieve all groups within an organization with pagination
-// @Tags organizations
-// @Produce json
-// @Param orgId path string true "Organization ID"
-// @Param limit query int false "Number of groups to return (default: 10, max: 100)"
-// @Param offset query int false "Number of groups to skip (default: 0)"
-// @Param include_inactive query bool false "Include inactive groups (default: false)"
-// @Success 200 {array} groups.GroupResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 404 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
-// @Router /api/v1/organizations/{orgId}/groups [get]
+//
+//	@Summary		Get organization groups
+//	@Description	Retrieve all groups within an organization with pagination
+//	@Tags			organizations
+//	@Produce		json
+//	@Param			orgId				path		string	true	"Organization ID"
+//	@Param			limit				query		int		false	"Number of groups to return (default: 10, max: 100)"
+//	@Param			offset				query		int		false	"Number of groups to skip (default: 0)"
+//	@Param			include_inactive	query		bool	false	"Include inactive groups (default: false)"
+//	@Success		200					{object}	organizations.OrganizationGroupListResponse
+//	@Failure		400					{object}	responses.ErrorResponse
+//	@Failure		404					{object}	responses.ErrorResponse
+//	@Failure		500					{object}	responses.ErrorResponse
+//	@Router			/api/v1/organizations/{orgId}/groups [get]
 func (h *Handler) GetOrganizationGroups(c *gin.Context) {
 	orgID := c.Param("orgId")
 	if orgID == "" {
@@ -518,19 +528,20 @@ func (h *Handler) GetOrganizationGroups(c *gin.Context) {
 }
 
 // CreateGroupInOrganization handles POST /organizations/:orgId/groups
-// @Summary Create group in organization
-// @Description Create a new group within a specific organization
-// @Tags organizations
-// @Accept json
-// @Produce json
-// @Param orgId path string true "Organization ID"
-// @Param group body groups.CreateGroupRequest true "Group creation data"
-// @Success 201 {object} groups.GroupResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 404 {object} responses.ErrorResponse
-// @Failure 409 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
-// @Router /api/v1/organizations/{orgId}/groups [post]
+//
+//	@Summary		Create group in organization
+//	@Description	Create a new group within a specific organization
+//	@Tags			organizations
+//	@Accept			json
+//	@Produce		json
+//	@Param			orgId	path		string											true	"Organization ID"
+//	@Param			group	body		organizations.CreateOrganizationGroupRequest	true	"Group creation data"
+//	@Success		201		{object}	organizations.OrganizationGroupResponse
+//	@Failure		400		{object}	responses.ErrorResponse
+//	@Failure		404		{object}	responses.ErrorResponse
+//	@Failure		409		{object}	responses.ErrorResponse
+//	@Failure		500		{object}	responses.ErrorResponse
+//	@Router			/api/v1/organizations/{orgId}/groups [post]
 func (h *Handler) CreateGroupInOrganization(c *gin.Context) {
 	orgID := c.Param("orgId")
 	if orgID == "" {
@@ -593,17 +604,18 @@ func (h *Handler) CreateGroupInOrganization(c *gin.Context) {
 }
 
 // GetGroupInOrganization handles GET /organizations/:orgId/groups/:groupId
-// @Summary Get group in organization
-// @Description Retrieve a specific group within an organization
-// @Tags organizations
-// @Produce json
-// @Param orgId path string true "Organization ID"
-// @Param groupId path string true "Group ID"
-// @Success 200 {object} groups.GroupResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 404 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
-// @Router /api/v1/organizations/{orgId}/groups/{groupId} [get]
+//
+//	@Summary		Get group in organization
+//	@Description	Retrieve a specific group within an organization
+//	@Tags			organizations
+//	@Produce		json
+//	@Param			orgId	path		string	true	"Organization ID"
+//	@Param			groupId	path		string	true	"Group ID"
+//	@Success		200		{object}	organizations.OrganizationGroupResponse
+//	@Failure		400		{object}	responses.ErrorResponse
+//	@Failure		404		{object}	responses.ErrorResponse
+//	@Failure		500		{object}	responses.ErrorResponse
+//	@Router			/api/v1/organizations/{orgId}/groups/{groupId} [get]
 func (h *Handler) GetGroupInOrganization(c *gin.Context) {
 	orgID := c.Param("orgId")
 	groupID := c.Param("groupId")
@@ -662,20 +674,21 @@ func (h *Handler) GetGroupInOrganization(c *gin.Context) {
 }
 
 // AddUserToGroupInOrganization handles POST /organizations/:orgId/groups/:groupId/users
-// @Summary Add user to group in organization
-// @Description Add a user to a specific group within an organization
-// @Tags organizations
-// @Accept json
-// @Produce json
-// @Param orgId path string true "Organization ID"
-// @Param groupId path string true "Group ID"
-// @Param request body groups.AddMemberRequest true "User assignment data"
-// @Success 201 {object} groups.GroupMembershipResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 404 {object} responses.ErrorResponse
-// @Failure 409 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
-// @Router /api/v1/organizations/{orgId}/groups/{groupId}/users [post]
+//
+//	@Summary		Add user to group in organization
+//	@Description	Add a user to a specific group within an organization
+//	@Tags			organizations
+//	@Accept			json
+//	@Produce		json
+//	@Param			orgId	path		string									true	"Organization ID"
+//	@Param			groupId	path		string									true	"Group ID"
+//	@Param			request	body		organizations.AssignUserToGroupRequest	true	"User assignment data"
+//	@Success		201		{object}	organizations.OrganizationGroupMemberResponse
+//	@Failure		400		{object}	responses.ErrorResponse
+//	@Failure		404		{object}	responses.ErrorResponse
+//	@Failure		409		{object}	responses.ErrorResponse
+//	@Failure		500		{object}	responses.ErrorResponse
+//	@Router			/api/v1/organizations/{orgId}/groups/{groupId}/users [post]
 func (h *Handler) AddUserToGroupInOrganization(c *gin.Context) {
 	orgID := c.Param("orgId")
 	groupID := c.Param("groupId")
@@ -778,18 +791,19 @@ func (h *Handler) AddUserToGroupInOrganization(c *gin.Context) {
 }
 
 // RemoveUserFromGroupInOrganization handles DELETE /organizations/:orgId/groups/:groupId/users/:userId
-// @Summary Remove user from group in organization
-// @Description Remove a user from a specific group within an organization
-// @Tags organizations
-// @Produce json
-// @Param orgId path string true "Organization ID"
-// @Param groupId path string true "Group ID"
-// @Param userId path string true "User ID"
-// @Success 200 {object} responses.SuccessResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 404 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
-// @Router /api/v1/organizations/{orgId}/groups/{groupId}/users/{userId} [delete]
+//
+//	@Summary		Remove user from group in organization
+//	@Description	Remove a user from a specific group within an organization
+//	@Tags			organizations
+//	@Produce		json
+//	@Param			orgId	path		string	true	"Organization ID"
+//	@Param			groupId	path		string	true	"Group ID"
+//	@Param			userId	path		string	true	"User ID"
+//	@Success		200		{object}	responses.SuccessResponse
+//	@Failure		400		{object}	responses.ErrorResponse
+//	@Failure		404		{object}	responses.ErrorResponse
+//	@Failure		500		{object}	responses.ErrorResponse
+//	@Router			/api/v1/organizations/{orgId}/groups/{groupId}/users/{userId} [delete]
 func (h *Handler) RemoveUserFromGroupInOrganization(c *gin.Context) {
 	orgID := c.Param("orgId")
 	groupID := c.Param("groupId")
@@ -882,19 +896,20 @@ func (h *Handler) RemoveUserFromGroupInOrganization(c *gin.Context) {
 }
 
 // GetGroupUsersInOrganization handles GET /organizations/:orgId/groups/:groupId/users
-// @Summary Get group users in organization
-// @Description Retrieve all users in a specific group within an organization
-// @Tags organizations
-// @Produce json
-// @Param orgId path string true "Organization ID"
-// @Param groupId path string true "Group ID"
-// @Param limit query int false "Number of users to return (default: 10, max: 100)"
-// @Param offset query int false "Number of users to skip (default: 0)"
-// @Success 200 {array} groups.GroupMembershipResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 404 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
-// @Router /api/v1/organizations/{orgId}/groups/{groupId}/users [get]
+//
+//	@Summary		Get group users in organization
+//	@Description	Retrieve all users in a specific group within an organization
+//	@Tags			organizations
+//	@Produce		json
+//	@Param			orgId	path		string	true	"Organization ID"
+//	@Param			groupId	path		string	true	"Group ID"
+//	@Param			limit	query		int		false	"Number of users to return (default: 10, max: 100)"
+//	@Param			offset	query		int		false	"Number of users to skip (default: 0)"
+//	@Success		200		{object}	organizations.OrganizationGroupMembersResponse
+//	@Failure		400		{object}	responses.ErrorResponse
+//	@Failure		404		{object}	responses.ErrorResponse
+//	@Failure		500		{object}	responses.ErrorResponse
+//	@Router			/api/v1/organizations/{orgId}/groups/{groupId}/users [get]
 func (h *Handler) GetGroupUsersInOrganization(c *gin.Context) {
 	orgID := c.Param("orgId")
 	groupID := c.Param("groupId")
@@ -978,19 +993,20 @@ func (h *Handler) GetGroupUsersInOrganization(c *gin.Context) {
 }
 
 // GetUserGroupsInOrganization handles GET /organizations/:orgId/users/:userId/groups
-// @Summary Get user groups in organization
-// @Description Retrieve all groups a user belongs to within an organization
-// @Tags organizations
-// @Produce json
-// @Param orgId path string true "Organization ID"
-// @Param userId path string true "User ID"
-// @Param limit query int false "Number of groups to return (default: 10, max: 100)"
-// @Param offset query int false "Number of groups to skip (default: 0)"
-// @Success 200 {array} groups.GroupResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 404 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
-// @Router /api/v1/organizations/{orgId}/users/{userId}/groups [get]
+//
+//	@Summary		Get user groups in organization
+//	@Description	Retrieve all groups a user belongs to within an organization
+//	@Tags			organizations
+//	@Produce		json
+//	@Param			orgId	path		string	true	"Organization ID"
+//	@Param			userId	path		string	true	"User ID"
+//	@Param			limit	query		int		false	"Number of groups to return (default: 10, max: 100)"
+//	@Param			offset	query		int		false	"Number of groups to skip (default: 0)"
+//	@Success		200		{object}	organizations.UserOrganizationGroupsResponse
+//	@Failure		400		{object}	responses.ErrorResponse
+//	@Failure		404		{object}	responses.ErrorResponse
+//	@Failure		500		{object}	responses.ErrorResponse
+//	@Router			/api/v1/organizations/{orgId}/users/{userId}/groups [get]
 func (h *Handler) GetUserGroupsInOrganization(c *gin.Context) {
 	orgID := c.Param("orgId")
 	principalID := c.Param("userId")
@@ -1072,20 +1088,21 @@ func (h *Handler) getUserGroupsInOrganization(ctx context.Context, orgID, userID
 }
 
 // AssignRoleToGroupInOrganization handles POST /organizations/:orgId/groups/:groupId/roles
-// @Summary Assign role to group in organization
-// @Description Assign a role to a specific group within an organization
-// @Tags organizations
-// @Accept json
-// @Produce json
-// @Param orgId path string true "Organization ID"
-// @Param groupId path string true "Group ID"
-// @Param request body groups.AssignRoleToGroupRequest true "Role assignment data"
-// @Success 201 {object} groups.GroupRoleResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 404 {object} responses.ErrorResponse
-// @Failure 409 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
-// @Router /api/v1/organizations/{orgId}/groups/{groupId}/roles [post]
+//
+//	@Summary		Assign role to group in organization
+//	@Description	Assign a role to a specific group within an organization
+//	@Tags			organizations
+//	@Accept			json
+//	@Produce		json
+//	@Param			orgId	path		string									true	"Organization ID"
+//	@Param			groupId	path		string									true	"Group ID"
+//	@Param			request	body		organizations.AssignRoleToGroupRequest	true	"Role assignment data"
+//	@Success		201		{object}	organizations.OrganizationGroupRoleResponse
+//	@Failure		400		{object}	responses.ErrorResponse
+//	@Failure		404		{object}	responses.ErrorResponse
+//	@Failure		409		{object}	responses.ErrorResponse
+//	@Failure		500		{object}	responses.ErrorResponse
+//	@Router			/api/v1/organizations/{orgId}/groups/{groupId}/roles [post]
 func (h *Handler) AssignRoleToGroupInOrganization(c *gin.Context) {
 	orgID := c.Param("orgId")
 	groupID := c.Param("groupId")
@@ -1193,18 +1210,19 @@ func (h *Handler) AssignRoleToGroupInOrganization(c *gin.Context) {
 }
 
 // RemoveRoleFromGroupInOrganization handles DELETE /organizations/:orgId/groups/:groupId/roles/:roleId
-// @Summary Remove role from group in organization
-// @Description Remove a role from a specific group within an organization
-// @Tags organizations
-// @Produce json
-// @Param orgId path string true "Organization ID"
-// @Param groupId path string true "Group ID"
-// @Param roleId path string true "Role ID"
-// @Success 200 {object} groups.RemoveGroupRoleResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 404 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
-// @Router /api/v1/organizations/{orgId}/groups/{groupId}/roles/{roleId} [delete]
+//
+//	@Summary		Remove role from group in organization
+//	@Description	Remove a role from a specific group within an organization
+//	@Tags			organizations
+//	@Produce		json
+//	@Param			orgId	path		string	true	"Organization ID"
+//	@Param			groupId	path		string	true	"Group ID"
+//	@Param			roleId	path		string	true	"Role ID"
+//	@Success		200		{object}	responses.SuccessResponse
+//	@Failure		400		{object}	responses.ErrorResponse
+//	@Failure		404		{object}	responses.ErrorResponse
+//	@Failure		500		{object}	responses.ErrorResponse
+//	@Router			/api/v1/organizations/{orgId}/groups/{groupId}/roles/{roleId} [delete]
 func (h *Handler) RemoveRoleFromGroupInOrganization(c *gin.Context) {
 	orgID := c.Param("orgId")
 	groupID := c.Param("groupId")
@@ -1298,19 +1316,20 @@ func (h *Handler) RemoveRoleFromGroupInOrganization(c *gin.Context) {
 }
 
 // GetGroupRolesInOrganization handles GET /organizations/:orgId/groups/:groupId/roles
-// @Summary Get group roles in organization
-// @Description Retrieve all roles assigned to a specific group within an organization
-// @Tags organizations
-// @Produce json
-// @Param orgId path string true "Organization ID"
-// @Param groupId path string true "Group ID"
-// @Param limit query int false "Number of roles to return (default: 10, max: 100)"
-// @Param offset query int false "Number of roles to skip (default: 0)"
-// @Success 200 {array} groups.GroupRoleDetail
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 404 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
-// @Router /api/v1/organizations/{orgId}/groups/{groupId}/roles [get]
+//
+//	@Summary		Get group roles in organization
+//	@Description	Retrieve all roles assigned to a specific group within an organization
+//	@Tags			organizations
+//	@Produce		json
+//	@Param			orgId	path		string	true	"Organization ID"
+//	@Param			groupId	path		string	true	"Group ID"
+//	@Param			limit	query		int		false	"Number of roles to return (default: 10, max: 100)"
+//	@Param			offset	query		int		false	"Number of roles to skip (default: 0)"
+//	@Success		200		{object}	organizations.OrganizationGroupRolesResponse
+//	@Failure		400		{object}	responses.ErrorResponse
+//	@Failure		404		{object}	responses.ErrorResponse
+//	@Failure		500		{object}	responses.ErrorResponse
+//	@Router			/api/v1/organizations/{orgId}/groups/{groupId}/roles [get]
 func (h *Handler) GetGroupRolesInOrganization(c *gin.Context) {
 	orgID := c.Param("orgId")
 	groupID := c.Param("groupId")
@@ -1397,17 +1416,18 @@ func (h *Handler) GetGroupRolesInOrganization(c *gin.Context) {
 // These would need to be replaced with actual service calls once the GroupService interface is extended
 
 // GetUserEffectiveRolesInOrganization handles GET /organizations/:orgId/users/:userId/effective-roles
-// @Summary Get user's effective roles in organization
-// @Description Retrieve all effective roles for a user within an organization, including inherited roles from group hierarchy
-// @Tags organizations
-// @Produce json
-// @Param orgId path string true "Organization ID"
-// @Param userId path string true "User ID"
-// @Success 200 {array} groups.EffectiveRole
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 404 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
-// @Router /api/v1/organizations/{orgId}/users/{userId}/effective-roles [get]
+//
+//	@Summary		Get user's effective roles in organization
+//	@Description	Retrieve all effective roles for a user within an organization, including inherited roles from group hierarchy
+//	@Tags			organizations
+//	@Produce		json
+//	@Param			orgId	path		string	true	"Organization ID"
+//	@Param			userId	path		string	true	"User ID"
+//	@Success		200		{object}	organizations.UserEffectiveRolesResponse
+//	@Failure		400		{object}	responses.ErrorResponse
+//	@Failure		404		{object}	responses.ErrorResponse
+//	@Failure		500		{object}	responses.ErrorResponse
+//	@Router			/api/v1/organizations/{orgId}/users/{userId}/effective-roles [get]
 func (h *Handler) GetUserEffectiveRolesInOrganization(c *gin.Context) {
 	orgID := c.Param("orgId")
 	userID := c.Param("userId")

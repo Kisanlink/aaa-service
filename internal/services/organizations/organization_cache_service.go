@@ -46,14 +46,23 @@ const (
 	OrgGroupMembersPattern       = "org:%s:group:%s:members"
 	OrgGroupActiveMembersPattern = "org:%s:group:%s:active_members"
 
+	// Enhanced caching patterns for performance optimization
+	OrgUserEffectiveRolesPattern = "org:%s:user:%s:effective_roles_v2"
+	OrgGroupRolesPattern         = "org:%s:group:%s:roles"
+	OrgGroupActiveRolesPattern   = "org:%s:group:%s:active_roles"
+	OrgRoleInheritancePattern    = "org:%s:role_inheritance"
+	OrgHierarchyTreePattern      = "org:%s:hierarchy_tree"
+
 	// Organization stats
 	OrgStatsPattern = "org:%s:stats"
 
 	// Cache TTL values (in seconds)
-	HierarchyCacheTTL  = 1800 // 30 minutes for hierarchy data
-	GroupsCacheTTL     = 900  // 15 minutes for group data
-	UserGroupsCacheTTL = 600  // 10 minutes for user-group relationships
-	StatsCacheTTL      = 300  // 5 minutes for stats
+	HierarchyCacheTTL      = 1800 // 30 minutes for hierarchy data
+	GroupsCacheTTL         = 900  // 15 minutes for group data
+	UserGroupsCacheTTL     = 600  // 10 minutes for user-group relationships
+	EffectiveRolesCacheTTL = 300  // 5 minutes for effective roles (frequently changing)
+	RoleInheritanceTTL     = 1200 // 20 minutes for role inheritance patterns
+	StatsCacheTTL          = 300  // 5 minutes for stats
 )
 
 // CacheOrganizationHierarchy caches the complete organization hierarchy
@@ -492,6 +501,268 @@ func (c *OrganizationCacheService) WarmOrganizationCache(ctx context.Context, or
 	}
 
 	c.logger.Info("Organization cache warming completed", zap.String("org_id", orgID))
+	return nil
+}
+
+// CacheUserEffectiveRoles caches effective roles for a user in an organization
+func (c *OrganizationCacheService) CacheUserEffectiveRoles(ctx context.Context, orgID, userID string, effectiveRoles interface{}) error {
+	key := fmt.Sprintf(OrgUserEffectiveRolesPattern, orgID, userID)
+
+	if err := c.cache.Set(key, effectiveRoles, EffectiveRolesCacheTTL); err != nil {
+		c.logger.Warn("Failed to cache user effective roles",
+			zap.String("org_id", orgID),
+			zap.String("user_id", userID),
+			zap.String("cache_key", key),
+			zap.Error(err))
+		return err
+	}
+
+	c.logger.Debug("Cached user effective roles",
+		zap.String("org_id", orgID),
+		zap.String("user_id", userID),
+		zap.String("cache_key", key))
+
+	return nil
+}
+
+// GetCachedUserEffectiveRoles retrieves cached user effective roles
+func (c *OrganizationCacheService) GetCachedUserEffectiveRoles(ctx context.Context, orgID, userID string) (interface{}, bool) {
+	key := fmt.Sprintf(OrgUserEffectiveRolesPattern, orgID, userID)
+
+	cached, found := c.cache.Get(key)
+	if !found {
+		return nil, false
+	}
+
+	c.logger.Debug("Retrieved cached user effective roles",
+		zap.String("org_id", orgID),
+		zap.String("user_id", userID),
+		zap.String("cache_key", key))
+
+	return cached, true
+}
+
+// CacheGroupRoles caches roles assigned to a group within an organization
+func (c *OrganizationCacheService) CacheGroupRoles(ctx context.Context, orgID, groupID string, roles interface{}, activeOnly bool) error {
+	var key string
+	if activeOnly {
+		key = fmt.Sprintf(OrgGroupActiveRolesPattern, orgID, groupID)
+	} else {
+		key = fmt.Sprintf(OrgGroupRolesPattern, orgID, groupID)
+	}
+
+	if err := c.cache.Set(key, roles, GroupsCacheTTL); err != nil {
+		c.logger.Warn("Failed to cache group roles",
+			zap.String("org_id", orgID),
+			zap.String("group_id", groupID),
+			zap.String("cache_key", key),
+			zap.Bool("active_only", activeOnly),
+			zap.Error(err))
+		return err
+	}
+
+	c.logger.Debug("Cached group roles",
+		zap.String("org_id", orgID),
+		zap.String("group_id", groupID),
+		zap.String("cache_key", key),
+		zap.Bool("active_only", activeOnly))
+
+	return nil
+}
+
+// GetCachedGroupRoles retrieves cached group roles
+func (c *OrganizationCacheService) GetCachedGroupRoles(ctx context.Context, orgID, groupID string, activeOnly bool) (interface{}, bool) {
+	var key string
+	if activeOnly {
+		key = fmt.Sprintf(OrgGroupActiveRolesPattern, orgID, groupID)
+	} else {
+		key = fmt.Sprintf(OrgGroupRolesPattern, orgID, groupID)
+	}
+
+	cached, found := c.cache.Get(key)
+	if !found {
+		return nil, false
+	}
+
+	c.logger.Debug("Retrieved cached group roles",
+		zap.String("org_id", orgID),
+		zap.String("group_id", groupID),
+		zap.String("cache_key", key),
+		zap.Bool("active_only", activeOnly))
+
+	return cached, true
+}
+
+// CacheRoleInheritanceTree caches the complete role inheritance tree for an organization
+func (c *OrganizationCacheService) CacheRoleInheritanceTree(ctx context.Context, orgID string, inheritanceTree interface{}) error {
+	key := fmt.Sprintf(OrgRoleInheritancePattern, orgID)
+
+	if err := c.cache.Set(key, inheritanceTree, RoleInheritanceTTL); err != nil {
+		c.logger.Warn("Failed to cache role inheritance tree",
+			zap.String("org_id", orgID),
+			zap.String("cache_key", key),
+			zap.Error(err))
+		return err
+	}
+
+	c.logger.Debug("Cached role inheritance tree",
+		zap.String("org_id", orgID),
+		zap.String("cache_key", key))
+
+	return nil
+}
+
+// GetCachedRoleInheritanceTree retrieves cached role inheritance tree
+func (c *OrganizationCacheService) GetCachedRoleInheritanceTree(ctx context.Context, orgID string) (interface{}, bool) {
+	key := fmt.Sprintf(OrgRoleInheritancePattern, orgID)
+
+	cached, found := c.cache.Get(key)
+	if !found {
+		return nil, false
+	}
+
+	c.logger.Debug("Retrieved cached role inheritance tree",
+		zap.String("org_id", orgID),
+		zap.String("cache_key", key))
+
+	return cached, true
+}
+
+// CacheHierarchyTree caches the complete organization hierarchy tree
+func (c *OrganizationCacheService) CacheHierarchyTree(ctx context.Context, orgID string, hierarchyTree interface{}) error {
+	key := fmt.Sprintf(OrgHierarchyTreePattern, orgID)
+
+	if err := c.cache.Set(key, hierarchyTree, HierarchyCacheTTL); err != nil {
+		c.logger.Warn("Failed to cache hierarchy tree",
+			zap.String("org_id", orgID),
+			zap.String("cache_key", key),
+			zap.Error(err))
+		return err
+	}
+
+	c.logger.Debug("Cached hierarchy tree",
+		zap.String("org_id", orgID),
+		zap.String("cache_key", key))
+
+	return nil
+}
+
+// GetCachedHierarchyTree retrieves cached hierarchy tree
+func (c *OrganizationCacheService) GetCachedHierarchyTree(ctx context.Context, orgID string) (interface{}, bool) {
+	key := fmt.Sprintf(OrgHierarchyTreePattern, orgID)
+
+	cached, found := c.cache.Get(key)
+	if !found {
+		return nil, false
+	}
+
+	c.logger.Debug("Retrieved cached hierarchy tree",
+		zap.String("org_id", orgID),
+		zap.String("cache_key", key))
+
+	return cached, true
+}
+
+// InvalidateRoleRelatedCache invalidates all role-related cache entries for an organization
+func (c *OrganizationCacheService) InvalidateRoleRelatedCache(ctx context.Context, orgID string) error {
+	patterns := []string{
+		fmt.Sprintf(OrgRoleInheritancePattern, orgID),
+	}
+
+	for _, pattern := range patterns {
+		if err := c.cache.Delete(pattern); err != nil {
+			c.logger.Warn("Failed to invalidate role-related cache key",
+				zap.String("org_id", orgID),
+				zap.String("cache_key", pattern),
+				zap.Error(err))
+		}
+	}
+
+	// Invalidate all user effective roles in this organization
+	userRolePattern := fmt.Sprintf("org:%s:user:*:effective_roles*", orgID)
+	keys, err := c.cache.Keys(userRolePattern)
+	if err != nil {
+		c.logger.Warn("Failed to get user effective roles keys for invalidation",
+			zap.String("org_id", orgID),
+			zap.String("pattern", userRolePattern),
+			zap.Error(err))
+	} else {
+		for _, key := range keys {
+			if err := c.cache.Delete(key); err != nil {
+				c.logger.Warn("Failed to invalidate user effective roles cache key",
+					zap.String("org_id", orgID),
+					zap.String("cache_key", key),
+					zap.Error(err))
+			}
+		}
+	}
+
+	// Invalidate all group roles in this organization
+	groupRolePattern := fmt.Sprintf("org:%s:group:*:*roles", orgID)
+	keys, err = c.cache.Keys(groupRolePattern)
+	if err != nil {
+		c.logger.Warn("Failed to get group roles keys for invalidation",
+			zap.String("org_id", orgID),
+			zap.String("pattern", groupRolePattern),
+			zap.Error(err))
+	} else {
+		for _, key := range keys {
+			if err := c.cache.Delete(key); err != nil {
+				c.logger.Warn("Failed to invalidate group roles cache key",
+					zap.String("org_id", orgID),
+					zap.String("cache_key", key),
+					zap.Error(err))
+			}
+		}
+	}
+
+	c.logger.Info("Invalidated role-related cache",
+		zap.String("org_id", orgID),
+		zap.Int("pattern_count", len(patterns)))
+
+	return nil
+}
+
+// InvalidateHierarchyRelatedCache invalidates hierarchy-related cache when structure changes
+func (c *OrganizationCacheService) InvalidateHierarchyRelatedCache(ctx context.Context, orgID string, affectedOrgIDs []string) error {
+	// Invalidate the main organization's hierarchy cache
+	hierarchyPatterns := []string{
+		fmt.Sprintf(OrgHierarchyKeyPattern, orgID),
+		fmt.Sprintf(OrgHierarchyTreePattern, orgID),
+		fmt.Sprintf(OrgParentHierarchyPattern, orgID),
+		fmt.Sprintf(OrgChildrenPattern, orgID),
+		fmt.Sprintf(OrgActiveChildrenPattern, orgID),
+	}
+
+	for _, pattern := range hierarchyPatterns {
+		if err := c.cache.Delete(pattern); err != nil {
+			c.logger.Warn("Failed to invalidate hierarchy cache key",
+				zap.String("org_id", orgID),
+				zap.String("cache_key", pattern),
+				zap.Error(err))
+		}
+	}
+
+	// Invalidate cache for all affected organizations in the hierarchy
+	for _, affectedOrgID := range affectedOrgIDs {
+		if affectedOrgID != orgID {
+			for _, pattern := range hierarchyPatterns {
+				key := fmt.Sprintf(pattern, affectedOrgID)
+				if err := c.cache.Delete(key); err != nil {
+					c.logger.Warn("Failed to invalidate affected org hierarchy cache key",
+						zap.String("affected_org_id", affectedOrgID),
+						zap.String("cache_key", key),
+						zap.Error(err))
+				}
+			}
+		}
+	}
+
+	c.logger.Info("Invalidated hierarchy-related cache",
+		zap.String("org_id", orgID),
+		zap.Int("affected_orgs", len(affectedOrgIDs)),
+		zap.Int("pattern_count", len(hierarchyPatterns)))
+
 	return nil
 }
 

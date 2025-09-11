@@ -21,6 +21,7 @@ import (
 	"github.com/Kisanlink/aaa-service/internal/interfaces"
 	"github.com/Kisanlink/aaa-service/internal/middleware"
 	addressRepo "github.com/Kisanlink/aaa-service/internal/repositories/addresses"
+	auditRepo "github.com/Kisanlink/aaa-service/internal/repositories/audit"
 	contactRepo "github.com/Kisanlink/aaa-service/internal/repositories/contacts"
 	roleRepo "github.com/Kisanlink/aaa-service/internal/repositories/roles"
 	userRepo "github.com/Kisanlink/aaa-service/internal/repositories/users"
@@ -39,15 +40,15 @@ import (
 	"gorm.io/gorm"
 )
 
-// @title AAA Service API
-// @version 2.0
-// @description Authentication, Authorization, and Accounting Service with PostgreSQL-based RBAC
-// @host localhost:8080
-// @BasePath /
-// @securityDefinitions.apikey BearerAuth
-// @in header
-// @name Authorization
-// @description Type "Bearer" followed by a space and JWT token.
+//	@title						AAA Service API
+//	@version					2.0
+//	@description				Authentication, Authorization, and Accounting Service with PostgreSQL-based RBAC
+//	@host						localhost:8080
+//	@BasePath					/
+//	@securityDefinitions.apikey	BearerAuth
+//	@in							header
+//	@name						Authorization
+//	@description				Type "Bearer" followed by a space and JWT token.
 
 // runSeedScripts runs all seeding scripts to initialize default data
 func runSeedScripts(ctx context.Context, dbManager *db.DatabaseManager, logger *zap.Logger) error {
@@ -388,7 +389,9 @@ func setupAuthStack(
 	logger *zap.Logger,
 	validator interfaces.Validator,
 ) (*services.AuditService, *services.AuthorizationService, *services.AuthService, *middleware.AuthMiddleware, *middleware.AuditMiddleware, error) {
-	auditService := services.NewAuditService(dbManager, cacheService, logger)
+	// Initialize audit repository
+	auditRepository := auditRepo.NewAuditRepository(dbManager)
+	auditService := services.NewAuditService(dbManager, auditRepository, cacheService, logger)
 
 	// Get database connection for authorization service
 	// Use the dbManager interface directly instead of type assertion

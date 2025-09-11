@@ -18,21 +18,23 @@ import (
 
 // Service handles business logic for group operations
 type Service struct {
-	groupRepo     *groups.GroupRepository
-	groupRoleRepo *groups.GroupRoleRepository
-	orgRepo       *organizations.OrganizationRepository
-	roleRepo      *roles.RoleRepository
-	validator     interfaces.Validator
-	cache         interfaces.CacheService
-	groupCache    *GroupCacheService
-	auditService  interfaces.AuditService
-	logger        *zap.Logger
+	groupRepo           *groups.GroupRepository
+	groupRoleRepo       *groups.GroupRoleRepository
+	groupMembershipRepo *groups.GroupMembershipRepository
+	orgRepo             *organizations.OrganizationRepository
+	roleRepo            *roles.RoleRepository
+	validator           interfaces.Validator
+	cache               interfaces.CacheService
+	groupCache          *GroupCacheService
+	auditService        interfaces.AuditService
+	logger              *zap.Logger
 }
 
 // NewGroupService creates a new group service instance
 func NewGroupService(
 	groupRepo *groups.GroupRepository,
 	groupRoleRepo *groups.GroupRoleRepository,
+	groupMembershipRepo *groups.GroupMembershipRepository,
 	orgRepo *organizations.OrganizationRepository,
 	roleRepo *roles.RoleRepository,
 	validator interfaces.Validator,
@@ -42,15 +44,16 @@ func NewGroupService(
 ) *Service {
 	groupCache := NewGroupCacheService(cache, logger)
 	return &Service{
-		groupRepo:     groupRepo,
-		groupRoleRepo: groupRoleRepo,
-		orgRepo:       orgRepo,
-		roleRepo:      roleRepo,
-		validator:     validator,
-		cache:         cache,
-		groupCache:    groupCache,
-		auditService:  auditService,
-		logger:        logger,
+		groupRepo:           groupRepo,
+		groupRoleRepo:       groupRoleRepo,
+		groupMembershipRepo: groupMembershipRepo,
+		orgRepo:             orgRepo,
+		roleRepo:            roleRepo,
+		validator:           validator,
+		cache:               cache,
+		groupCache:          groupCache,
+		auditService:        auditService,
+		logger:              logger,
 	}
 }
 
@@ -309,9 +312,18 @@ func (s *Service) UpdateGroup(ctx context.Context, groupID string, req interface
 	}
 	s.auditService.LogGroupOperation(ctx, "system", models.AuditActionUpdateGroup, group.OrganizationID, groupID, "Group updated successfully", true, auditDetails)
 
-	// Log hierarchy change separately if it occurred
+	// Log hierarchy change separately if it occurred with comprehensive structure change logging
 	if hierarchyChanged {
 		s.auditService.LogHierarchyChange(ctx, "system", models.AuditActionChangeGroupHierarchy, models.ResourceTypeGroup, groupID, oldParentID, newParentID, "Group hierarchy changed", true, auditDetails)
+
+		// Also log comprehensive structure change for enhanced audit trail
+		hierarchyOldValues := map[string]interface{}{
+			"parent_id": oldParentID,
+		}
+		hierarchyNewValues := map[string]interface{}{
+			"parent_id": newParentID,
+		}
+		s.auditService.LogOrganizationStructureChange(ctx, "system", models.AuditActionChangeGroupHierarchy, group.OrganizationID, models.ResourceTypeGroup, groupID, hierarchyOldValues, hierarchyNewValues, true, "Group hierarchy structure changed")
 	}
 
 	s.logger.Info("Group updated successfully", zap.String("group_id", groupID))
@@ -930,6 +942,7 @@ func (s *Service) GetUserEffectiveRoles(ctx context.Context, orgID, userID strin
 		s.groupRepo,
 		s.groupRoleRepo,
 		s.roleRepo,
+		s.groupMembershipRepo,
 		s.cache,
 		s.logger,
 	)

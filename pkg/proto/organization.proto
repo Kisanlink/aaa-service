@@ -2,31 +2,183 @@ syntax = "proto3";
 
 package pb;
 
-option go_package = "github.com/Kisanlink/aaa-service/pb";
+option go_package = "github.com/Kisanlink/aaa-service/pkg/proto;pb";
 
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
 
-// Organization model
+// Enhanced Organization model
 message Organization {
     string id = 1;
     string name = 2;
-    string description = 3;
-    string parent_id = 4;
-    bool is_active = 5;
-    map<string, string> metadata = 6;
-    google.protobuf.Timestamp created_at = 7;
-    google.protobuf.Timestamp updated_at = 8;
-    Organization parent = 9;
-    repeated Organization children = 10;
+    string display_name = 3;
+    string description = 4;
+    string status = 5;                      // "active", "inactive", "suspended"
+    string type = 6;                        // "enterprise", "small_business", "individual"
+
+    // Contact Information
+    string primary_email = 7;
+    string primary_phone = 8;
+    string website = 9;
+    Address primary_address = 10;
+
+    // Administrative
+    string owner_id = 11;
+    repeated string admin_ids = 12;
+    string parent_organization_id = 13;     // For sub-organizations
+    repeated string child_organization_ids = 14;
+
+    // Subscription and Limits
+    string subscription_plan = 15;          // "free", "pro", "enterprise"
+    int32 user_limit = 16;
+    int32 current_user_count = 17;
+    google.protobuf.Timestamp subscription_expires_at = 18;
+
+    // Domain and Branding
+    repeated string domains = 19;           // Verified domains
+    repeated string allowed_email_domains = 20;
+    string logo_url = 21;
+    string brand_color = 22;
+    google.protobuf.Struct branding = 23;
+
+    // Security and Compliance
+    SecuritySettings security_settings = 24;
+    ComplianceSettings compliance_settings = 25;
+    repeated string features_enabled = 26;
+
+    // Metadata and Timestamps
+    google.protobuf.Struct metadata = 27;
+    google.protobuf.Struct custom_fields = 28;
+    string created_at = 29;
+    string updated_at = 30;
+    string created_by = 31;
+    string updated_by = 32;
+
+    // Integration Settings
+    repeated IntegrationConfig integrations = 33;
+    google.protobuf.Struct api_settings = 34;
+
+    // Business Information
+    string tax_id = 35;
+    string business_license = 36;
+    string industry = 37;
+    int32 employee_count = 38;
+    string timezone = 39;
+    string default_language = 40;
+    string default_currency = 41;
+}
+
+// Address information
+message Address {
+    string street_line_1 = 1;
+    string street_line_2 = 2;
+    string city = 3;
+    string state_province = 4;
+    string postal_code = 5;
+    string country = 6;
+    string country_code = 7;
+    google.protobuf.Struct coordinates = 8; // lat/lng
+}
+
+// Security settings for organization
+message SecuritySettings {
+    bool mfa_required = 1;
+    repeated string allowed_mfa_methods = 2;
+    int32 password_min_length = 3;
+    bool password_require_uppercase = 4;
+    bool password_require_lowercase = 5;
+    bool password_require_numbers = 6;
+    bool password_require_symbols = 7;
+    int32 password_expiry_days = 8;
+    int32 session_timeout_minutes = 9;
+    int32 max_concurrent_sessions = 10;
+    repeated string allowed_ip_ranges = 11;
+    bool require_device_verification = 12;
+    int32 failed_login_lockout_threshold = 13;
+    int32 lockout_duration_minutes = 14;
+    bool audit_logging_enabled = 15;
+    google.protobuf.Struct custom_security_rules = 16;
+}
+
+// Compliance settings
+message ComplianceSettings {
+    bool gdpr_enabled = 1;
+    bool ccpa_enabled = 2;
+    bool hipaa_enabled = 3;
+    repeated string data_retention_policies = 4;
+    int32 data_retention_days = 5;
+    bool data_encryption_required = 6;
+    bool audit_trail_required = 7;
+    repeated string compliance_frameworks = 8; // "SOC2", "ISO27001", etc.
+    google.protobuf.Struct custom_policies = 9;
+}
+
+// Integration configuration
+message IntegrationConfig {
+    string integration_id = 1;
+    string integration_type = 2;           // "sso", "api", "webhook"
+    string name = 3;
+    bool enabled = 4;
+    google.protobuf.Struct configuration = 5;
+    repeated string allowed_scopes = 6;
+    string status = 7;                     // "active", "inactive", "error"
+    string created_at = 8;
+    string updated_at = 9;
+}
+
+// Role definition for organization
+message Role {
+    string id = 1;
+    string name = 2;
+    string display_name = 3;
+    string description = 4;
+    string organization_id = 5;
+    repeated string permissions = 6;
+    bool is_system_role = 7;               // Cannot be modified
+    bool is_default = 8;                   // Assigned to new users
+    int32 level = 9;                       // Role hierarchy level
+    string parent_role_id = 10;            // For role inheritance
+    repeated string child_role_ids = 11;
+    google.protobuf.Struct metadata = 12;
+    string created_at = 13;
+    string updated_at = 14;
+    string created_by = 15;
+    string updated_by = 16;
+}
+
+// Permission definition
+message Permission {
+    string id = 1;
+    string name = 2;
+    string display_name = 3;
+    string description = 4;
+    string category = 5;                   // "user", "organization", "billing"
+    string resource_type = 6;              // What resource this applies to
+    repeated string actions = 7;           // What actions are allowed
+    bool is_system_permission = 8;         // Cannot be modified
+    string scope = 9;                      // "global", "organization", "resource"
+    google.protobuf.Struct conditions = 10; // Conditional logic
+    string created_at = 11;
+    string updated_at = 12;
 }
 
 // Create Organization Request
 message CreateOrganizationRequest {
     string name = 1;
-    string description = 2;
-    string parent_id = 3;
-    string template_id = 4; // Optional template to apply
-    map<string, string> metadata = 5;
+    string display_name = 2;
+    string description = 3;
+    string type = 4;
+    string owner_id = 5;
+    string primary_email = 6;
+    string primary_phone = 7;
+    Address primary_address = 8;
+    string parent_organization_id = 9;
+    repeated string domains = 10;
+    string subscription_plan = 11;
+    SecuritySettings security_settings = 12;
+    ComplianceSettings compliance_settings = 13;
+    google.protobuf.Struct metadata = 14;
+    google.protobuf.Struct custom_fields = 15;
 }
 
 // Create Organization Response
@@ -34,13 +186,18 @@ message CreateOrganizationResponse {
     int32 status_code = 1;
     string message = 2;
     Organization organization = 3;
+    repeated string next_steps = 4;
+    string setup_token = 5;                // For initial setup
 }
 
 // Get Organization Request
 message GetOrganizationRequest {
     string id = 1;
     bool include_children = 2;
-    bool include_parent = 3;
+    bool include_users = 3;
+    bool include_roles = 4;
+    bool include_integrations = 5;
+    repeated string include_fields = 6;
 }
 
 // Get Organization Response
@@ -48,15 +205,27 @@ message GetOrganizationResponse {
     int32 status_code = 1;
     string message = 2;
     Organization organization = 3;
+    repeated Organization child_organizations = 4;
+    repeated OrganizationUser users = 5;
+    repeated Role roles = 6;
+    repeated IntegrationConfig integrations = 7;
 }
 
 // List Organizations Request
 message ListOrganizationsRequest {
-    string parent_id = 1; // Filter by parent
-    bool include_inactive = 2;
-    int32 page = 3;
-    int32 page_size = 4;
-    string search = 5;
+    int32 page = 1;
+    int32 per_page = 2;
+    string search = 3;
+    string status = 4;
+    string type = 5;
+    string parent_id = 6;
+    repeated string organization_ids = 7;
+    string created_after = 8;
+    string created_before = 9;
+    string sort_by = 10;
+    string sort_order = 11;
+    repeated string include_fields = 12;
+    google.protobuf.Struct filters = 13;
 }
 
 // List Organizations Response
@@ -66,17 +235,30 @@ message ListOrganizationsResponse {
     repeated Organization organizations = 3;
     int32 total_count = 4;
     int32 page = 5;
-    int32 page_size = 6;
+    int32 per_page = 6;
+    int32 total_pages = 7;
+    bool has_next_page = 8;
+    bool has_prev_page = 9;
+    string next_cursor = 10;
+    string prev_cursor = 11;
 }
 
 // Update Organization Request
 message UpdateOrganizationRequest {
     string id = 1;
     string name = 2;
-    string description = 3;
-    string parent_id = 4;
-    bool is_active = 5;
-    map<string, string> metadata = 6;
+    string display_name = 3;
+    string description = 4;
+    string status = 5;
+    string primary_email = 6;
+    string primary_phone = 7;
+    Address primary_address = 8;
+    string subscription_plan = 9;
+    SecuritySettings security_settings = 10;
+    ComplianceSettings compliance_settings = 11;
+    google.protobuf.Struct metadata = 12;
+    google.protobuf.Struct custom_fields = 13;
+    repeated string fields_to_update = 14;
 }
 
 // Update Organization Response
@@ -84,25 +266,194 @@ message UpdateOrganizationResponse {
     int32 status_code = 1;
     string message = 2;
     Organization organization = 3;
+    repeated string updated_fields = 4;
+    repeated string warnings = 5;
 }
 
 // Delete Organization Request
 message DeleteOrganizationRequest {
     string id = 1;
-    bool cascade = 2; // Delete children too
+    bool hard_delete = 2;
+    string reason = 3;
+    bool transfer_users = 4;
+    string transfer_to_organization_id = 5;
 }
 
 // Delete Organization Response
 message DeleteOrganizationResponse {
     int32 status_code = 1;
     string message = 2;
+    bool success = 3;
+    int32 users_transferred = 4;
+    repeated string cleanup_tasks = 5;
 }
 
-// Organization Service
+// Add User to Organization Request
+message AddUserToOrganizationRequest {
+    string organization_id = 1;
+    string user_id = 2;
+    repeated string role_ids = 3;
+    bool send_invitation = 4;
+    string invitation_message = 5;
+    google.protobuf.Struct user_metadata = 6;
+}
+
+// Add User to Organization Response
+message AddUserToOrganizationResponse {
+    int32 status_code = 1;
+    string message = 2;
+    OrganizationUser organization_user = 3;
+    string invitation_token = 4;
+}
+
+// Remove User from Organization Request
+message RemoveUserFromOrganizationRequest {
+    string organization_id = 1;
+    string user_id = 2;
+    bool transfer_ownership = 3;
+    string transfer_to_user_id = 4;
+    string reason = 5;
+}
+
+// Remove User from Organization Response
+message RemoveUserFromOrganizationResponse {
+    int32 status_code = 1;
+    string message = 2;
+    bool success = 3;
+    repeated string transferred_resources = 4;
+}
+
+// Organization User relationship
+message OrganizationUser {
+    string id = 1;
+    string user_id = 2;
+    string organization_id = 3;
+    repeated string role_ids = 4;
+    string status = 5;                     // "active", "inactive", "pending"
+    string joined_at = 6;
+    string invited_by = 7;
+    string invitation_accepted_at = 8;
+    google.protobuf.Struct metadata = 9;
+    bool is_owner = 10;
+    bool is_admin = 11;
+    repeated string permissions = 12;       // Direct permissions
+}
+
+// Validate Organization Access Request
+message ValidateOrganizationAccessRequest {
+    string user_id = 1;
+    string organization_id = 2;
+    string resource_type = 3;
+    string resource_id = 4;
+    string action = 5;
+}
+
+// Validate Organization Access Response
+message ValidateOrganizationAccessResponse {
+    bool allowed = 1;
+    string decision_id = 2;
+    repeated string reasons = 3;
+    OrganizationUser user_membership = 4;
+    repeated string effective_permissions = 5;
+}
+
+// Create Role Request
+message CreateRoleRequest {
+    string organization_id = 1;
+    string name = 2;
+    string display_name = 3;
+    string description = 4;
+    repeated string permissions = 5;
+    bool is_default = 6;
+    int32 level = 7;
+    string parent_role_id = 8;
+    google.protobuf.Struct metadata = 9;
+}
+
+// Create Role Response
+message CreateRoleResponse {
+    int32 status_code = 1;
+    string message = 2;
+    Role role = 3;
+}
+
+// List Roles Request
+message ListRolesRequest {
+    string organization_id = 1;
+    int32 page = 2;
+    int32 per_page = 3;
+    string search = 4;
+    bool include_system_roles = 5;
+    bool include_permissions = 6;
+    string sort_by = 7;
+    string sort_order = 8;
+}
+
+// List Roles Response
+message ListRolesResponse {
+    int32 status_code = 1;
+    string message = 2;
+    repeated Role roles = 3;
+    int32 total_count = 4;
+    int32 page = 5;
+    int32 per_page = 6;
+    int32 total_pages = 7;
+}
+
+// Update Role Request
+message UpdateRoleRequest {
+    string id = 1;
+    string organization_id = 2;
+    string name = 3;
+    string display_name = 4;
+    string description = 5;
+    repeated string permissions = 6;
+    bool is_default = 7;
+    int32 level = 8;
+    string parent_role_id = 9;
+    google.protobuf.Struct metadata = 10;
+    repeated string fields_to_update = 11;
+}
+
+// Update Role Response
+message UpdateRoleResponse {
+    int32 status_code = 1;
+    string message = 2;
+    Role role = 3;
+    repeated string updated_fields = 4;
+}
+
+// Delete Role Request
+message DeleteRoleRequest {
+    string id = 1;
+    string organization_id = 2;
+    string replacement_role_id = 3;        // Role to assign to users who had this role
+}
+
+// Delete Role Response
+message DeleteRoleResponse {
+    int32 status_code = 1;
+    string message = 2;
+    bool success = 3;
+    int32 users_migrated = 4;
+}
+
+// Organization Management Service
 service OrganizationService {
     rpc CreateOrganization(CreateOrganizationRequest) returns (CreateOrganizationResponse);
     rpc GetOrganization(GetOrganizationRequest) returns (GetOrganizationResponse);
     rpc ListOrganizations(ListOrganizationsRequest) returns (ListOrganizationsResponse);
     rpc UpdateOrganization(UpdateOrganizationRequest) returns (UpdateOrganizationResponse);
     rpc DeleteOrganization(DeleteOrganizationRequest) returns (DeleteOrganizationResponse);
+
+    // User-Organization Management
+    rpc AddUserToOrganization(AddUserToOrganizationRequest) returns (AddUserToOrganizationResponse);
+    rpc RemoveUserFromOrganization(RemoveUserFromOrganizationRequest) returns (RemoveUserFromOrganizationResponse);
+    rpc ValidateOrganizationAccess(ValidateOrganizationAccessRequest) returns (ValidateOrganizationAccessResponse);
+
+    // Role Management
+    rpc CreateRole(CreateRoleRequest) returns (CreateRoleResponse);
+    rpc ListRoles(ListRolesRequest) returns (ListRolesResponse);
+    rpc UpdateRole(UpdateRoleRequest) returns (UpdateRoleResponse);
+    rpc DeleteRole(DeleteRoleRequest) returns (DeleteRoleResponse);
 }

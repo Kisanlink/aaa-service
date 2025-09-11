@@ -381,12 +381,16 @@ func (s *Service) VerifyUserPasswordByPhone(ctx context.Context, phoneNumber, co
 	return response, nil
 }
 
-// SetMPin sets user's MPIN with secure hashing and validation
-func (s *Service) SetMPin(ctx context.Context, userID string, mPin string) error {
+// SetMPin sets user's MPIN with secure hashing and validation (requires password verification)
+func (s *Service) SetMPin(ctx context.Context, userID string, mPin string, currentPassword string) error {
 	s.logger.Info("Setting MPIN", zap.String("user_id", userID))
 
 	if userID == "" || mPin == "" {
 		return errors.NewValidationError("user ID and MPIN are required")
+	}
+
+	if currentPassword == "" {
+		return errors.NewValidationError("current password is required to set MPIN")
 	}
 
 	// Validate MPIN format (4-6 digits)
@@ -408,6 +412,23 @@ func (s *Service) SetMPin(ctx context.Context, userID string, mPin string) error
 		return errors.NewNotFoundError("user not found")
 	}
 
+	// Security check: Ensure user is not deleted
+	if user.DeletedAt != nil {
+		s.logger.Warn("SetMPin attempt for deleted user", zap.String("user_id", userID))
+		return errors.NewNotFoundError("user not found")
+	}
+
+	// Check if MPIN is already set
+	if user.HasMPin() {
+		return errors.NewConflictError("MPIN is already set. Use update-mpin endpoint to change it")
+	}
+
+	// Verify current password
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(currentPassword)); err != nil {
+		s.logger.Warn("Invalid password during MPIN setup", zap.String("user_id", userID))
+		return errors.NewUnauthorizedError("invalid password")
+	}
+
 	// Hash the MPIN with appropriate cost
 	hashedMPin, err := bcrypt.GenerateFromPassword([]byte(mPin), bcrypt.DefaultCost)
 	if err != nil {
@@ -427,6 +448,69 @@ func (s *Service) SetMPin(ctx context.Context, userID string, mPin string) error
 	return nil
 }
 
+// UpdateMPin updates user's existing MPIN with current MPIN verification
+func (s *Service) UpdateMPin(ctx context.Context, userID, currentMPin, newMPin string) error {
+	s.logger.Info("Updating MPIN", zap.String("user_id", userID))
+
+	if userID == "" || currentMPin == "" || newMPin == "" {
+		return errors.NewValidationError("user ID, current MPIN, and new MPIN are required")
+	}
+
+	// Validate new MPIN format (4-6 digits)
+	if len(newMPin) < 4 || len(newMPin) > 6 {
+		return errors.NewValidationError("new MPIN must be 4-6 digits")
+	}
+
+	// Validate new MPIN contains only digits
+	for _, char := range newMPin {
+		if char < '0' || char > '9' {
+			return errors.NewValidationError("new MPIN must contain only digits")
+		}
+	}
+
+	user := &models.User{}
+	_, err := s.userRepo.GetByID(ctx, userID, user)
+	if err != nil {
+		s.logger.Error("Failed to get user for MPIN update", zap.String("user_id", userID), zap.Error(err))
+		return errors.NewNotFoundError("user not found")
+	}
+
+	// Security check: Ensure user is not deleted
+	if user.DeletedAt != nil {
+		s.logger.Warn("UpdateMPin attempt for deleted user", zap.String("user_id", userID))
+		return errors.NewNotFoundError("user not found")
+	}
+
+	// Check if MPIN is set
+	if !user.HasMPin() {
+		return errors.NewNotFoundError("MPIN not set for this user. Use set-mpin endpoint first")
+	}
+
+	// Verify current MPIN
+	if err := bcrypt.CompareHashAndPassword([]byte(*user.MPin), []byte(currentMPin)); err != nil {
+		s.logger.Warn("Invalid current MPIN during update", zap.String("user_id", userID))
+		return errors.NewUnauthorizedError("invalid current MPIN")
+	}
+
+	// Hash the new MPIN
+	hashedMPin, err := bcrypt.GenerateFromPassword([]byte(newMPin), bcrypt.DefaultCost)
+	if err != nil {
+		s.logger.Error("Failed to hash new MPIN", zap.String("user_id", userID), zap.Error(err))
+		return errors.NewInternalError(err)
+	}
+
+	user.SetMPin(string(hashedMPin))
+	err = s.userRepo.Update(ctx, user)
+	if err != nil {
+		s.logger.Error("Failed to update MPIN", zap.String("user_id", userID), zap.Error(err))
+		return errors.NewInternalError(err)
+	}
+
+	s.clearUserCache(userID)
+	s.logger.Info("MPIN updated successfully", zap.String("user_id", userID))
+	return nil
+}
+
 // VerifyMPin verifies user's mPin
 func (s *Service) VerifyMPin(ctx context.Context, userID string, mPin string) error {
 	s.logger.Info("Verifying mPin", zap.String("user_id", userID))
@@ -438,6 +522,12 @@ func (s *Service) VerifyMPin(ctx context.Context, userID string, mPin string) er
 	user := &models.User{}
 	_, err := s.userRepo.GetByID(ctx, userID, user)
 	if err != nil {
+		return errors.NewNotFoundError("user not found")
+	}
+
+	// Security check: Ensure user is not deleted
+	if user.DeletedAt != nil {
+		s.logger.Warn("VerifyMPin attempt for deleted user", zap.String("user_id", userID))
 		return errors.NewNotFoundError("user not found")
 	}
 
@@ -530,60 +620,6 @@ func (s *Service) VerifyUserCredentials(ctx context.Context, phone, countryCode 
 
 	// Get user with roles for complete response
 	return s.GetUserWithRoles(ctx, user.ID)
-}
-
-// UpdateMPin updates user's MPIN with current MPIN verification
-func (s *Service) UpdateMPin(ctx context.Context, userID, currentMPin, newMPin string) error {
-	s.logger.Info("Updating MPIN", zap.String("user_id", userID))
-
-	if userID == "" || currentMPin == "" || newMPin == "" {
-		return errors.NewValidationError("user ID, current MPIN, and new MPIN are required")
-	}
-
-	// Validate new MPIN format (4-6 digits)
-	if len(newMPin) < 4 || len(newMPin) > 6 {
-		return errors.NewValidationError("MPIN must be 4-6 digits")
-	}
-
-	// Get user
-	user := &models.User{}
-	_, err := s.userRepo.GetByID(ctx, userID, user)
-	if err != nil {
-		s.logger.Error("Failed to get user for MPIN update", zap.String("user_id", userID), zap.Error(err))
-		return errors.NewNotFoundError("user not found")
-	}
-
-	// Verify current MPIN
-	if !user.HasMPin() {
-		return errors.NewBadRequestError("current MPIN not set")
-	}
-
-	err = bcrypt.CompareHashAndPassword([]byte(*user.MPin), []byte(currentMPin))
-	if err != nil {
-		s.logger.Error("Current MPIN verification failed", zap.String("user_id", userID))
-		return errors.NewUnauthorizedError("invalid current MPIN")
-	}
-
-	// Hash new MPIN
-	hashedNewMPin, err := bcrypt.GenerateFromPassword([]byte(newMPin), bcrypt.DefaultCost)
-	if err != nil {
-		s.logger.Error("Failed to hash new MPIN", zap.String("user_id", userID), zap.Error(err))
-		return errors.NewInternalError(err)
-	}
-
-	// Update MPIN
-	user.SetMPin(string(hashedNewMPin))
-	err = s.userRepo.Update(ctx, user)
-	if err != nil {
-		s.logger.Error("Failed to update MPIN", zap.String("user_id", userID), zap.Error(err))
-		return errors.NewInternalError(err)
-	}
-
-	// Clear cache
-	s.clearUserCache(userID)
-
-	s.logger.Info("MPIN updated successfully", zap.String("user_id", userID))
-	return nil
 }
 
 // getCachedUserRoles retrieves user roles with caching

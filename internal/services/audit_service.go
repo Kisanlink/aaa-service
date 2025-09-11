@@ -14,6 +14,7 @@ import (
 // AuditService provides audit logging services
 type AuditService struct {
 	dbManager    db.DBManager
+	auditRepo    interfaces.AuditRepository
 	cacheService interfaces.CacheService
 	logger       *zap.Logger
 }
@@ -57,6 +58,7 @@ type AuditQueryResult struct {
 // NewAuditService creates a new audit service
 func NewAuditService(
 	dbManager db.DBManager,
+	auditRepo interfaces.AuditRepository,
 	cacheService interfaces.CacheService,
 	logger *zap.Logger,
 ) *AuditService {
@@ -65,6 +67,7 @@ func NewAuditService(
 
 	return &AuditService{
 		dbManager:    dbManager,
+		auditRepo:    auditRepo,
 		cacheService: cacheService,
 		logger:       logger,
 	}
@@ -508,20 +511,63 @@ func (s *AuditService) QueryAuditLogs(ctx context.Context, query *AuditQuery) (*
 		filters["timestamp_lte"] = *query.EndTime
 	}
 
-	// For now, return empty results as a placeholder
-	// In a real implementation, you'd query the database with proper filtering
-	logs := []models.AuditLog{}
-	totalCount := int64(0)
+	// Calculate offset for pagination
+	offset := (query.Page - 1) * query.PerPage
 
-	s.logger.Debug("Querying audit logs (simplified implementation)",
+	// Query audit logs using repository
+	var logs []*models.AuditLog
+	var totalCount int64
+	var err error
+
+	// Apply filters based on query parameters
+	if query.StartTime != nil && query.EndTime != nil {
+		if query.UserID != "" {
+			logs, err = s.auditRepo.ListByUserAndTimeRange(ctx, query.UserID, *query.StartTime, *query.EndTime, query.PerPage, offset)
+			if err == nil {
+				totalCount, err = s.auditRepo.CountByUser(ctx, query.UserID)
+			}
+		} else {
+			logs, err = s.auditRepo.ListByTimeRange(ctx, *query.StartTime, *query.EndTime, query.PerPage, offset)
+			if err == nil {
+				totalCount, err = s.auditRepo.CountByTimeRange(ctx, *query.StartTime, *query.EndTime)
+			}
+		}
+	} else if query.UserID != "" {
+		logs, err = s.auditRepo.ListByUser(ctx, query.UserID, query.PerPage, offset)
+		if err == nil {
+			totalCount, err = s.auditRepo.CountByUser(ctx, query.UserID)
+		}
+	} else if query.Action != "" {
+		logs, err = s.auditRepo.ListByAction(ctx, query.Action, query.PerPage, offset)
+	} else if query.Resource != "" {
+		logs, err = s.auditRepo.ListByResourceType(ctx, query.Resource, query.PerPage, offset)
+	} else {
+		logs, err = s.auditRepo.List(ctx, query.PerPage, offset)
+	}
+
+	if err != nil {
+		s.logger.Error("Failed to query audit logs", zap.Error(err))
+		return nil, err
+	}
+
+	// Convert to slice of models.AuditLog for compatibility
+	logSlice := make([]models.AuditLog, len(logs))
+	for i, log := range logs {
+		if log != nil {
+			logSlice[i] = *log
+		}
+	}
+
+	s.logger.Debug("Querying audit logs completed",
 		zap.String("user_id", query.UserID),
 		zap.String("action", query.Action),
 		zap.String("resource", query.Resource),
 		zap.Int("page", query.Page),
-		zap.Int("per_page", query.PerPage))
+		zap.Int("per_page", query.PerPage),
+		zap.Int("results", len(logSlice)))
 
 	return &AuditQueryResult{
-		Logs:       logs,
+		Logs:       logSlice,
 		TotalCount: totalCount,
 		Page:       query.Page,
 		PerPage:    query.PerPage,
@@ -663,8 +709,8 @@ func (s *AuditService) logEvent(ctx context.Context, auditLog *models.AuditLog, 
 		}
 	}
 
-	// Save audit log to database
-	err := s.dbManager.Create(ctx, auditLog)
+	// Save audit log to database using repository
+	err := s.auditRepo.Create(ctx, auditLog)
 	if err != nil {
 		// If database save fails, still log to application logger
 		s.logger.Error("Failed to save audit log to database",
@@ -1055,6 +1101,79 @@ func (s *AuditService) LogHierarchyChange(ctx context.Context, userID, action, r
 	s.logEvent(ctx, auditLog, details)
 }
 
+// LogOrganizationStructureChange logs comprehensive organization structure changes
+// This method ensures all context is captured for organization hierarchy modifications
+func (s *AuditService) LogOrganizationStructureChange(ctx context.Context, userID, action, orgID, resourceType, resourceID string, oldValues, newValues map[string]interface{}, success bool, message string) {
+	status := models.AuditStatusSuccess
+	if !success {
+		status = models.AuditStatusFailure
+	}
+
+	var auditLog *models.AuditLog
+	if isAnonymousUser(userID) {
+		auditLog = models.NewAuditLog(action, resourceType, status, message)
+		if resourceID != "" {
+			auditLog.ResourceID = &resourceID
+		}
+	} else {
+		auditLog = models.NewAuditLogWithUserAndResource(userID, action, resourceType, resourceID, status, message)
+	}
+
+	// Add comprehensive structure change details
+	details := map[string]interface{}{
+		"organization_id":  orgID,
+		"operation_type":   "structure_change",
+		"resource_type":    resourceType,
+		"resource_id":      resourceID,
+		"change_timestamp": time.Now().UTC().Format(time.RFC3339),
+	}
+
+	// Add old and new values for complete audit trail
+	if oldValues != nil && len(oldValues) > 0 {
+		details["old_values"] = oldValues
+	}
+	if newValues != nil && len(newValues) > 0 {
+		details["new_values"] = newValues
+	}
+
+	// Add security context
+	if requestID := ctx.Value("request_id"); requestID != nil {
+		details["request_id"] = requestID
+	}
+	if sessionID := ctx.Value("session_id"); sessionID != nil {
+		details["session_id"] = sessionID
+	}
+
+	// Mark as security-sensitive for enhanced monitoring
+	details["security_sensitive"] = true
+	details["tamper_proof"] = true
+
+	s.logEvent(ctx, auditLog, details)
+
+	// Also log to security event stream for critical structure changes
+	if s.isCriticalStructureChange(action) {
+		s.LogSecurityEvent(ctx, userID, "critical_structure_change", resourceType, success, details)
+	}
+}
+
+// isCriticalStructureChange determines if a structure change is critical and needs enhanced monitoring
+func (s *AuditService) isCriticalStructureChange(action string) bool {
+	criticalActions := []string{
+		models.AuditActionDeleteOrganization,
+		models.AuditActionChangeOrganizationHierarchy,
+		models.AuditActionChangeGroupHierarchy,
+		models.AuditActionDeactivateOrganization,
+		models.AuditActionDeleteGroup,
+	}
+
+	for _, criticalAction := range criticalActions {
+		if action == criticalAction {
+			return true
+		}
+	}
+	return false
+}
+
 // QueryOrganizationAuditLogs queries audit logs scoped to a specific organization
 func (s *AuditService) QueryOrganizationAuditLogs(ctx context.Context, orgID string, query *AuditQuery) (*AuditQueryResult, error) {
 	// Validate and set defaults for pagination
@@ -1098,21 +1217,69 @@ func (s *AuditService) QueryOrganizationAuditLogs(ctx context.Context, orgID str
 		filters["timestamp_lte"] = *query.EndTime
 	}
 
-	// For now, return empty results as a placeholder
-	// In a real implementation, you'd query the database with proper filtering
-	logs := []models.AuditLog{}
-	totalCount := int64(0)
+	// Calculate offset for pagination
+	offset := (query.Page - 1) * query.PerPage
 
-	s.logger.Debug("Querying organization audit logs",
+	// Query organization-scoped audit logs using repository
+	var logs []*models.AuditLog
+	var totalCount int64
+	var err error
+
+	// Apply organization-scoped filters based on query parameters
+	if query.StartTime != nil && query.EndTime != nil {
+		logs, err = s.auditRepo.ListByOrganizationAndTimeRange(ctx, orgID, *query.StartTime, *query.EndTime, query.PerPage, offset)
+		if err == nil {
+			totalCount, err = s.auditRepo.CountByOrganizationAndTimeRange(ctx, orgID, *query.StartTime, *query.EndTime)
+		}
+	} else {
+		logs, err = s.auditRepo.ListByOrganization(ctx, orgID, query.PerPage, offset)
+		if err == nil {
+			totalCount, err = s.auditRepo.CountByOrganization(ctx, orgID)
+		}
+	}
+
+	if err != nil {
+		s.logger.Error("Failed to query organization audit logs", zap.Error(err))
+		return nil, err
+	}
+
+	// Convert to slice of models.AuditLog for compatibility
+	logSlice := make([]models.AuditLog, len(logs))
+	for i, log := range logs {
+		if log != nil {
+			logSlice[i] = *log
+		}
+	}
+
+	// Additional security validation - ensure all logs belong to the specified organization
+	validatedLogs := make([]models.AuditLog, 0, len(logSlice))
+	for _, log := range logSlice {
+		if log.Details != nil {
+			if logOrgID, exists := log.Details["organization_id"]; exists {
+				if logOrgIDStr, ok := logOrgID.(string); ok && logOrgIDStr == orgID {
+					validatedLogs = append(validatedLogs, log)
+				} else {
+					s.logger.Error("Security violation: audit log from different organization found",
+						zap.String("requested_org_id", orgID),
+						zap.String("log_org_id", fmt.Sprintf("%v", logOrgID)),
+						zap.String("audit_log_id", log.ID))
+				}
+			}
+		}
+	}
+
+	// Log the security-conscious query
+	s.logger.Debug("Querying organization audit logs with security filters",
 		zap.String("org_id", orgID),
 		zap.String("user_id", query.UserID),
 		zap.String("action", query.Action),
 		zap.String("resource", query.Resource),
 		zap.Int("page", query.Page),
-		zap.Int("per_page", query.PerPage))
+		zap.Int("per_page", query.PerPage),
+		zap.Int("total_results", len(validatedLogs)))
 
 	return &AuditQueryResult{
-		Logs:       logs,
+		Logs:       validatedLogs,
 		TotalCount: totalCount,
 		Page:       query.Page,
 		PerPage:    query.PerPage,
@@ -1149,41 +1316,72 @@ func (s *AuditService) GetGroupAuditTrail(ctx context.Context, orgID, groupID st
 
 // ValidateAuditLogIntegrity validates that audit logs haven't been tampered with
 func (s *AuditService) ValidateAuditLogIntegrity(ctx context.Context, auditLogID string) (bool, error) {
-	// This is a placeholder for tamper-proof validation
-	// In a real implementation, you might:
-	// 1. Use cryptographic hashes to verify log integrity
-	// 2. Check against external audit systems
-	// 3. Validate log sequence numbers
-	// 4. Check digital signatures
-
 	s.logger.Debug("Validating audit log integrity", zap.String("audit_log_id", auditLogID))
 
-	// For now, always return true (valid)
+	// Use repository to validate integrity
+	auditLog, err := s.auditRepo.ValidateIntegrity(ctx, auditLogID)
+	if err != nil {
+		s.logger.Error("Audit log integrity validation failed",
+			zap.Error(err),
+			zap.String("audit_log_id", auditLogID))
+		return false, nil
+	}
+
+	// Additional tamper-proof checks could include:
+	// 1. Cryptographic hash validation
+	// 2. Sequence number validation
+	// 3. Digital signature verification
+	// 4. Cross-reference with external audit systems
+
+	s.logger.Debug("Audit log integrity validation passed",
+		zap.String("audit_log_id", auditLogID),
+		zap.String("action", auditLog.Action),
+		zap.String("resource_type", auditLog.ResourceType))
 	return true, nil
 }
 
 // GetAuditStatistics gets audit statistics
 func (s *AuditService) GetAuditStatistics(ctx context.Context, days int) (map[string]interface{}, error) {
 	startTime := time.Now().AddDate(0, 0, -days)
+	endTime := time.Now()
 
-	// For now, use simplified statistics (would be replaced with actual DB queries)
-	totalEvents := int64(0)
-	successfulEvents := int64(0)
-
-	// In a real implementation, you'd query the database here
 	s.logger.Debug("Generating audit statistics",
 		zap.Time("start_time", startTime),
 		zap.Int("days", days))
+
+	// Get total events using repository
+	totalEvents, err := s.auditRepo.CountByTimeRange(ctx, startTime, endTime)
+	if err != nil {
+		s.logger.Error("Failed to get total events count", zap.Error(err))
+		totalEvents = 0
+	}
+
+	// Get successful events
+	successfulEvents, err := s.auditRepo.CountByStatus(ctx, models.AuditStatusSuccess)
+	if err != nil {
+		s.logger.Error("Failed to get successful events count", zap.Error(err))
+		successfulEvents = 0
+	}
+
+	// Get failed events
+	failedEvents, err := s.auditRepo.CountByStatus(ctx, models.AuditStatusFailure)
+	if err != nil {
+		s.logger.Error("Failed to get failed events count", zap.Error(err))
+		failedEvents = 0
+	}
+
+	// Get warning events
+	warningEvents, err := s.auditRepo.CountByStatus(ctx, models.AuditStatusWarning)
+	if err != nil {
+		s.logger.Error("Failed to get warning events count", zap.Error(err))
+		warningEvents = 0
+	}
 
 	// Calculate success rate
 	var successRate float64
 	if totalEvents > 0 {
 		successRate = (float64(successfulEvents) / float64(totalEvents)) * 100
 	}
-
-	// Simplified for now - would use actual DB queries
-	failedEvents := int64(0)
-	warningEvents := int64(0)
 
 	// For simplicity, we'll create basic statistics
 	// In a real implementation, you might use database aggregation queries

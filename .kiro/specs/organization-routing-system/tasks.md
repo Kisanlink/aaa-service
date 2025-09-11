@@ -104,7 +104,7 @@
   - Write unit tests for repository operations
   - _Requirements: 4.1, 4.2, 4.3, 4.4_
 
-- [ ] 14. Complete role-group assignment handlers implementation
+- [x] 14. Complete role-group assignment handlers implementation
 
   - Add AssignRoleToGroupInOrganization and RemoveRoleFromGroupInOrganization handlers
   - Implement GetGroupRolesInOrganization handler
@@ -112,7 +112,7 @@
   - Write unit tests for role-group assignment handlers
   - _Requirements: 4.1, 4.2, 4.3, 4.4, 6.1, 6.2, 6.3_
 
-- [ ] 15. Fix role inheritance engine group membership integration
+- [x] 15. Fix role inheritance engine group membership integration
 
   - Implement getUserDirectGroups method to query actual group memberships
   - Create GroupMembershipRepository if not exists or integrate with existing repository
@@ -135,7 +135,7 @@
   - Test edge cases for multi-tenant security
   - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_
 
-- [ ] 18. Update API documentation and Swagger specs
+- [x] 18. Update API documentation and Swagger specs
 
   - Add Swagger annotations for all new organization-scoped endpoints
   - Update docs/swagger.yaml and docs/swagger.json with new API definitions

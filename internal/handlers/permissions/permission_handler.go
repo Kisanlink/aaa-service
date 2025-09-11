@@ -76,16 +76,17 @@ func (r *UpdatePermissionRequest) Validate() error {
 }
 
 // CreatePermissionV2 handles POST /v2/permissions
-// @Summary Create a new permission
-// @Description Create a new permission with resource, effect, and actions
-// @Tags permissions
-// @Accept json
-// @Produce json
-// @Param permission body CreatePermissionRequest true "Permission creation data"
-// @Success 201 {object} map[string]interface{}
-// @Failure 400 {object} map[string]interface{}
-// @Failure 500 {object} map[string]interface{}
-// @Router /api/v2/permissions [post]
+//
+//	@Summary		Create a new permission
+//	@Description	Create a new permission with resource, effect, and actions
+//	@Tags			permissions
+//	@Accept			json
+//	@Produce		json
+//	@Param			permission	body		CreatePermissionRequest	true	"Permission creation data"
+//	@Success		201			{object}	map[string]interface{}
+//	@Failure		400			{object}	map[string]interface{}
+//	@Failure		500			{object}	map[string]interface{}
+//	@Router			/api/v2/permissions [post]
 func (h *PermissionHandler) CreatePermissionV2(c *gin.Context) {
 	h.logger.Info("Creating permission")
 
@@ -120,17 +121,18 @@ func (h *PermissionHandler) CreatePermissionV2(c *gin.Context) {
 }
 
 // GetPermissionV2 handles GET /v2/permissions/:id
-// @Summary Get permission by ID
-// @Description Retrieve a permission by its unique identifier
-// @Tags permissions
-// @Accept json
-// @Produce json
-// @Param id path string true "Permission ID"
-// @Success 200 {object} map[string]interface{}
-// @Failure 400 {object} map[string]interface{}
-// @Failure 404 {object} map[string]interface{}
-// @Failure 500 {object} map[string]interface{}
-// @Router /api/v2/permissions/{id} [get]
+//
+//	@Summary		Get permission by ID
+//	@Description	Retrieve a permission by its unique identifier
+//	@Tags			permissions
+//	@Accept			json
+//	@Produce		json
+//	@Param			id	path		string	true	"Permission ID"
+//	@Success		200	{object}	map[string]interface{}
+//	@Failure		400	{object}	map[string]interface{}
+//	@Failure		404	{object}	map[string]interface{}
+//	@Failure		500	{object}	map[string]interface{}
+//	@Router			/api/v2/permissions/{id} [get]
 func (h *PermissionHandler) GetPermissionV2(c *gin.Context) {
 	permissionID := c.Param("id")
 	h.logger.Info("Getting permission by ID", zap.String("permissionID", permissionID))
@@ -155,18 +157,19 @@ func (h *PermissionHandler) GetPermissionV2(c *gin.Context) {
 }
 
 // UpdatePermissionV2 handles PUT /v2/permissions/:id
-// @Summary Update permission
-// @Description Update an existing permission
-// @Tags permissions
-// @Accept json
-// @Produce json
-// @Param id path string true "Permission ID"
-// @Param permission body UpdatePermissionRequest true "Permission update data"
-// @Success 200 {object} map[string]interface{}
-// @Failure 400 {object} map[string]interface{}
-// @Failure 404 {object} map[string]interface{}
-// @Failure 500 {object} map[string]interface{}
-// @Router /api/v2/permissions/{id} [put]
+//
+//	@Summary		Update permission
+//	@Description	Update an existing permission
+//	@Tags			permissions
+//	@Accept			json
+//	@Produce		json
+//	@Param			id			path		string					true	"Permission ID"
+//	@Param			permission	body		UpdatePermissionRequest	true	"Permission update data"
+//	@Success		200			{object}	map[string]interface{}
+//	@Failure		400			{object}	map[string]interface{}
+//	@Failure		404			{object}	map[string]interface{}
+//	@Failure		500			{object}	map[string]interface{}
+//	@Router			/api/v2/permissions/{id} [put]
 func (h *PermissionHandler) UpdatePermissionV2(c *gin.Context) {
 	permissionID := c.Param("id")
 	h.logger.Info("Updating permission", zap.String("permissionID", permissionID))
@@ -205,17 +208,18 @@ func (h *PermissionHandler) UpdatePermissionV2(c *gin.Context) {
 }
 
 // DeletePermissionV2 handles DELETE /v2/permissions/:id
-// @Summary Delete permission
-// @Description Delete a permission by its unique identifier
-// @Tags permissions
-// @Accept json
-// @Produce json
-// @Param id path string true "Permission ID"
-// @Success 200 {object} map[string]interface{}
-// @Failure 400 {object} map[string]interface{}
-// @Failure 404 {object} map[string]interface{}
-// @Failure 500 {object} map[string]interface{}
-// @Router /api/v2/permissions/{id} [delete]
+//
+//	@Summary		Delete permission
+//	@Description	Delete a permission by its unique identifier
+//	@Tags			permissions
+//	@Accept			json
+//	@Produce		json
+//	@Param			id	path		string	true	"Permission ID"
+//	@Success		200	{object}	map[string]interface{}
+//	@Failure		400	{object}	map[string]interface{}
+//	@Failure		404	{object}	map[string]interface{}
+//	@Failure		500	{object}	map[string]interface{}
+//	@Router			/api/v2/permissions/{id} [delete]
 func (h *PermissionHandler) DeletePermissionV2(c *gin.Context) {
 	permissionID := c.Param("id")
 	h.logger.Info("Deleting permission", zap.String("permissionID", permissionID))
@@ -236,17 +240,18 @@ func (h *PermissionHandler) DeletePermissionV2(c *gin.Context) {
 }
 
 // ListPermissionsV2 handles GET /v2/permissions
-// @Summary List permissions
-// @Description Get a paginated list of permissions
-// @Tags permissions
-// @Accept json
-// @Produce json
-// @Param limit query int false "Number of permissions to return" default(10)
-// @Param offset query int false "Number of permissions to skip" default(0)
-// @Success 200 {object} responses.PermissionsListResponse
-// @Failure 400 {object} responses.ErrorResponseSwagger
-// @Failure 500 {object} responses.ErrorResponseSwagger
-// @Router /api/v2/permissions [get]
+//
+//	@Summary		List permissions
+//	@Description	Get a paginated list of permissions
+//	@Tags			permissions
+//	@Accept			json
+//	@Produce		json
+//	@Param			limit	query		int	false	"Number of permissions to return"	default(10)
+//	@Param			offset	query		int	false	"Number of permissions to skip"		default(0)
+//	@Success		200		{object}	responses.PermissionsListResponse
+//	@Failure		400		{object}	responses.ErrorResponseSwagger
+//	@Failure		500		{object}	responses.ErrorResponseSwagger
+//	@Router			/api/v2/permissions [get]
 func (h *PermissionHandler) ListPermissionsV2(c *gin.Context) {
 	h.logger.Info("Listing permissions")
 
@@ -361,16 +366,17 @@ func (h *PermissionHandler) ListPermissionsV2(c *gin.Context) {
 }
 
 // EvaluatePermissionV2 handles POST /v2/permissions/evaluate
-// @Summary Evaluate permission
-// @Description Check if a user has permission to perform an action on a resource
-// @Tags permissions
-// @Accept json
-// @Produce json
-// @Param evaluation body object{user_id=string,resource=string,action=string} true "Permission evaluation data"
-// @Success 200 {object} map[string]interface{}
-// @Failure 400 {object} map[string]interface{}
-// @Failure 500 {object} map[string]interface{}
-// @Router /api/v2/permissions/evaluate [post]
+//
+//	@Summary		Evaluate permission
+//	@Description	Check if a user has permission to perform an action on a resource
+//	@Tags			permissions
+//	@Accept			json
+//	@Produce		json
+//	@Param			evaluation	body		object{user_id=string,resource=string,action=string}	true	"Permission evaluation data"
+//	@Success		200			{object}	map[string]interface{}
+//	@Failure		400			{object}	map[string]interface{}
+//	@Failure		500			{object}	map[string]interface{}
+//	@Router			/api/v2/permissions/evaluate [post]
 func (h *PermissionHandler) EvaluatePermissionV2(c *gin.Context) {
 	h.logger.Info("Evaluating permission")
 
@@ -409,16 +415,17 @@ func (h *PermissionHandler) EvaluatePermissionV2(c *gin.Context) {
 }
 
 // GrantTemporaryPermissionV2 handles POST /v2/permissions/temporary
-// @Summary Grant temporary permission
-// @Description Grant temporary permission to a user for specific actions on a resource
-// @Tags permissions
-// @Accept json
-// @Produce json
-// @Param permission body object{user_id=string,resource=string,actions=[]string,expires_at=string} true "Temporary permission data"
-// @Success 201 {object} map[string]interface{}
-// @Failure 400 {object} map[string]interface{}
-// @Failure 500 {object} map[string]interface{}
-// @Router /api/v2/permissions/temporary [post]
+//
+//	@Summary		Grant temporary permission
+//	@Description	Grant temporary permission to a user for specific actions on a resource
+//	@Tags			permissions
+//	@Accept			json
+//	@Produce		json
+//	@Param			permission	body		object{user_id=string,resource=string,actions=[]string,expires_at=string}	true	"Temporary permission data"
+//	@Success		201			{object}	map[string]interface{}
+//	@Failure		400			{object}	map[string]interface{}
+//	@Failure		500			{object}	map[string]interface{}
+//	@Router			/api/v2/permissions/temporary [post]
 func (h *PermissionHandler) GrantTemporaryPermissionV2(c *gin.Context) {
 	h.logger.Info("Granting temporary permission")
 

@@ -1,32 +1,73 @@
-# AAA Service Product Overview
+---
+inclusion: fileMatch
+fileMatchPattern: ["**/README.md", "**/ARCHITECTURE.md", "**/docs/**/*.md"]
+---
 
-## What is AAA Service?
+# AAA Service Business Context
 
-AAA Service is a comprehensive Authentication, Authorization, and Accounting service built for enterprise-grade identity and access management. It provides a complete solution for managing user identities, permissions, and audit trails in modern applications.
+## Service Purpose
 
-## Core Features
+Enterprise-grade Authentication, Authorization, and Accounting service providing JWT-based authentication, PostgreSQL RBAC with hierarchical roles, comprehensive audit logging, and multi-tenant organization management.
 
-- **Authentication**: JWT-based authentication with refresh tokens and multi-factor authentication support
-- **Authorization**: PostgreSQL RBAC integration for real-time permission evaluation with hierarchical roles
-- **Accounting**: Comprehensive audit logging and event tracking for compliance
-- **User Management**: Complete user lifecycle management with profiles and contacts
-- **Role Management**: Hierarchical roles with organization and group scoping
-- **Permission System**: Fine-grained permissions with resource-level control
-- **Multi-tenancy**: Organization and group-based isolation for enterprise deployments
+## Core Domain Concepts
 
-## Architecture Philosophy
+### Authentication
 
-The service follows clean architecture principles with clear separation of concerns:
+- JWT tokens with refresh token support
+- Multi-factor authentication capabilities
+- User lifecycle management with profiles and contacts
 
-- Domain-driven design with business logic isolation
-- Interface-based dependency injection
-- Modular structure for easy testing and maintenance
-- Public API packages for external integration
+### Authorization (RBAC)
+
+- **Hierarchical roles** with organization and group scoping
+- **Role inheritance** - users inherit roles from parent groups/organizations
+- **Fine-grained permissions** with resource-level control
+- **Real-time permission evaluation** using PostgreSQL
+
+### Accounting & Audit
+
+- Comprehensive audit logging for all operations
+- Event tracking for compliance reporting
+- Anonymous audit support for sensitive operations
+
+### Multi-tenancy
+
+- **Organizations** - top-level tenant isolation
+- **Groups** - sub-organization units with role inheritance
+- **Hierarchical structure** - organizations contain groups, groups contain users
+
+## Key Business Rules
+
+### Role Inheritance
+
+- Users inherit roles from their groups
+- Groups inherit roles from parent groups
+- Organizations can assign roles to groups
+- Role inheritance flows down the hierarchy: Organization → Group → User
+
+### Permission Evaluation
+
+- Permissions are evaluated in real-time from PostgreSQL
+- Users get effective permissions from all inherited roles
+- Permission checks consider organization and group context
+
+### Audit Requirements
+
+- All user actions must be auditable
+- Sensitive operations support anonymous audit trails
+- Audit logs include context (organization, group, user, action, resource)
 
 ## Target Use Cases
 
-- Enterprise applications requiring robust identity management
-- Multi-tenant SaaS platforms
-- Microservices architectures needing centralized authentication
-- Applications requiring detailed audit trails and compliance reporting
-- Systems with complex permission hierarchies and role-based access control
+- Enterprise applications with complex permission hierarchies
+- Multi-tenant SaaS platforms requiring organization isolation
+- Microservices needing centralized authentication and authorization
+- Systems requiring detailed compliance and audit reporting
+- Applications with hierarchical organizational structures
+
+## Integration Patterns
+
+- **HTTP REST API** for web applications
+- **gRPC** for high-performance service-to-service communication
+- **JWT tokens** for stateless authentication
+- **Public client packages** for external service integration

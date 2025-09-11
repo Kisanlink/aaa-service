@@ -223,7 +223,7 @@ func (cis *CounterInitializationService) initializeGroupCounters(ctx context.Con
 			zap.Int("count", len(existingIDs)),
 			zap.String("sample_id", existingIDs[0]))
 
-		hash.InitializeGlobalCountersFromDatabase("GRP", existingIDs, hash.Medium)
+		hash.InitializeGlobalCountersFromDatabase(groups[0].GetTableIdentifier(), existingIDs, hash.Medium)
 	} else {
 		cis.logger.Info("No existing groups found, skipping group counter initialization")
 	}

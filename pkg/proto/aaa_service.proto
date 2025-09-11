@@ -1,0 +1,398 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "github.com/Kisanlink/aaa-service/pkg/proto;pb";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+import "auth_enhanced.proto";
+import "token.proto";
+import "authorization.proto";
+import "organization.proto";
+
+// Health Check Request
+message HealthCheckRequest {
+    string service = 1;
+    bool include_dependencies = 2;
+    bool include_metrics = 3;
+}
+
+// Health Check Response
+message HealthCheckResponse {
+    int32 status_code = 1;
+    string message = 2;
+    string status = 3;                     // "healthy", "unhealthy", "degraded"
+    google.protobuf.Timestamp timestamp = 4;
+    string version = 5;
+    repeated ServiceDependency dependencies = 6;
+    ServiceMetrics metrics = 7;
+    google.protobuf.Struct details = 8;
+}
+
+// Service dependency information
+message ServiceDependency {
+    string name = 1;
+    string status = 2;                     // "healthy", "unhealthy", "unknown"
+    string endpoint = 3;
+    int64 response_time_ms = 4;
+    string version = 5;
+    string error_message = 6;
+}
+
+// Service metrics
+message ServiceMetrics {
+    int64 uptime_seconds = 1;
+    int64 total_requests = 2;
+    int64 successful_requests = 3;
+    int64 failed_requests = 4;
+    double success_rate = 5;
+    double average_response_time_ms = 6;
+    int64 active_connections = 7;
+    int64 memory_usage_bytes = 8;
+    double cpu_usage_percent = 9;
+}
+
+// System Information Request
+message SystemInfoRequest {
+    bool include_config = 1;
+    bool include_features = 2;
+}
+
+// System Information Response
+message SystemInfoResponse {
+    string version = 1;
+    string build_time = 2;
+    string git_commit = 3;
+    string environment = 4;
+    repeated string enabled_features = 5;
+    google.protobuf.Struct configuration = 6;
+    ServiceLimits limits = 7;
+}
+
+// Service limits and quotas
+message ServiceLimits {
+    int32 max_users_per_organization = 1;
+    int32 max_roles_per_organization = 2;
+    int32 max_permissions_per_role = 3;
+    int32 max_concurrent_sessions_per_user = 4;
+    int32 max_tokens_per_user = 5;
+    int32 rate_limit_per_minute = 6;
+    int32 max_request_size_bytes = 7;
+    int32 session_timeout_minutes = 8;
+    int32 token_expiry_hours = 9;
+}
+
+// Audit Log Entry
+message AuditLogEntry {
+    string id = 1;
+    string user_id = 2;
+    string organization_id = 3;
+    string action = 4;                     // "login", "create_user", "update_role", etc.
+    string resource_type = 5;              // "user", "role", "organization"
+    string resource_id = 6;
+    string result = 7;                     // "success", "failure", "error"
+    google.protobuf.Struct metadata = 8;
+    string ip_address = 9;
+    string user_agent = 10;
+    string session_id = 11;
+    google.protobuf.Timestamp timestamp = 12;
+    string details = 13;
+    repeated string tags = 14;
+}
+
+// Audit Log Query Request
+message AuditLogQueryRequest {
+    string organization_id = 1;
+    string user_id = 2;
+    repeated string actions = 3;
+    repeated string resource_types = 4;
+    string result = 5;
+    google.protobuf.Timestamp start_time = 6;
+    google.protobuf.Timestamp end_time = 7;
+    string search_query = 8;
+    int32 page = 9;
+    int32 per_page = 10;
+    string sort_by = 11;
+    string sort_order = 12;
+    repeated string include_fields = 13;
+}
+
+// Audit Log Query Response
+message AuditLogQueryResponse {
+    int32 status_code = 1;
+    string message = 2;
+    repeated AuditLogEntry entries = 3;
+    int32 total_count = 4;
+    int32 page = 5;
+    int32 per_page = 6;
+    int32 total_pages = 7;
+    bool has_next_page = 8;
+    bool has_prev_page = 9;
+    string next_cursor = 10;
+    string prev_cursor = 11;
+}
+
+// Session Management
+message Session {
+    string id = 1;
+    string user_id = 2;
+    string organization_id = 3;
+    string device_id = 4;
+    string device_name = 5;
+    string user_agent = 6;
+    string ip_address = 7;
+    string status = 8;                     // "active", "expired", "terminated"
+    google.protobuf.Timestamp created_at = 9;
+    google.protobuf.Timestamp last_activity = 10;
+    google.protobuf.Timestamp expires_at = 11;
+    repeated string permissions = 12;
+    google.protobuf.Struct metadata = 13;
+    bool is_trusted_device = 14;
+    string location = 15;
+}
+
+// List Sessions Request
+message ListSessionsRequest {
+    string user_id = 1;
+    string organization_id = 2;
+    string status = 3;
+    bool include_expired = 4;
+    int32 page = 5;
+    int32 per_page = 6;
+    string sort_by = 7;
+    string sort_order = 8;
+}
+
+// List Sessions Response
+message ListSessionsResponse {
+    int32 status_code = 1;
+    string message = 2;
+    repeated Session sessions = 3;
+    int32 total_count = 4;
+    int32 page = 5;
+    int32 per_page = 6;
+    int32 total_pages = 7;
+}
+
+// Terminate Session Request
+message TerminateSessionRequest {
+    string session_id = 1;
+    string user_id = 2;
+    bool terminate_all_sessions = 3;
+    string reason = 4;
+}
+
+// Terminate Session Response
+message TerminateSessionResponse {
+    int32 status_code = 1;
+    string message = 2;
+    bool success = 3;
+    int32 sessions_terminated = 4;
+}
+
+// Configuration Management
+message ConfigurationSetting {
+    string key = 1;
+    string value = 2;
+    string description = 3;
+    string category = 4;                   // "security", "limits", "features"
+    bool is_sensitive = 5;                 // Mask value in responses
+    bool is_readonly = 6;                  // Cannot be modified via API
+    string default_value = 7;
+    repeated string allowed_values = 8;
+    string validation_regex = 9;
+    google.protobuf.Timestamp updated_at = 10;
+    string updated_by = 11;
+}
+
+// Get Configuration Request
+message GetConfigurationRequest {
+    string organization_id = 1;
+    repeated string keys = 2;
+    string category = 3;
+    bool include_sensitive = 4;
+    bool include_readonly = 5;
+}
+
+// Get Configuration Response
+message GetConfigurationResponse {
+    int32 status_code = 1;
+    string message = 2;
+    repeated ConfigurationSetting settings = 3;
+    google.protobuf.Timestamp last_updated = 4;
+}
+
+// Update Configuration Request
+message UpdateConfigurationRequest {
+    string organization_id = 1;
+    repeated ConfigurationSetting settings = 2;
+    string reason = 3;
+}
+
+// Update Configuration Response
+message UpdateConfigurationResponse {
+    int32 status_code = 1;
+    string message = 2;
+    repeated ConfigurationSetting updated_settings = 3;
+    repeated string errors = 4;
+    repeated string warnings = 5;
+}
+
+// Notification Management
+message NotificationTemplate {
+    string id = 1;
+    string name = 2;
+    string type = 3;                       // "email", "sms", "webhook"
+    string event = 4;                      // "user_registered", "password_reset", etc.
+    string subject = 5;
+    string body = 6;
+    google.protobuf.Struct variables = 7;
+    bool is_active = 8;
+    string organization_id = 9;
+    string created_at = 10;
+    string updated_at = 11;
+}
+
+// Send Notification Request
+message SendNotificationRequest {
+    string template_id = 1;
+    string recipient_id = 2;
+    string recipient_email = 3;
+    string recipient_phone = 4;
+    google.protobuf.Struct variables = 5;
+    string priority = 6;                   // "low", "normal", "high", "urgent"
+    bool schedule_send = 7;
+    google.protobuf.Timestamp send_at = 8;
+}
+
+// Send Notification Response
+message SendNotificationResponse {
+    int32 status_code = 1;
+    string message = 2;
+    string notification_id = 3;
+    string status = 4;                     // "sent", "scheduled", "failed"
+    google.protobuf.Timestamp sent_at = 5;
+    string error_message = 6;
+}
+
+// Bulk Operations
+message BulkOperation {
+    string id = 1;
+    string operation_type = 2;             // "bulk_create_users", "bulk_assign_roles"
+    string status = 3;                     // "pending", "processing", "completed", "failed"
+    string organization_id = 4;
+    string created_by = 5;
+    google.protobuf.Timestamp created_at = 6;
+    google.protobuf.Timestamp started_at = 7;
+    google.protobuf.Timestamp completed_at = 8;
+    int32 total_items = 9;
+    int32 processed_items = 10;
+    int32 successful_items = 11;
+    int32 failed_items = 12;
+    double progress_percentage = 13;
+    repeated string errors = 14;
+    google.protobuf.Struct metadata = 15;
+}
+
+// Start Bulk Operation Request
+message StartBulkOperationRequest {
+    string operation_type = 1;
+    string organization_id = 2;
+    google.protobuf.Struct operation_data = 3;
+    bool validate_only = 4;
+}
+
+// Start Bulk Operation Response
+message StartBulkOperationResponse {
+    int32 status_code = 1;
+    string message = 2;
+    string operation_id = 3;
+    BulkOperation operation = 4;
+    repeated string validation_errors = 5;
+}
+
+// Get Bulk Operation Status Request
+message GetBulkOperationStatusRequest {
+    string operation_id = 1;
+    bool include_details = 2;
+}
+
+// Get Bulk Operation Status Response
+message GetBulkOperationStatusResponse {
+    int32 status_code = 1;
+    string message = 2;
+    BulkOperation operation = 3;
+    repeated string recent_errors = 4;
+}
+
+// Unified AAA Service - combining all services
+service AAAService {
+    // Health and System
+    rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
+    rpc GetSystemInfo(SystemInfoRequest) returns (SystemInfoResponse);
+
+    // User Management (from UserService)
+    rpc Login(LoginRequest) returns (LoginResponse);
+    rpc Register(RegisterRequest) returns (RegisterResponse);
+    rpc GetUser(GetUserRequest) returns (GetUserResponse);
+    rpc GetAllUsers(GetAllUsersRequest) returns (GetAllUsersResponse);
+    rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse);
+    rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
+    rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
+    rpc Logout(LogoutRequest) returns (LogoutResponse);
+    rpc GetUserByPhone(GetUserByPhoneRequest) returns (GetUserResponse);
+    rpc VerifyUserPassword(VerifyPasswordRequest) returns (VerifyPasswordResponse);
+
+    // Token Management (from TokenService)
+    rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse);
+    rpc RefreshAccessToken(RefreshAccessTokenRequest) returns (RefreshAccessTokenResponse);
+    rpc RevokeToken(RevokeTokenRequest) returns (RevokeTokenResponse);
+    rpc IntrospectToken(IntrospectTokenRequest) returns (IntrospectTokenResponse);
+    rpc CreateToken(CreateTokenRequest) returns (CreateTokenResponse);
+    rpc ListActiveTokens(ListActiveTokensRequest) returns (ListActiveTokensResponse);
+    rpc BlacklistToken(BlacklistTokenRequest) returns (BlacklistTokenResponse);
+
+    // Authorization (from AuthorizationService)
+    rpc Check(CheckRequest) returns (CheckResponse);
+    rpc BatchCheck(BatchCheckRequest) returns (BatchCheckResponse);
+    rpc LookupResources(LookupResourcesRequest) returns (LookupResourcesResponse);
+    rpc CheckColumns(CheckColumnsRequest) returns (CheckColumnsResponse);
+    rpc ListAllowedColumns(ListAllowedColumnsRequest) returns (ListAllowedColumnsResponse);
+    rpc EvaluatePermission(EvaluatePermissionRequest) returns (EvaluatePermissionResponse);
+    rpc BulkEvaluatePermissions(BulkEvaluatePermissionsRequest) returns (BulkEvaluatePermissionsResponse);
+
+    // Organization Management (from OrganizationService)
+    rpc CreateOrganization(CreateOrganizationRequest) returns (CreateOrganizationResponse);
+    rpc GetOrganization(GetOrganizationRequest) returns (GetOrganizationResponse);
+    rpc ListOrganizations(ListOrganizationsRequest) returns (ListOrganizationsResponse);
+    rpc UpdateOrganization(UpdateOrganizationRequest) returns (UpdateOrganizationResponse);
+    rpc DeleteOrganization(DeleteOrganizationRequest) returns (DeleteOrganizationResponse);
+    rpc AddUserToOrganization(AddUserToOrganizationRequest) returns (AddUserToOrganizationResponse);
+    rpc RemoveUserFromOrganization(RemoveUserFromOrganizationRequest) returns (RemoveUserFromOrganizationResponse);
+    rpc ValidateOrganizationAccess(ValidateOrganizationAccessRequest) returns (ValidateOrganizationAccessResponse);
+
+    // Role Management (from OrganizationService)
+    rpc CreateRole(CreateRoleRequest) returns (CreateRoleResponse);
+    rpc ListRoles(ListRolesRequest) returns (ListRolesResponse);
+    rpc UpdateRole(UpdateRoleRequest) returns (UpdateRoleResponse);
+    rpc DeleteRole(DeleteRoleRequest) returns (DeleteRoleResponse);
+
+    // Audit and Logging
+    rpc QueryAuditLog(AuditLogQueryRequest) returns (AuditLogQueryResponse);
+
+    // Session Management
+    rpc ListSessions(ListSessionsRequest) returns (ListSessionsResponse);
+    rpc TerminateSession(TerminateSessionRequest) returns (TerminateSessionResponse);
+
+    // Configuration Management
+    rpc GetConfiguration(GetConfigurationRequest) returns (GetConfigurationResponse);
+    rpc UpdateConfiguration(UpdateConfigurationRequest) returns (UpdateConfigurationResponse);
+
+    // Notification Management
+    rpc SendNotification(SendNotificationRequest) returns (SendNotificationResponse);
+
+    // Bulk Operations
+    rpc StartBulkOperation(StartBulkOperationRequest) returns (StartBulkOperationResponse);
+    rpc GetBulkOperationStatus(GetBulkOperationStatusRequest) returns (GetBulkOperationStatusResponse);
+}

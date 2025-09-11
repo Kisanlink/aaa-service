@@ -2,6 +2,7 @@ package interfaces
 
 import (
 	"context"
+	"time"
 
 	"github.com/Kisanlink/aaa-service/internal/entities/models"
 	userRequests "github.com/Kisanlink/aaa-service/internal/entities/requests/users"
@@ -74,7 +75,7 @@ type UserService interface {
 	GetUserWithRoles(ctx context.Context, userID string) (*userResponses.UserResponse, error)
 	VerifyUserPassword(ctx context.Context, username, password string) (*userResponses.UserResponse, error)
 	VerifyUserPasswordByPhone(ctx context.Context, phoneNumber, countryCode, password string) (*userResponses.UserResponse, error)
-	SetMPin(ctx context.Context, userID string, mPin string) error
+	SetMPin(ctx context.Context, userID string, mPin string, currentPassword string) error
 	VerifyMPin(ctx context.Context, userID string, mPin string) error
 	UpdateMPin(ctx context.Context, userID, currentMPin, newMPin string) error
 	VerifyUserCredentials(ctx context.Context, phone, countryCode string, password, mpin *string) (*userResponses.UserResponse, error)
@@ -253,6 +254,22 @@ type GroupRoleRepository interface {
 	GetByGroupIDWithRoles(ctx context.Context, groupID string) ([]*models.GroupRole, error)
 }
 
+// GroupMembershipRepository interface for group membership operations
+type GroupMembershipRepository interface {
+	base.Repository[*models.GroupMembership]
+	GetByGroupID(ctx context.Context, groupID string, limit, offset int) ([]*models.GroupMembership, error)
+	GetByPrincipalID(ctx context.Context, principalID string, limit, offset int) ([]*models.GroupMembership, error)
+	GetByGroupAndPrincipal(ctx context.Context, groupID, principalID string) (*models.GroupMembership, error)
+	GetUserDirectGroups(ctx context.Context, orgID, userID string) ([]*models.Group, error)
+	GetEffectiveMemberships(ctx context.Context, groupID string, limit, offset int) ([]*models.GroupMembership, error)
+	GetUserGroupsInOrganization(ctx context.Context, orgID, userID string, limit, offset int) ([]*models.Group, error)
+	CountUserGroupsInOrganization(ctx context.Context, orgID, userID string) (int64, error)
+	ExistsByGroupAndPrincipal(ctx context.Context, groupID, principalID string) (bool, error)
+	DeactivateMembership(ctx context.Context, groupID, principalID string) error
+	ActivateMembership(ctx context.Context, groupID, principalID string) error
+	GetGroupMembersWithDetails(ctx context.Context, groupID string, limit, offset int) ([]map[string]interface{}, error)
+}
+
 // TokenManager interface for token operations
 type TokenManager interface {
 	GenerateAccessToken(userID string, claims map[string]interface{}) (string, error)
@@ -406,6 +423,7 @@ type AuditService interface {
 	LogGroupMembershipChange(ctx context.Context, actorUserID, action, orgID, groupID, targetUserID, message string, success bool, details map[string]interface{})
 	LogGroupRoleAssignment(ctx context.Context, actorUserID, action, orgID, groupID, roleID, message string, success bool, details map[string]interface{})
 	LogHierarchyChange(ctx context.Context, userID, action, resourceType, resourceID, oldParentID, newParentID, message string, success bool, details map[string]interface{})
+	LogOrganizationStructureChange(ctx context.Context, userID, action, orgID, resourceType, resourceID string, oldValues, newValues map[string]interface{}, success bool, message string)
 
 	// Audit query operations
 	QueryAuditLogs(ctx context.Context, query interface{}) (interface{}, error)
@@ -420,4 +438,87 @@ type AuditService interface {
 	ValidateAuditLogIntegrity(ctx context.Context, auditLogID string) (bool, error)
 	GetAuditStatistics(ctx context.Context, days int) (map[string]interface{}, error)
 	ArchiveOldLogs(ctx context.Context, days int) error
+}
+
+// AuditRepository defines the interface for audit log repository operations
+type AuditRepository interface {
+	Create(ctx context.Context, auditLog *models.AuditLog) error
+	GetByID(ctx context.Context, id string) (*models.AuditLog, error)
+	Update(ctx context.Context, auditLog *models.AuditLog) error
+	Delete(ctx context.Context, id string) error
+	List(ctx context.Context, limit, offset int) ([]*models.AuditLog, error)
+	ListByOrganization(ctx context.Context, orgID string, limit, offset int) ([]*models.AuditLog, error)
+	ListByUser(ctx context.Context, userID string, limit, offset int) ([]*models.AuditLog, error)
+	ListByAction(ctx context.Context, action string, limit, offset int) ([]*models.AuditLog, error)
+	ListByResourceType(ctx context.Context, resourceType string, limit, offset int) ([]*models.AuditLog, error)
+	ListByStatus(ctx context.Context, status string, limit, offset int) ([]*models.AuditLog, error)
+	ListByTimeRange(ctx context.Context, startTime, endTime time.Time, limit, offset int) ([]*models.AuditLog, error)
+	ListByOrganizationAndTimeRange(ctx context.Context, orgID string, startTime, endTime time.Time, limit, offset int) ([]*models.AuditLog, error)
+	ListByUserAndTimeRange(ctx context.Context, userID string, startTime, endTime time.Time, limit, offset int) ([]*models.AuditLog, error)
+	ListByGroupAndTimeRange(ctx context.Context, orgID, groupID string, startTime, endTime time.Time, limit, offset int) ([]*models.AuditLog, error)
+	CountByOrganization(ctx context.Context, orgID string) (int64, error)
+	CountByUser(ctx context.Context, userID string) (int64, error)
+	CountByStatus(ctx context.Context, status string) (int64, error)
+	CountByTimeRange(ctx context.Context, startTime, endTime time.Time) (int64, error)
+	CountByOrganizationAndTimeRange(ctx context.Context, orgID string, startTime, endTime time.Time) (int64, error)
+	GetSecurityEvents(ctx context.Context, days int, limit, offset int) ([]*models.AuditLog, error)
+	GetFailedOperations(ctx context.Context, days int, limit, offset int) ([]*models.AuditLog, error)
+	ArchiveOldLogs(ctx context.Context, cutoffDate time.Time) (int64, error)
+	ValidateIntegrity(ctx context.Context, auditLogID string) (*models.AuditLog, error)
+}
+
+// OrganizationRepository interface for organization data operations
+type OrganizationRepository interface {
+	// Basic CRUD operations
+	Create(ctx context.Context, org *models.Organization) error
+	GetByID(ctx context.Context, id string) (*models.Organization, error)
+	Update(ctx context.Context, org *models.Organization) error
+	Delete(ctx context.Context, id string) error
+	List(ctx context.Context, limit, offset int) ([]*models.Organization, error)
+	Count(ctx context.Context) (int64, error)
+	Exists(ctx context.Context, id string) (bool, error)
+	SoftDelete(ctx context.Context, id string, deletedBy string) error
+	Restore(ctx context.Context, id string) error
+	GetByName(ctx context.Context, name string) (*models.Organization, error)
+	GetByType(ctx context.Context, orgType string, limit, offset int) ([]*models.Organization, error)
+	ListActive(ctx context.Context, limit, offset int) ([]*models.Organization, error)
+	GetChildren(ctx context.Context, parentID string) ([]*models.Organization, error)
+	GetActiveChildren(ctx context.Context, parentID string) ([]*models.Organization, error)
+	GetParentHierarchy(ctx context.Context, orgID string) ([]*models.Organization, error)
+	CountChildren(ctx context.Context, parentID string) (int64, error)
+	CountGroups(ctx context.Context, orgID string) (int64, error)
+	CountUsers(ctx context.Context, orgID string) (int64, error)
+	HasActiveGroups(ctx context.Context, orgID string) (bool, error)
+	Search(ctx context.Context, keyword string, limit, offset int) ([]*models.Organization, error)
+	GetByStatus(ctx context.Context, isActive bool, limit, offset int) ([]*models.Organization, error)
+	GetRootOrganizations(ctx context.Context, limit, offset int) ([]*models.Organization, error)
+}
+
+// UserRepositoryInterface interface for user data operations (renamed to avoid conflict)
+type UserRepositoryInterface interface {
+	// Basic CRUD operations
+	Create(ctx context.Context, user *models.User) error
+	GetByID(ctx context.Context, id string) (*models.User, error)
+	Update(ctx context.Context, user *models.User) error
+	Delete(ctx context.Context, id string) error
+	List(ctx context.Context, limit, offset int) ([]*models.User, error)
+	Count(ctx context.Context) (int64, error)
+	Exists(ctx context.Context, id string) (bool, error)
+	SoftDelete(ctx context.Context, id string, deletedBy string) error
+	Restore(ctx context.Context, id string) error
+	GetByEmail(ctx context.Context, email string) (*models.User, error)
+	GetByPhoneNumber(ctx context.Context, phoneNumber, countryCode string) (*models.User, error)
+	GetByAadhaarNumber(ctx context.Context, aadhaarNumber string) (*models.User, error)
+	GetByUsername(ctx context.Context, username string) (*models.User, error)
+	ExistsByEmail(ctx context.Context, email string) (bool, error)
+	ExistsByPhoneNumber(ctx context.Context, phoneNumber, countryCode string) (bool, error)
+	ExistsByAadhaarNumber(ctx context.Context, aadhaarNumber string) (bool, error)
+	ExistsByUsername(ctx context.Context, username string) (bool, error)
+	ListActive(ctx context.Context, limit, offset int) ([]*models.User, error)
+	Search(ctx context.Context, query string, limit, offset int) ([]*models.User, error)
+	GetWithAddress(ctx context.Context, userID string) (*models.User, error)
+	GetWithProfile(ctx context.Context, userID string) (*models.User, error)
+	UpdatePassword(ctx context.Context, userID, hashedPassword string) error
+	UpdateLastLogin(ctx context.Context, userID string) error
+	VerifyPassword(ctx context.Context, userID, password string) (bool, error)
 }

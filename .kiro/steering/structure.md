@@ -1,187 +1,195 @@
-# AAA Service Project Structure
+---
+inclusion: fileMatch
+fileMatchPattern: ["**/*.go", "**/go.mod", "**/go.sum"]
+---
 
-## File Organization Principles
+# Go Code Structure Guidelines
 
-### File Size Limit
+## File Organization Rules
 
-- **Maximum 300 lines per file**: All Go files must stay under 300 lines for readability
-- **Single Responsibility**: Each file has one clear, focused purpose
-- **Split when growing**: Break large files into logical modules before hitting the limit
+### Critical Limits
 
-### Package Structure
+- **300 lines maximum per Go file** - split before reaching this limit
+- **Single responsibility** - each file has one focused purpose
+- **Domain-based organization** - group related functionality together
 
-```
-aaa-service/
-├── cmd/server/              # Application entry point
-├── internal/                # Private application code
-│   ├── config/             # Configuration management
-│   ├── entities/           # Data models and DTOs
-│   │   ├── models/        # Domain models
-│   │   ├── requests/      # Request DTOs (organized by domain)
-│   │   └── responses/     # Response DTOs (organized by domain)
-│   ├── handlers/          # HTTP handlers (one per domain)
-│   ├── services/          # Business logic (split by domain and operation)
-│   ├── repositories/      # Data access layer (using kisanlink-db)
-│   ├── middleware/        # HTTP middleware
-│   └── grpc_server/       # gRPC server implementation
-├── pkg/                    # Public API packages
-│   ├── client/            # HTTP client for external use
-│   ├── models/            # Public data models
-│   ├── proto/             # Protocol buffer definitions
-│   └── errors/            # Error types and handling
-├── migrations/             # Database migrations and seeds
-├── docs/                   # Documentation and OpenAPI specs
-└── utils/                  # Shared utilities
-```
+### Service Structure Pattern
 
-## Code Organization Patterns
-
-### Service Layer Structure
-
-Services are split into focused files by operation:
-
-```
-internal/services/user/
-├── service.go          # Service struct and constructor
-├── create.go           # User creation logic
-├── read.go             # User retrieval operations
-├── update.go           # User modification operations
-└── delete.go           # User deletion logic
-```
-
-### Handler Organization
-
-Handlers are organized by domain with clear separation:
-
-```
-internal/handlers/
-├── auth/               # Authentication endpoints
-├── users/              # User management endpoints
-├── roles/              # Role management endpoints
-├── organizations/      # Organization endpoints
-└── health/             # Health check endpoints
-```
-
-### Request/Response Structure
-
-DTOs are organized by domain and operation:
-
-```
-internal/entities/requests/
-├── auth_requests.go    # Authentication requests
-├── users/              # User-related requests
-│   ├── create_user.go
-│   ├── update_user.go
-│   └── create_user_profile.go
-└── roles/              # Role-related requests
-    ├── create_role.go
-    ├── assign_role.go
-    └── update_role.go
-```
-
-## Naming Conventions
-
-### Files and Packages
-
-- Use snake_case for file names: `user_service.go`, `auth_handler.go`
-- Use lowercase for package names: `users`, `auth`, `roles`
-- Group related functionality in domain packages
-
-### Functions and Methods
-
-- Use PascalCase for exported functions: `CreateUser`, `ValidateToken`
-- Use camelCase for private functions: `validateRequest`, `hashPassword`
-- Use descriptive names that indicate purpose: `VerifyUserPasswordByPhone`
-
-### Variables and Constants
-
-- Use camelCase for variables: `userID`, `accessToken`
-- Use UPPER_CASE for constants: `JWT_SECRET`, `MAX_LOGIN_ATTEMPTS`
-- Use meaningful names over abbreviations
-
-## Dependency Management
-
-### Interface-Based Design
-
-- Define interfaces in `internal/interfaces/interfaces.go`
-- Use dependency injection in service constructors
-- Keep interfaces focused and minimal
-
-### Repository Pattern
-
-- Use kisanlink-db for all database operations
-- Implement repository interfaces for each domain
-- Leverage kisanlink-db's multi-backend support
-
-### Service Dependencies
+Always split services by operation:
 
 ```go
+// internal/services/user/
+// service.go - Service struct and constructor
 type Service struct {
     userRepo     interfaces.UserRepository
-    roleRepo     interfaces.RoleRepository
     cacheService interfaces.CacheService
     logger       *zap.Logger
-    validator    interfaces.Validator
 }
+
+// create.go - User creation logic only
+func (s *Service) CreateUser(ctx context.Context, req *requests.CreateUser) (*responses.UserResponse, error)
+
+// read.go - User retrieval operations only
+func (s *Service) GetUser(ctx context.Context, userID string) (*responses.UserResponse, error)
+func (s *Service) ListUsers(ctx context.Context, filters *requests.UserFilters) (*responses.UserListResponse, error)
+
+// update.go - User modification operations only
+func (s *Service) UpdateUser(ctx context.Context, userID string, req *requests.UpdateUser) (*responses.UserResponse, error)
+
+// delete.go - User deletion logic only
+func (s *Service) DeleteUser(ctx context.Context, userID string) error
 ```
 
-## Code Quality Standards
+## Naming Conventions (Strict)
 
-### Error Handling
+- **Files**: snake_case (`user_service.go`, `auth_handler.go`, `role_inheritance_engine.go`)
+- **Packages**: lowercase (`users`, `auth`, `roles`, `organizations`)
+- **Exported functions**: PascalCase (`CreateUser`, `ValidateToken`, `GetUserRoles`)
+- **Private functions**: camelCase (`validateRequest`, `hashPassword`, `buildQuery`)
+- **Variables**: camelCase (`userID`, `accessToken`, `organizationHierarchy`)
+- **Constants**: UPPER_CASE (`JWT_SECRET`, `MAX_LOGIN_ATTEMPTS`, `DEFAULT_CACHE_TTL`)
 
-- Use custom error types from `pkg/errors/`
-- Provide meaningful error messages
-- Log errors with appropriate context using Zap
-
-### Validation
-
-- Validate at request boundaries (handlers)
-- Use struct tags for validation rules
-- Implement custom validation methods when needed
-
-### Testing
-
-- Write tests alongside implementation files
-- Use table-driven tests for multiple scenarios
-- Mock dependencies using interfaces
-
-## Efficiency Guidelines
+## Required Patterns
 
 ### Database Operations
 
-- Use kisanlink-db for consistent database access
-- Implement proper connection pooling
-- Use transactions for multi-step operations
+```go
+// ALWAYS use kisanlink-db for database operations
+func (r *Repository) CreateUser(ctx context.Context, user *models.User) error {
+    return r.db.WithContext(ctx).Create(user).Error
+}
 
-### Caching Strategy
+// Use transactions for multi-step operations
+func (s *Service) CreateUserWithProfile(ctx context.Context, req *requests.CreateUserWithProfile) error {
+    return s.db.Transaction(func(tx *gorm.DB) error {
+        // Multiple operations within transaction
+    })
+}
+```
 
-- Cache frequently accessed data in Redis
-- Use appropriate TTL values
-- Implement cache invalidation patterns
+### Error Handling
 
-### Performance Considerations
+```go
+// Use custom error types from pkg/errors/
+import "aaa-service/pkg/errors"
 
-- Use context for request timeouts
-- Implement proper pagination for list operations
-- Use database indexes for query optimization
+func (s *Service) GetUser(ctx context.Context, userID string) (*responses.UserResponse, error) {
+    user, err := s.userRepo.GetByID(ctx, userID)
+    if err != nil {
+        s.logger.Error("failed to get user", zap.String("userID", userID), zap.Error(err))
+        return nil, errors.NewNotFoundError("user not found")
+    }
+    return responses.ToUserResponse(user), nil
+}
+```
 
-## Migration and Refactoring
+### Request Validation
 
-### When to Split Files
+```go
+// Validate at handler boundaries using struct tags
+type CreateUserRequest struct {
+    Email    string `json:"email" validate:"required,email"`
+    Phone    string `json:"phone" validate:"required,phone"`
+    Name     string `json:"name" validate:"required,min=2,max=100"`
+}
+
+func (h *Handler) CreateUser(c *gin.Context) {
+    var req CreateUserRequest
+    if err := c.ShouldBindJSON(&req); err != nil {
+        c.JSON(400, responses.NewErrorResponse("invalid request", err))
+        return
+    }
+
+    if err := h.validator.Struct(&req); err != nil {
+        c.JSON(400, responses.NewValidationErrorResponse(err))
+        return
+    }
+}
+```
+
+### Context Usage
+
+```go
+// Always use context for timeouts and cancellation
+func (s *Service) ProcessUserData(ctx context.Context, userID string) error {
+    // Check context before expensive operations
+    select {
+    case <-ctx.Done():
+        return ctx.Err()
+    default:
+    }
+
+    // Pass context to all downstream calls
+    user, err := s.userRepo.GetByID(ctx, userID)
+    if err != nil {
+        return err
+    }
+
+    return s.processUser(ctx, user)
+}
+```
+
+## Import Organization (Required Order)
+
+```go
+package users
+
+import (
+    // 1. Standard library
+    "context"
+    "fmt"
+    "time"
+
+    // 2. Third-party packages
+    "github.com/gin-gonic/gin"
+    "go.uber.org/zap"
+    "gorm.io/gorm"
+
+    // 3. Local packages
+    "aaa-service/internal/entities/models"
+    "aaa-service/internal/entities/requests"
+    "aaa-service/internal/entities/responses"
+    "aaa-service/pkg/errors"
+)
+```
+
+## Testing Requirements
+
+```go
+// Write tests alongside implementation files
+// Use table-driven tests for multiple scenarios
+func TestUserService_CreateUser(t *testing.T) {
+    tests := []struct {
+        name    string
+        request *requests.CreateUser
+        want    *responses.UserResponse
+        wantErr bool
+    }{
+        {
+            name: "valid user creation",
+            request: &requests.CreateUser{
+                Email: "test@example.com",
+                Name:  "Test User",
+            },
+            want: &responses.UserResponse{
+                Email: "test@example.com",
+                Name:  "Test User",
+            },
+            wantErr: false,
+        },
+    }
+
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            // Test implementation
+        })
+    }
+}
+```
+
+## When to Split Files
 
 - File approaches 250 lines (before 300 limit)
 - Multiple responsibilities in single file
 - Difficult to understand or test
-
-### Refactoring Guidelines
-
-- Move common functionality to kisanlink-db
-- Extract reusable components to shared packages
-- Maintain backward compatibility in public APIs
-
-### Import Organization
-
-- Standard library imports first
-- Third-party imports second
-- Local imports last
-- Use goimports for automatic formatting
+- More than 5-7 public methods in a service file

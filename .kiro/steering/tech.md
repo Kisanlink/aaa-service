@@ -1,123 +1,110 @@
-# AAA Service Technology Stack
+---
+inclusion: always
+---
 
-## Core Technologies
+# AAA Service Development Guide
 
-- **Language**: Go 1.24+ (using latest toolchain)
-- **HTTP Framework**: Gin for REST API endpoints
-- **gRPC**: Google gRPC for high-performance service-to-service communication
-- **Database**: PostgreSQL 17+ (primary), with optional DynamoDB and S3 support
-- **Cache**: Redis 7+ for performance optimization
-- **ORM**: GORM for PostgreSQL interactions via kisanlink-db manager
-- **Authentication**: JWT tokens with golang-jwt/jwt/v4
-- **Logging**: Zap (go.uber.org/zap) for structured logging
-- **Validation**: Custom validator with go-playground/validator/v10
-- **Documentation**: Swagger/OpenAPI with swaggo/swag
+## Service Overview
 
-## Key Dependencies
+AAA Service is an enterprise-grade Authentication, Authorization, and Accounting service providing JWT-based auth, PostgreSQL RBAC with hierarchical roles, comprehensive audit logging, and multi-tenant organization management.
 
-- **kisanlink-db**: Custom database manager for multi-backend support
-- **gin-gonic/gin**: HTTP web framework
-- **gorm.io/gorm**: ORM for database operations
-- **go-redis/redis/v8**: Redis client
-- **google.golang.org/grpc**: gRPC framework
-- **google.golang.org/protobuf**: Protocol buffer support
+## Technology Stack
 
-## Development Tools
+- **Go 1.24+** with Gin (HTTP), gRPC, PostgreSQL 17+, Redis 7+, GORM via kisanlink-db
+- **Key Dependencies**: kisanlink-db (custom DB manager), golang-jwt/jwt/v4, go.uber.org/zap, swaggo/swag
+- **Tools**: Docker, golangci-lint, Make for automation
 
-- **Docker**: Multi-stage builds with Alpine Linux base
-- **Docker Compose**: Local development environment with PostgreSQL and Redis
-- **golangci-lint**: Code linting and quality checks
-- **swag**: API documentation generation
-- **Make**: Build automation and common tasks
+## Architecture Principles
 
-## Common Commands
+- **Clean Architecture**: Domain-driven design with interface-based dependency injection
+- **File Size Limit**: Maximum 300 lines per Go file - split before reaching limit
+- **Single Responsibility**: Each file has one focused purpose
+- **Repository Pattern**: Use kisanlink-db for all database operations
 
-### Development
+## Project Structure
 
-```bash
-# Setup development environment
-make setup
-
-# Run the service locally
-make run
-# or
-go run cmd/server/main.go
-
-# Build the application
-make build
-# or
-go build -o bin/aaa-server cmd/server/main.go
 ```
+internal/
+├── config/          # Configuration management
+├── entities/        # Models, requests (by domain), responses (by domain)
+├── handlers/        # HTTP handlers (one per domain)
+├── services/        # Business logic (split by domain/operation)
+├── repositories/    # Data access via kisanlink-db
+├── middleware/      # HTTP middleware
+└── grpc_server/     # gRPC implementation
+
+pkg/                 # Public API packages
+migrations/          # Database migrations and seeds
+```
+
+## Code Standards
+
+### Naming Conventions
+
+- Files: `snake_case` (user_service.go, auth_handler.go)
+- Packages: lowercase (users, auth, roles)
+- Exported functions: PascalCase (CreateUser, ValidateToken)
+- Private functions: camelCase (validateRequest, hashPassword)
+- Variables: camelCase (userID, accessToken)
+- Constants: UPPER_CASE (JWT_SECRET, MAX_LOGIN_ATTEMPTS)
+
+### Service Organization
+
+Split services by operation:
+
+```
+internal/services/user/
+├── service.go    # Service struct and constructor
+├── create.go     # Creation logic
+├── read.go       # Retrieval operations
+├── update.go     # Modification operations
+└── delete.go     # Deletion logic
+```
+
+### Error Handling
+
+- Use custom error types from `pkg/errors/`
+- Log errors with context using Zap
+- Provide meaningful error messages
 
 ### Testing
 
-```bash
-# Run all tests
-make test
-# or
-go test ./...
+- Write tests alongside implementation
+- Use table-driven tests for multiple scenarios
+- Mock dependencies using interfaces
 
-# Run tests with coverage
-make test-coverage
-
-# Run integration tests
-make test-e2e
-
-# Run specific module tests
-make test-farmers
-```
-
-### Docker
+## Development Commands
 
 ```bash
-# Build Docker image
-make docker-build
+# Development
+make run                    # Run locally
+go run cmd/server/main.go   # Alternative run
 
-# Run with Docker Compose
-docker-compose up -d
+# Testing
+make test                   # All tests
+make test-coverage          # With coverage
+go test ./...              # Alternative test
 
-# Run tests with test database
-docker-compose -f docker-compose.test.yml up -d
+# Quality
+make format                 # Format code
+make lint                   # Run linter
+make docs                   # Generate Swagger docs
+
+# Docker
+docker-compose up -d        # Local environment
 ```
 
-### Documentation
+## Environment Variables
 
-```bash
-# Generate Swagger documentation
-make docs
-# or
-swag init -g cmd/server/main.go
+Use `AAA_` prefix: `AAA_JWT_SECRET` (required), `AAA_AUTO_MIGRATE`, `AAA_RUN_SEED`, `AAA_ENABLE_DOCS`
+Database: `DB_POSTGRES_*`, Redis: `REDIS_*`
 
-# View docs at http://localhost:8080/swagger/index.html
-```
+## Key Implementation Rules
 
-### Code Quality
-
-```bash
-# Format code
-make format
-
-# Run linter
-make lint
-
-# Run all quality checks
-make check
-```
-
-## Environment Configuration
-
-The service uses environment variables with the `AAA_` prefix:
-
-- `AAA_JWT_SECRET`: JWT signing secret (required)
-- `AAA_AUTO_MIGRATE`: Auto-run database migrations
-- `AAA_RUN_SEED`: Seed initial data
-- `AAA_ENABLE_DOCS`: Enable Swagger documentation
-- Database configuration via `DB_POSTGRES_*` variables
-- Redis configuration via `REDIS_*` variables
-
-## Build System
-
-- Uses Go modules for dependency management
-- Multi-stage Docker builds for optimized production images
-- Makefile provides standardized commands for all operations
-- Supports both local development and containerized deployment
+1. **Always use kisanlink-db** for database operations
+2. **Validate at request boundaries** (handlers) using struct tags
+3. **Use context** for request timeouts and cancellation
+4. **Implement proper caching** with Redis and appropriate TTL
+5. **Follow import order**: standard library, third-party, local
+6. **Split files before 250 lines** to stay under 300 limit
+7. **Use interfaces** for dependency injection and testing

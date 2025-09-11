@@ -145,8 +145,8 @@ func (m *MockUserService) VerifyUserPasswordByPhone(ctx context.Context, phoneNu
 	return args.Get(0).(*userResponses.UserResponse), args.Error(1)
 }
 
-func (m *MockUserService) SetMPin(ctx context.Context, userID string, mPin string) error {
-	args := m.Called(ctx, userID, mPin)
+func (m *MockUserService) SetMPin(ctx context.Context, userID, mPin, currentPassword string) error {
+	args := m.Called(ctx, userID, mPin, currentPassword)
 	return args.Error(0)
 }
 

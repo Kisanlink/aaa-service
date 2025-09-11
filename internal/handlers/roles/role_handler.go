@@ -54,17 +54,18 @@ func NewRoleHandler(
 }
 
 // CreateRole handles POST /v1/roles
-// @Summary Create a new role
-// @Description Create a new role with the provided information
-// @Tags roles
-// @Accept json
-// @Produce json
-// @Param role body roles.CreateRoleRequest true "Role creation data"
-// @Success 201 {object} map[string]interface{}
-// @Failure 400 {object} responses.ErrorResponseSwagger
-// @Failure 409 {object} responses.ErrorResponseSwagger
-// @Failure 500 {object} responses.ErrorResponseSwagger
-// @Router /api/v2/roles [post]
+//
+//	@Summary		Create a new role
+//	@Description	Create a new role with the provided information
+//	@Tags			roles
+//	@Accept			json
+//	@Produce		json
+//	@Param			role	body		roles.CreateRoleRequest	true	"Role creation data"
+//	@Success		201		{object}	map[string]interface{}
+//	@Failure		400		{object}	responses.ErrorResponseSwagger
+//	@Failure		409		{object}	responses.ErrorResponseSwagger
+//	@Failure		500		{object}	responses.ErrorResponseSwagger
+//	@Router			/api/v2/roles [post]
 func (h *RoleHandler) CreateRole(c *gin.Context) {
 	h.logger.Info("Creating role")
 
@@ -106,17 +107,18 @@ func (h *RoleHandler) CreateRole(c *gin.Context) {
 }
 
 // GetRole handles GET /v1/roles/:id
-// @Summary Get role by ID
-// @Description Retrieve a role by its unique identifier
-// @Tags roles
-// @Accept json
-// @Produce json
-// @Param id path string true "Role ID"
-// @Success 200 {object} map[string]interface{}
-// @Failure 400 {object} responses.ErrorResponseSwagger
-// @Failure 404 {object} responses.ErrorResponseSwagger
-// @Failure 500 {object} responses.ErrorResponseSwagger
-// @Router /api/v2/roles/{id} [get]
+//
+//	@Summary		Get role by ID
+//	@Description	Retrieve a role by its unique identifier
+//	@Tags			roles
+//	@Accept			json
+//	@Produce		json
+//	@Param			id	path		string	true	"Role ID"
+//	@Success		200	{object}	map[string]interface{}
+//	@Failure		400	{object}	responses.ErrorResponseSwagger
+//	@Failure		404	{object}	responses.ErrorResponseSwagger
+//	@Failure		500	{object}	responses.ErrorResponseSwagger
+//	@Router			/api/v2/roles/{id} [get]
 func (h *RoleHandler) GetRole(c *gin.Context) {
 	roleID := c.Param("id")
 	h.logger.Info("Getting role by ID", zap.String("roleID", roleID))
@@ -139,19 +141,20 @@ func (h *RoleHandler) GetRole(c *gin.Context) {
 }
 
 // UpdateRole handles PUT /v1/roles/:id
-// @Summary Update role
-// @Description Update an existing role's information
-// @Tags roles
-// @Accept json
-// @Produce json
-// @Param id path string true "Role ID"
-// @Param role body roles.UpdateRoleRequest true "Role update data"
-// @Success 200 {object} map[string]interface{}
-// @Failure 400 {object} responses.ErrorResponseSwagger
-// @Failure 404 {object} responses.ErrorResponseSwagger
-// @Failure 409 {object} responses.ErrorResponseSwagger
-// @Failure 500 {object} responses.ErrorResponseSwagger
-// @Router /api/v2/roles/{id} [put]
+//
+//	@Summary		Update role
+//	@Description	Update an existing role's information
+//	@Tags			roles
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path		string					true	"Role ID"
+//	@Param			role	body		roles.UpdateRoleRequest	true	"Role update data"
+//	@Success		200		{object}	map[string]interface{}
+//	@Failure		400		{object}	responses.ErrorResponseSwagger
+//	@Failure		404		{object}	responses.ErrorResponseSwagger
+//	@Failure		409		{object}	responses.ErrorResponseSwagger
+//	@Failure		500		{object}	responses.ErrorResponseSwagger
+//	@Router			/api/v2/roles/{id} [put]
 func (h *RoleHandler) UpdateRole(c *gin.Context) {
 	roleID := c.Param("id")
 	h.logger.Info("Updating role", zap.String("roleID", roleID))
@@ -207,18 +210,19 @@ func (h *RoleHandler) UpdateRole(c *gin.Context) {
 }
 
 // DeleteRole handles DELETE /v1/roles/:id
-// @Summary Delete role
-// @Description Delete a role by its unique identifier
-// @Tags roles
-// @Accept json
-// @Produce json
-// @Param id path string true "Role ID"
-// @Success 200 {object} map[string]interface{}
-// @Failure 400 {object} responses.ErrorResponseSwagger
-// @Failure 404 {object} responses.ErrorResponseSwagger
-// @Failure 409 {object} responses.ErrorResponseSwagger
-// @Failure 500 {object} responses.ErrorResponseSwagger
-// @Router /api/v2/roles/{id} [delete]
+//
+//	@Summary		Delete role
+//	@Description	Delete a role by its unique identifier
+//	@Tags			roles
+//	@Accept			json
+//	@Produce		json
+//	@Param			id	path		string	true	"Role ID"
+//	@Success		200	{object}	map[string]interface{}
+//	@Failure		400	{object}	responses.ErrorResponseSwagger
+//	@Failure		404	{object}	responses.ErrorResponseSwagger
+//	@Failure		409	{object}	responses.ErrorResponseSwagger
+//	@Failure		500	{object}	responses.ErrorResponseSwagger
+//	@Router			/api/v2/roles/{id} [delete]
 func (h *RoleHandler) DeleteRole(c *gin.Context) {
 	roleID := c.Param("id")
 	h.logger.Info("Deleting role", zap.String("roleID", roleID))
@@ -249,17 +253,18 @@ func (h *RoleHandler) DeleteRole(c *gin.Context) {
 }
 
 // ListRoles handles GET /v1/roles
-// @Summary List roles
-// @Description Get a paginated list of roles
-// @Tags roles
-// @Accept json
-// @Produce json
-// @Param limit query int false "Number of roles to return" default(10)
-// @Param offset query int false "Number of roles to skip" default(0)
-// @Success 200 {object} map[string]interface{}
-// @Failure 400 {object} map[string]interface{}
-// @Failure 500 {object} map[string]interface{}
-// @Router /api/v2/roles [get]
+//
+//	@Summary		List roles
+//	@Description	Get a paginated list of roles
+//	@Tags			roles
+//	@Accept			json
+//	@Produce		json
+//	@Param			limit	query		int	false	"Number of roles to return"	default(10)
+//	@Param			offset	query		int	false	"Number of roles to skip"	default(0)
+//	@Success		200		{object}	map[string]interface{}
+//	@Failure		400		{object}	map[string]interface{}
+//	@Failure		500		{object}	map[string]interface{}
+//	@Router			/api/v2/roles [get]
 func (h *RoleHandler) ListRoles(c *gin.Context) {
 	h.logger.Info("Listing roles")
 
@@ -431,19 +436,20 @@ func (h *RoleHandler) AddChildRoleV2(c *gin.Context) {
 }
 
 // AssignRole handles POST /users/{id}/roles
-// @Summary Assign role to user
-// @Description Assign a role to an existing user
-// @Tags roles
-// @Accept json
-// @Produce json
-// @Param id path string true "User ID"
-// @Param role body roles.AssignRoleRequest true "Role assignment data"
-// @Success 200 {object} responses.AssignRoleResponse
-// @Failure 400 {object} responses.ErrorResponseSwagger
-// @Failure 404 {object} responses.ErrorResponseSwagger
-// @Failure 409 {object} responses.ErrorResponseSwagger
-// @Failure 500 {object} responses.ErrorResponseSwagger
-// @Router /api/v2/users/{id}/roles [post]
+//
+//	@Summary		Assign role to user
+//	@Description	Assign a role to an existing user
+//	@Tags			roles
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path		string					true	"User ID"
+//	@Param			role	body		roles.AssignRoleRequest	true	"Role assignment data"
+//	@Success		200		{object}	responses.AssignRoleResponse
+//	@Failure		400		{object}	responses.ErrorResponseSwagger
+//	@Failure		404		{object}	responses.ErrorResponseSwagger
+//	@Failure		409		{object}	responses.ErrorResponseSwagger
+//	@Failure		500		{object}	responses.ErrorResponseSwagger
+//	@Router			/api/v2/users/{id}/roles [post]
 func (h *RoleHandler) AssignRole(c *gin.Context) {
 	userID := c.Param("id")
 
@@ -605,18 +611,19 @@ func (h *RoleHandler) AssignRole(c *gin.Context) {
 }
 
 // RemoveRole handles DELETE /users/{id}/roles/{role_id}
-// @Summary Remove role from user
-// @Description Remove a role assignment from a user
-// @Tags roles
-// @Accept json
-// @Produce json
-// @Param id path string true "User ID"
-// @Param role_id path string true "Role ID"
-// @Success 200 {object} responses.RemoveRoleResponse
-// @Failure 400 {object} responses.ErrorResponseSwagger
-// @Failure 404 {object} responses.ErrorResponseSwagger
-// @Failure 500 {object} responses.ErrorResponseSwagger
-// @Router /api/v2/users/{id}/roles/{role_id} [delete]
+//
+//	@Summary		Remove role from user
+//	@Description	Remove a role assignment from a user
+//	@Tags			roles
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path		string	true	"User ID"
+//	@Param			role_id	path		string	true	"Role ID"
+//	@Success		200		{object}	responses.RemoveRoleResponse
+//	@Failure		400		{object}	responses.ErrorResponseSwagger
+//	@Failure		404		{object}	responses.ErrorResponseSwagger
+//	@Failure		500		{object}	responses.ErrorResponseSwagger
+//	@Router			/api/v2/users/{id}/roles/{role_id} [delete]
 func (h *RoleHandler) RemoveRole(c *gin.Context) {
 	userID := c.Param("id")
 	roleID := c.Param("role_id")

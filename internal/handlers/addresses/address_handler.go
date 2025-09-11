@@ -34,16 +34,17 @@ func NewAddressHandler(
 }
 
 // CreateAddress handles POST /addresses
-// @Summary Create a new address
-// @Description Create a new address for a user
-// @Tags addresses
-// @Accept json
-// @Produce json
-// @Param address body addresses.CreateAddressRequest true "Address creation data"
-// @Success 201 {object} map[string]interface{}
-// @Failure 400 {object} map[string]interface{}
-// @Failure 500 {object} map[string]interface{}
-// @Router /api/v2/addresses [post]
+//
+//	@Summary		Create a new address
+//	@Description	Create a new address for a user
+//	@Tags			addresses
+//	@Accept			json
+//	@Produce		json
+//	@Param			address	body		addresses.CreateAddressRequest	true	"Address creation data"
+//	@Success		201		{object}	map[string]interface{}
+//	@Failure		400		{object}	map[string]interface{}
+//	@Failure		500		{object}	map[string]interface{}
+//	@Router			/api/v2/addresses [post]
 func (h *AddressHandler) CreateAddress(c *gin.Context) {
 	h.logger.Info("Creating address")
 
@@ -77,17 +78,18 @@ func (h *AddressHandler) CreateAddress(c *gin.Context) {
 }
 
 // GetAddress handles GET /addresses/:id
-// @Summary Get address by ID
-// @Description Retrieve an address by its unique identifier
-// @Tags addresses
-// @Accept json
-// @Produce json
-// @Param id path string true "Address ID"
-// @Success 200 {object} map[string]interface{}
-// @Failure 400 {object} map[string]interface{}
-// @Failure 404 {object} map[string]interface{}
-// @Failure 500 {object} map[string]interface{}
-// @Router /api/v2/addresses/{id} [get]
+//
+//	@Summary		Get address by ID
+//	@Description	Retrieve an address by its unique identifier
+//	@Tags			addresses
+//	@Accept			json
+//	@Produce		json
+//	@Param			id	path		string	true	"Address ID"
+//	@Success		200	{object}	map[string]interface{}
+//	@Failure		400	{object}	map[string]interface{}
+//	@Failure		404	{object}	map[string]interface{}
+//	@Failure		500	{object}	map[string]interface{}
+//	@Router			/api/v2/addresses/{id} [get]
 func (h *AddressHandler) GetAddress(c *gin.Context) {
 	addressID := c.Param("id")
 	h.logger.Info("Getting address by ID", zap.String("addressID", addressID))
@@ -110,18 +112,19 @@ func (h *AddressHandler) GetAddress(c *gin.Context) {
 }
 
 // UpdateAddress handles PUT /addresses/:id
-// @Summary Update address
-// @Description Update an existing address
-// @Tags addresses
-// @Accept json
-// @Produce json
-// @Param id path string true "Address ID"
-// @Param address body addresses.UpdateAddressRequest true "Address update data"
-// @Success 200 {object} map[string]interface{}
-// @Failure 400 {object} map[string]interface{}
-// @Failure 404 {object} map[string]interface{}
-// @Failure 500 {object} map[string]interface{}
-// @Router /api/v2/addresses/{id} [put]
+//
+//	@Summary		Update address
+//	@Description	Update an existing address
+//	@Tags			addresses
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path		string							true	"Address ID"
+//	@Param			address	body		addresses.UpdateAddressRequest	true	"Address update data"
+//	@Success		200		{object}	map[string]interface{}
+//	@Failure		400		{object}	map[string]interface{}
+//	@Failure		404		{object}	map[string]interface{}
+//	@Failure		500		{object}	map[string]interface{}
+//	@Router			/api/v2/addresses/{id} [put]
 func (h *AddressHandler) UpdateAddress(c *gin.Context) {
 	addressID := c.Param("id")
 	h.logger.Info("Updating address", zap.String("addressID", addressID))
@@ -164,17 +167,18 @@ func (h *AddressHandler) UpdateAddress(c *gin.Context) {
 }
 
 // DeleteAddress handles DELETE /addresses/:id
-// @Summary Delete address
-// @Description Delete an address by its unique identifier
-// @Tags addresses
-// @Accept json
-// @Produce json
-// @Param id path string true "Address ID"
-// @Success 200 {object} map[string]interface{}
-// @Failure 400 {object} map[string]interface{}
-// @Failure 404 {object} map[string]interface{}
-// @Failure 500 {object} map[string]interface{}
-// @Router /api/v2/addresses/{id} [delete]
+//
+//	@Summary		Delete address
+//	@Description	Delete an address by its unique identifier
+//	@Tags			addresses
+//	@Accept			json
+//	@Produce		json
+//	@Param			id	path		string	true	"Address ID"
+//	@Success		200	{object}	map[string]interface{}
+//	@Failure		400	{object}	map[string]interface{}
+//	@Failure		404	{object}	map[string]interface{}
+//	@Failure		500	{object}	map[string]interface{}
+//	@Router			/api/v2/addresses/{id} [delete]
 func (h *AddressHandler) DeleteAddress(c *gin.Context) {
 	addressID := c.Param("id")
 	h.logger.Info("Deleting address", zap.String("addressID", addressID))
@@ -200,18 +204,19 @@ func (h *AddressHandler) DeleteAddress(c *gin.Context) {
 }
 
 // SearchAddresses handles GET /addresses/search
-// @Summary Search addresses
-// @Description Search for addresses based on query parameters
-// @Tags addresses
-// @Accept json
-// @Produce json
-// @Param q query string true "Search query"
-// @Param limit query int false "Number of addresses to return" default(10)
-// @Param offset query int false "Number of addresses to skip" default(0)
-// @Success 200 {object} map[string]interface{}
-// @Failure 400 {object} map[string]interface{}
-// @Failure 500 {object} map[string]interface{}
-// @Router /api/v2/addresses/search [get]
+//
+//	@Summary		Search addresses
+//	@Description	Search for addresses based on query parameters
+//	@Tags			addresses
+//	@Accept			json
+//	@Produce		json
+//	@Param			q		query		string	true	"Search query"
+//	@Param			limit	query		int		false	"Number of addresses to return"	default(10)
+//	@Param			offset	query		int		false	"Number of addresses to skip"	default(0)
+//	@Success		200		{object}	map[string]interface{}
+//	@Failure		400		{object}	map[string]interface{}
+//	@Failure		500		{object}	map[string]interface{}
+//	@Router			/api/v2/addresses/search [get]
 func (h *AddressHandler) SearchAddresses(c *gin.Context) {
 	query := c.Query("q")
 	h.logger.Info("Searching addresses", zap.String("query", query))

@@ -35,13 +35,14 @@ func NewHealthHandler(
 }
 
 // BasicHealth handles GET /health
-// @Summary Basic health check
-// @Description Get basic service health status
-// @Tags health
-// @Accept json
-// @Produce json
-// @Success 200 {object} map[string]interface{}
-// @Router /health [get]
+//
+//	@Summary		Basic health check
+//	@Description	Get basic service health status
+//	@Tags			health
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{object}	map[string]interface{}
+//	@Router			/health [get]
 func (h *HealthHandler) BasicHealth(c *gin.Context) {
 	h.logger.Debug("Processing basic health check")
 
@@ -56,14 +57,15 @@ func (h *HealthHandler) BasicHealth(c *gin.Context) {
 }
 
 // ReadinessCheck handles GET /ready
-// @Summary Readiness check
-// @Description Check if service is ready to accept requests
-// @Tags health
-// @Accept json
-// @Produce json
-// @Success 200 {object} map[string]interface{}
-// @Failure 503 {object} map[string]interface{}
-// @Router /ready [get]
+//
+//	@Summary		Readiness check
+//	@Description	Check if service is ready to accept requests
+//	@Tags			health
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{object}	map[string]interface{}
+//	@Failure		503	{object}	map[string]interface{}
+//	@Router			/ready [get]
 func (h *HealthHandler) ReadinessCheck(c *gin.Context) {
 	h.logger.Debug("Processing readiness check")
 
@@ -107,13 +109,14 @@ func (h *HealthHandler) ReadinessCheck(c *gin.Context) {
 }
 
 // LivenessCheck handles GET /live
-// @Summary Liveness check
-// @Description Check if service is alive
-// @Tags health
-// @Accept json
-// @Produce json
-// @Success 200 {object} map[string]interface{}
-// @Router /live [get]
+//
+//	@Summary		Liveness check
+//	@Description	Check if service is alive
+//	@Tags			health
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{object}	map[string]interface{}
+//	@Router			/live [get]
 func (h *HealthHandler) LivenessCheck(c *gin.Context) {
 	h.logger.Debug("Processing liveness check")
 

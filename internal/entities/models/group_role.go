@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/Kisanlink/kisanlink-db/pkg/base"
@@ -8,16 +9,35 @@ import (
 	"gorm.io/gorm"
 )
 
-// GroupRole represents the relationship between groups and roles within an organization
+// Error constants for validation
+var (
+	ErrInvalidGroupID        = fmt.Errorf("group_id cannot be empty")
+	ErrInvalidRoleID         = fmt.Errorf("role_id cannot be empty")
+	ErrInvalidOrganizationID = fmt.Errorf("organization_id cannot be empty")
+	ErrInvalidAssignedBy     = fmt.Errorf("assigned_by cannot be empty")
+	ErrInvalidTimeRange      = fmt.Errorf("starts_at must be before ends_at")
+)
+
+// ValidationError represents a validation error
+type ValidationError struct {
+	Field   string
+	Message string
+}
+
+func (e *ValidationError) Error() string {
+	return e.Message
+}
+
+// GroupRole represents a role assignment to a group within an organization
 type GroupRole struct {
 	*base.BaseModel
-	GroupID        string     `json:"group_id" gorm:"type:varchar(255);not null;index:idx_group_roles_group_org,priority:1;index:idx_group_roles_group_role,priority:1"`
-	RoleID         string     `json:"role_id" gorm:"type:varchar(255);not null;index:idx_group_roles_role_org,priority:1;index:idx_group_roles_group_role,priority:2"`
-	OrganizationID string     `json:"organization_id" gorm:"type:varchar(255);not null;index:idx_group_roles_group_org,priority:2;index:idx_group_roles_role_org,priority:2"`
+	GroupID        string     `json:"group_id" gorm:"type:varchar(255);not null"`
+	RoleID         string     `json:"role_id" gorm:"type:varchar(255);not null"`
+	OrganizationID string     `json:"organization_id" gorm:"type:varchar(255);not null"`
 	AssignedBy     string     `json:"assigned_by" gorm:"type:varchar(255);not null"`
 	StartsAt       *time.Time `json:"starts_at" gorm:"type:timestamp"`
 	EndsAt         *time.Time `json:"ends_at" gorm:"type:timestamp"`
-	IsActive       bool       `json:"is_active" gorm:"default:true;index:idx_group_roles_active"`
+	IsActive       bool       `json:"is_active" gorm:"default:true"`
 	Metadata       *string    `json:"metadata" gorm:"type:jsonb"`
 
 	// Relationships
@@ -27,10 +47,15 @@ type GroupRole struct {
 	Assigner     *User         `json:"assigner" gorm:"foreignKey:AssignedBy;references:ID"`
 }
 
+// TableName returns the GORM table name for this model
+func (gr *GroupRole) TableName() string {
+	return "group_roles"
+}
+
 // NewGroupRole creates a new GroupRole instance
 func NewGroupRole(groupID, roleID, organizationID, assignedBy string) *GroupRole {
 	return &GroupRole{
-		BaseModel:      base.NewBaseModel("GRPR", hash.Small),
+		BaseModel:      base.NewBaseModel("GRPR", hash.Medium),
 		GroupID:        groupID,
 		RoleID:         roleID,
 		OrganizationID: organizationID,
@@ -67,34 +92,28 @@ func (gr *GroupRole) BeforeSoftDelete() error {
 	return gr.BaseModel.BeforeSoftDelete()
 }
 
-// GORM Hooks - These are for GORM compatibility
-// BeforeCreateGORM is called by GORM before creating a new record
+// GORM Hooks
 func (gr *GroupRole) BeforeCreateGORM(tx *gorm.DB) error {
 	return gr.BeforeCreate()
 }
 
-// BeforeUpdateGORM is called by GORM before updating an existing record
 func (gr *GroupRole) BeforeUpdateGORM(tx *gorm.DB) error {
 	return gr.BeforeUpdate()
 }
 
-// BeforeDeleteGORM is called by GORM before hard deleting a record
 func (gr *GroupRole) BeforeDeleteGORM(tx *gorm.DB) error {
 	return gr.BeforeDelete()
 }
 
 // Helper methods
 func (gr *GroupRole) GetTableIdentifier() string   { return "GRPR" }
-func (gr *GroupRole) GetTableSize() hash.TableSize { return hash.Small }
-
-// TableName returns the GORM table name for this model
-func (gr *GroupRole) TableName() string { return "group_roles" }
+func (gr *GroupRole) GetTableSize() hash.TableSize { return hash.Medium }
 
 // Explicit method implementations to satisfy linter
 func (gr *GroupRole) GetID() string   { return gr.BaseModel.GetID() }
 func (gr *GroupRole) SetID(id string) { gr.BaseModel.SetID(id) }
 
-// IsEffective checks if the group role assignment is currently effective based on time bounds
+// IsEffective checks if the role assignment is currently effective based on time bounds
 func (gr *GroupRole) IsEffective(at time.Time) bool {
 	if !gr.IsActive {
 		return false
@@ -111,22 +130,22 @@ func (gr *GroupRole) IsEffective(at time.Time) bool {
 	return true
 }
 
-// IsCurrentlyEffective checks if the group role assignment is currently effective
+// IsCurrentlyEffective checks if the role assignment is effective at the current time
 func (gr *GroupRole) IsCurrentlyEffective() bool {
 	return gr.IsEffective(time.Now())
 }
 
-// GetResourceType returns the PostgreSQL RBAC resource type for group roles
+// GetResourceType returns the resource type for group roles
 func (gr *GroupRole) GetResourceType() string {
-	return ResourceTypeGroupRole
+	return "aaa/group_role"
 }
 
-// GetObjectID returns the PostgreSQL RBAC object ID for this group role
+// GetObjectID returns the object ID for this group role
 func (gr *GroupRole) GetObjectID() string {
 	return gr.GetID()
 }
 
-// Validate performs basic validation on the GroupRole
+// Validate validates the GroupRole model
 func (gr *GroupRole) Validate() error {
 	if gr.GroupID == "" {
 		return ErrInvalidGroupID
@@ -144,23 +163,4 @@ func (gr *GroupRole) Validate() error {
 		return ErrInvalidTimeRange
 	}
 	return nil
-}
-
-// Custom error types for GroupRole validation
-var (
-	ErrInvalidGroupID        = &ValidationError{Field: "group_id", Message: "group_id cannot be empty"}
-	ErrInvalidRoleID         = &ValidationError{Field: "role_id", Message: "role_id cannot be empty"}
-	ErrInvalidOrganizationID = &ValidationError{Field: "organization_id", Message: "organization_id cannot be empty"}
-	ErrInvalidAssignedBy     = &ValidationError{Field: "assigned_by", Message: "assigned_by cannot be empty"}
-	ErrInvalidTimeRange      = &ValidationError{Field: "time_range", Message: "starts_at cannot be after ends_at"}
-)
-
-// ValidationError represents a validation error
-type ValidationError struct {
-	Field   string
-	Message string
-}
-
-func (e *ValidationError) Error() string {
-	return e.Message
 }

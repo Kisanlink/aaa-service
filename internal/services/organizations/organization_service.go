@@ -10,16 +10,14 @@ import (
 	groupResponses "github.com/Kisanlink/aaa-service/internal/entities/responses/groups"
 	organizationResponses "github.com/Kisanlink/aaa-service/internal/entities/responses/organizations"
 	"github.com/Kisanlink/aaa-service/internal/interfaces"
-	orgRepo "github.com/Kisanlink/aaa-service/internal/repositories/organizations"
-	"github.com/Kisanlink/aaa-service/internal/repositories/users"
 	"github.com/Kisanlink/aaa-service/pkg/errors"
 	"go.uber.org/zap"
 )
 
 // Service handles business logic for organization operations
 type Service struct {
-	orgRepo      *orgRepo.OrganizationRepository
-	userRepo     *users.UserRepository
+	orgRepo      interfaces.OrganizationRepository
+	userRepo     interfaces.UserRepositoryInterface
 	groupRepo    interfaces.GroupRepository
 	groupService interfaces.GroupService
 	validator    interfaces.Validator
@@ -31,8 +29,8 @@ type Service struct {
 
 // NewOrganizationService creates a new organization service instance
 func NewOrganizationService(
-	orgRepo *orgRepo.OrganizationRepository,
-	userRepo *users.UserRepository,
+	orgRepo interfaces.OrganizationRepository,
+	userRepo interfaces.UserRepositoryInterface,
 	groupRepo interfaces.GroupRepository,
 	groupService interfaces.GroupService,
 	validator interfaces.Validator,
@@ -272,9 +270,18 @@ func (s *Service) UpdateOrganization(ctx context.Context, orgID string, req *org
 	}
 	s.auditService.LogOrganizationOperation(ctx, "system", models.AuditActionUpdateOrganization, orgID, "Organization updated successfully", true, auditDetails)
 
-	// Log hierarchy change separately if it occurred
+	// Log hierarchy change separately if it occurred with comprehensive structure change logging
 	if hierarchyChanged {
 		s.auditService.LogHierarchyChange(ctx, "system", models.AuditActionChangeOrganizationHierarchy, models.ResourceTypeOrganization, orgID, oldParentID, newParentID, "Organization hierarchy changed", true, auditDetails)
+
+		// Also log comprehensive structure change for enhanced audit trail
+		hierarchyOldValues := map[string]interface{}{
+			"parent_id": oldParentID,
+		}
+		hierarchyNewValues := map[string]interface{}{
+			"parent_id": newParentID,
+		}
+		s.auditService.LogOrganizationStructureChange(ctx, "system", models.AuditActionChangeOrganizationHierarchy, orgID, models.ResourceTypeOrganization, orgID, hierarchyOldValues, hierarchyNewValues, true, "Organization hierarchy structure changed")
 	}
 
 	// Invalidate cache after successful update
@@ -832,8 +839,7 @@ func (s *Service) AddUserToGroupInOrganization(ctx context.Context, orgID, group
 	}
 
 	// Verify user exists and belongs to organization (this would need user-organization relationship)
-	user := &models.User{}
-	user, err = s.userRepo.GetByID(ctx, userID, user)
+	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil || user == nil {
 		s.logger.Error("User not found", zap.String("user_id", userID))
 		return nil, errors.NewNotFoundError("user not found")
@@ -911,8 +917,7 @@ func (s *Service) GetUserGroupsInOrganization(ctx context.Context, orgID, userID
 	}
 
 	// Verify user exists
-	user := &models.User{}
-	user, err = s.userRepo.GetByID(ctx, userID, user)
+	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil || user == nil {
 		s.logger.Error("User not found", zap.String("user_id", userID))
 		return nil, errors.NewNotFoundError("user not found")
@@ -1118,8 +1123,7 @@ func (s *Service) GetUserEffectiveRolesInOrganization(ctx context.Context, orgID
 	}
 
 	// Verify user exists
-	user := &models.User{}
-	user, err = s.userRepo.GetByID(ctx, userID, user)
+	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil || user == nil {
 		s.logger.Error("User not found", zap.String("user_id", userID))
 		return nil, errors.NewNotFoundError("user not found")

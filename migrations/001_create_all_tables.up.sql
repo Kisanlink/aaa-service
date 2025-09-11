@@ -230,6 +230,31 @@ CREATE TABLE user_roles (
     CONSTRAINT uk_user_roles_user_role UNIQUE (user_id, role_id)
 );
 
+-- Group Roles table (many-to-many relationship between groups and roles)
+CREATE TABLE group_roles (
+    id VARCHAR(255) PRIMARY KEY,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by VARCHAR(255),
+    updated_by VARCHAR(255),
+    deleted_at TIMESTAMP,
+    deleted_by VARCHAR(255),
+    group_id VARCHAR(255) NOT NULL,
+    role_id VARCHAR(255) NOT NULL,
+    organization_id VARCHAR(255) NOT NULL,
+    assigned_by VARCHAR(255) NOT NULL,
+    starts_at TIMESTAMP,
+    ends_at TIMESTAMP,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    metadata JSONB,
+
+    CONSTRAINT fk_group_roles_group FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE,
+    CONSTRAINT fk_group_roles_role FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE,
+    CONSTRAINT fk_group_roles_organization FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE,
+    CONSTRAINT fk_group_roles_assigned_by FOREIGN KEY (assigned_by) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT uk_group_roles_group_role_org UNIQUE (group_id, role_id, organization_id)
+);
+
 -- Role Permissions table (many-to-many relationship)
 CREATE TABLE role_permissions (
     id VARCHAR(255) PRIMARY KEY,

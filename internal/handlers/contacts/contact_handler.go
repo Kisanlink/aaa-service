@@ -36,17 +36,18 @@ func NewContactHandler(
 }
 
 // CreateContact handles POST /contacts
-// @Summary Create a new contact
-// @Description Create a new contact with the provided information
-// @Tags contacts
-// @Accept json
-// @Produce json
-// @Param contact body contacts.CreateContactRequest true "Contact creation data"
-// @Success 201 {object} contacts.ContactResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 409 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
-// @Router /api/v2/contacts [post]
+//
+//	@Summary		Create a new contact
+//	@Description	Create a new contact with the provided information
+//	@Tags			contacts
+//	@Accept			json
+//	@Produce		json
+//	@Param			contact	body		contacts.CreateContactRequest	true	"Contact creation data"
+//	@Success		201		{object}	contacts.ContactResponse
+//	@Failure		400		{object}	responses.ErrorResponse
+//	@Failure		409		{object}	responses.ErrorResponse
+//	@Failure		500		{object}	responses.ErrorResponse
+//	@Router			/api/v2/contacts [post]
 func (h *ContactHandler) CreateContact(c *gin.Context) {
 	h.logger.Info("Creating contact")
 
@@ -92,16 +93,17 @@ func (h *ContactHandler) CreateContact(c *gin.Context) {
 }
 
 // GetContact handles GET /contacts/:id
-// @Summary Get a contact by ID
-// @Description Retrieve a contact by its ID
-// @Tags contacts
-// @Produce json
-// @Param id path string true "Contact ID"
-// @Success 200 {object} contacts.ContactResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 404 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
-// @Router /api/v2/contacts/{id} [get]
+//
+//	@Summary		Get a contact by ID
+//	@Description	Retrieve a contact by its ID
+//	@Tags			contacts
+//	@Produce		json
+//	@Param			id	path		string	true	"Contact ID"
+//	@Success		200	{object}	contacts.ContactResponse
+//	@Failure		400	{object}	responses.ErrorResponse
+//	@Failure		404	{object}	responses.ErrorResponse
+//	@Failure		500	{object}	responses.ErrorResponse
+//	@Router			/api/v2/contacts/{id} [get]
 func (h *ContactHandler) GetContact(c *gin.Context) {
 	contactID := c.Param("id")
 	if contactID == "" {
@@ -127,18 +129,19 @@ func (h *ContactHandler) GetContact(c *gin.Context) {
 }
 
 // UpdateContact handles PUT /contacts/:id
-// @Summary Update a contact
-// @Description Update an existing contact with the provided information
-// @Tags contacts
-// @Accept json
-// @Produce json
-// @Param id path string true "Contact ID"
-// @Param contact body contacts.UpdateContactRequest true "Contact update data"
-// @Success 200 {object} contacts.ContactResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 404 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
-// @Router /api/v2/contacts/{id} [put]
+//
+//	@Summary		Update a contact
+//	@Description	Update an existing contact with the provided information
+//	@Tags			contacts
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path		string							true	"Contact ID"
+//	@Param			contact	body		contacts.UpdateContactRequest	true	"Contact update data"
+//	@Success		200		{object}	contacts.ContactResponse
+//	@Failure		400		{object}	responses.ErrorResponse
+//	@Failure		404		{object}	responses.ErrorResponse
+//	@Failure		500		{object}	responses.ErrorResponse
+//	@Router			/api/v2/contacts/{id} [put]
 func (h *ContactHandler) UpdateContact(c *gin.Context) {
 	contactID := c.Param("id")
 	if contactID == "" {
@@ -190,16 +193,17 @@ func (h *ContactHandler) UpdateContact(c *gin.Context) {
 }
 
 // DeleteContact handles DELETE /contacts/:id
-// @Summary Delete a contact
-// @Description Soft delete a contact by ID
-// @Tags contacts
-// @Produce json
-// @Param id path string true "Contact ID"
-// @Success 204 "Contact deleted successfully"
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 404 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
-// @Router /api/v2/contacts/{id} [delete]
+//
+//	@Summary		Delete a contact
+//	@Description	Soft delete a contact by ID
+//	@Tags			contacts
+//	@Produce		json
+//	@Param			id	path	string	true	"Contact ID"
+//	@Success		204	"Contact deleted successfully"
+//	@Failure		400	{object}	responses.ErrorResponse
+//	@Failure		404	{object}	responses.ErrorResponse
+//	@Failure		500	{object}	responses.ErrorResponse
+//	@Router			/api/v2/contacts/{id} [delete]
 func (h *ContactHandler) DeleteContact(c *gin.Context) {
 	contactID := c.Param("id")
 	if contactID == "" {
@@ -233,16 +237,17 @@ func (h *ContactHandler) DeleteContact(c *gin.Context) {
 }
 
 // ListContacts handles GET /contacts
-// @Summary List contacts
-// @Description Retrieve a paginated list of contacts
-// @Tags contacts
-// @Produce json
-// @Param limit query int false "Number of contacts to return (default: 10, max: 100)"
-// @Param offset query int false "Number of contacts to skip (default: 0)"
-// @Success 200 {object} contacts.ContactListResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
-// @Router /api/v2/contacts [get]
+//
+//	@Summary		List contacts
+//	@Description	Retrieve a paginated list of contacts
+//	@Tags			contacts
+//	@Produce		json
+//	@Param			limit	query		int	false	"Number of contacts to return (default: 10, max: 100)"
+//	@Param			offset	query		int	false	"Number of contacts to skip (default: 0)"
+//	@Success		200		{object}	contacts.ContactListResponse
+//	@Failure		400		{object}	responses.ErrorResponse
+//	@Failure		500		{object}	responses.ErrorResponse
+//	@Router			/api/v2/contacts [get]
 func (h *ContactHandler) ListContacts(c *gin.Context) {
 	// Parse pagination parameters
 	limitStr := c.DefaultQuery("limit", "10")
@@ -275,17 +280,18 @@ func (h *ContactHandler) ListContacts(c *gin.Context) {
 }
 
 // GetContactsByUser handles GET /contacts/user/:userID
-// @Summary Get contacts by user
-// @Description Retrieve contacts for a specific user
-// @Tags contacts
-// @Produce json
-// @Param userID path string true "User ID"
-// @Param limit query int false "Number of contacts to return (default: 10, max: 100)"
-// @Param offset query int false "Number of contacts to skip (default: 0)"
-// @Success 200 {object} contacts.ContactListResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
-// @Router /api/v2/contacts/user/{userID} [get]
+//
+//	@Summary		Get contacts by user
+//	@Description	Retrieve contacts for a specific user
+//	@Tags			contacts
+//	@Produce		json
+//	@Param			userID	path		string	true	"User ID"
+//	@Param			limit	query		int		false	"Number of contacts to return (default: 10, max: 100)"
+//	@Param			offset	query		int		false	"Number of contacts to skip (default: 0)"
+//	@Success		200		{object}	contacts.ContactListResponse
+//	@Failure		400		{object}	responses.ErrorResponse
+//	@Failure		500		{object}	responses.ErrorResponse
+//	@Router			/api/v2/contacts/user/{userID} [get]
 func (h *ContactHandler) GetContactsByUser(c *gin.Context) {
 	userID := c.Param("userID")
 	if userID == "" {
