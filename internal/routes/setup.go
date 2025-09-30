@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/Kisanlink/aaa-service/internal/handlers/admin"
+	"github.com/Kisanlink/aaa-service/internal/handlers/organizations"
 	"github.com/Kisanlink/aaa-service/internal/handlers/permissions"
 	"github.com/Kisanlink/aaa-service/internal/handlers/roles"
 	"github.com/Kisanlink/aaa-service/internal/interfaces"
@@ -26,6 +27,8 @@ type RouteHandlers struct {
 	UserService          interfaces.UserService
 	RoleService          interfaces.RoleService
 	ContactService       interface{} // Using interface{} to avoid circular dependency
+	OrganizationService  interfaces.OrganizationService
+	GroupService         interfaces.GroupService
 	Validator            interfaces.Validator
 	Responder            interfaces.Responder
 	Logger               *zap.Logger
@@ -84,6 +87,29 @@ func SetupAAA(router *gin.Engine, handlers RouteHandlers) {
 	if contactService, ok := handlers.ContactService.(*contactService.ContactService); ok {
 		SetupContactRoutes(protectedAPI, handlers.AuthMiddleware, contactService, handlers.Validator, handlers.Responder, handlers.Logger)
 	}
+
+	// Setup organization routes if services are available
+	//nolint:nestif // Complex conditional is necessary for service availability checks
+	if handlers.OrganizationService != nil && handlers.GroupService != nil {
+		// Import the organization handler package
+		orgHandler := organizations.NewOrganizationHandler(
+			handlers.OrganizationService,
+			handlers.GroupService,
+			handlers.Logger,
+			handlers.Responder,
+		)
+		// Pass the protectedAPI group instead of the router to ensure routes get /api/v2 prefix
+		SetupOrganizationRoutes(protectedAPI, orgHandler, handlers.AuthMiddleware)
+	} else {
+		if handlers.Logger != nil {
+			if handlers.OrganizationService == nil {
+				handlers.Logger.Warn("Organization service not available - organization routes will not be registered")
+			}
+			if handlers.GroupService == nil {
+				handlers.Logger.Warn("Group service not available - organization routes will not be registered")
+			}
+		}
+	}
 }
 
 // SetupMiddleware configures global middleware for the router
@@ -111,6 +137,8 @@ func SetupAAAWrapper(router *gin.Engine, authService *services.AuthService, auth
 		UserService:          nil, // UserService will be set separately if needed
 		RoleService:          nil, // RoleService will be set separately if needed
 		ContactService:       nil, // ContactService will be set separately if needed
+		OrganizationService:  nil, // OrganizationService will be set separately if needed
+		GroupService:         nil, // GroupService will be set separately if needed
 		Validator:            nil, // Validator will be set separately if needed
 		Responder:            nil, // Responder will be set separately if needed
 		Logger:               logger,
@@ -131,6 +159,30 @@ func SetupAAAWithAdmin(router *gin.Engine, authService *services.AuthService, au
 		UserService:          userService,
 		RoleService:          roleService,
 		ContactService:       contactService,
+		OrganizationService:  nil, // Will be set when services are available
+		GroupService:         nil, // Will be set when services are available
+		Validator:            validator,
+		Responder:            responder,
+		Logger:               logger,
+	}
+	SetupAAA(router, handlers)
+}
+
+// SetupAAAWithOrganizations is an extended wrapper that includes organization and group services
+func SetupAAAWithOrganizations(router *gin.Engine, authService *services.AuthService, authzService *services.AuthorizationService, auditService *services.AuditService, authMiddleware *middleware.AuthMiddleware, adminHandler *admin.AdminHandler, roleHandler *roles.RoleHandler, permissionHandler *permissions.PermissionHandler, userService interfaces.UserService, roleService interfaces.RoleService, contactService interface{}, organizationService interfaces.OrganizationService, groupService interfaces.GroupService, validator interfaces.Validator, responder interfaces.Responder, logger *zap.Logger) {
+	handlers := RouteHandlers{
+		AuthService:          authService,
+		AuthorizationService: authzService,
+		AuditService:         auditService,
+		AuthMiddleware:       authMiddleware,
+		AdminHandler:         adminHandler,
+		RoleHandler:          roleHandler,
+		PermissionHandler:    permissionHandler,
+		UserService:          userService,
+		RoleService:          roleService,
+		ContactService:       contactService,
+		OrganizationService:  organizationService,
+		GroupService:         groupService,
 		Validator:            validator,
 		Responder:            responder,
 		Logger:               logger,

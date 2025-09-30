@@ -334,6 +334,8 @@ func (h *Handler) GetOrganizationHierarchy(c *gin.Context) {
 //	@Failure		404	{object}	responses.ErrorResponse
 //	@Failure		500	{object}	responses.ErrorResponse
 //	@Router			/api/v2/organizations/{id}/activate [post]
+//
+//nolint:dupl // Activate and Deactivate have similar structure but different logic
 func (h *Handler) ActivateOrganization(c *gin.Context) {
 	orgID := c.Param("id")
 	if orgID == "" {
@@ -473,7 +475,7 @@ func (h *Handler) GetOrganizationStats(c *gin.Context) {
 //	@Failure		500					{object}	responses.ErrorResponse
 //	@Router			/api/v1/organizations/{orgId}/groups [get]
 func (h *Handler) GetOrganizationGroups(c *gin.Context) {
-	orgID := c.Param("orgId")
+	orgID := c.Param("id")
 	if orgID == "" {
 		h.responder.SendError(c, http.StatusBadRequest, "organization ID is required", nil)
 		return
@@ -543,7 +545,7 @@ func (h *Handler) GetOrganizationGroups(c *gin.Context) {
 //	@Failure		500		{object}	responses.ErrorResponse
 //	@Router			/api/v1/organizations/{orgId}/groups [post]
 func (h *Handler) CreateGroupInOrganization(c *gin.Context) {
-	orgID := c.Param("orgId")
+	orgID := c.Param("id")
 	if orgID == "" {
 		h.responder.SendError(c, http.StatusBadRequest, "organization ID is required", nil)
 		return
@@ -617,7 +619,7 @@ func (h *Handler) CreateGroupInOrganization(c *gin.Context) {
 //	@Failure		500		{object}	responses.ErrorResponse
 //	@Router			/api/v1/organizations/{orgId}/groups/{groupId} [get]
 func (h *Handler) GetGroupInOrganization(c *gin.Context) {
-	orgID := c.Param("orgId")
+	orgID := c.Param("id")
 	groupID := c.Param("groupId")
 
 	if orgID == "" {
@@ -690,7 +692,7 @@ func (h *Handler) GetGroupInOrganization(c *gin.Context) {
 //	@Failure		500		{object}	responses.ErrorResponse
 //	@Router			/api/v1/organizations/{orgId}/groups/{groupId}/users [post]
 func (h *Handler) AddUserToGroupInOrganization(c *gin.Context) {
-	orgID := c.Param("orgId")
+	orgID := c.Param("id")
 	groupID := c.Param("groupId")
 
 	if orgID == "" {
@@ -805,7 +807,7 @@ func (h *Handler) AddUserToGroupInOrganization(c *gin.Context) {
 //	@Failure		500		{object}	responses.ErrorResponse
 //	@Router			/api/v1/organizations/{orgId}/groups/{groupId}/users/{userId} [delete]
 func (h *Handler) RemoveUserFromGroupInOrganization(c *gin.Context) {
-	orgID := c.Param("orgId")
+	orgID := c.Param("id")
 	groupID := c.Param("groupId")
 	principalID := c.Param("userId")
 
@@ -911,7 +913,7 @@ func (h *Handler) RemoveUserFromGroupInOrganization(c *gin.Context) {
 //	@Failure		500		{object}	responses.ErrorResponse
 //	@Router			/api/v1/organizations/{orgId}/groups/{groupId}/users [get]
 func (h *Handler) GetGroupUsersInOrganization(c *gin.Context) {
-	orgID := c.Param("orgId")
+	orgID := c.Param("id")
 	groupID := c.Param("groupId")
 
 	if orgID == "" {
@@ -1008,7 +1010,7 @@ func (h *Handler) GetGroupUsersInOrganization(c *gin.Context) {
 //	@Failure		500		{object}	responses.ErrorResponse
 //	@Router			/api/v1/organizations/{orgId}/users/{userId}/groups [get]
 func (h *Handler) GetUserGroupsInOrganization(c *gin.Context) {
-	orgID := c.Param("orgId")
+	orgID := c.Param("id")
 	principalID := c.Param("userId")
 
 	if orgID == "" {
@@ -1104,7 +1106,7 @@ func (h *Handler) getUserGroupsInOrganization(ctx context.Context, orgID, userID
 //	@Failure		500		{object}	responses.ErrorResponse
 //	@Router			/api/v1/organizations/{orgId}/groups/{groupId}/roles [post]
 func (h *Handler) AssignRoleToGroupInOrganization(c *gin.Context) {
-	orgID := c.Param("orgId")
+	orgID := c.Param("id")
 	groupID := c.Param("groupId")
 
 	if orgID == "" {
@@ -1224,7 +1226,7 @@ func (h *Handler) AssignRoleToGroupInOrganization(c *gin.Context) {
 //	@Failure		500		{object}	responses.ErrorResponse
 //	@Router			/api/v1/organizations/{orgId}/groups/{groupId}/roles/{roleId} [delete]
 func (h *Handler) RemoveRoleFromGroupInOrganization(c *gin.Context) {
-	orgID := c.Param("orgId")
+	orgID := c.Param("id")
 	groupID := c.Param("groupId")
 	roleID := c.Param("roleId")
 
@@ -1331,7 +1333,7 @@ func (h *Handler) RemoveRoleFromGroupInOrganization(c *gin.Context) {
 //	@Failure		500		{object}	responses.ErrorResponse
 //	@Router			/api/v1/organizations/{orgId}/groups/{groupId}/roles [get]
 func (h *Handler) GetGroupRolesInOrganization(c *gin.Context) {
-	orgID := c.Param("orgId")
+	orgID := c.Param("id")
 	groupID := c.Param("groupId")
 
 	if orgID == "" {
@@ -1429,7 +1431,7 @@ func (h *Handler) GetGroupRolesInOrganization(c *gin.Context) {
 //	@Failure		500		{object}	responses.ErrorResponse
 //	@Router			/api/v1/organizations/{orgId}/users/{userId}/effective-roles [get]
 func (h *Handler) GetUserEffectiveRolesInOrganization(c *gin.Context) {
-	orgID := c.Param("orgId")
+	orgID := c.Param("id")
 	userID := c.Param("userId")
 
 	if orgID == "" {
