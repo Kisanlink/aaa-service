@@ -12,6 +12,7 @@ import (
 	userResponses "github.com/Kisanlink/aaa-service/internal/entities/responses/users"
 	"github.com/Kisanlink/aaa-service/internal/interfaces"
 	"github.com/Kisanlink/aaa-service/pkg/errors"
+	"github.com/Kisanlink/kisanlink-db/pkg/base"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
@@ -287,19 +288,35 @@ func (h *AuthHandler) RefreshTokenV2(c *gin.Context) {
 		return
 	}
 
-	// Generate new tokens
+	// Convert user roles for token generation
+	var userRoles []models.UserRole
+	for _, role := range userResponse.Roles {
+		userRole := models.NewUserRole(role.UserID, role.RoleID)
+		userRole.SetID(role.ID)
+		userRole.IsActive = role.IsActive
+		userRole.Role = models.Role{
+			BaseModel:   &base.BaseModel{},
+			Name:        role.Role.Name,
+			Description: role.Role.Description,
+			IsActive:    role.Role.IsActive,
+		}
+		userRole.Role.SetID(role.Role.ID)
+		userRoles = append(userRoles, *userRole)
+	}
+
+	// Generate new tokens with role information
 	username := ""
 	if userResponse.Username != nil {
 		username = *userResponse.Username
 	}
-	newAccessToken, err := helper.GenerateAccessToken(userResponse.ID, nil, username, userResponse.IsValidated)
+	newAccessToken, err := helper.GenerateAccessToken(userResponse.ID, userRoles, username, userResponse.IsValidated)
 	if err != nil {
 		h.logger.Error("Failed to generate new access token", zap.Error(err))
 		h.responder.SendInternalError(c, err)
 		return
 	}
 
-	newRefreshToken, err := helper.GenerateRefreshToken(userResponse.ID, nil, username, userResponse.IsValidated)
+	newRefreshToken, err := helper.GenerateRefreshToken(userResponse.ID, userRoles, username, userResponse.IsValidated)
 	if err != nil {
 		h.logger.Error("Failed to generate new refresh token", zap.Error(err))
 		h.responder.SendInternalError(c, err)
