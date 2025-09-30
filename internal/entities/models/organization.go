@@ -21,14 +21,14 @@ type Organization struct {
 }
 
 const (
-	OrgTable     = "ORG"
+	OrgTable     = "ORGN"
 	OrgTableSize = hash.Medium
 )
 
 // NewOrganization creates a new Organization instance
 func NewOrganization(name, description string) *Organization {
 	return &Organization{
-		BaseModel:   base.NewBaseModel("ORG", hash.Medium),
+		BaseModel:   base.NewBaseModel("ORGN", hash.Medium),
 		Name:        name,
 		Description: description,
 		IsActive:    true,
@@ -58,7 +58,7 @@ func (o *Organization) BeforeDelete() error     { return o.BaseModel.BeforeDelet
 func (o *Organization) BeforeSoftDelete() error { return o.BaseModel.BeforeSoftDelete() }
 
 // Helper methods
-func (o *Organization) GetTableIdentifier() string   { return "ORG" }
+func (o *Organization) GetTableIdentifier() string   { return "ORGN" }
 func (o *Organization) GetTableSize() hash.TableSize { return hash.Medium }
 
 // TableName returns the GORM table name for this model

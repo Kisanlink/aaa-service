@@ -74,7 +74,7 @@ func (gi *GroupInheritance) TableName() string {
 // NewGroup creates a new Group instance
 func NewGroup(name, description, organizationID string) *Group {
 	return &Group{
-		BaseModel:      base.NewBaseModel("GRP", hash.Medium),
+		BaseModel:      base.NewBaseModel("GRPN", hash.Medium),
 		Name:           name,
 		Description:    description,
 		OrganizationID: organizationID,
@@ -131,7 +131,7 @@ func (gi *GroupInheritance) BeforeCreateGORM(tx *gorm.DB) error {
 }
 
 // Helper methods
-func (g *Group) GetTableIdentifier() string   { return "GRP" }
+func (g *Group) GetTableIdentifier() string   { return "GRPN" }
 func (g *Group) GetTableSize() hash.TableSize { return hash.Medium }
 
 // Explicit method implementations to satisfy linter

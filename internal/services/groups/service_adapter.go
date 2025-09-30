@@ -58,9 +58,7 @@ func (a *ServiceAdapter) RemoveMemberFromGroup(ctx context.Context, groupID, pri
 
 // GetGroupMembers adapts the concrete method to the interface
 func (a *ServiceAdapter) GetGroupMembers(ctx context.Context, groupID string, limit, offset int) (interface{}, error) {
-	// This method needs to be implemented in the concrete service
-	a.logger.Warn("GetGroupMembers not fully implemented in concrete service")
-	return nil, &NotImplementedError{Method: "GetGroupMembers"}
+	return a.service.GetGroupMembers(ctx, groupID, limit, offset)
 }
 
 // AssignRoleToGroup adapts the concrete method to the interface
@@ -80,9 +78,7 @@ func (a *ServiceAdapter) GetGroupRoles(ctx context.Context, groupID string) (int
 
 // GetUserEffectiveRoles adapts the concrete method to the interface
 func (a *ServiceAdapter) GetUserEffectiveRoles(ctx context.Context, orgID, userID string) (interface{}, error) {
-	// This method needs to be implemented in the concrete service
-	a.logger.Warn("GetUserEffectiveRoles not fully implemented in concrete service")
-	return nil, &NotImplementedError{Method: "GetUserEffectiveRoles"}
+	return a.service.GetUserEffectiveRoles(ctx, orgID, userID)
 }
 
 // Custom error types for the adapter

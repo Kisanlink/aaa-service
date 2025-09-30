@@ -30,6 +30,18 @@ func NewValidator() interfaces.Validator {
 	if err := validate.RegisterValidation("username", validateUsername); err != nil {
 		panic(fmt.Sprintf("failed to register username validation: %v", err))
 	}
+	if err := validate.RegisterValidation("org_id", validateOrganizationID); err != nil {
+		panic(fmt.Sprintf("failed to register org_id validation: %v", err))
+	}
+	if err := validate.RegisterValidation("group_id", validateGroupID); err != nil {
+		panic(fmt.Sprintf("failed to register group_id validation: %v", err))
+	}
+	if err := validate.RegisterValidation("user_id", validateUserID); err != nil {
+		panic(fmt.Sprintf("failed to register user_id validation: %v", err))
+	}
+	if err := validate.RegisterValidation("role_id", validateRoleID); err != nil {
+		panic(fmt.Sprintf("failed to register role_id validation: %v", err))
+	}
 
 	return &Validator{
 		validate: validate,
@@ -460,4 +472,54 @@ func validateUsername(fl v10.FieldLevel) bool {
 	// Username can only contain letters, numbers, and underscores
 	usernameRegex := regexp.MustCompile(`^[a-zA-Z0-9_]+$`)
 	return usernameRegex.MatchString(username)
+}
+
+func validateOrganizationID(fl v10.FieldLevel) bool {
+	orgID := fl.Field().String()
+	if orgID == "" {
+		return true // Allow empty values (omitempty should handle this)
+	}
+
+	// Organization ID must be in format: ORGN followed by exactly 8 digits
+	// Example: ORGN00000001, ORGN00000002, etc.
+	orgIDRegex := regexp.MustCompile(`^ORGN\d{8}$`)
+	return orgIDRegex.MatchString(orgID)
+}
+
+func validateGroupID(fl v10.FieldLevel) bool {
+	groupID := fl.Field().String()
+	if groupID == "" {
+		return true // Allow empty values (omitempty should handle this)
+	}
+
+	// Group ID can be in two formats:
+	// 1. GRP followed by exactly 8 digits (old format): GRP00000001
+	// 2. GRPN followed by exactly 8 digits (new format): GRPN00000001
+	// Accept both for backward compatibility during migration
+	groupIDRegex := regexp.MustCompile(`^GRP[N]?\d{8}$`)
+	return groupIDRegex.MatchString(groupID)
+}
+
+func validateUserID(fl v10.FieldLevel) bool {
+	userID := fl.Field().String()
+	if userID == "" {
+		return true // Allow empty values (omitempty should handle this)
+	}
+
+	// User ID must be in format: USER followed by exactly 8 digits
+	// Example: USER00000001, USER00000002, etc.
+	userIDRegex := regexp.MustCompile(`^USER\d{8}$`)
+	return userIDRegex.MatchString(userID)
+}
+
+func validateRoleID(fl v10.FieldLevel) bool {
+	roleID := fl.Field().String()
+	if roleID == "" {
+		return true // Allow empty values (omitempty should handle this)
+	}
+
+	// Role ID must be in format: ROLE followed by exactly 8 digits
+	// Example: ROLE00000001, ROLE00000002, etc.
+	roleIDRegex := regexp.MustCompile(`^ROLE\d{8}$`)
+	return roleIDRegex.MatchString(roleID)
 }

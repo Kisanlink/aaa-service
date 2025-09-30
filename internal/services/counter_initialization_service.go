@@ -198,7 +198,7 @@ func (cis *CounterInitializationService) initializeOrganizationCounters(ctx cont
 			zap.Int("count", len(existingIDs)),
 			zap.String("sample_id", existingIDs[0]))
 
-		hash.InitializeGlobalCountersFromDatabase("ORG", existingIDs, hash.Medium)
+		hash.InitializeGlobalCountersFromDatabase("ORGN", existingIDs, hash.Medium)
 	} else {
 		cis.logger.Info("No existing organizations found, skipping organization counter initialization")
 	}

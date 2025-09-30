@@ -81,6 +81,8 @@ type UserService interface {
 	VerifyUserCredentials(ctx context.Context, phone, countryCode string, password, mpin *string) (*userResponses.UserResponse, error)
 	GetUserByPhoneNumber(ctx context.Context, phoneNumber, countryCode string) (*userResponses.UserResponse, error)
 	SoftDeleteUserWithCascade(ctx context.Context, userID, deletedBy string) error
+	GetUserOrganizations(ctx context.Context, userID string) ([]map[string]interface{}, error)
+	GetUserGroups(ctx context.Context, userID string) ([]map[string]interface{}, error)
 }
 
 // AddressService interface for address-related operations

@@ -12,6 +12,7 @@ import (
 	"github.com/Kisanlink/aaa-service/internal/interfaces"
 	"github.com/Kisanlink/aaa-service/pkg/errors"
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 	"go.uber.org/zap"
 )
 
@@ -675,6 +676,232 @@ func (h *Handler) GetGroupInOrganization(c *gin.Context) {
 	h.responder.SendSuccess(c, http.StatusOK, group)
 }
 
+// UpdateGroupInOrganization handles PUT /organizations/:orgId/groups/:groupId
+//
+//	@Summary		Update group in organization
+//	@Description	Update a specific group within an organization (super_admin only)
+//	@Tags			organizations
+//	@Accept			json
+//	@Produce		json
+//	@Param			orgId	path		string										true	"Organization ID"
+//	@Param			groupId	path		string										true	"Group ID"
+//	@Param			request	body		organizations.UpdateOrganizationGroupRequest	true	"Group update data"
+//	@Success		200		{object}	organizations.OrganizationGroupResponse
+//	@Failure		400		{object}	responses.ErrorResponse
+//	@Failure		401		{object}	responses.ErrorResponse
+//	@Failure		403		{object}	responses.ErrorResponse
+//	@Failure		404		{object}	responses.ErrorResponse
+//	@Failure		500		{object}	responses.ErrorResponse
+//	@Router			/api/v1/organizations/{orgId}/groups/{groupId} [put]
+//	@Security		BearerAuth
+func (h *Handler) UpdateGroupInOrganization(c *gin.Context) {
+	orgID := c.Param("id")
+	groupID := c.Param("groupId")
+
+	if orgID == "" {
+		h.responder.SendError(c, http.StatusBadRequest, "organization ID is required", nil)
+		return
+	}
+
+	if groupID == "" {
+		h.responder.SendError(c, http.StatusBadRequest, "group ID is required", nil)
+		return
+	}
+
+	var req orgRequests.UpdateOrganizationGroupRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		h.logger.Error("Failed to bind JSON for group update", zap.Error(err))
+		h.responder.SendError(c, http.StatusBadRequest, "invalid request body", err)
+		return
+	}
+
+	// Extract user ID from context (set by auth middleware)
+	userID, exists := c.Get("user_id")
+	if !exists {
+		h.logger.Error("User ID not found in context")
+		h.responder.SendError(c, http.StatusUnauthorized, "unauthorized", nil)
+		return
+	}
+
+	// Verify organization exists
+	_, err := h.orgService.GetOrganization(c.Request.Context(), orgID)
+	if err != nil {
+		h.logger.Error("Organization not found", zap.Error(err), zap.String("org_id", orgID))
+		if errors.IsNotFoundError(err) {
+			h.responder.SendError(c, http.StatusNotFound, "organization not found", err)
+		} else {
+			h.responder.SendInternalError(c, err)
+		}
+		return
+	}
+
+	// Verify group exists and belongs to the organization
+	existingGroup, err := h.groupService.GetGroup(c.Request.Context(), groupID)
+	if err != nil {
+		h.logger.Error("Group not found", zap.Error(err), zap.String("group_id", groupID))
+		if errors.IsNotFoundError(err) {
+			h.responder.SendError(c, http.StatusNotFound, "group not found", err)
+		} else {
+			h.responder.SendInternalError(c, err)
+		}
+		return
+	}
+
+	// Verify group belongs to the specified organization
+	if groupResponse, ok := existingGroup.(map[string]interface{}); ok {
+		if groupOrgID, exists := groupResponse["organization_id"]; exists {
+			if groupOrgID != orgID {
+				h.logger.Warn("Group does not belong to specified organization",
+					zap.String("group_id", groupID),
+					zap.String("group_org_id", fmt.Sprintf("%v", groupOrgID)),
+					zap.String("requested_org_id", orgID))
+				h.responder.SendError(c, http.StatusNotFound, "group not found in this organization", nil)
+				return
+			}
+		}
+	}
+
+	// Convert to UpdateGroupRequest for the service layer
+	updateGroupReq := &groupRequests.UpdateGroupRequest{
+		Name:        req.Name,
+		Description: req.Description,
+		ParentID:    req.ParentID,
+		IsActive:    req.IsActive,
+	}
+
+	// Update group
+	updatedGroup, err := h.groupService.UpdateGroup(c.Request.Context(), groupID, updateGroupReq)
+	if err != nil {
+		h.logger.Error("Failed to update group",
+			zap.Error(err),
+			zap.String("group_id", groupID),
+			zap.String("org_id", orgID))
+
+		switch {
+		case errors.IsValidationError(err):
+			h.responder.SendValidationError(c, []string{err.Error()})
+		case errors.IsNotFoundError(err):
+			h.responder.SendError(c, http.StatusNotFound, "group not found", err)
+		case errors.IsConflictError(err):
+			h.responder.SendError(c, http.StatusConflict, "conflict", err)
+		default:
+			h.responder.SendInternalError(c, err)
+		}
+		return
+	}
+
+	h.logger.Info("Group updated successfully in organization",
+		zap.String("group_id", groupID),
+		zap.String("org_id", orgID),
+		zap.String("updated_by", userID.(string)))
+
+	h.responder.SendSuccess(c, http.StatusOK, updatedGroup)
+}
+
+// DeleteGroupInOrganization handles DELETE /organizations/:orgId/groups/:groupId
+//
+//	@Summary		Delete group in organization
+//	@Description	Delete a specific group within an organization (super_admin only)
+//	@Tags			organizations
+//	@Produce		json
+//	@Param			orgId	path		string	true	"Organization ID"
+//	@Param			groupId	path		string	true	"Group ID"
+//	@Success		200		{object}	responses.SuccessResponse
+//	@Failure		400		{object}	responses.ErrorResponse
+//	@Failure		401		{object}	responses.ErrorResponse
+//	@Failure		403		{object}	responses.ErrorResponse
+//	@Failure		404		{object}	responses.ErrorResponse
+//	@Failure		500		{object}	responses.ErrorResponse
+//	@Router			/api/v1/organizations/{orgId}/groups/{groupId} [delete]
+//	@Security		BearerAuth
+func (h *Handler) DeleteGroupInOrganization(c *gin.Context) {
+	orgID := c.Param("id")
+	groupID := c.Param("groupId")
+
+	if orgID == "" {
+		h.responder.SendError(c, http.StatusBadRequest, "organization ID is required", nil)
+		return
+	}
+
+	if groupID == "" {
+		h.responder.SendError(c, http.StatusBadRequest, "group ID is required", nil)
+		return
+	}
+
+	// Extract user ID from context (set by auth middleware)
+	userID, exists := c.Get("user_id")
+	if !exists {
+		h.logger.Error("User ID not found in context")
+		h.responder.SendError(c, http.StatusUnauthorized, "unauthorized", nil)
+		return
+	}
+
+	// Verify organization exists
+	_, err := h.orgService.GetOrganization(c.Request.Context(), orgID)
+	if err != nil {
+		h.logger.Error("Organization not found", zap.Error(err), zap.String("org_id", orgID))
+		if errors.IsNotFoundError(err) {
+			h.responder.SendError(c, http.StatusNotFound, "organization not found", err)
+		} else {
+			h.responder.SendInternalError(c, err)
+		}
+		return
+	}
+
+	// Verify group exists and belongs to the organization
+	existingGroup, err := h.groupService.GetGroup(c.Request.Context(), groupID)
+	if err != nil {
+		h.logger.Error("Group not found", zap.Error(err), zap.String("group_id", groupID))
+		if errors.IsNotFoundError(err) {
+			h.responder.SendError(c, http.StatusNotFound, "group not found", err)
+		} else {
+			h.responder.SendInternalError(c, err)
+		}
+		return
+	}
+
+	// Verify group belongs to the specified organization
+	if groupResponse, ok := existingGroup.(map[string]interface{}); ok {
+		if groupOrgID, exists := groupResponse["organization_id"]; exists {
+			if groupOrgID != orgID {
+				h.logger.Warn("Group does not belong to specified organization",
+					zap.String("group_id", groupID),
+					zap.String("group_org_id", fmt.Sprintf("%v", groupOrgID)),
+					zap.String("requested_org_id", orgID))
+				h.responder.SendError(c, http.StatusNotFound, "group not found in this organization", nil)
+				return
+			}
+		}
+	}
+
+	// Delete group
+	err = h.groupService.DeleteGroup(c.Request.Context(), groupID, userID.(string))
+	if err != nil {
+		h.logger.Error("Failed to delete group",
+			zap.Error(err),
+			zap.String("group_id", groupID),
+			zap.String("org_id", orgID))
+
+		switch {
+		case errors.IsNotFoundError(err):
+			h.responder.SendError(c, http.StatusNotFound, "group not found", err)
+		case errors.IsConflictError(err):
+			h.responder.SendError(c, http.StatusConflict, "cannot delete group with active members", err)
+		default:
+			h.responder.SendInternalError(c, err)
+		}
+		return
+	}
+
+	h.logger.Info("Group deleted successfully from organization",
+		zap.String("group_id", groupID),
+		zap.String("org_id", orgID),
+		zap.String("deleted_by", userID.(string)))
+
+	h.responder.SendSuccess(c, http.StatusOK, "group deleted successfully")
+}
+
 // AddUserToGroupInOrganization handles POST /organizations/:orgId/groups/:groupId/users
 //
 //	@Summary		Add user to group in organization
@@ -705,27 +932,41 @@ func (h *Handler) AddUserToGroupInOrganization(c *gin.Context) {
 		return
 	}
 
-	var req groupRequests.AddMemberRequest
+	var req orgRequests.AssignUserToGroupRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		h.logger.Error("Failed to bind JSON for user-group assignment", zap.Error(err))
+		h.logger.Error("Failed to bind JSON for user-group assignment",
+			zap.Error(err),
+			zap.String("org_id", orgID),
+			zap.String("group_id", groupID),
+			zap.Any("request_body", req))
+
+		// Try to extract detailed validation errors
+		if validationErrs, ok := err.(validator.ValidationErrors); ok {
+			var errorMessages []string
+			for _, fieldErr := range validationErrs {
+				errorMessages = append(errorMessages, fmt.Sprintf("field '%s' failed validation '%s'", fieldErr.Field(), fieldErr.Tag()))
+				h.logger.Error("Validation error detail",
+					zap.String("field", fieldErr.Field()),
+					zap.String("tag", fieldErr.Tag()),
+					zap.Any("value", fieldErr.Value()),
+					zap.String("param", fieldErr.Param()))
+			}
+			h.responder.SendValidationError(c, errorMessages)
+			return
+		}
+
 		h.responder.SendError(c, http.StatusBadRequest, "invalid request body", err)
 		return
 	}
 
-	// Set the group ID from URL parameter
-	req.GroupID = groupID
-
 	// Extract user ID from context (set by auth middleware)
-	userID, exists := c.Get("user_id")
+	currentUserID, exists := c.Get("user_id")
 	if !exists {
 		h.logger.Error("User ID not found in context")
 		h.responder.SendError(c, http.StatusUnauthorized, "unauthorized", nil)
 		return
 	}
-
-	// Set the added_by field
-	req.AddedByID = userID.(string)
 
 	// Verify organization exists
 	_, err := h.orgService.GetOrganization(c.Request.Context(), orgID)
@@ -765,8 +1006,18 @@ func (h *Handler) AddUserToGroupInOrganization(c *gin.Context) {
 		}
 	}
 
+	// Convert to AddMemberRequest for the service layer
+	addMemberReq := &groupRequests.AddMemberRequest{
+		GroupID:       groupID,
+		PrincipalID:   req.PrincipalID,
+		PrincipalType: req.PrincipalType,
+		AddedByID:     currentUserID.(string),
+		StartsAt:      req.StartsAt,
+		EndsAt:        req.EndsAt,
+	}
+
 	// Add member to group
-	membership, err := h.groupService.AddMemberToGroup(c.Request.Context(), &req)
+	membership, err := h.groupService.AddMemberToGroup(c.Request.Context(), addMemberReq)
 	if err != nil {
 		h.logger.Error("Failed to add user to group", zap.Error(err))
 
@@ -787,7 +1038,7 @@ func (h *Handler) AddUserToGroupInOrganization(c *gin.Context) {
 		zap.String("org_id", orgID),
 		zap.String("group_id", groupID),
 		zap.String("principal_id", req.PrincipalID),
-		zap.String("added_by", userID.(string)))
+		zap.String("added_by", currentUserID.(string)))
 
 	h.responder.SendSuccess(c, http.StatusCreated, membership)
 }
@@ -1109,30 +1360,37 @@ func (h *Handler) AssignRoleToGroupInOrganization(c *gin.Context) {
 	orgID := c.Param("id")
 	groupID := c.Param("groupId")
 
+	h.logger.Info("AssignRoleToGroupInOrganization called",
+		zap.String("org_id", orgID),
+		zap.String("group_id", groupID))
+
 	if orgID == "" {
+		h.logger.Error("Organization ID missing from URL")
 		h.responder.SendError(c, http.StatusBadRequest, "organization ID is required", nil)
 		return
 	}
 
 	if groupID == "" {
+		h.logger.Error("Group ID missing from URL")
 		h.responder.SendError(c, http.StatusBadRequest, "group ID is required", nil)
 		return
 	}
 
-	var req groupRequests.AssignRoleToGroupRequest
+	var req orgRequests.AssignRoleToGroupRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		h.logger.Error("Failed to bind JSON for role-group assignment", zap.Error(err))
+		h.logger.Error("Failed to bind JSON for role-group assignment",
+			zap.Error(err),
+			zap.String("org_id", orgID),
+			zap.String("group_id", groupID))
 		h.responder.SendError(c, http.StatusBadRequest, "invalid request body", err)
 		return
 	}
 
-	// Validate request with organization and group IDs
-	if err := req.ValidateWithOrgAndGroupID(orgID, groupID); err != nil {
-		h.logger.Error("Request validation failed", zap.Error(err))
-		h.responder.SendValidationError(c, []string{err.Error()})
-		return
-	}
+	h.logger.Info("Request bound successfully",
+		zap.String("role_id", req.RoleID),
+		zap.String("org_id", orgID),
+		zap.String("group_id", groupID))
 
 	// Extract user ID from context (set by auth middleware)
 	userID, exists := c.Get("user_id")
@@ -1185,9 +1443,18 @@ func (h *Handler) AssignRoleToGroupInOrganization(c *gin.Context) {
 	// For now, we'll proceed with the assignment
 
 	// Assign role to group
+	h.logger.Info("Attempting to assign role to group",
+		zap.String("group_id", groupID),
+		zap.String("role_id", req.RoleID),
+		zap.String("assigned_by", userID.(string)))
+
 	roleAssignment, err := h.groupService.AssignRoleToGroup(c.Request.Context(), groupID, req.RoleID, userID.(string))
 	if err != nil {
-		h.logger.Error("Failed to assign role to group", zap.Error(err))
+		h.logger.Error("Failed to assign role to group",
+			zap.Error(err),
+			zap.String("group_id", groupID),
+			zap.String("role_id", req.RoleID),
+			zap.String("error_type", fmt.Sprintf("%T", err)))
 
 		switch {
 		case errors.IsValidationError(err):
@@ -1197,10 +1464,15 @@ func (h *Handler) AssignRoleToGroupInOrganization(c *gin.Context) {
 		case errors.IsNotFoundError(err):
 			h.responder.SendError(c, http.StatusNotFound, "role not found", err)
 		default:
+			h.logger.Error("Unhandled error in role assignment",
+				zap.Error(err),
+				zap.String("error_details", fmt.Sprintf("%+v", err)))
 			h.responder.SendInternalError(c, err)
 		}
 		return
 	}
+
+	h.logger.Info("Role assignment service call completed successfully")
 
 	h.logger.Info("Role assigned to group successfully",
 		zap.String("org_id", orgID),

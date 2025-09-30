@@ -295,7 +295,13 @@ func initializeServer(
 	// Initialize business services
 	_ = services.NewAddressService(addressRepository, cacheService, loggerAdapter, validator) // Available for future use
 	roleService := services.NewRoleService(roleRepository, userRoleRepository, cacheService, loggerAdapter, validator)
-	userService := user.NewService(userRepository, roleRepository, userRoleRepository, cacheService, logger, validator)
+	userServiceInstance := user.NewService(userRepository, roleRepository, userRoleRepository, cacheService, logger, validator)
+
+	// Inject organizational repositories for JWT context enhancement
+	if svc, ok := userServiceInstance.(*user.Service); ok {
+		svc.SetOrganizationalRepositories(groupMembershipRepository, groupRepository, organizationRepository)
+	}
+	userService := userServiceInstance
 
 	// Initialize contact service
 	contactRepository := contactRepo.NewContactRepository(primaryDBManager)

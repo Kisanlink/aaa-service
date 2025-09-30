@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/Kisanlink/aaa-service/internal/handlers/admin"
+	"github.com/Kisanlink/aaa-service/internal/handlers/groups"
 	"github.com/Kisanlink/aaa-service/internal/handlers/organizations"
 	"github.com/Kisanlink/aaa-service/internal/handlers/permissions"
 	"github.com/Kisanlink/aaa-service/internal/handlers/roles"
@@ -58,6 +59,11 @@ func SetupAAA(router *gin.Engine, handlers RouteHandlers) {
 	protectedAPI.Use(handlers.AuthMiddleware.HTTPAuthMiddleware())
 	protectedAPI.Use(middleware.SensitiveOperationRateLimit()) // More restrictive rate limiting
 
+	// V1 API compatibility routes (for backward compatibility)
+	protectedAPIV1 := router.Group("/api/v1")
+	protectedAPIV1.Use(handlers.AuthMiddleware.HTTPAuthMiddleware())
+	protectedAPIV1.Use(middleware.SensitiveOperationRateLimit())
+
 	// Setup route groups
 	SetupHealthRoutes(publicAPI, handlers.Logger)
 
@@ -98,15 +104,25 @@ func SetupAAA(router *gin.Engine, handlers RouteHandlers) {
 			handlers.Logger,
 			handlers.Responder,
 		)
-		// Pass the protectedAPI group instead of the router to ensure routes get /api/v2 prefix
+		// Setup organization routes for both V2 (new) and V1 (backward compatibility)
 		SetupOrganizationRoutes(protectedAPI, orgHandler, handlers.AuthMiddleware)
+		SetupOrganizationRoutes(protectedAPIV1, orgHandler, handlers.AuthMiddleware)
+
+		// Also setup standalone group routes for direct group management
+		groupHandler := groups.NewGroupHandler(
+			handlers.GroupService,
+			handlers.Logger,
+			handlers.Responder,
+		)
+		// Register group routes under /api/v1/groups (as per the existing pattern)
+		RegisterGroupRoutes(router, groupHandler, handlers.AuthMiddleware)
 	} else {
 		if handlers.Logger != nil {
 			if handlers.OrganizationService == nil {
-				handlers.Logger.Warn("Organization service not available - organization routes will not be registered")
+				handlers.Logger.Warn("Organization service not available - organization and group routes will not be registered")
 			}
 			if handlers.GroupService == nil {
-				handlers.Logger.Warn("Group service not available - organization routes will not be registered")
+				handlers.Logger.Warn("Group service not available - organization and group routes will not be registered")
 			}
 		}
 	}

@@ -49,8 +49,8 @@ type UserContext struct {
 	Groups        []GroupContext        `json:"groups"`
 }
 
-// GenerateAccessToken generates a JWT access token with comprehensive organizational context
-func GenerateAccessToken(userID string, userRoles []models.UserRole, username string, isValidated bool) (string, error) {
+// GenerateAccessTokenWithContext generates a JWT access token with comprehensive organizational context
+func GenerateAccessTokenWithContext(userID string, userRoles []models.UserRole, username, phoneNumber, countryCode string, isValidated bool, organizations []OrganizationContext, groups []GroupContext) (string, error) {
 	cfg := config.LoadJWTConfigFromEnv()
 	now := time.Now()
 	iat := now.Add(-cfg.Leeway / 2)
@@ -59,8 +59,6 @@ func GenerateAccessToken(userID string, userRoles []models.UserRole, username st
 
 	// Build enhanced role context with organization and group information
 	roleContexts := make([]RoleContext, len(userRoles))
-	organizationMap := make(map[string]OrganizationContext)
-	groupMap := make(map[string]GroupContext)
 
 	for i, userRole := range userRoles {
 		roleContext := RoleContext{
@@ -86,25 +84,22 @@ func GenerateAccessToken(userID string, userRoles []models.UserRole, username st
 		roleContexts[i] = roleContext
 	}
 
-	// Extract unique organizations and groups from roles
-	organizations := make([]OrganizationContext, 0, len(organizationMap))
-	for _, org := range organizationMap {
-		organizations = append(organizations, org)
-	}
-
-	groups := make([]GroupContext, 0, len(groupMap))
-	for _, group := range groupMap {
-		groups = append(groups, group)
-	}
-
-	// Build comprehensive user context
+	// Build comprehensive user context with provided organizations and groups
 	userContext := UserContext{
 		ID:            userID,
 		Username:      &username,
+		PhoneNumber:   phoneNumber,
+		CountryCode:   countryCode,
 		IsValidated:   isValidated,
 		Roles:         roleContexts,
 		Organizations: organizations,
 		Groups:        groups,
+	}
+
+	// Extract only role IDs for legacy roleIds field (not full objects)
+	roleIDs := make([]string, len(userRoles))
+	for i, userRole := range userRoles {
+		roleIDs[i] = userRole.RoleID
 	}
 
 	claims := jwt.MapClaims{
@@ -127,7 +122,7 @@ func GenerateAccessToken(userID string, userRoles []models.UserRole, username st
 
 		// Legacy fields for backward compatibility
 		"user_id":    userID,
-		"roleIds":    userRoles, // Keep original format for compatibility
+		"roleIds":    roleIDs, // Only role IDs, not full objects
 		"username":   username,
 		"isvalidate": isValidated,
 
@@ -141,6 +136,13 @@ func GenerateAccessToken(userID string, userRoles []models.UserRole, username st
 	return token.SignedString([]byte(cfg.Secret))
 }
 
+// GenerateAccessToken generates a JWT access token (backward compatibility wrapper)
+// This function is kept for backward compatibility. Use GenerateAccessTokenWithContext for full context.
+func GenerateAccessToken(userID string, userRoles []models.UserRole, username string, isValidated bool) (string, error) {
+	// Call the new function with empty organizations and groups
+	return GenerateAccessTokenWithContext(userID, userRoles, username, "", "", isValidated, []OrganizationContext{}, []GroupContext{})
+}
+
 // GenerateRefreshToken generates a long-lived JWT refresh token with minimal context
 func GenerateRefreshToken(userID string, userRoles []models.UserRole, username string, isValidated bool) (string, error) {
 	cfg := config.LoadJWTConfigFromEnv()
@@ -148,6 +150,12 @@ func GenerateRefreshToken(userID string, userRoles []models.UserRole, username s
 	iat := now.Add(-cfg.Leeway / 2)
 	nbf := now.Add(-cfg.Leeway / 2)
 	exp := now.Add(7 * 24 * time.Hour) // 7 days
+
+	// Extract only role IDs for refresh token (minimal data)
+	roleIDs := make([]string, len(userRoles))
+	for i, userRole := range userRoles {
+		roleIDs[i] = userRole.RoleID
+	}
 
 	// Refresh tokens contain minimal information for security
 	claims := jwt.MapClaims{
@@ -169,7 +177,7 @@ func GenerateRefreshToken(userID string, userRoles []models.UserRole, username s
 		"user_id":    userID,
 		"username":   username,
 		"isvalidate": isValidated,
-		"roleIds":    userRoles, // Minimal role info for compatibility
+		"roleIds":    roleIDs, // Only role IDs, not full objects
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)

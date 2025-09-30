@@ -460,7 +460,14 @@ func (s *Service) AddMemberToGroup(ctx context.Context, req interface{}) (interf
 
 	// Validate request
 	if err := s.validator.ValidateStruct(addMemberReq); err != nil {
-		s.logger.Error("Add member validation failed", zap.Error(err))
+		s.logger.Error("Add member validation failed",
+			zap.Error(err),
+			zap.String("group_id", addMemberReq.GroupID),
+			zap.String("principal_id", addMemberReq.PrincipalID),
+			zap.String("principal_type", addMemberReq.PrincipalType),
+			zap.String("added_by_id", addMemberReq.AddedByID),
+			zap.Any("starts_at", addMemberReq.StartsAt),
+			zap.Any("ends_at", addMemberReq.EndsAt))
 		return nil, errors.NewValidationError("invalid request data", err.Error())
 	}
 

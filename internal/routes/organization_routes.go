@@ -28,6 +28,10 @@ func SetupOrganizationRoutes(apiGroup *gin.RouterGroup, orgHandler *organization
 		org.POST("/:id/groups", orgHandler.CreateGroupInOrganization)
 		org.GET("/:id/groups/:groupId", orgHandler.GetGroupInOrganization)
 
+		// Group update/delete - restricted to super_admin only
+		org.PUT("/:id/groups/:groupId", authMiddleware.RequireRole("super_admin"), orgHandler.UpdateGroupInOrganization)
+		org.DELETE("/:id/groups/:groupId", authMiddleware.RequireRole("super_admin"), orgHandler.DeleteGroupInOrganization)
+
 		// User-group management within organization context
 		org.POST("/:id/groups/:groupId/users", orgHandler.AddUserToGroupInOrganization)
 		org.DELETE("/:id/groups/:groupId/users/:userId", orgHandler.RemoveUserFromGroupInOrganization)

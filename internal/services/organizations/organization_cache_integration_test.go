@@ -100,12 +100,12 @@ func TestOrganizationCacheService_CacheAndRetrieveParentHierarchy(t *testing.T) 
 	// Create test parent hierarchy
 	parents := []*models.Organization{
 		{
-			BaseModel: base.NewBaseModel("ORG", hash.Medium),
+			BaseModel: base.NewBaseModel("ORGN", hash.Medium),
 			Name:      "Parent Organization 1",
 			IsActive:  true,
 		},
 		{
-			BaseModel: base.NewBaseModel("ORG", hash.Medium),
+			BaseModel: base.NewBaseModel("ORGN", hash.Medium),
 			Name:      "Parent Organization 2",
 			IsActive:  true,
 		},
@@ -142,12 +142,12 @@ func TestOrganizationCacheService_CacheAndRetrieveChildren(t *testing.T) {
 	// Create test children
 	children := []*models.Organization{
 		{
-			BaseModel: base.NewBaseModel("ORG", hash.Medium),
+			BaseModel: base.NewBaseModel("ORGN", hash.Medium),
 			Name:      "Child Organization 1",
 			IsActive:  true,
 		},
 		{
-			BaseModel: base.NewBaseModel("ORG", hash.Medium),
+			BaseModel: base.NewBaseModel("ORGN", hash.Medium),
 			Name:      "Child Organization 2",
 			IsActive:  false,
 		},

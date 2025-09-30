@@ -356,57 +356,87 @@ definitions:
         type: string
     type: object
   organizations.AssignRoleToGroupRequest:
+    description: Request body for assigning a role to a group in an organization
     properties:
       ends_at:
+        description: Optional role assignment end time
+        example: "2024-12-31T23:59:59Z"
         type: string
       role_id:
+        description: Role ID to assign
+        example: ROLE00000001
         type: string
       starts_at:
+        description: Optional role assignment start time
+        example: "2024-01-01T00:00:00Z"
         type: string
     required:
     - role_id
     type: object
   organizations.AssignUserToGroupRequest:
+    description: Request body for adding a user to a group in an organization
     properties:
       ends_at:
+        description: Optional membership end time
+        example: "2024-12-31T23:59:59Z"
+        type: string
+      principal_id:
+        description: Principal ID (user or service)
+        example: USER00000001
         type: string
       principal_type:
+        description: 'Principal type: user or service'
         enum:
         - user
         - service
+        example: user
         type: string
       starts_at:
-        type: string
-      user_id:
+        description: Optional membership start time
+        example: "2024-01-01T00:00:00Z"
         type: string
     required:
+    - principal_id
     - principal_type
-    - user_id
     type: object
   organizations.CreateOrganizationGroupRequest:
+    description: Request body for creating a group in an organization
     properties:
       description:
+        description: Group description
+        example: Software engineering team members
         maxLength: 1000
         type: string
       name:
+        description: Group name
+        example: Engineering Team
         maxLength: 100
         minLength: 1
         type: string
       parent_id:
+        description: Optional parent group ID
+        example: GRP1234567890123456789
         type: string
     required:
     - name
     type: object
   organizations.CreateOrganizationRequest:
+    description: Request body for creating a new organization
     properties:
       description:
+        description: Organization description
+        example: Leading provider of innovative solutions
         maxLength: 1000
         type: string
       name:
+        description: Organization name
+        example: Acme Corporation
         maxLength: 100
         minLength: 1
         type: string
       parent_id:
+        description: Optional parent organization ID
+        example: ORGN00000001
         type: string
     required:
     - name
@@ -593,18 +623,51 @@ definitions:
       user_count:
         type: integer
     type: object
-  organizations.UpdateOrganizationRequest:
+  organizations.UpdateOrganizationGroupRequest:
+    description: Request body for updating a group in an organization (all fields
+      optional)
     properties:
       description:
+        description: Group description
+        example: Updated team description
         maxLength: 1000
         type: string
       is_active:
+        description: Whether group is active
+        example: true
         type: boolean
       name:
+        description: Group name
+        example: Updated Team Name
         maxLength: 100
         minLength: 1
         type: string
       parent_id:
+        description: Parent group ID
+        example: GRP9876543210987654321
+        type: string
+    type: object
+  organizations.UpdateOrganizationRequest:
+    description: Request body for updating an organization (all fields optional)
+    properties:
+      description:
+        description: Organization description
+        example: Updated description
+        maxLength: 1000
+        type: string
+      is_active:
+        description: Whether organization is active
+        example: true
+        type: boolean
+      name:
+        description: Organization name
+        example: Updated Corp Name
+        maxLength: 100
+        minLength: 1
+        type: string
+      parent_id:
+        description: Parent organization ID
+        example: ORGN00000002
         type: string
     type: object
   organizations.UserEffectiveRolesResponse:
@@ -1857,6 +1920,51 @@ paths:
       tags:
       - organizations
   /api/v1/organizations/{orgId}/groups/{groupId}:
+    delete:
+      description: Delete a specific group within an organization (super_admin only)
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Group ID
+        in: path
+        name: groupId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/responses.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete group in organization
+      tags:
+      - organizations
     get:
       description: Retrieve a specific group within an organization
       parameters:
@@ -1890,6 +1998,59 @@ paths:
           schema:
             $ref: '#/definitions/responses.ErrorResponse'
       summary: Get group in organization
+      tags:
+      - organizations
+    put:
+      consumes:
+      - application/json
+      description: Update a specific group within an organization (super_admin only)
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Group ID
+        in: path
+        name: groupId
+        required: true
+        type: string
+      - description: Group update data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/organizations.UpdateOrganizationGroupRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/organizations.OrganizationGroupResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update group in organization
       tags:
       - organizations
   /api/v1/organizations/{orgId}/groups/{groupId}/roles:

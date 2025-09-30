@@ -123,14 +123,17 @@ func (r *GroupRoleRepository) ExistsByGroupAndRole(ctx context.Context, groupID,
 		Where("group_id", base.OpEqual, groupID).
 		Where("role_id", base.OpEqual, roleID).
 		Where("is_active", base.OpEqual, true).
+		Limit(1, 0). // Only fetch 1 record for efficiency
 		Build()
 
-	count, err := r.BaseFilterableRepository.CountWithFilter(ctx, filter)
+	// Use Find instead of CountWithFilter to work around library bug
+	// where CountWithFilter passes nil model causing "Table not set" error
+	groupRoles, err := r.BaseFilterableRepository.Find(ctx, filter)
 	if err != nil {
 		return false, err
 	}
 
-	return count > 0, nil
+	return len(groupRoles) > 0, nil
 }
 
 // DeactivateByGroupAndRole deactivates a group role assignment

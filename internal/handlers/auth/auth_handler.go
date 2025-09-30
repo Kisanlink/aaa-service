@@ -116,12 +116,56 @@ func (h *AuthHandler) LoginV2(c *gin.Context) {
 		userRoles = append(userRoles, *userRole)
 	}
 
-	// Generate tokens with role information
+	// Get user's organizations and groups for JWT context
+	organizations, err := h.userService.GetUserOrganizations(c.Request.Context(), userResponse.ID)
+	if err != nil {
+		h.logger.Warn("Failed to get user organizations, proceeding with empty list",
+			zap.String("user_id", userResponse.ID),
+			zap.Error(err))
+		organizations = []map[string]interface{}{}
+	}
+
+	groups, err := h.userService.GetUserGroups(c.Request.Context(), userResponse.ID)
+	if err != nil {
+		h.logger.Warn("Failed to get user groups, proceeding with empty list",
+			zap.String("user_id", userResponse.ID),
+			zap.Error(err))
+		groups = []map[string]interface{}{}
+	}
+
+	// Convert organizations and groups to helper types
+	orgContexts := make([]helper.OrganizationContext, len(organizations))
+	for i, org := range organizations {
+		orgContexts[i] = helper.OrganizationContext{
+			ID:   org["id"].(string),
+			Name: org["name"].(string),
+		}
+	}
+
+	groupContexts := make([]helper.GroupContext, len(groups))
+	for i, group := range groups {
+		groupContexts[i] = helper.GroupContext{
+			ID:             group["id"].(string),
+			Name:           group["name"].(string),
+			OrganizationID: group["organization_id"].(string),
+		}
+	}
+
+	// Generate tokens with full context including organizations and groups
 	username := ""
 	if userResponse.Username != nil {
 		username = *userResponse.Username
 	}
-	accessToken, err := helper.GenerateAccessToken(userResponse.ID, userRoles, username, userResponse.IsValidated)
+	accessToken, err := helper.GenerateAccessTokenWithContext(
+		userResponse.ID,
+		userRoles,
+		username,
+		userResponse.PhoneNumber,
+		userResponse.CountryCode,
+		userResponse.IsValidated,
+		orgContexts,
+		groupContexts,
+	)
 	if err != nil {
 		h.logger.Error("Failed to generate access token", zap.Error(err))
 		h.responder.SendInternalError(c, err)
@@ -304,12 +348,56 @@ func (h *AuthHandler) RefreshTokenV2(c *gin.Context) {
 		userRoles = append(userRoles, *userRole)
 	}
 
-	// Generate new tokens with role information
+	// Get user's organizations and groups for JWT context
+	organizations, err := h.userService.GetUserOrganizations(c.Request.Context(), userResponse.ID)
+	if err != nil {
+		h.logger.Warn("Failed to get user organizations, proceeding with empty list",
+			zap.String("user_id", userResponse.ID),
+			zap.Error(err))
+		organizations = []map[string]interface{}{}
+	}
+
+	groups, err := h.userService.GetUserGroups(c.Request.Context(), userResponse.ID)
+	if err != nil {
+		h.logger.Warn("Failed to get user groups, proceeding with empty list",
+			zap.String("user_id", userResponse.ID),
+			zap.Error(err))
+		groups = []map[string]interface{}{}
+	}
+
+	// Convert organizations and groups to helper types
+	orgContexts := make([]helper.OrganizationContext, len(organizations))
+	for i, org := range organizations {
+		orgContexts[i] = helper.OrganizationContext{
+			ID:   org["id"].(string),
+			Name: org["name"].(string),
+		}
+	}
+
+	groupContexts := make([]helper.GroupContext, len(groups))
+	for i, group := range groups {
+		groupContexts[i] = helper.GroupContext{
+			ID:             group["id"].(string),
+			Name:           group["name"].(string),
+			OrganizationID: group["organization_id"].(string),
+		}
+	}
+
+	// Generate new tokens with full context including organizations and groups
 	username := ""
 	if userResponse.Username != nil {
 		username = *userResponse.Username
 	}
-	newAccessToken, err := helper.GenerateAccessToken(userResponse.ID, userRoles, username, userResponse.IsValidated)
+	newAccessToken, err := helper.GenerateAccessTokenWithContext(
+		userResponse.ID,
+		userRoles,
+		username,
+		userResponse.PhoneNumber,
+		userResponse.CountryCode,
+		userResponse.IsValidated,
+		orgContexts,
+		groupContexts,
+	)
 	if err != nil {
 		h.logger.Error("Failed to generate new access token", zap.Error(err))
 		h.responder.SendInternalError(c, err)

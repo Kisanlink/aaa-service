@@ -195,6 +195,156 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Update a specific group within an organization (super_admin only)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "organizations"
+                ],
+                "summary": "Update group in organization",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Group ID",
+                        "name": "groupId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Group update data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/organizations.UpdateOrganizationGroupRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/organizations.OrganizationGroupResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/responses.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/responses.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/responses.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/responses.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/responses.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Delete a specific group within an organization (super_admin only)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "organizations"
+                ],
+                "summary": "Delete group in organization",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Group ID",
+                        "name": "groupId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/responses.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/responses.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/responses.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/responses.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/responses.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/responses.ErrorResponse"
+                        }
+                    }
+                }
             }
         },
         "/api/v1/organizations/{orgId}/groups/{groupId}/roles": {
@@ -4945,84 +5095,114 @@ const docTemplate = `{
             }
         },
         "organizations.AssignRoleToGroupRequest": {
+            "description": "Request body for assigning a role to a group in an organization",
             "type": "object",
             "required": [
                 "role_id"
             ],
             "properties": {
                 "ends_at": {
-                    "type": "string"
+                    "description": "Optional role assignment end time",
+                    "type": "string",
+                    "example": "2024-12-31T23:59:59Z"
                 },
                 "role_id": {
-                    "type": "string"
+                    "description": "Role ID to assign",
+                    "type": "string",
+                    "example": "ROLE00000001"
                 },
                 "starts_at": {
-                    "type": "string"
+                    "description": "Optional role assignment start time",
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
                 }
             }
         },
         "organizations.AssignUserToGroupRequest": {
+            "description": "Request body for adding a user to a group in an organization",
             "type": "object",
             "required": [
-                "principal_type",
-                "user_id"
+                "principal_id",
+                "principal_type"
             ],
             "properties": {
                 "ends_at": {
-                    "type": "string"
+                    "description": "Optional membership end time",
+                    "type": "string",
+                    "example": "2024-12-31T23:59:59Z"
+                },
+                "principal_id": {
+                    "description": "Principal ID (user or service)",
+                    "type": "string",
+                    "example": "USER00000001"
                 },
                 "principal_type": {
+                    "description": "Principal type: user or service",
                     "type": "string",
                     "enum": [
                         "user",
                         "service"
-                    ]
+                    ],
+                    "example": "user"
                 },
                 "starts_at": {
-                    "type": "string"
-                },
-                "user_id": {
-                    "type": "string"
+                    "description": "Optional membership start time",
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
                 }
             }
         },
         "organizations.CreateOrganizationGroupRequest": {
+            "description": "Request body for creating a group in an organization",
             "type": "object",
             "required": [
                 "name"
             ],
             "properties": {
                 "description": {
+                    "description": "Group description",
                     "type": "string",
-                    "maxLength": 1000
+                    "maxLength": 1000,
+                    "example": "Software engineering team members"
                 },
                 "name": {
+                    "description": "Group name",
                     "type": "string",
                     "maxLength": 100,
-                    "minLength": 1
+                    "minLength": 1,
+                    "example": "Engineering Team"
                 },
                 "parent_id": {
-                    "type": "string"
+                    "description": "Optional parent group ID",
+                    "type": "string",
+                    "example": "GRP1234567890123456789"
                 }
             }
         },
         "organizations.CreateOrganizationRequest": {
+            "description": "Request body for creating a new organization",
             "type": "object",
             "required": [
                 "name"
             ],
             "properties": {
                 "description": {
+                    "description": "Organization description",
                     "type": "string",
-                    "maxLength": 1000
+                    "maxLength": 1000,
+                    "example": "Leading provider of innovative solutions"
                 },
                 "name": {
+                    "description": "Organization name",
                     "type": "string",
                     "maxLength": 100,
-                    "minLength": 1
+                    "minLength": 1,
+                    "example": "Acme Corporation"
                 },
                 "parent_id": {
-                    "type": "string"
+                    "description": "Optional parent organization ID",
+                    "type": "string",
+                    "example": "ORGN00000001"
                 }
             }
         },
@@ -5304,23 +5484,61 @@ const docTemplate = `{
                 }
             }
         },
-        "organizations.UpdateOrganizationRequest": {
+        "organizations.UpdateOrganizationGroupRequest": {
+            "description": "Request body for updating a group in an organization (all fields optional)",
             "type": "object",
             "properties": {
                 "description": {
+                    "description": "Group description",
                     "type": "string",
-                    "maxLength": 1000
+                    "maxLength": 1000,
+                    "example": "Updated team description"
                 },
                 "is_active": {
-                    "type": "boolean"
+                    "description": "Whether group is active",
+                    "type": "boolean",
+                    "example": true
                 },
                 "name": {
+                    "description": "Group name",
                     "type": "string",
                     "maxLength": 100,
-                    "minLength": 1
+                    "minLength": 1,
+                    "example": "Updated Team Name"
                 },
                 "parent_id": {
-                    "type": "string"
+                    "description": "Parent group ID",
+                    "type": "string",
+                    "example": "GRP9876543210987654321"
+                }
+            }
+        },
+        "organizations.UpdateOrganizationRequest": {
+            "description": "Request body for updating an organization (all fields optional)",
+            "type": "object",
+            "properties": {
+                "description": {
+                    "description": "Organization description",
+                    "type": "string",
+                    "maxLength": 1000,
+                    "example": "Updated description"
+                },
+                "is_active": {
+                    "description": "Whether organization is active",
+                    "type": "boolean",
+                    "example": true
+                },
+                "name": {
+                    "description": "Organization name",
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 1,
+                    "example": "Updated Corp Name"
+                },
+                "parent_id": {
+                    "description": "Parent organization ID",
+                    "type": "string",
+                    "example": "ORGN00000002"
                 }
             }
         },

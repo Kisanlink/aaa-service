@@ -118,6 +118,22 @@ func (m *MockUserService) SoftDeleteUserWithCascade(ctx context.Context, userID,
 	return args.Error(0)
 }
 
+func (m *MockUserService) GetUserOrganizations(ctx context.Context, userID string) ([]map[string]interface{}, error) {
+	args := m.Called(ctx, userID)
+	if args.Get(0) == nil {
+		return []map[string]interface{}{}, args.Error(1)
+	}
+	return args.Get(0).([]map[string]interface{}), args.Error(1)
+}
+
+func (m *MockUserService) GetUserGroups(ctx context.Context, userID string) ([]map[string]interface{}, error) {
+	args := m.Called(ctx, userID)
+	if args.Get(0) == nil {
+		return []map[string]interface{}{}, args.Error(1)
+	}
+	return args.Get(0).([]map[string]interface{}), args.Error(1)
+}
+
 // MockValidator is a mock implementation of Validator
 type MockValidator struct {
 	mock.Mock
@@ -218,6 +234,8 @@ func TestLoginV2_PasswordAuthentication_Success(t *testing.T) {
 	// Setup mocks
 	mockValidator.On("ValidateStruct", &loginReq).Return(nil)
 	mockUserService.On("VerifyUserCredentials", mock.Anything, "1234567890", "+91", &password, (*string)(nil)).Return(userResponse, nil)
+	mockUserService.On("GetUserOrganizations", mock.Anything, "user-123").Return([]map[string]interface{}{}, nil)
+	mockUserService.On("GetUserGroups", mock.Anything, "user-123").Return([]map[string]interface{}{}, nil)
 	mockResponder.On("SendSuccess", mock.Anything, http.StatusOK, mock.AnythingOfType("*responses.LoginResponse")).Return()
 
 	// Create request
@@ -267,6 +285,8 @@ func TestLoginV2_MPinAuthentication_Success(t *testing.T) {
 	// Setup mocks
 	mockValidator.On("ValidateStruct", &loginReq).Return(nil)
 	mockUserService.On("VerifyUserCredentials", mock.Anything, "1234567890", "+91", (*string)(nil), &mpin).Return(userResponse, nil)
+	mockUserService.On("GetUserOrganizations", mock.Anything, "user-123").Return([]map[string]interface{}{}, nil)
+	mockUserService.On("GetUserGroups", mock.Anything, "user-123").Return([]map[string]interface{}{}, nil)
 	mockResponder.On("SendSuccess", mock.Anything, http.StatusOK, mock.AnythingOfType("*responses.LoginResponse")).Return()
 
 	// Create request
@@ -318,6 +338,8 @@ func TestLoginV2_BothPasswordAndMPin_PrioritizesPassword(t *testing.T) {
 	// Setup mocks - should call with password, not MPIN
 	mockValidator.On("ValidateStruct", &loginReq).Return(nil)
 	mockUserService.On("VerifyUserCredentials", mock.Anything, "1234567890", "+91", &password, &mpin).Return(userResponse, nil)
+	mockUserService.On("GetUserOrganizations", mock.Anything, "user-123").Return([]map[string]interface{}{}, nil)
+	mockUserService.On("GetUserGroups", mock.Anything, "user-123").Return([]map[string]interface{}{}, nil)
 	mockResponder.On("SendSuccess", mock.Anything, http.StatusOK, mock.AnythingOfType("*responses.LoginResponse")).Return()
 
 	// Create request

@@ -176,6 +176,22 @@ func (m *MockUserService) GetUserByPhoneNumber(ctx context.Context, phoneNumber,
 	return args.Get(0).(*userResponses.UserResponse), args.Error(1)
 }
 
+func (m *MockUserService) GetUserOrganizations(ctx context.Context, userID string) ([]map[string]interface{}, error) {
+	args := m.Called(ctx, userID)
+	if args.Get(0) == nil {
+		return []map[string]interface{}{}, args.Error(1)
+	}
+	return args.Get(0).([]map[string]interface{}), args.Error(1)
+}
+
+func (m *MockUserService) GetUserGroups(ctx context.Context, userID string) ([]map[string]interface{}, error) {
+	args := m.Called(ctx, userID)
+	if args.Get(0) == nil {
+		return []map[string]interface{}{}, args.Error(1)
+	}
+	return args.Get(0).([]map[string]interface{}), args.Error(1)
+}
+
 // MockRoleService is a mock implementation of RoleService for testing
 type MockRoleService struct {
 	mock.Mock

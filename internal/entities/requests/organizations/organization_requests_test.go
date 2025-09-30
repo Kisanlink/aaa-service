@@ -87,7 +87,7 @@ func TestAssignUserToGroupRequest_Validate(t *testing.T) {
 		{
 			name: "valid user assignment",
 			request: AssignUserToGroupRequest{
-				UserID:        "550e8400-e29b-41d4-a716-446655440000",
+				PrincipalID:   "550e8400-e29b-41d4-a716-446655440000",
 				PrincipalType: "user",
 				StartsAt:      &now,
 				EndsAt:        &future,
@@ -97,7 +97,7 @@ func TestAssignUserToGroupRequest_Validate(t *testing.T) {
 		{
 			name: "valid service assignment",
 			request: AssignUserToGroupRequest{
-				UserID:        "550e8400-e29b-41d4-a716-446655440000",
+				PrincipalID:   "550e8400-e29b-41d4-a716-446655440000",
 				PrincipalType: "service",
 			},
 			wantErr: false,
@@ -105,7 +105,7 @@ func TestAssignUserToGroupRequest_Validate(t *testing.T) {
 		{
 			name: "empty user ID",
 			request: AssignUserToGroupRequest{
-				UserID:        "",
+				PrincipalID:   "",
 				PrincipalType: "user",
 			},
 			wantErr: true,
@@ -113,7 +113,7 @@ func TestAssignUserToGroupRequest_Validate(t *testing.T) {
 		{
 			name: "invalid user ID format",
 			request: AssignUserToGroupRequest{
-				UserID:        "invalid-uuid",
+				PrincipalID:   "invalid-uuid",
 				PrincipalType: "user",
 			},
 			wantErr: true,
@@ -121,7 +121,7 @@ func TestAssignUserToGroupRequest_Validate(t *testing.T) {
 		{
 			name: "invalid principal type",
 			request: AssignUserToGroupRequest{
-				UserID:        "550e8400-e29b-41d4-a716-446655440000",
+				PrincipalID:   "550e8400-e29b-41d4-a716-446655440000",
 				PrincipalType: "invalid",
 			},
 			wantErr: true,
@@ -129,7 +129,7 @@ func TestAssignUserToGroupRequest_Validate(t *testing.T) {
 		{
 			name: "empty principal type",
 			request: AssignUserToGroupRequest{
-				UserID:        "550e8400-e29b-41d4-a716-446655440000",
+				PrincipalID:   "550e8400-e29b-41d4-a716-446655440000",
 				PrincipalType: "",
 			},
 			wantErr: true,
@@ -140,7 +140,7 @@ func TestAssignUserToGroupRequest_Validate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Note: This test assumes validation is implemented using struct tags
 			// In a real implementation, you would call a validation function
-			assert.NotNil(t, tt.request.UserID)
+			assert.NotNil(t, tt.request.PrincipalID)
 		})
 	}
 }
