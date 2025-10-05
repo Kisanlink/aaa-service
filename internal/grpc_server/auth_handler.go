@@ -12,7 +12,7 @@ import (
 
 // AuthHandler implements the UserServiceV2 gRPC service for authentication
 type AuthHandler struct {
-	pb.UnimplementedUserServiceV2Server
+	pb.UnimplementedUserServiceServer
 	authService *services.AuthService
 	logger      *zap.Logger
 }
@@ -26,7 +26,7 @@ func NewAuthHandler(authService *services.AuthService, logger *zap.Logger) *Auth
 }
 
 // Login authenticates a user and returns JWT tokens
-func (h *AuthHandler) Login(ctx context.Context, req *pb.LoginRequestV2) (*pb.LoginResponseV2, error) {
+func (h *AuthHandler) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResponse, error) {
 	h.logger.Info("gRPC Login request", zap.String("username", req.Username))
 
 	// Convert gRPC request to service request
@@ -41,14 +41,14 @@ func (h *AuthHandler) Login(ctx context.Context, req *pb.LoginRequestV2) (*pb.Lo
 	response, err := h.authService.LoginWithUsername(ctx, loginReq)
 	if err != nil {
 		h.logger.Error("Login failed", zap.String("username", req.Username), zap.Error(err))
-		return &pb.LoginResponseV2{
+		return &pb.LoginResponse{
 			StatusCode: 401,
 			Message:    "Authentication failed",
 		}, status.Error(codes.Unauthenticated, err.Error())
 	}
 
 	// Convert service response to gRPC response
-	grpcResponse := &pb.LoginResponseV2{
+	grpcResponse := &pb.LoginResponse{
 		StatusCode:   200,
 		Message:      "Login successful",
 		AccessToken:  response.AccessToken,
@@ -64,7 +64,7 @@ func (h *AuthHandler) Login(ctx context.Context, req *pb.LoginRequestV2) (*pb.Lo
 }
 
 // Register creates a new user account
-func (h *AuthHandler) Register(ctx context.Context, req *pb.RegisterRequestV2) (*pb.RegisterResponseV2, error) {
+func (h *AuthHandler) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.RegisterResponse, error) {
 	h.logger.Info("gRPC Register request", zap.String("username", req.Username))
 
 	// Convert gRPC request to service request
@@ -82,14 +82,14 @@ func (h *AuthHandler) Register(ctx context.Context, req *pb.RegisterRequestV2) (
 	response, err := h.authService.Register(ctx, registerReq)
 	if err != nil {
 		h.logger.Error("Registration failed", zap.String("username", req.Username), zap.Error(err))
-		return &pb.RegisterResponseV2{
+		return &pb.RegisterResponse{
 			StatusCode: 400,
 			Message:    "Registration failed",
 		}, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	// Convert service response to gRPC response
-	grpcResponse := &pb.RegisterResponseV2{
+	grpcResponse := &pb.RegisterResponse{
 		StatusCode:   201,
 		Message:      "Registration successful",
 		User:         convertUserToGRPC(response),
@@ -102,7 +102,7 @@ func (h *AuthHandler) Register(ctx context.Context, req *pb.RegisterRequestV2) (
 }
 
 // RefreshToken refreshes an access token
-func (h *AuthHandler) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequestV2) (*pb.RefreshTokenResponseV2, error) {
+func (h *AuthHandler) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequest) (*pb.RefreshTokenResponse, error) {
 	h.logger.Info("gRPC RefreshToken request")
 
 	// Note: The gRPC interface doesn't include mPin, but the service requires it
@@ -111,14 +111,14 @@ func (h *AuthHandler) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequ
 	response, err := h.authService.RefreshToken(ctx, req.RefreshToken, "")
 	if err != nil {
 		h.logger.Error("Token refresh failed", zap.Error(err))
-		return &pb.RefreshTokenResponseV2{
+		return &pb.RefreshTokenResponse{
 			StatusCode: 401,
 			Message:    "Token refresh failed",
 		}, status.Error(codes.Unauthenticated, err.Error())
 	}
 
 	// Convert service response to gRPC response
-	grpcResponse := &pb.RefreshTokenResponseV2{
+	grpcResponse := &pb.RefreshTokenResponse{
 		StatusCode:   200,
 		Message:      "Token refreshed successfully",
 		AccessToken:  response.AccessToken,
@@ -131,14 +131,14 @@ func (h *AuthHandler) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequ
 }
 
 // Logout invalidates user tokens
-func (h *AuthHandler) Logout(ctx context.Context, req *pb.LogoutRequestV2) (*pb.LogoutResponseV2, error) {
+func (h *AuthHandler) Logout(ctx context.Context, req *pb.LogoutRequest) (*pb.LogoutResponse, error) {
 	h.logger.Info("gRPC Logout request")
 
 	// Extract user ID from token
 	claims, err := h.authService.ValidateToken(req.AccessToken)
 	if err != nil {
 		h.logger.Error("Invalid token for logout", zap.Error(err))
-		return &pb.LogoutResponseV2{
+		return &pb.LogoutResponse{
 			StatusCode: 401,
 			Message:    "Invalid token",
 		}, status.Error(codes.Unauthenticated, "Invalid token")
@@ -148,13 +148,13 @@ func (h *AuthHandler) Logout(ctx context.Context, req *pb.LogoutRequestV2) (*pb.
 	err = h.authService.Logout(ctx, claims.UserID)
 	if err != nil {
 		h.logger.Error("Logout failed", zap.String("user_id", claims.UserID), zap.Error(err))
-		return &pb.LogoutResponseV2{
+		return &pb.LogoutResponse{
 			StatusCode: 500,
 			Message:    "Logout failed",
 		}, status.Error(codes.Internal, err.Error())
 	}
 
-	grpcResponse := &pb.LogoutResponseV2{
+	grpcResponse := &pb.LogoutResponse{
 		StatusCode: 200,
 		Message:    "Logout successful",
 	}
@@ -164,63 +164,63 @@ func (h *AuthHandler) Logout(ctx context.Context, req *pb.LogoutRequestV2) (*pb.
 }
 
 // GetUser retrieves user information (placeholder implementation)
-func (h *AuthHandler) GetUser(ctx context.Context, req *pb.GetUserRequestV2) (*pb.GetUserResponseV2, error) {
+func (h *AuthHandler) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.GetUserResponse, error) {
 	h.logger.Info("gRPC GetUser request", zap.String("user_id", req.Id))
 
 	// This would typically call a user service
 	// For now, return a placeholder response
-	return &pb.GetUserResponseV2{
+	return &pb.GetUserResponse{
 		StatusCode: 501,
 		Message:    "GetUser not implemented yet",
 	}, status.Error(codes.Unimplemented, "GetUser not implemented yet")
 }
 
 // GetAllUsers retrieves all users (placeholder implementation)
-func (h *AuthHandler) GetAllUsers(ctx context.Context, req *pb.GetAllUsersRequestV2) (*pb.GetAllUsersResponseV2, error) {
+func (h *AuthHandler) GetAllUsers(ctx context.Context, req *pb.GetAllUsersRequest) (*pb.GetAllUsersResponse, error) {
 	h.logger.Info("gRPC GetAllUsers request")
 
 	// This would typically call a user service
 	// For now, return a placeholder response
-	return &pb.GetAllUsersResponseV2{
+	return &pb.GetAllUsersResponse{
 		StatusCode: 501,
 		Message:    "GetAllUsers not implemented yet",
 	}, status.Error(codes.Unimplemented, "GetAllUsers not implemented yet")
 }
 
 // UpdateUser updates user information (placeholder implementation)
-func (h *AuthHandler) UpdateUser(ctx context.Context, req *pb.UpdateUserRequestV2) (*pb.UpdateUserResponseV2, error) {
+func (h *AuthHandler) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest) (*pb.UpdateUserResponse, error) {
 	h.logger.Info("gRPC UpdateUser request", zap.String("user_id", req.Id))
 
 	// This would typically call a user service
 	// For now, return a placeholder response
-	return &pb.UpdateUserResponseV2{
+	return &pb.UpdateUserResponse{
 		StatusCode: 501,
 		Message:    "UpdateUser not implemented yet",
 	}, status.Error(codes.Unimplemented, "UpdateUser not implemented yet")
 }
 
 // DeleteUser deletes a user (placeholder implementation)
-func (h *AuthHandler) DeleteUser(ctx context.Context, req *pb.DeleteUserRequestV2) (*pb.DeleteUserResponseV2, error) {
+func (h *AuthHandler) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest) (*pb.DeleteUserResponse, error) {
 	h.logger.Info("gRPC DeleteUser request", zap.String("user_id", req.Id))
 
 	// This would typically call a user service
 	// For now, return a placeholder response
-	return &pb.DeleteUserResponseV2{
+	return &pb.DeleteUserResponse{
 		StatusCode: 501,
 		Message:    "DeleteUser not implemented yet",
 	}, status.Error(codes.Unimplemented, "DeleteUser not implemented yet")
 }
 
-// Helper function to convert LoginResponse to gRPC UserV2
-func convertUserToGRPC(response *services.LoginResponse) *pb.UserV2 {
+// Helper function to convert LoginResponse to gRPC User
+func convertUserToGRPC(response *services.LoginResponse) *pb.User {
 	if response == nil {
 		return nil
 	}
 
 	user := &response.User
-	userRoles := make([]*pb.UserRoleV2, len(user.Roles))
+	userRoles := make([]*pb.UserRole, len(user.Roles))
 	for i, role := range user.Roles {
-		userRoles[i] = &pb.UserRoleV2{
+		userRoles[i] = &pb.UserRole{
 			Id:     role.ID,
 			UserId: role.UserID,
 			RoleId: role.RoleID,
@@ -238,7 +238,7 @@ func convertUserToGRPC(response *services.LoginResponse) *pb.UserV2 {
 		username = *user.Username
 	}
 
-	return &pb.UserV2{
+	return &pb.User{
 		Id:          user.ID,
 		Username:    username,
 		PhoneNumber: user.PhoneNumber,

@@ -87,47 +87,143 @@ func (e *BadRequestError) Details() []string {
 // Constructor functions
 func NewValidationError(message string, details ...string) *ValidationError {
 	return &ValidationError{
-		message: message,
-		details: details,
+		message: sanitizeErrorMessage(message),
+		details: sanitizeErrorDetails(details),
 	}
 }
 
 func NewNotFoundError(message string) *NotFoundError {
 	return &NotFoundError{
-		message: message,
+		message: sanitizeErrorMessage(message),
 	}
 }
 
 func NewConflictError(message string) *ConflictError {
 	return &ConflictError{
-		message: message,
+		message: sanitizeErrorMessage(message),
 	}
 }
 
 func NewUnauthorizedError(message string) *UnauthorizedError {
 	return &UnauthorizedError{
-		message: message,
+		message: sanitizeErrorMessage(message),
 	}
 }
 
 func NewForbiddenError(message string) *ForbiddenError {
 	return &ForbiddenError{
-		message: message,
+		message: sanitizeErrorMessage(message),
 	}
 }
 
 func NewInternalError(err error) *InternalError {
 	return &InternalError{
 		message: "Internal server error",
-		err:     err,
+		err:     err, // Internal errors are not exposed to clients
 	}
 }
 
 func NewBadRequestError(message string, details ...string) *BadRequestError {
 	return &BadRequestError{
-		message: message,
-		details: details,
+		message: sanitizeErrorMessage(message),
+		details: sanitizeErrorDetails(details),
 	}
+}
+
+// Security error constructors that don't leak sensitive information
+func NewSecureUnauthorizedError() *UnauthorizedError {
+	return &UnauthorizedError{
+		message: "Authentication required",
+	}
+}
+
+func NewSecureForbiddenError() *ForbiddenError {
+	return &ForbiddenError{
+		message: "Access denied",
+	}
+}
+
+func NewSecureNotFoundError(resourceType string) *NotFoundError {
+	return &NotFoundError{
+		message: fmt.Sprintf("%s not found", resourceType),
+	}
+}
+
+func NewSecureValidationError() *ValidationError {
+	return &ValidationError{
+		message: "Invalid input provided",
+		details: []string{},
+	}
+}
+
+// Authentication specific errors that don't leak information
+func NewAuthenticationFailedError() *UnauthorizedError {
+	return &UnauthorizedError{
+		message: "Invalid credentials",
+	}
+}
+
+func NewAccountLockedError() *UnauthorizedError {
+	return &UnauthorizedError{
+		message: "Account temporarily locked due to multiple failed attempts",
+	}
+}
+
+func NewTokenExpiredError() *UnauthorizedError {
+	return &UnauthorizedError{
+		message: "Token has expired",
+	}
+}
+
+func NewInvalidTokenError() *UnauthorizedError {
+	return &UnauthorizedError{
+		message: "Invalid token",
+	}
+}
+
+// Rate limiting errors
+func NewRateLimitError(retryAfter string) *BadRequestError {
+	return &BadRequestError{
+		message: "Rate limit exceeded. Please try again later.",
+		details: []string{fmt.Sprintf("retry_after: %s seconds", retryAfter)},
+	}
+}
+
+// sanitizeErrorMessage removes sensitive information from error messages
+func sanitizeErrorMessage(message string) string {
+	// Remove potential sensitive patterns
+	sensitivePatterns := []string{
+		"password", "token", "secret", "key", "hash",
+		"database", "sql", "connection", "server",
+		"internal", "system", "debug", "trace",
+	}
+
+	lowerMessage := strings.ToLower(message)
+	for _, pattern := range sensitivePatterns {
+		if strings.Contains(lowerMessage, pattern) {
+			// Return a generic message if sensitive information is detected
+			return "An error occurred while processing your request"
+		}
+	}
+
+	// Remove file paths and stack traces
+	if strings.Contains(message, "/") || strings.Contains(message, "\\") {
+		return "An error occurred while processing your request"
+	}
+
+	return message
+}
+
+// sanitizeErrorDetails removes sensitive information from error details
+func sanitizeErrorDetails(details []string) []string {
+	var sanitized []string
+	for _, detail := range details {
+		sanitizedDetail := sanitizeErrorMessage(detail)
+		if sanitizedDetail != "An error occurred while processing your request" {
+			sanitized = append(sanitized, sanitizedDetail)
+		}
+	}
+	return sanitized
 }
 
 // IsErrorType helper functions

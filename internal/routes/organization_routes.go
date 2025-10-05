@@ -7,42 +7,41 @@ import (
 )
 
 // SetupOrganizationRoutes configures organization-related routes
-func SetupOrganizationRoutes(router *gin.Engine, orgHandler *organizations.Handler, authMiddleware *middleware.AuthMiddleware) {
-	// API v1 routes
-	v1 := router.Group("/api/v1")
+// This function accepts a router group (typically the protected API group) and adds organization routes to it
+func SetupOrganizationRoutes(apiGroup *gin.RouterGroup, orgHandler *organizations.Handler, authMiddleware *middleware.AuthMiddleware) {
+	// Organization routes with authentication
+	// Note: The apiGroup is expected to be /api/v2 with auth middleware already applied
+	org := apiGroup.Group("/organizations")
 	{
-		// Organization routes with authentication
-		orgV1 := v1.Group("/organizations")
-		orgV1.Use(authMiddleware.HTTPAuthMiddleware())
-		{
-			orgV1.POST("/", orgHandler.CreateOrganization)
-			orgV1.GET("/", orgHandler.ListOrganizations)
-			orgV1.GET("/:id", orgHandler.GetOrganization)
-			orgV1.PUT("/:id", orgHandler.UpdateOrganization)
-			orgV1.DELETE("/:id", orgHandler.DeleteOrganization)
-			orgV1.GET("/:id/hierarchy", orgHandler.GetOrganizationHierarchy)
-			orgV1.POST("/:id/activate", orgHandler.ActivateOrganization)
-			orgV1.POST("/:id/deactivate", orgHandler.DeactivateOrganization)
-			orgV1.GET("/:id/stats", orgHandler.GetOrganizationStats)
-		}
-	}
+		org.POST("/", orgHandler.CreateOrganization)
+		org.GET("/", orgHandler.ListOrganizations)
+		org.GET("/:id", orgHandler.GetOrganization)
+		org.PUT("/:id", orgHandler.UpdateOrganization)
+		org.DELETE("/:id", orgHandler.DeleteOrganization)
+		org.GET("/:id/hierarchy", orgHandler.GetOrganizationHierarchy)
+		org.POST("/:id/activate", orgHandler.ActivateOrganization)
+		org.POST("/:id/deactivate", orgHandler.DeactivateOrganization)
+		org.GET("/:id/stats", orgHandler.GetOrganizationStats)
 
-	// API v2 routes (if needed for future enhancements)
-	v2 := router.Group("/api/v2")
-	{
-		// Organization routes with authentication
-		orgV2 := v2.Group("/organizations")
-		orgV2.Use(authMiddleware.HTTPAuthMiddleware())
-		{
-			orgV2.POST("/", orgHandler.CreateOrganization)
-			orgV2.GET("/", orgHandler.ListOrganizations)
-			orgV2.GET("/:id", orgHandler.GetOrganization)
-			orgV2.PUT("/:id", orgHandler.UpdateOrganization)
-			orgV2.DELETE("/:id", orgHandler.DeleteOrganization)
-			orgV2.GET("/:id/hierarchy", orgHandler.GetOrganizationHierarchy)
-			orgV2.POST("/:id/activate", orgHandler.ActivateOrganization)
-			orgV2.POST("/:id/deactivate", orgHandler.DeactivateOrganization)
-			orgV2.GET("/:id/stats", orgHandler.GetOrganizationStats)
-		}
+		// Organization-scoped group management routes
+		org.GET("/:id/groups", orgHandler.GetOrganizationGroups)
+		org.POST("/:id/groups", orgHandler.CreateGroupInOrganization)
+		org.GET("/:id/groups/:groupId", orgHandler.GetGroupInOrganization)
+
+		// Group update/delete - restricted to super_admin only
+		org.PUT("/:id/groups/:groupId", authMiddleware.RequireRole("super_admin"), orgHandler.UpdateGroupInOrganization)
+		org.DELETE("/:id/groups/:groupId", authMiddleware.RequireRole("super_admin"), orgHandler.DeleteGroupInOrganization)
+
+		// User-group management within organization context
+		org.POST("/:id/groups/:groupId/users", orgHandler.AddUserToGroupInOrganization)
+		org.DELETE("/:id/groups/:groupId/users/:userId", orgHandler.RemoveUserFromGroupInOrganization)
+		org.GET("/:id/groups/:groupId/users", orgHandler.GetGroupUsersInOrganization)
+		org.GET("/:id/users/:userId/groups", orgHandler.GetUserGroupsInOrganization)
+		org.GET("/:id/users/:userId/effective-roles", orgHandler.GetUserEffectiveRolesInOrganization)
+
+		// Role-group management within organization context
+		org.POST("/:id/groups/:groupId/roles", orgHandler.AssignRoleToGroupInOrganization)
+		org.DELETE("/:id/groups/:groupId/roles/:roleId", orgHandler.RemoveRoleFromGroupInOrganization)
+		org.GET("/:id/groups/:groupId/roles", orgHandler.GetGroupRolesInOrganization)
 	}
 }

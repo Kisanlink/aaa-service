@@ -9,8 +9,9 @@ import (
 	cfg "github.com/Kisanlink/aaa-service/internal/config"
 	"github.com/Kisanlink/aaa-service/internal/interfaces"
 	"github.com/Kisanlink/aaa-service/internal/middleware"
+	auditRepo "github.com/Kisanlink/aaa-service/internal/repositories/audit"
 	"github.com/Kisanlink/aaa-service/internal/services"
-	"github.com/Kisanlink/aaa-service/pkg/proto"
+	pb "github.com/Kisanlink/aaa-service/pkg/proto"
 	"github.com/Kisanlink/kisanlink-db/pkg/db"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -61,8 +62,9 @@ func NewGRPCServer(
 		config.Port = "50051"
 	}
 
-	// Create audit service
-	auditService := services.NewAuditService(dbManager, cacheService, logger)
+	// Create audit repository and service
+	auditRepository := auditRepo.NewAuditRepository(dbManager)
+	auditService := services.NewAuditService(dbManager, auditRepository, cacheService, logger)
 
 	// Create authorization service
 	// Get database connection for authorization service
@@ -185,19 +187,28 @@ func (s *GRPCServer) Stop() {
 
 // registerServices registers all gRPC services
 func (s *GRPCServer) registerServices() {
-	// Create a combined handler that implements both auth and user methods
+	// Register the unified AAA service handler
+	// 	aaaHandler := NewAAAHandler(
+	// 		s.authService,
+	// 		s.authzService,
+	// 		s.auditService,
+	// 		s.userService,
+	// 		s.roleService,
+	// 		s.cacheService,
+	// 		s.logger,
+	// 	)
+	// 	pb.RegisterAAAServiceServer(s.server, aaaHandler)
+
+	// Keep legacy services for backward compatibility
 	combinedHandler := NewCombinedUserHandler(s.authService, s.userService, s.logger)
-	proto.RegisterUserServiceV2Server(s.server, combinedHandler)
+	pb.RegisterUserServiceServer(s.server, combinedHandler)
 
-	// Register authorization service
 	authzHandler := NewAuthorizationHandler(s.authzService, s.logger)
-	proto.RegisterAuthorizationServiceServer(s.server, authzHandler)
+	pb.RegisterAuthorizationServiceServer(s.server, authzHandler)
 
-	// Audit handler is available but not registered
-	// until the corresponding proto service is defined
-	_ = NewAuditHandler(s.auditService, s.logger) // Available for future use
-
-	s.logger.Info("gRPC services registered successfully")
+	s.logger.Info("gRPC services registered successfully",
+		zap.String("primary_service", "AAAService"),
+		zap.Strings("legacy_services", []string{"UserServiceV2", "AuthorizationService"}))
 }
 
 // loggingInterceptor logs gRPC requests

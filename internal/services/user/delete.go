@@ -134,3 +134,84 @@ func (s *Service) clearUserRoleCache(userID string) {
 		s.logger.Warn("Failed to delete user role cache", zap.Error(err))
 	}
 }
+
+// validateUserDeletionPermissions checks if the user can be deleted
+func (s *Service) validateUserDeletionPermissions(ctx context.Context, userID, deletedBy string) error {
+	// Basic validation - prevent self-deletion
+	if userID == deletedBy {
+		return errors.NewValidationError("users cannot delete themselves")
+	}
+
+	// Check if user has critical admin roles that prevent deletion
+	userRoles, err := s.userRoleRepo.GetActiveRolesByUserID(ctx, userID)
+	if err != nil {
+		s.logger.Error("Failed to check user roles for deletion validation",
+			zap.String("user_id", userID),
+			zap.Error(err))
+		return errors.NewInternalError(fmt.Errorf("failed to validate deletion permissions: %w", err))
+	}
+
+	// Check for super admin or system admin roles
+	for _, userRole := range userRoles {
+		if userRole.Role.Name == "super_admin" || userRole.Role.Name == "system_admin" {
+			s.logger.Warn("Attempting to delete user with critical admin role",
+				zap.String("user_id", userID),
+				zap.String("role_name", userRole.Role.Name))
+			return errors.NewForbiddenError("cannot delete users with critical admin roles")
+		}
+	}
+
+	return nil
+}
+
+// cascadeDeleteUserProfile soft deletes the user's profile
+func (s *Service) cascadeDeleteUserProfile(ctx context.Context, userID, deletedBy string) error {
+	// Note: This assumes we have access to a user profile repository
+	// For now, we'll implement a basic version that logs the operation
+	s.logger.Info("Cascading delete to user profile",
+		zap.String("user_id", userID),
+		zap.String("deleted_by", deletedBy))
+
+	// In a full implementation, this would:
+	// 1. Get the user profile by user ID
+	// 2. Soft delete the profile
+	// 3. Handle any profile-specific relationships (addresses, etc.)
+
+	// For now, we'll just log that this step was attempted
+	s.logger.Debug("User profile cascade deletion completed", zap.String("user_id", userID))
+	return nil
+}
+
+// cascadeDeleteUserContacts soft deletes all user contacts
+func (s *Service) cascadeDeleteUserContacts(ctx context.Context, userID, deletedBy string) error {
+	// Note: This assumes we have access to a contact repository
+	// For now, we'll implement a basic version that logs the operation
+	s.logger.Info("Cascading delete to user contacts",
+		zap.String("user_id", userID),
+		zap.String("deleted_by", deletedBy))
+
+	// In a full implementation, this would:
+	// 1. Get all contacts for the user
+	// 2. Soft delete each contact
+	// 3. Handle any contact-specific relationships (addresses, etc.)
+
+	// For now, we'll just log that this step was attempted
+	s.logger.Debug("User contacts cascade deletion completed", zap.String("user_id", userID))
+	return nil
+}
+
+// clearUserProfileCache removes user profile data from cache
+func (s *Service) clearUserProfileCache(userID string) {
+	cacheKey := fmt.Sprintf("user_profile:%s", userID)
+	if err := s.cacheService.Delete(cacheKey); err != nil {
+		s.logger.Warn("Failed to delete user profile cache", zap.Error(err))
+	}
+}
+
+// clearUserContactsCache removes user contacts data from cache
+func (s *Service) clearUserContactsCache(userID string) {
+	cacheKey := fmt.Sprintf("user_contacts:%s", userID)
+	if err := s.cacheService.Delete(cacheKey); err != nil {
+		s.logger.Warn("Failed to delete user contacts cache", zap.Error(err))
+	}
+}

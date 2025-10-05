@@ -36,17 +36,18 @@ func NewActionHandler(
 }
 
 // CreateAction handles POST /actions
-// @Summary Create a new action
-// @Description Create a new action with the provided information
-// @Tags actions
-// @Accept json
-// @Produce json
-// @Param action body actions.CreateActionRequest true "Action creation data"
-// @Success 201 {object} actions.ActionResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 409 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
-// @Router /api/v2/actions [post]
+//
+//	@Summary		Create a new action
+//	@Description	Create a new action with the provided information
+//	@Tags			actions
+//	@Accept			json
+//	@Produce		json
+//	@Param			action	body		actions.CreateActionRequest	true	"Action creation data"
+//	@Success		201		{object}	actions.ActionResponse
+//	@Failure		400		{object}	responses.ErrorResponse
+//	@Failure		409		{object}	responses.ErrorResponse
+//	@Failure		500		{object}	responses.ErrorResponse
+//	@Router			/api/v2/actions [post]
 func (h *ActionHandler) CreateAction(c *gin.Context) {
 	h.logger.Info("Creating action")
 
@@ -92,16 +93,17 @@ func (h *ActionHandler) CreateAction(c *gin.Context) {
 }
 
 // GetAction handles GET /actions/:id
-// @Summary Get an action by ID
-// @Description Retrieve an action by its ID
-// @Tags actions
-// @Produce json
-// @Param id path string true "Action ID"
-// @Success 200 {object} actions.ActionResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 404 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
-// @Router /api/v2/actions/{id} [get]
+//
+//	@Summary		Get an action by ID
+//	@Description	Retrieve an action by its ID
+//	@Tags			actions
+//	@Produce		json
+//	@Param			id	path		string	true	"Action ID"
+//	@Success		200	{object}	actions.ActionResponse
+//	@Failure		400	{object}	responses.ErrorResponse
+//	@Failure		404	{object}	responses.ErrorResponse
+//	@Failure		500	{object}	responses.ErrorResponse
+//	@Router			/api/v2/actions/{id} [get]
 func (h *ActionHandler) GetAction(c *gin.Context) {
 	actionID := c.Param("id")
 	if actionID == "" {
@@ -127,18 +129,19 @@ func (h *ActionHandler) GetAction(c *gin.Context) {
 }
 
 // UpdateAction handles PUT /actions/:id
-// @Summary Update an action
-// @Description Update an existing action with the provided information
-// @Tags actions
-// @Accept json
-// @Produce json
-// @Param id path string true "Action ID"
-// @Param action body actions.UpdateActionRequest true "Action update data"
-// @Success 200 {object} actions.ActionResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 404 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
-// @Router /api/v2/actions/{id} [put]
+//
+//	@Summary		Update an action
+//	@Description	Update an existing action with the provided information
+//	@Tags			actions
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path		string						true	"Action ID"
+//	@Param			action	body		actions.UpdateActionRequest	true	"Action update data"
+//	@Success		200		{object}	actions.ActionResponse
+//	@Failure		400		{object}	responses.ErrorResponse
+//	@Failure		404		{object}	responses.ErrorResponse
+//	@Failure		500		{object}	responses.ErrorResponse
+//	@Router			/api/v2/actions/{id} [put]
 func (h *ActionHandler) UpdateAction(c *gin.Context) {
 	actionID := c.Param("id")
 	if actionID == "" {
@@ -190,16 +193,17 @@ func (h *ActionHandler) UpdateAction(c *gin.Context) {
 }
 
 // DeleteAction handles DELETE /actions/:id
-// @Summary Delete an action
-// @Description Soft delete an action by ID
-// @Tags actions
-// @Produce json
-// @Param id path string true "Action ID"
-// @Success 204 "Action deleted successfully"
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 404 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
-// @Router /api/v2/actions/{id} [delete]
+//
+//	@Summary		Delete an action
+//	@Description	Soft delete an action by ID
+//	@Tags			actions
+//	@Produce		json
+//	@Param			id	path	string	true	"Action ID"
+//	@Success		204	"Action deleted successfully"
+//	@Failure		400	{object}	responses.ErrorResponse
+//	@Failure		404	{object}	responses.ErrorResponse
+//	@Failure		500	{object}	responses.ErrorResponse
+//	@Router			/api/v2/actions/{id} [delete]
 func (h *ActionHandler) DeleteAction(c *gin.Context) {
 	actionID := c.Param("id")
 	if actionID == "" {
@@ -233,16 +237,17 @@ func (h *ActionHandler) DeleteAction(c *gin.Context) {
 }
 
 // ListActions handles GET /actions
-// @Summary List actions
-// @Description Retrieve a paginated list of actions
-// @Tags actions
-// @Produce json
-// @Param limit query int false "Number of actions to return (default: 10, max: 100)"
-// @Param offset query int false "Number of actions to skip (default: 0)"
-// @Success 200 {object} actions.ActionListResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
-// @Router /api/v2/actions [get]
+//
+//	@Summary		List actions
+//	@Description	Retrieve a paginated list of actions
+//	@Tags			actions
+//	@Produce		json
+//	@Param			limit	query		int	false	"Number of actions to return (default: 10, max: 100)"
+//	@Param			offset	query		int	false	"Number of actions to skip (default: 0)"
+//	@Success		200		{object}	actions.ActionListResponse
+//	@Failure		400		{object}	responses.ErrorResponse
+//	@Failure		500		{object}	responses.ErrorResponse
+//	@Router			/api/v2/actions [get]
 func (h *ActionHandler) ListActions(c *gin.Context) {
 	// Parse pagination parameters
 	limitStr := c.DefaultQuery("limit", "10")
@@ -275,17 +280,18 @@ func (h *ActionHandler) ListActions(c *gin.Context) {
 }
 
 // GetActionsByService handles GET /actions/service/:serviceName
-// @Summary Get actions by service
-// @Description Retrieve actions for a specific service
-// @Tags actions
-// @Produce json
-// @Param serviceName path string true "Service name"
-// @Param limit query int false "Number of actions to return (default: 10, max: 100)"
-// @Param offset query int false "Number of actions to skip (default: 0)"
-// @Success 200 {object} actions.ActionListResponse
-// @Failure 400 {object} responses.ErrorResponse
-// @Failure 500 {object} responses.ErrorResponse
-// @Router /api/v2/actions/service/{serviceName} [get]
+//
+//	@Summary		Get actions by service
+//	@Description	Retrieve actions for a specific service
+//	@Tags			actions
+//	@Produce		json
+//	@Param			serviceName	path		string	true	"Service name"
+//	@Param			limit		query		int		false	"Number of actions to return (default: 10, max: 100)"
+//	@Param			offset		query		int		false	"Number of actions to skip (default: 0)"
+//	@Success		200			{object}	actions.ActionListResponse
+//	@Failure		400			{object}	responses.ErrorResponse
+//	@Failure		500			{object}	responses.ErrorResponse
+//	@Router			/api/v2/actions/service/{serviceName} [get]
 func (h *ActionHandler) GetActionsByService(c *gin.Context) {
 	serviceName := c.Param("serviceName")
 	if serviceName == "" {

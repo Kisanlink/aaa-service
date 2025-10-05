@@ -66,6 +66,23 @@ const (
 	AuditActionRestore           = "restore"
 	AuditActionAPICall           = "api_call"
 	AuditActionDatabaseOperation = "database_operation"
+	// Organization operations
+	AuditActionCreateOrganization     = "create_organization"
+	AuditActionUpdateOrganization     = "update_organization"
+	AuditActionDeleteOrganization     = "delete_organization"
+	AuditActionActivateOrganization   = "activate_organization"
+	AuditActionDeactivateOrganization = "deactivate_organization"
+	// Group operations
+	AuditActionCreateGroup       = "create_group"
+	AuditActionUpdateGroup       = "update_group"
+	AuditActionDeleteGroup       = "delete_group"
+	AuditActionAddGroupMember    = "add_group_member"
+	AuditActionRemoveGroupMember = "remove_group_member"
+	AuditActionAssignGroupRole   = "assign_group_role"
+	AuditActionRemoveGroupRole   = "remove_group_role"
+	// Organization hierarchy operations
+	AuditActionChangeOrganizationHierarchy = "change_organization_hierarchy"
+	AuditActionChangeGroupHierarchy        = "change_group_hierarchy"
 )
 
 // NewAuditLog creates a new AuditLog instance

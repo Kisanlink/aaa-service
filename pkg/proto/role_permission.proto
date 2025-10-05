@@ -1,141 +1,271 @@
 syntax = "proto3";
 
-package role_permission;
+package role_permission_v2;
 
-option go_package = "github.com/Kisanlink/aaa-service/pb";
+option go_package = "github.com/Kisanlink/aaa-service/pkg/proto;pb";
 
-// Base message definition (optional, if you want to reuse fields like ID, createdAt, updatedAt)
-message Base {
-    string id = 1;          // UUID as string
-    string created_at = 2;  // ISO 8601 timestamp
-    string updated_at = 3;  // ISO 8601 timestamp
-}
-
-// Role message definition
+// V2 Role model with enhanced fields
 message Role {
-    string id = 1;          // Primary key (UUID as string)
-    string name = 2;        // Unique name
-    string description = 3; // Optional description
+    string id = 1;
+    string name = 2;
+    string description = 3;
+    string status = 4;
+    string created_at = 5;
+    string updated_at = 6;
+    repeated string permissions = 7;
+    repeated string child_roles = 8;
+    string parent_role_id = 9;
+    int32 hierarchy_level = 10;
 }
 
-// Permission message definition
+// V2 Permission model with enhanced fields
 message Permission {
-    string id = 1;          // Primary key (UUID as string)
-    string name = 2;        // Unique name
-    string description = 3; // Optional description
+    string id = 1;
+    string name = 2;
+    string description = 3;
+    string resource = 4;
+    string effect = 5;
+    repeated string actions = 6;
+    string status = 7;
+    string created_at = 8;
+    string updated_at = 9;
 }
 
-// Request messages for Role CRUD operations
+// V2 Role-Permission Connection model
+message RolePermissionConnection {
+    string id = 1;
+    string role_id = 2;
+    string permission_id = 3;
+    string created_at = 4;
+    string updated_at = 5;
+    RoleV2 role = 6;
+    PermissionV2 permission = 7;
+}
+
+// V2 Create Role Request
 message CreateRoleRequest {
-    string name = 1;        // Unique name
-    string description = 2; // Optional description
+    string name = 1;
+    string description = 2;
+    string parent_role_id = 3;
+    repeated string permission_ids = 4;
 }
 
+// V2 Create Role Response
 message CreateRoleResponse {
-    int32 status_code = 1;  // HTTP status code equivalent
-    string message = 2;     // Response message
-    Role role = 3;          // Created role
+    int32 status_code = 1;
+    string message = 2;
+    RoleV2 role = 3;
 }
 
-message GetAllRolesRequest {}
+// V2 Get Role Request
+message GetRoleRequest {
+    string id = 1;
+    bool include_permissions = 2;
+    bool include_child_roles = 3;
+}
 
+// V2 Get Role Response
+message GetRoleResponse {
+    int32 status_code = 1;
+    string message = 2;
+    RoleV2 role = 3;
+}
+
+// V2 Get All Roles Request
+message GetAllRolesRequest {
+    int32 page = 1;
+    int32 per_page = 2;
+    string search = 3;
+    string status = 4;
+    string parent_role_id = 5;
+    bool include_permissions = 6;
+}
+
+// V2 Get All Roles Response
 message GetAllRolesResponse {
-    int32 status_code = 1;  // HTTP status code equivalent
-    string message = 2;     // Response message
-    repeated Role roles = 3; // List of roles
+    int32 status_code = 1;
+    string message = 2;
+    repeated RoleV2 roles = 3;
+    int32 total_count = 4;
+    int32 page = 5;
+    int32 per_page = 6;
 }
 
-message GetRoleByIdRequest {
-    string id = 1;          // Role ID (UUID as string)
-}
-
-message GetRoleByIdResponse {
-    int32 status_code = 1;  // HTTP status code equivalent
-    string message = 2;     // Response message
-    Role role = 3;          // Retrieved role
-}
-
+// V2 Update Role Request
 message UpdateRoleRequest {
-    Role role = 1;          // Role object with updated fields
+    string id = 1;
+    string name = 2;
+    string description = 3;
+    string status = 4;
+    string parent_role_id = 5;
+    repeated string permission_ids = 6;
 }
 
+// V2 Update Role Response
 message UpdateRoleResponse {
-    int32 status_code = 1;  // HTTP status code equivalent
-    string message = 2;     // Response message
-    Role role = 3;          // Updated role
+    int32 status_code = 1;
+    string message = 2;
+    RoleV2 role = 3;
 }
 
+// V2 Delete Role Request
 message DeleteRoleRequest {
-    string id = 1;          // Role ID (UUID as string)
+    string id = 1;
+    bool cascade = 2;
 }
 
+// V2 Delete Role Response
 message DeleteRoleResponse {
-    int32 status_code = 1;  // HTTP status code equivalent
-    string message = 2;     // Response message
+    int32 status_code = 1;
+    string message = 2;
 }
 
-// Request messages for Permission CRUD operations
+// V2 Create Permission Request
 message CreatePermissionRequest {
-    string name = 1;        // Unique name
-    string description = 2; // Optional description
+    string name = 1;
+    string description = 2;
+    string resource = 3;
+    string effect = 4;
+    repeated string actions = 5;
 }
 
+// V2 Create Permission Response
 message CreatePermissionResponse {
-    int32 status_code = 1;  // HTTP status code equivalent
-    string message = 2;     // Response message
-    Permission permission = 3; // Created permission
+    int32 status_code = 1;
+    string message = 2;
+    PermissionV2 permission = 3;
 }
 
-message GetAllPermissionsRequest {}
+// V2 Get Permission Request
+message GetPermissionRequest {
+    string id = 1;
+}
 
+// V2 Get Permission Response
+message GetPermissionResponse {
+    int32 status_code = 1;
+    string message = 2;
+    PermissionV2 permission = 3;
+}
+
+// V2 Get All Permissions Request
+message GetAllPermissionsRequest {
+    int32 page = 1;
+    int32 per_page = 2;
+    string search = 3;
+    string resource = 4;
+    string effect = 5;
+}
+
+// V2 Get All Permissions Response
 message GetAllPermissionsResponse {
-    int32 status_code = 1;  // HTTP status code equivalent
-    string message = 2;     // Response message
-    repeated Permission permissions = 3; // List of permissions
+    int32 status_code = 1;
+    string message = 2;
+    repeated PermissionV2 permissions = 3;
+    int32 total_count = 4;
+    int32 page = 5;
+    int32 per_page = 6;
 }
 
-message GetPermissionByIdRequest {
-    string id = 1;          // Permission ID (UUID as string)
-}
-
-message GetPermissionByIdResponse {
-    int32 status_code = 1;  // HTTP status code equivalent
-    string message = 2;     // Response message
-    Permission permission = 3; // Retrieved permission
-}
-
+// V2 Update Permission Request
 message UpdatePermissionRequest {
-    Permission permission = 1; // Permission object with updated fields
+    string id = 1;
+    string name = 2;
+    string description = 3;
+    string resource = 4;
+    string effect = 5;
+    repeated string actions = 6;
+    string status = 7;
 }
 
+// V2 Update Permission Response
 message UpdatePermissionResponse {
-    int32 status_code = 1;  // HTTP status code equivalent
-    string message = 2;     // Response message
-    Permission permission = 3; // Updated permission
+    int32 status_code = 1;
+    string message = 2;
+    PermissionV2 permission = 3;
 }
 
+// V2 Delete Permission Request
 message DeletePermissionRequest {
-    string id = 1;          // Permission ID (UUID as string)
+    string id = 1;
 }
 
+// V2 Delete Permission Response
 message DeletePermissionResponse {
-    int32 status_code = 1;  // HTTP status code equivalent
-    string message = 2;     // Response message
+    int32 status_code = 1;
+    string message = 2;
 }
 
+// V2 Assign Permission to Role Request
+message AssignPermissionToRoleRequest {
+    string role_id = 1;
+    string permission_id = 2;
+}
 
+// V2 Assign Permission to Role Response
+message AssignPermissionToRoleResponse {
+    int32 status_code = 1;
+    string message = 2;
+    RolePermissionConnectionV2 connection = 3;
+}
+
+// V2 Remove Permission from Role Request
+message RemovePermissionFromRoleRequest {
+    string role_id = 1;
+    string permission_id = 2;
+}
+
+// V2 Remove Permission from Role Response
+message RemovePermissionFromRoleResponse {
+    int32 status_code = 1;
+    string message = 2;
+}
+
+// V2 Get Role Permissions Request
+message GetRolePermissionsRequest {
+    string role_id = 1;
+}
+
+// V2 Get Role Permissions Response
+message GetRolePermissionsResponse {
+    int32 status_code = 1;
+    string message = 2;
+    repeated PermissionV2 permissions = 3;
+}
+
+// V2 Evaluate Permission Request
+message EvaluatePermissionRequest {
+    string user_id = 1;
+    string resource = 2;
+    string action = 3;
+}
+
+// V2 Evaluate Permission Response
+message EvaluatePermissionResponse {
+    int32 status_code = 1;
+    string message = 2;
+    bool allowed = 3;
+    repeated string permissions = 4;
+}
+
+// V2 Role Service
 service RoleService {
-    rpc CreateRole(CreateRoleRequest) returns (CreateRoleResponse);
-    rpc GetAllRoles(GetAllRolesRequest) returns (GetAllRolesResponse);
-    rpc GetRoleById(GetRoleByIdRequest) returns (GetRoleByIdResponse);
-    rpc UpdateRole(UpdateRoleRequest) returns (UpdateRoleResponse);
-    rpc DeleteRole(DeleteRoleRequest) returns (DeleteRoleResponse);
+    rpc CreateRole(CreateRoleRequestV2) returns (CreateRoleResponseV2);
+    rpc GetRole(GetRoleRequestV2) returns (GetRoleResponseV2);
+    rpc GetAllRoles(GetAllRolesRequestV2) returns (GetAllRolesResponseV2);
+    rpc UpdateRole(UpdateRoleRequestV2) returns (UpdateRoleResponseV2);
+    rpc DeleteRole(DeleteRoleRequestV2) returns (DeleteRoleResponseV2);
+    rpc AssignPermissionToRole(AssignPermissionToRoleRequestV2) returns (AssignPermissionToRoleResponseV2);
+    rpc RemovePermissionFromRole(RemovePermissionFromRoleRequestV2) returns (RemovePermissionFromRoleResponseV2);
+    rpc GetRolePermissions(GetRolePermissionsRequestV2) returns (GetRolePermissionsResponseV2);
 }
 
+// V2 Permission Service
 service PermissionService {
-    rpc CreatePermission(CreatePermissionRequest) returns (CreatePermissionResponse);
-    rpc GetAllPermissions(GetAllPermissionsRequest) returns (GetAllPermissionsResponse);
-    rpc GetPermissionById(GetPermissionByIdRequest) returns (GetPermissionByIdResponse);
-    rpc UpdatePermission(UpdatePermissionRequest) returns (UpdatePermissionResponse);
-    rpc DeletePermission(DeletePermissionRequest) returns (DeletePermissionResponse);
+    rpc CreatePermission(CreatePermissionRequestV2) returns (CreatePermissionResponseV2);
+    rpc GetPermission(GetPermissionRequestV2) returns (GetPermissionResponseV2);
+    rpc GetAllPermissions(GetAllPermissionsRequestV2) returns (GetAllPermissionsResponseV2);
+    rpc UpdatePermission(UpdatePermissionRequestV2) returns (UpdatePermissionResponseV2);
+    rpc DeletePermission(DeletePermissionRequestV2) returns (DeletePermissionResponseV2);
+    rpc EvaluatePermission(EvaluatePermissionRequestV2) returns (EvaluatePermissionResponseV2);
 }

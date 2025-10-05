@@ -20,13 +20,20 @@ import (
 	"github.com/Kisanlink/aaa-service/internal/handlers/roles"
 	"github.com/Kisanlink/aaa-service/internal/interfaces"
 	"github.com/Kisanlink/aaa-service/internal/middleware"
+	repositoryAdapters "github.com/Kisanlink/aaa-service/internal/repositories/adapters"
 	addressRepo "github.com/Kisanlink/aaa-service/internal/repositories/addresses"
+	auditRepo "github.com/Kisanlink/aaa-service/internal/repositories/audit"
 	contactRepo "github.com/Kisanlink/aaa-service/internal/repositories/contacts"
+	groupRepo "github.com/Kisanlink/aaa-service/internal/repositories/groups"
+	organizationRepo "github.com/Kisanlink/aaa-service/internal/repositories/organizations"
 	roleRepo "github.com/Kisanlink/aaa-service/internal/repositories/roles"
 	userRepo "github.com/Kisanlink/aaa-service/internal/repositories/users"
 	"github.com/Kisanlink/aaa-service/internal/routes"
 	"github.com/Kisanlink/aaa-service/internal/services"
+	serviceAdapters "github.com/Kisanlink/aaa-service/internal/services/adapters"
 	contactService "github.com/Kisanlink/aaa-service/internal/services/contacts"
+	groupService "github.com/Kisanlink/aaa-service/internal/services/groups"
+	organizationService "github.com/Kisanlink/aaa-service/internal/services/organizations"
 	"github.com/Kisanlink/aaa-service/internal/services/user"
 	"github.com/Kisanlink/aaa-service/migrations"
 	"github.com/Kisanlink/aaa-service/utils"
@@ -39,15 +46,15 @@ import (
 	"gorm.io/gorm"
 )
 
-// @title AAA Service API
-// @version 2.0
-// @description Authentication, Authorization, and Accounting Service with PostgreSQL-based RBAC
-// @host localhost:8080
-// @BasePath /
-// @securityDefinitions.apikey BearerAuth
-// @in header
-// @name Authorization
-// @description Type "Bearer" followed by a space and JWT token.
+//	@title						AAA Service API
+//	@version					2.0
+//	@description				Authentication, Authorization, and Accounting Service with PostgreSQL-based RBAC
+//	@host						localhost:8080
+//	@BasePath					/
+//	@securityDefinitions.apikey	BearerAuth
+//	@in							header
+//	@name						Authorization
+//	@description				Type "Bearer" followed by a space and JWT token.
 
 // runSeedScripts runs all seeding scripts to initialize default data
 func runSeedScripts(ctx context.Context, dbManager *db.DatabaseManager, logger *zap.Logger) error {
@@ -258,6 +265,12 @@ func initializeServer(
 	roleRepository := roleRepo.NewRoleRepository(primaryDBManager)
 	userRoleRepository := roleRepo.NewUserRoleRepository(primaryDBManager)
 
+	// Initialize organization and group repositories
+	organizationRepository := organizationRepo.NewOrganizationRepository(primaryDBManager)
+	groupRepository := groupRepo.NewGroupRepository(primaryDBManager)
+	groupRoleRepository := groupRepo.NewGroupRoleRepository(primaryDBManager)
+	groupMembershipRepository := groupRepo.NewGroupMembershipRepository(primaryDBManager)
+
 	// Initialize cache service
 	// FIX: Check CACHE_DISABLED environment variable to optionally disable Redis
 	var cacheService interfaces.CacheService
@@ -282,21 +295,27 @@ func initializeServer(
 	// Initialize business services
 	_ = services.NewAddressService(addressRepository, cacheService, loggerAdapter, validator) // Available for future use
 	roleService := services.NewRoleService(roleRepository, userRoleRepository, cacheService, loggerAdapter, validator)
-	userService := user.NewService(userRepository, roleRepository, userRoleRepository, cacheService, logger, validator)
+	userServiceInstance := user.NewService(userRepository, roleRepository, userRoleRepository, cacheService, logger, validator)
+
+	// Inject organizational repositories for JWT context enhancement
+	if svc, ok := userServiceInstance.(*user.Service); ok {
+		svc.SetOrganizationalRepositories(groupMembershipRepository, groupRepository, organizationRepository)
+	}
+	userService := userServiceInstance
 
 	// Initialize contact service
 	contactRepository := contactRepo.NewContactRepository(primaryDBManager)
 	contactServiceInstance := contactService.NewContactService(contactRepository, cacheService, loggerAdapter, validator)
 
 	// Initialize handlers
-	roleHandler := roles.NewRoleHandler(roleService, validator, responder, logger)
 	permissionHandler := permissions.NewPermissionHandler(primaryDBManager, validator, responder, logger)
 
 	// Initialize HTTP server
 	httpServer, err := initializeHTTPServer(
 		httpPort, jwtSecret,
 		primaryDBManager, userService, roleService, userRepository, userRoleRepository,
-		cacheService, validator, responder, maintenanceService, logger, roleHandler, permissionHandler, contactServiceInstance,
+		cacheService, validator, responder, maintenanceService, logger, permissionHandler, contactServiceInstance,
+		organizationRepository, groupRepository, groupRoleRepository, groupMembershipRepository, roleRepository,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize HTTP server: %w", err)
@@ -339,9 +358,13 @@ func initializeHTTPServer(
 	responder interfaces.Responder,
 	maintenanceService interfaces.MaintenanceService,
 	logger *zap.Logger,
-	roleHandler *roles.RoleHandler,
 	permissionHandler *permissions.PermissionHandler,
 	contactServiceInstance *contactService.ContactService,
+	organizationRepository *organizationRepo.OrganizationRepository,
+	groupRepository *groupRepo.GroupRepository,
+	groupRoleRepository *groupRepo.GroupRoleRepository,
+	groupMembershipRepository *groupRepo.GroupMembershipRepository,
+	roleRepository *roleRepo.RoleRepository,
 ) (*HTTPServer, error) {
 	// Build auth, authorization, and audit stack
 	auditService, authzService, authService, authMiddleware, auditMiddleware, err := setupAuthStack(
@@ -359,6 +382,45 @@ func initializeHTTPServer(
 		return nil, err
 	}
 
+	// Initialize roleHandler now that auditService is available
+	roleHandler := roles.NewRoleHandler(roleService, validator, responder, auditService, logger)
+
+	// Create repository adapters to handle interface mismatches
+	userRepositoryAdapter := repositoryAdapters.NewUserRepositoryAdapter(userRepository.(*userRepo.UserRepository))
+	groupRepositoryAdapter := repositoryAdapters.NewGroupRepositoryAdapter(groupRepository)
+
+	// Create audit service adapter
+	auditRepository := auditRepo.NewAuditRepository(dbManager)
+	auditServiceConcrete := services.NewAuditService(dbManager, auditRepository, cacheService, logger)
+	auditServiceAdapter := serviceAdapters.NewAuditServiceAdapter(auditServiceConcrete)
+
+	// Initialize organization service with adapters
+	organizationServiceConcrete := organizationService.NewOrganizationService(
+		organizationRepository,
+		userRepositoryAdapter,
+		groupRepositoryAdapter,
+		nil, // groupService will be set after to avoid circular dependency
+		validator,
+		cacheService,
+		auditServiceAdapter,
+		logger,
+	)
+	organizationServiceInstance := organizationService.NewServiceAdapter(organizationServiceConcrete, logger)
+
+	// Initialize group service with adapters
+	groupServiceConcrete := groupService.NewGroupService(
+		groupRepository,
+		groupRoleRepository,
+		groupMembershipRepository,
+		organizationRepository,
+		roleRepository,
+		validator,
+		cacheService,
+		auditServiceAdapter,
+		logger,
+	)
+	groupServiceInstance := groupService.NewServiceAdapter(groupServiceConcrete, logger)
+
 	// Create gin router
 	router := gin.New()
 
@@ -366,7 +428,7 @@ func initializeHTTPServer(
 	setupHTTPMiddleware(router, authMiddleware, auditMiddleware, maintenanceService, responder, logger)
 
 	// Setup routes and docs
-	setupRoutesAndDocs(router, authService, authzService, auditService, authMiddleware, maintenanceService, validator, responder, logger, roleHandler, permissionHandler, userService, roleService, contactServiceInstance)
+	setupRoutesAndDocs(router, authService, authzService, auditService, authMiddleware, maintenanceService, validator, responder, logger, roleHandler, permissionHandler, userService, roleService, contactServiceInstance, organizationServiceInstance, groupServiceInstance)
 
 	return &HTTPServer{
 		router: router,
@@ -387,7 +449,9 @@ func setupAuthStack(
 	logger *zap.Logger,
 	validator interfaces.Validator,
 ) (*services.AuditService, *services.AuthorizationService, *services.AuthService, *middleware.AuthMiddleware, *middleware.AuditMiddleware, error) {
-	auditService := services.NewAuditService(dbManager, cacheService, logger)
+	// Initialize audit repository
+	auditRepository := auditRepo.NewAuditRepository(dbManager)
+	auditService := services.NewAuditService(dbManager, auditRepository, cacheService, logger)
 
 	// Get database connection for authorization service
 	// Use the dbManager interface directly instead of type assertion
@@ -484,12 +548,31 @@ func setupRoutesAndDocs(
 	userService interfaces.UserService,
 	roleService interfaces.RoleService,
 	contactServiceInstance *contactService.ContactService,
+	organizationServiceInstance interfaces.OrganizationService,
+	groupServiceInstance interfaces.GroupService,
 ) {
 	// Create AdminHandler for v2 admin routes
 	adminHandler := admin.NewAdminHandler(maintenanceService, validator, responder, logger)
 
-	// Setup routes using the routes package with AdminHandler
-	routes.SetupAAAWithAdmin(router, authService, authzService, auditService, authMiddleware, adminHandler, roleHandler, permissionHandler, userService, roleService, contactServiceInstance, validator, responder, logger)
+	// Setup routes using the enhanced wrapper that supports organization services
+	routes.SetupAAAWithOrganizations(
+		router,
+		authService,
+		authzService,
+		auditService,
+		authMiddleware,
+		adminHandler,
+		roleHandler,
+		permissionHandler,
+		userService,
+		roleService,
+		contactServiceInstance,
+		organizationServiceInstance,
+		groupServiceInstance,
+		validator,
+		responder,
+		logger,
+	)
 
 	// Serve OpenAPI and Scalar-powered docs UI (gated by env)
 	if getEnv("AAA_ENABLE_DOCS", "true") == "true" {
@@ -518,10 +601,16 @@ func setupRoutesAndDocs(
 		router.GET("/", func(c *gin.Context) {
 			c.Redirect(http.StatusMovedPermanently, "/docs")
 		})
+
+		// Add favicon route to avoid 401 errors
+		router.GET("/favicon.ico", func(c *gin.Context) {
+			c.Status(http.StatusNoContent)
+		})
 	} else {
 		router.GET("/", func(c *gin.Context) {
 			c.String(http.StatusOK, "aaa-service running")
 		})
+		logger.Info("Documentation endpoints disabled (AAA_ENABLE_DOCS=false)")
 	}
 }
 

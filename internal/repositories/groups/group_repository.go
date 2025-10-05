@@ -215,25 +215,33 @@ func (r *GroupRepository) HasActiveMembers(ctx context.Context, groupID string) 
 }
 
 // CreateMembership creates a new group membership
-// TODO: This needs a separate GroupMembershipRepository to be fully implemented
+// Note: This method is deprecated. Use GroupMembershipRepository directly for better separation of concerns.
 func (r *GroupRepository) CreateMembership(ctx context.Context, membership *models.GroupMembership) error {
-	return fmt.Errorf("CreateMembership not fully implemented - needs GroupMembershipRepository")
+	// Create a temporary GroupMembershipRepository instance
+	membershipRepo := NewGroupMembershipRepository(r.dbManager)
+	return membershipRepo.Create(ctx, membership)
 }
 
 // UpdateMembership updates an existing group membership
-// TODO: This needs a separate GroupMembershipRepository to be fully implemented
+// Note: This method is deprecated. Use GroupMembershipRepository directly for better separation of concerns.
 func (r *GroupRepository) UpdateMembership(ctx context.Context, membership *models.GroupMembership) error {
-	return fmt.Errorf("UpdateMembership not fully implemented - needs GroupMembershipRepository")
+	// Create a temporary GroupMembershipRepository instance
+	membershipRepo := NewGroupMembershipRepository(r.dbManager)
+	return membershipRepo.Update(ctx, membership)
 }
 
 // GetMembership retrieves a specific group membership
-// TODO: This needs a separate GroupMembershipRepository to be fully implemented
+// Note: This method is deprecated. Use GroupMembershipRepository directly for better separation of concerns.
 func (r *GroupRepository) GetMembership(ctx context.Context, groupID, principalID string) (*models.GroupMembership, error) {
-	return nil, fmt.Errorf("GetMembership not fully implemented - needs GroupMembershipRepository")
+	// Create a temporary GroupMembershipRepository instance
+	membershipRepo := NewGroupMembershipRepository(r.dbManager)
+	return membershipRepo.GetByGroupAndPrincipal(ctx, groupID, principalID)
 }
 
 // GetGroupMembers retrieves all members of a group with pagination
-// TODO: This needs a separate GroupMembershipRepository to be fully implemented
+// Note: This method is deprecated. Use GroupMembershipRepository directly for better separation of concerns.
 func (r *GroupRepository) GetGroupMembers(ctx context.Context, groupID string, limit, offset int) ([]*models.GroupMembership, error) {
-	return nil, fmt.Errorf("GetGroupMembers not fully implemented - needs GroupMembershipRepository")
+	// Create a temporary GroupMembershipRepository instance
+	membershipRepo := NewGroupMembershipRepository(r.dbManager)
+	return membershipRepo.GetByGroupID(ctx, groupID, limit, offset)
 }

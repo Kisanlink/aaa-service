@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package pb;
 
-option go_package = "github.com/Kisanlink/aaa-service/pb";
+option go_package = "github.com/Kisanlink/aaa-service/pkg/proto;pb";
 
 service Greeter {
     rpc SayHello (HelloRequest) returns (HelloResponse);

@@ -128,6 +128,12 @@ func (s *AuthService) Login(ctx context.Context, req *LoginRequest) (*LoginRespo
 		return nil, errors.NewUnauthorizedError("invalid credentials")
 	}
 
+	// Security check: Ensure user is not deleted
+	if user.DeletedAt != nil {
+		s.logger.Warn("Login attempt for deleted user", zap.String("user_id", user.ID))
+		return nil, errors.NewUnauthorizedError("invalid credentials")
+	}
+
 	// Verify password
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
 		s.logger.Warn("Login attempt with invalid password", zap.String("user_id", user.ID))
@@ -217,6 +223,12 @@ func (s *AuthService) LoginWithUsername(ctx context.Context, req *UsernameLoginR
 	user, err := s.userRepository.GetByUsername(ctx, req.Username)
 	if err != nil {
 		s.logger.Warn("Login attempt with invalid username", zap.String("username", req.Username))
+		return nil, errors.NewUnauthorizedError("invalid credentials")
+	}
+
+	// Security check: Ensure user is not deleted
+	if user.DeletedAt != nil {
+		s.logger.Warn("Login attempt for deleted user", zap.String("user_id", user.ID))
 		return nil, errors.NewUnauthorizedError("invalid credentials")
 	}
 
@@ -410,6 +422,12 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshToken string, mPi
 	user := &models.User{}
 	_, err = s.userRepository.GetByID(ctx, claims.UserID, user)
 	if err != nil {
+		return nil, errors.NewUnauthorizedError("user not found")
+	}
+
+	// Security check: Ensure user is not deleted
+	if user.DeletedAt != nil {
+		s.logger.Warn("Token refresh attempt for deleted user", zap.String("user_id", user.ID))
 		return nil, errors.NewUnauthorizedError("user not found")
 	}
 
@@ -695,7 +713,7 @@ func (s *AuthService) validateEmailCode(ctx context.Context, userID, code string
 	return nil
 }
 
-// SetMPin sets or updates the user's mPin
+// SetMPin sets the user's mPin (only if not already set)
 func (s *AuthService) SetMPin(ctx context.Context, userID string, mPin string, currentPassword string) error {
 	// Get user
 	user := &models.User{}
@@ -704,8 +722,25 @@ func (s *AuthService) SetMPin(ctx context.Context, userID string, mPin string, c
 		return errors.NewNotFoundError("user not found")
 	}
 
+	// Security check: Ensure user is not deleted
+	if user.DeletedAt != nil {
+		s.logger.Warn("SetMPin attempt for deleted user", zap.String("user_id", userID))
+		return errors.NewNotFoundError("user not found")
+	}
+
+	// Check if mPin is already set
+	if user.MPin != nil && *user.MPin != "" {
+		return errors.NewConflictError("mPin is already set. Use update-mpin endpoint to change it")
+	}
+
+	// Verify current password is required
+	if currentPassword == "" {
+		return errors.NewValidationError("current password is required to set mPin")
+	}
+
 	// Verify current password
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(currentPassword)); err != nil {
+		s.logger.Warn("Invalid password during mPin setup", zap.String("user_id", userID))
 		return errors.NewUnauthorizedError("invalid password")
 	}
 
@@ -724,11 +759,60 @@ func (s *AuthService) SetMPin(ctx context.Context, userID string, mPin string, c
 	// Audit the action
 	if s.auditService != nil {
 		s.auditService.LogUserAction(ctx, userID, "set_mpin", "user", userID, map[string]interface{}{
-			"action": "mPin set/updated",
+			"action": "mPin set",
 		})
 	}
 
 	s.logger.Info("mPin set successfully", zap.String("user_id", userID))
+	return nil
+}
+
+// UpdateMPin updates the user's existing mPin
+func (s *AuthService) UpdateMPin(ctx context.Context, userID string, currentMPin string, newMPin string) error {
+	// Get user
+	user := &models.User{}
+	_, err := s.userRepository.GetByID(ctx, userID, user)
+	if err != nil {
+		return errors.NewNotFoundError("user not found")
+	}
+
+	// Security check: Ensure user is not deleted
+	if user.DeletedAt != nil {
+		s.logger.Warn("UpdateMPin attempt for deleted user", zap.String("user_id", userID))
+		return errors.NewNotFoundError("user not found")
+	}
+
+	// Check if mPin is set
+	if user.MPin == nil || *user.MPin == "" {
+		return errors.NewNotFoundError("mPin not set for this user. Use set-mpin endpoint first")
+	}
+
+	// Verify current mPin
+	if err := bcrypt.CompareHashAndPassword([]byte(*user.MPin), []byte(currentMPin)); err != nil {
+		s.logger.Warn("Invalid current mPin during update", zap.String("user_id", userID))
+		return errors.NewUnauthorizedError("invalid current mPin")
+	}
+
+	// Hash the new mPin
+	hashedMPin, err := bcrypt.GenerateFromPassword([]byte(newMPin), bcrypt.DefaultCost)
+	if err != nil {
+		return errors.NewInternalError(fmt.Errorf("failed to hash new mPin: %w", err))
+	}
+
+	// Update user's mPin
+	user.SetMPin(string(hashedMPin))
+	if err := s.userRepository.Update(ctx, user); err != nil {
+		return errors.NewInternalError(fmt.Errorf("failed to update mPin: %w", err))
+	}
+
+	// Audit the action
+	if s.auditService != nil {
+		s.auditService.LogUserAction(ctx, userID, "update_mpin", "user", userID, map[string]interface{}{
+			"action": "mPin updated",
+		})
+	}
+
+	s.logger.Info("mPin updated successfully", zap.String("user_id", userID))
 	return nil
 }
 
@@ -738,6 +822,12 @@ func (s *AuthService) VerifyMPin(ctx context.Context, userID string, mPin string
 	user := &models.User{}
 	_, err := s.userRepository.GetByID(ctx, userID, user)
 	if err != nil {
+		return errors.NewNotFoundError("user not found")
+	}
+
+	// Security check: Ensure user is not deleted
+	if user.DeletedAt != nil {
+		s.logger.Warn("VerifyMPin attempt for deleted user", zap.String("user_id", userID))
 		return errors.NewNotFoundError("user not found")
 	}
 

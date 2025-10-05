@@ -10,7 +10,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// GetUserByID retrieves a user by their unique identifier
+// GetUserByID retrieves a user by their unique identifier (only active users)
 func (s *Service) GetUserByID(ctx context.Context, userID string) (*userResponses.UserResponse, error) {
 	s.logger.Info("Getting user by ID", zap.String("user_id", userID))
 
@@ -35,6 +35,12 @@ func (s *Service) GetUserByID(ctx context.Context, userID string) (*userResponse
 		return nil, errors.NewNotFoundError("user not found")
 	}
 
+	// Security check: Ensure user is not deleted
+	if user.DeletedAt != nil {
+		s.logger.Warn("Attempt to access deleted user", zap.String("user_id", userID))
+		return nil, errors.NewNotFoundError("user not found")
+	}
+
 	// Convert to response format
 	response := &userResponses.UserResponse{
 		ID:          user.ID,
@@ -55,7 +61,7 @@ func (s *Service) GetUserByID(ctx context.Context, userID string) (*userResponse
 	return response, nil
 }
 
-// ListUsers retrieves a paginated list of users
+// ListUsers retrieves a paginated list of active (non-deleted) users
 func (s *Service) ListUsers(ctx context.Context, limit, offset int) (interface{}, error) {
 	s.logger.Info("Listing users",
 		zap.Int("limit", limit),
@@ -65,8 +71,8 @@ func (s *Service) ListUsers(ctx context.Context, limit, offset int) (interface{}
 		limit = 20
 	}
 
-	// Get all users first (simple approach to fix empty results)
-	allUsers, err := s.userRepo.ListAll(ctx)
+	// Get only active (non-deleted) users using repository method
+	users, err := s.userRepo.List(ctx, limit, offset)
 	if err != nil {
 		s.logger.Error("Failed to list users",
 			zap.Int("limit", limit),
@@ -75,27 +81,17 @@ func (s *Service) ListUsers(ctx context.Context, limit, offset int) (interface{}
 		return nil, errors.NewInternalError(err)
 	}
 
-	// Apply pagination manually
-	totalUsers := len(allUsers)
-	start := offset
-	end := start + limit
-
-	if start >= totalUsers {
-		// No users in this range
-		s.logger.Info("Users retrieved successfully", zap.Int("count", 0))
-		return []*userResponses.UserResponse{}, nil
+	// Filter out deleted users at service level as additional security
+	activeUsers := make([]*models.User, 0, len(users))
+	for _, user := range users {
+		if user.DeletedAt == nil {
+			activeUsers = append(activeUsers, user)
+		}
 	}
-
-	if end > totalUsers {
-		end = totalUsers
-	}
-
-	// Get the paginated subset
-	paginatedUsers := allUsers[start:end]
 
 	// Convert to response format
-	responses := make([]*userResponses.UserResponse, len(paginatedUsers))
-	for i, user := range paginatedUsers {
+	responses := make([]*userResponses.UserResponse, len(activeUsers))
+	for i, user := range activeUsers {
 		responses[i] = &userResponses.UserResponse{
 			ID:          user.ID,
 			Username:    user.Username,

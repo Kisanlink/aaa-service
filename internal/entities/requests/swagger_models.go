@@ -3,15 +3,59 @@ package requests
 // Swagger Documentation Request Models for AAA Service API
 // These models are specifically designed for comprehensive API documentation
 
+// LoginRequestSwagger represents enhanced login request for Swagger docs
+//
+//	@Description	Enhanced login request supporting both password and MPIN authentication with optional data inclusion flags
+type LoginRequestSwagger struct {
+	PhoneNumber     string `json:"phone_number" binding:"required" example:"+1234567890"`
+	CountryCode     string `json:"country_code" binding:"required" example:"US"`
+	Password        string `json:"password,omitempty" example:"securePassword123"`
+	MPin            string `json:"mpin,omitempty" example:"1234"`
+	MFACode         string `json:"mfa_code,omitempty" example:"123456"`
+	IncludeProfile  bool   `json:"include_profile,omitempty" example:"true"`
+	IncludeRoles    bool   `json:"include_roles,omitempty" example:"true"`
+	IncludeContacts bool   `json:"include_contacts,omitempty" example:"false"`
+}
+
+// RegisterRequestSwagger represents user registration request for Swagger docs
+//
+//	@Description	User registration request with phone number, password, and optional profile information
+type RegisterRequestSwagger struct {
+	PhoneNumber   string `json:"phone_number" binding:"required" example:"+1234567890"`
+	CountryCode   string `json:"country_code" binding:"required" example:"US"`
+	Password      string `json:"password" binding:"required" example:"securePassword123"`
+	Username      string `json:"username,omitempty" example:"john_doe"`
+	AadhaarNumber string `json:"aadhaar_number,omitempty" example:"123456789012"`
+	Name          string `json:"name,omitempty" example:"John Doe"`
+}
+
 // RefreshTokenRequestSwagger represents refresh token request for Swagger docs
-// @Description Request structure for token refresh
+//
+//	@Description	Request structure for token refresh using MPIN verification
 type RefreshTokenRequestSwagger struct {
 	RefreshToken string `json:"refresh_token" binding:"required" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
 	MPin         string `json:"mpin" binding:"required" example:"1234"`
 }
 
+// SetMPinRequestSwagger represents set MPIN request for Swagger docs
+//
+//	@Description	Request structure for setting user's MPIN with password verification
+type SetMPinRequestSwagger struct {
+	MPin     string `json:"mpin" binding:"required" example:"1234"`
+	Password string `json:"password" binding:"required" example:"securePassword123"`
+}
+
+// UpdateMPinRequestSwagger represents update MPIN request for Swagger docs
+//
+//	@Description	Request structure for updating user's existing MPIN
+type UpdateMPinRequestSwagger struct {
+	CurrentMPin string `json:"current_mpin" binding:"required" example:"1234"`
+	NewMPin     string `json:"new_mpin" binding:"required" example:"5678"`
+}
+
 // UpdateUserRequest represents user update request
-// @Description Request structure for updating user information
+//
+//	@Description	Request structure for updating user information
 type UpdateUserRequest struct {
 	Username    string `json:"username,omitempty" example:"john_doe"`
 	PhoneNumber string `json:"phone_number,omitempty" example:"+1234567890"`
@@ -19,21 +63,24 @@ type UpdateUserRequest struct {
 }
 
 // CreateRoleRequest represents role creation request
-// @Description Request structure for creating a new role
+//
+//	@Description	Request structure for creating a new role
 type CreateRoleRequest struct {
 	Name        string `json:"name" binding:"required" example:"moderator"`
 	Description string `json:"description,omitempty" example:"Moderator role with limited admin access"`
 }
 
 // UpdateRoleRequest represents role update request
-// @Description Request structure for updating role information
+//
+//	@Description	Request structure for updating role information
 type UpdateRoleRequest struct {
 	Name        string `json:"name,omitempty" example:"moderator"`
 	Description string `json:"description,omitempty" example:"Updated moderator role description"`
 }
 
 // CreatePermissionRequest represents permission creation request
-// @Description Request structure for creating a new permission
+//
+//	@Description	Request structure for creating a new permission
 type CreatePermissionRequest struct {
 	Name        string `json:"name" binding:"required" example:"users:write"`
 	Description string `json:"description,omitempty" example:"Write access to user resources"`
@@ -42,7 +89,8 @@ type CreatePermissionRequest struct {
 }
 
 // UpdatePermissionRequest represents permission update request
-// @Description Request structure for updating permission information
+//
+//	@Description	Request structure for updating permission information
 type UpdatePermissionRequest struct {
 	Name        string `json:"name,omitempty" example:"users:write"`
 	Description string `json:"description,omitempty" example:"Updated write access to user resources"`
@@ -51,7 +99,8 @@ type UpdatePermissionRequest struct {
 }
 
 // GrantPermissionRequest represents permission grant request
-// @Description Request structure for granting permission to user
+//
+//	@Description	Request structure for granting permission to user
 type GrantPermissionRequest struct {
 	UserID     string `json:"user_id" binding:"required" example:"USER123456789"`
 	Resource   string `json:"resource" binding:"required" example:"user"`
@@ -60,7 +109,8 @@ type GrantPermissionRequest struct {
 }
 
 // RevokePermissionRequest represents permission revoke request
-// @Description Request structure for revoking permission from user
+//
+//	@Description	Request structure for revoking permission from user
 type RevokePermissionRequest struct {
 	UserID     string `json:"user_id" binding:"required" example:"USER123456789"`
 	Resource   string `json:"resource" binding:"required" example:"user"`
@@ -68,35 +118,38 @@ type RevokePermissionRequest struct {
 	Relation   string `json:"relation" binding:"required" example:"owner"`
 }
 
-// AssignRoleRequest represents role assignment request
-// @Description Request structure for assigning role to user
-type AssignRoleRequest struct {
-	UserID string `json:"user_id" binding:"required" example:"USER123456789"`
+// AssignRoleRequestSwagger represents role assignment request for Swagger docs
+//
+//	@Description	Request structure for assigning role to user
+type AssignRoleRequestSwagger struct {
 	RoleID string `json:"role_id" binding:"required" example:"ROLE123456789"`
 }
 
-// RemoveRoleRequest represents role removal request
-// @Description Request structure for removing role from user
-type RemoveRoleRequest struct {
-	UserID string `json:"user_id" binding:"required" example:"USER123456789"`
-	RoleID string `json:"role_id" binding:"required" example:"ROLE123456789"`
+// RemoveRoleRequestSwagger represents role removal request for Swagger docs
+//
+//	@Description	Request structure for removing role from user (role_id provided in URL path)
+type RemoveRoleRequestSwagger struct {
+	// Role ID is provided in the URL path parameter
 }
 
 // ArchiveLogsRequest represents log archiving request
-// @Description Request structure for archiving old logs
+//
+//	@Description	Request structure for archiving old logs
 type ArchiveLogsRequest struct {
 	Days int `json:"days" binding:"required,min=1" example:"90"`
 }
 
 // BulkPermissionCheckRequest represents bulk permission check request
-// @Description Request structure for checking multiple permissions
+//
+//	@Description	Request structure for checking multiple permissions
 type BulkPermissionCheckRequest struct {
 	UserID      string                `json:"user_id" binding:"required" example:"USER123456789"`
 	Permissions []PermissionCheckItem `json:"permissions" binding:"required,min=1"`
 }
 
 // PermissionCheckItem represents individual permission check item
-// @Description Individual permission check item structure
+//
+//	@Description	Individual permission check item structure
 type PermissionCheckItem struct {
 	Resource   string `json:"resource" binding:"required" example:"user"`
 	Action     string `json:"action" binding:"required" example:"read"`
@@ -104,7 +157,8 @@ type PermissionCheckItem struct {
 }
 
 // ModuleRegistrationRequest represents module registration request
-// @Description Request structure for registering a new module
+//
+//	@Description	Request structure for registering a new module
 type ModuleRegistrationRequest struct {
 	ServiceName string                     `json:"service_name" binding:"required" example:"user-service"`
 	Version     string                     `json:"version" binding:"required" example:"1.0.0"`
@@ -114,7 +168,8 @@ type ModuleRegistrationRequest struct {
 }
 
 // ModuleActionDefinition represents action definition for module
-// @Description Action definition structure for module registration
+//
+//	@Description	Action definition structure for module registration
 type ModuleActionDefinition struct {
 	Name        string `json:"name" binding:"required" example:"create_user"`
 	Description string `json:"description,omitempty" example:"Create a new user"`
@@ -122,7 +177,8 @@ type ModuleActionDefinition struct {
 }
 
 // ModuleResourceDefinition represents resource definition for module
-// @Description Resource definition structure for module registration
+//
+//	@Description	Resource definition structure for module registration
 type ModuleResourceDefinition struct {
 	Name        string   `json:"name" binding:"required" example:"user"`
 	Description string   `json:"description,omitempty" example:"User resource"`
@@ -130,7 +186,8 @@ type ModuleResourceDefinition struct {
 }
 
 // ModuleRoleDefinition represents role definition for module
-// @Description Role definition structure for module registration
+//
+//	@Description	Role definition structure for module registration
 type ModuleRoleDefinition struct {
 	Name        string   `json:"name" binding:"required" example:"user_admin"`
 	Description string   `json:"description,omitempty" example:"User administrator role"`

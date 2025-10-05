@@ -29,17 +29,18 @@ func SetupAuthRoutes(publicAPI, protectedAPI *gin.RouterGroup, authService *serv
 }
 
 // LoginV2 handles POST /v2/auth/login
-// @Summary User login (V2)
-// @Description Authenticate user with username and password and MFA
-// @Tags authentication
-// @Accept json
-// @Produce json
-// @Param credentials body services.LoginRequest true "Login credentials"
-// @Success 200 {object} responses.LoginSuccessResponse
-// @Failure 400 {object} responses.ErrorResponseSwagger
-// @Failure 401 {object} responses.ErrorResponseSwagger
-// @Failure 500 {object} responses.ErrorResponseSwagger
-// @Router /api/v2/auth/login [post]
+//
+//	@Summary		User login (V2)
+//	@Description	Authenticate user with username and password and MFA
+//	@Tags			authentication
+//	@Accept			json
+//	@Produce		json
+//	@Param			credentials	body		services.LoginRequest	true	"Login credentials"
+//	@Success		200			{object}	responses.LoginSuccessResponse
+//	@Failure		400			{object}	responses.ErrorResponseSwagger
+//	@Failure		401			{object}	responses.ErrorResponseSwagger
+//	@Failure		500			{object}	responses.ErrorResponseSwagger
+//	@Router			/api/v2/auth/login [post]
 func createLoginHandler(authService *services.AuthService, logger *zap.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req services.LoginRequest
@@ -80,17 +81,18 @@ func createUsernameLoginHandler(authService *services.AuthService, logger *zap.L
 }
 
 // RegisterV2 handles POST /v2/auth/register
-// @Summary User registration (V2)
-// @Description Register a new user account with enhanced validation
-// @Tags authentication
-// @Accept json
-// @Produce json
-// @Param user body services.RegisterRequest true "Registration data"
-// @Success 201 {object} responses.RegisterSuccessResponse
-// @Failure 400 {object} responses.ErrorResponseSwagger
-// @Failure 409 {object} responses.ErrorResponseSwagger
-// @Failure 500 {object} responses.ErrorResponseSwagger
-// @Router /api/v2/auth/register [post]
+//
+//	@Summary		User registration (V2)
+//	@Description	Register a new user account with enhanced validation
+//	@Tags			authentication
+//	@Accept			json
+//	@Produce		json
+//	@Param			user	body		services.RegisterRequest	true	"Registration data"
+//	@Success		201		{object}	responses.RegisterSuccessResponse
+//	@Failure		400		{object}	responses.ErrorResponseSwagger
+//	@Failure		409		{object}	responses.ErrorResponseSwagger
+//	@Failure		500		{object}	responses.ErrorResponseSwagger
+//	@Router			/api/v2/auth/register [post]
 func createRegisterHandler(authService *services.AuthService, logger *zap.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req services.RegisterRequest
@@ -136,17 +138,18 @@ func createRegisterHandler(authService *services.AuthService, logger *zap.Logger
 }
 
 // RefreshTokenV2 handles POST /v2/auth/refresh
-// @Summary Refresh access token (V2)
-// @Description Refresh access token using refresh token
-// @Tags authentication
-// @Accept json
-// @Produce json
-// @Param token body requests.RefreshTokenRequest true "Refresh token"
-// @Success 200 {object} responses.RefreshTokenSuccessResponse
-// @Failure 400 {object} responses.ErrorResponseSwagger
-// @Failure 401 {object} responses.ErrorResponseSwagger
-// @Failure 500 {object} responses.ErrorResponseSwagger
-// @Router /api/v2/auth/refresh [post]
+//
+//	@Summary		Refresh access token (V2)
+//	@Description	Refresh access token using refresh token
+//	@Tags			authentication
+//	@Accept			json
+//	@Produce		json
+//	@Param			token	body		requests.RefreshTokenRequest	true	"Refresh token"
+//	@Success		200		{object}	responses.RefreshTokenSuccessResponse
+//	@Failure		400		{object}	responses.ErrorResponseSwagger
+//	@Failure		401		{object}	responses.ErrorResponseSwagger
+//	@Failure		500		{object}	responses.ErrorResponseSwagger
+//	@Router			/api/v2/auth/refresh [post]
 func createRefreshHandler(authService *services.AuthService, logger *zap.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req struct {
@@ -170,16 +173,17 @@ func createRefreshHandler(authService *services.AuthService, logger *zap.Logger)
 }
 
 // LogoutV2 handles POST /v2/auth/logout
-// @Summary User logout (V2)
-// @Description Logout user and invalidate tokens
-// @Tags authentication
-// @Accept json
-// @Produce json
-// @Security BearerAuth
-// @Success 200 {object} responses.LogoutSuccessResponse
-// @Failure 401 {object} responses.ErrorResponseSwagger
-// @Failure 500 {object} responses.ErrorResponseSwagger
-// @Router /api/v2/auth/logout [post]
+//
+//	@Summary		User logout (V2)
+//	@Description	Logout user and invalidate tokens
+//	@Tags			authentication
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Success		200	{object}	responses.LogoutSuccessResponse
+//	@Failure		401	{object}	responses.ErrorResponseSwagger
+//	@Failure		500	{object}	responses.ErrorResponseSwagger
+//	@Router			/api/v2/auth/logout [post]
 func createLogoutHandler(authService *services.AuthService, logger *zap.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userID, exists := c.Get("user_id")

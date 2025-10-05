@@ -1,0 +1,241 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "github.com/Kisanlink/aaa-service/pkg/proto;pb";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+import "organization.proto";
+
+// JWT Token Validation Request
+message ValidateTokenRequest {
+    string token = 1;
+    bool include_user_details = 2;
+    bool include_permissions = 3;
+    bool include_organization = 4;
+    repeated string required_permissions = 5;
+    string resource_context = 6;
+    bool strict_validation = 7;
+}
+
+// JWT Token Validation Response
+message ValidateTokenResponse {
+    int32 status_code = 1;
+    string message = 2;
+    bool valid = 3;
+    TokenClaims claims = 4;
+    UserContext user_context = 5;
+    repeated string permissions = 6;
+    Organization organization = 7;
+    string validation_id = 8;
+    google.protobuf.Timestamp validated_at = 9;
+    repeated string warnings = 10;
+}
+
+// Token Claims
+message TokenClaims {
+    string user_id = 1;
+    string username = 2;
+    string email = 3;
+    string organization_id = 4;
+    string organization_name = 5;
+    repeated string roles = 6;
+    repeated string permissions = 7;
+    string session_id = 8;
+    string device_id = 9;
+    google.protobuf.Timestamp issued_at = 10;
+    google.protobuf.Timestamp expires_at = 11;
+    google.protobuf.Timestamp not_before = 12;
+    string issuer = 13;
+    repeated string audience = 14;
+    string subject = 15;
+    string jti = 16;
+    google.protobuf.Struct custom_claims = 17;
+    string token_type = 18;
+    repeated string scopes = 19;
+}
+
+// User Context for token validation
+message UserContext {
+    string id = 1;
+    string username = 2;
+    string email = 3;
+    string full_name = 4;
+    string status = 5;
+    bool is_validated = 6;
+    string organization_id = 7;
+    string organization_name = 8;
+    repeated string roles = 9;
+    repeated string permissions = 10;
+    repeated string groups = 11;
+    google.protobuf.Struct metadata = 12;
+    string preferred_language = 13;
+    string timezone = 14;
+    google.protobuf.Timestamp last_login_at = 15;
+    bool mfa_enabled = 16;
+}
+
+// Token Refresh Request
+message RefreshAccessTokenRequest {
+    string refresh_token = 1;
+    string device_id = 2;
+    repeated string requested_scopes = 3;
+    string organization_id = 4;
+    bool extend_session = 5;
+}
+
+// Token Refresh Response
+message RefreshAccessTokenResponse {
+    int32 status_code = 1;
+    string message = 2;
+    string access_token = 3;
+    string refresh_token = 4;
+    string token_type = 5;
+    int32 expires_in = 6;
+    repeated string granted_scopes = 7;
+    TokenClaims claims = 8;
+    UserContext user_context = 9;
+}
+
+// Token Revocation Request
+message RevokeTokenRequest {
+    string token = 1;
+    string token_type_hint = 2; // "access_token" or "refresh_token"
+    string device_id = 3;
+    bool revoke_all_user_tokens = 4;
+    string reason = 5;
+}
+
+// Token Revocation Response
+message RevokeTokenResponse {
+    int32 status_code = 1;
+    string message = 2;
+    bool success = 3;
+    int32 tokens_revoked = 4;
+    string revocation_id = 5;
+    google.protobuf.Timestamp revoked_at = 6;
+}
+
+// Token Introspection Request (OAuth 2.0 style)
+message IntrospectTokenRequest {
+    string token = 1;
+    string token_type_hint = 2;
+    string resource_server = 3;
+    repeated string required_scopes = 4;
+}
+
+// Token Introspection Response
+message IntrospectTokenResponse {
+    bool active = 1;
+    string client_id = 2;
+    string username = 3;
+    string scope = 4;
+    int64 exp = 5;
+    int64 iat = 6;
+    int64 nbf = 7;
+    string sub = 8;
+    repeated string aud = 9;
+    string iss = 10;
+    string jti = 11;
+    string token_type = 12;
+    google.protobuf.Struct extensions = 13;
+}
+
+// Create Token Request (for service-to-service)
+message CreateTokenRequest {
+    string user_id = 1;
+    string organization_id = 2;
+    repeated string roles = 3;
+    repeated string permissions = 4;
+    repeated string scopes = 5;
+    int32 expires_in_seconds = 6;
+    string device_id = 7;
+    string session_id = 8;
+    google.protobuf.Struct custom_claims = 9;
+    string token_type = 10;
+    repeated string audience = 11;
+}
+
+// Create Token Response
+message CreateTokenResponse {
+    int32 status_code = 1;
+    string message = 2;
+    string access_token = 3;
+    string refresh_token = 4;
+    string token_type = 5;
+    int32 expires_in = 6;
+    TokenClaims claims = 7;
+    string token_id = 8;
+}
+
+// List Active Tokens Request
+message ListActiveTokensRequest {
+    string user_id = 1;
+    string organization_id = 2;
+    string device_id = 3;
+    string token_type = 4;
+    int32 page = 5;
+    int32 per_page = 6;
+    bool include_expired = 7;
+    string sort_by = 8;
+    string sort_order = 9;
+}
+
+// Active Token Info
+message ActiveTokenInfo {
+    string token_id = 1;
+    string token_type = 2;
+    string device_id = 3;
+    string device_name = 4;
+    string user_agent = 5;
+    string ip_address = 6;
+    google.protobuf.Timestamp created_at = 7;
+    google.protobuf.Timestamp expires_at = 8;
+    google.protobuf.Timestamp last_used_at = 9;
+    repeated string scopes = 10;
+    bool is_active = 11;
+    string status = 12;
+}
+
+// List Active Tokens Response
+message ListActiveTokensResponse {
+    int32 status_code = 1;
+    string message = 2;
+    repeated ActiveTokenInfo tokens = 3;
+    int32 total_count = 4;
+    int32 page = 5;
+    int32 per_page = 6;
+    int32 total_pages = 7;
+    bool has_next_page = 8;
+    bool has_prev_page = 9;
+}
+
+// Token Blacklist Request
+message BlacklistTokenRequest {
+    string token_id = 1;
+    string reason = 2;
+    google.protobuf.Timestamp blacklist_until = 3;
+}
+
+// Token Blacklist Response
+message BlacklistTokenResponse {
+    int32 status_code = 1;
+    string message = 2;
+    bool success = 3;
+    string blacklist_id = 4;
+    google.protobuf.Timestamp blacklisted_at = 5;
+}
+
+// Organization is imported from auth_enhanced.proto
+
+// Token Management Service
+service TokenService {
+    rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse);
+    rpc RefreshAccessToken(RefreshAccessTokenRequest) returns (RefreshAccessTokenResponse);
+    rpc RevokeToken(RevokeTokenRequest) returns (RevokeTokenResponse);
+    rpc IntrospectToken(IntrospectTokenRequest) returns (IntrospectTokenResponse);
+    rpc CreateToken(CreateTokenRequest) returns (CreateTokenResponse);
+    rpc ListActiveTokens(ListActiveTokensRequest) returns (ListActiveTokensResponse);
+    rpc BlacklistToken(BlacklistTokenRequest) returns (BlacklistTokenResponse);
+}

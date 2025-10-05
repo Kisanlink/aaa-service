@@ -1,7 +1,11 @@
 package routes
 
 import (
+	"time"
+
 	"github.com/Kisanlink/aaa-service/internal/handlers/admin"
+	"github.com/Kisanlink/aaa-service/internal/handlers/groups"
+	"github.com/Kisanlink/aaa-service/internal/handlers/organizations"
 	"github.com/Kisanlink/aaa-service/internal/handlers/permissions"
 	"github.com/Kisanlink/aaa-service/internal/handlers/roles"
 	"github.com/Kisanlink/aaa-service/internal/interfaces"
@@ -24,6 +28,8 @@ type RouteHandlers struct {
 	UserService          interfaces.UserService
 	RoleService          interfaces.RoleService
 	ContactService       interface{} // Using interface{} to avoid circular dependency
+	OrganizationService  interfaces.OrganizationService
+	GroupService         interfaces.GroupService
 	Validator            interfaces.Validator
 	Responder            interfaces.Responder
 	Logger               *zap.Logger
@@ -31,16 +37,44 @@ type RouteHandlers struct {
 
 // SetupAAA configures all AAA routes with proper authentication and authorization
 func SetupAAA(router *gin.Engine, handlers RouteHandlers) {
+	// Apply global security middleware
+	router.Use(middleware.SecurityHeaders())
+	router.Use(middleware.CORS())
+	router.Use(middleware.RequestID())
+	router.Use(middleware.RequestSizeLimit(10 * 1024 * 1024)) // 10MB limit
+	router.Use(middleware.Timeout(30 * time.Second))
+	if handlers.Logger != nil {
+		// Note: Using gin's default logger for now, can be enhanced later
+		router.Use(gin.Logger())
+		router.Use(gin.Recovery())
+		router.Use(middleware.SecureErrorHandler(middleware.NewErrorHandlerConfig(handlers.Logger)))
+	}
+
 	// Public routes (no authentication required)
 	publicAPI := router.Group("/api/v2")
+	publicAPI.Use(middleware.RateLimit()) // General rate limiting for public endpoints
 
 	// Protected routes (authentication and authorization required)
 	protectedAPI := router.Group("/api/v2")
 	protectedAPI.Use(handlers.AuthMiddleware.HTTPAuthMiddleware())
+	protectedAPI.Use(middleware.SensitiveOperationRateLimit()) // More restrictive rate limiting
+
+	// V1 API compatibility routes (for backward compatibility)
+	protectedAPIV1 := router.Group("/api/v1")
+	protectedAPIV1.Use(handlers.AuthMiddleware.HTTPAuthMiddleware())
+	protectedAPIV1.Use(middleware.SensitiveOperationRateLimit())
 
 	// Setup route groups
 	SetupHealthRoutes(publicAPI, handlers.Logger)
-	SetupAuthRoutes(publicAPI, protectedAPI, handlers.AuthService, handlers.Logger)
+
+	// Setup V2 auth routes with AuthHandler for MPIN management (replaces old auth routes)
+	if handlers.UserService != nil && handlers.Validator != nil && handlers.Responder != nil {
+		SetupAuthV2Routes(publicAPI, protectedAPI, handlers.AuthMiddleware, handlers.UserService, handlers.Validator, handlers.Responder, handlers.Logger)
+	} else {
+		// Fallback to old auth routes if V2 dependencies are not available
+		SetupAuthRoutes(publicAPI, protectedAPI, handlers.AuthService, handlers.Logger)
+	}
+
 	SetupUserRoutes(protectedAPI, handlers.AuthMiddleware, handlers.UserService, handlers.RoleService, handlers.Validator, handlers.Responder, handlers.Logger)
 	SetupRoleRoutes(protectedAPI, handlers.AuthMiddleware, handlers.RoleHandler, handlers.Logger)
 	SetupPermissionRoutes(protectedAPI, handlers.AuthMiddleware, handlers.PermissionHandler, handlers.Logger)
@@ -58,6 +92,39 @@ func SetupAAA(router *gin.Engine, handlers RouteHandlers) {
 	SetupModuleRoutes(protectedAPI, handlers.Logger)
 	if contactService, ok := handlers.ContactService.(*contactService.ContactService); ok {
 		SetupContactRoutes(protectedAPI, handlers.AuthMiddleware, contactService, handlers.Validator, handlers.Responder, handlers.Logger)
+	}
+
+	// Setup organization routes if services are available
+	//nolint:nestif // Complex conditional is necessary for service availability checks
+	if handlers.OrganizationService != nil && handlers.GroupService != nil {
+		// Import the organization handler package
+		orgHandler := organizations.NewOrganizationHandler(
+			handlers.OrganizationService,
+			handlers.GroupService,
+			handlers.Logger,
+			handlers.Responder,
+		)
+		// Setup organization routes for both V2 (new) and V1 (backward compatibility)
+		SetupOrganizationRoutes(protectedAPI, orgHandler, handlers.AuthMiddleware)
+		SetupOrganizationRoutes(protectedAPIV1, orgHandler, handlers.AuthMiddleware)
+
+		// Also setup standalone group routes for direct group management
+		groupHandler := groups.NewGroupHandler(
+			handlers.GroupService,
+			handlers.Logger,
+			handlers.Responder,
+		)
+		// Register group routes under /api/v1/groups (as per the existing pattern)
+		RegisterGroupRoutes(router, groupHandler, handlers.AuthMiddleware)
+	} else {
+		if handlers.Logger != nil {
+			if handlers.OrganizationService == nil {
+				handlers.Logger.Warn("Organization service not available - organization and group routes will not be registered")
+			}
+			if handlers.GroupService == nil {
+				handlers.Logger.Warn("Group service not available - organization and group routes will not be registered")
+			}
+		}
 	}
 }
 
@@ -86,6 +153,8 @@ func SetupAAAWrapper(router *gin.Engine, authService *services.AuthService, auth
 		UserService:          nil, // UserService will be set separately if needed
 		RoleService:          nil, // RoleService will be set separately if needed
 		ContactService:       nil, // ContactService will be set separately if needed
+		OrganizationService:  nil, // OrganizationService will be set separately if needed
+		GroupService:         nil, // GroupService will be set separately if needed
 		Validator:            nil, // Validator will be set separately if needed
 		Responder:            nil, // Responder will be set separately if needed
 		Logger:               logger,
@@ -106,6 +175,30 @@ func SetupAAAWithAdmin(router *gin.Engine, authService *services.AuthService, au
 		UserService:          userService,
 		RoleService:          roleService,
 		ContactService:       contactService,
+		OrganizationService:  nil, // Will be set when services are available
+		GroupService:         nil, // Will be set when services are available
+		Validator:            validator,
+		Responder:            responder,
+		Logger:               logger,
+	}
+	SetupAAA(router, handlers)
+}
+
+// SetupAAAWithOrganizations is an extended wrapper that includes organization and group services
+func SetupAAAWithOrganizations(router *gin.Engine, authService *services.AuthService, authzService *services.AuthorizationService, auditService *services.AuditService, authMiddleware *middleware.AuthMiddleware, adminHandler *admin.AdminHandler, roleHandler *roles.RoleHandler, permissionHandler *permissions.PermissionHandler, userService interfaces.UserService, roleService interfaces.RoleService, contactService interface{}, organizationService interfaces.OrganizationService, groupService interfaces.GroupService, validator interfaces.Validator, responder interfaces.Responder, logger *zap.Logger) {
+	handlers := RouteHandlers{
+		AuthService:          authService,
+		AuthorizationService: authzService,
+		AuditService:         auditService,
+		AuthMiddleware:       authMiddleware,
+		AdminHandler:         adminHandler,
+		RoleHandler:          roleHandler,
+		PermissionHandler:    permissionHandler,
+		UserService:          userService,
+		RoleService:          roleService,
+		ContactService:       contactService,
+		OrganizationService:  organizationService,
+		GroupService:         groupService,
 		Validator:            validator,
 		Responder:            responder,
 		Logger:               logger,

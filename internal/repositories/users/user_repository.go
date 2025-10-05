@@ -9,6 +9,7 @@ import (
 	"github.com/Kisanlink/aaa-service/internal/entities/models"
 	"github.com/Kisanlink/kisanlink-db/pkg/base"
 	"github.com/Kisanlink/kisanlink-db/pkg/db"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -86,25 +87,26 @@ func (r *UserRepository) Restore(ctx context.Context, id string) error {
 	return r.BaseFilterableRepository.Restore(ctx, id)
 }
 
-// List retrieves users with pagination using database-level filtering
+// List retrieves active (non-deleted) users with pagination using database-level filtering
 func (r *UserRepository) List(ctx context.Context, limit, offset int) ([]*models.User, error) {
-	// Use base filterable repository for optimized database-level filtering
-	// The database manager expects Page/PageSize for pagination, not Limit/Offset
+	// Use base filterable repository with explicit filter for non-deleted users
 	filter := base.NewFilterBuilder().
-		Page(1, limit). // Use Page instead of Limit for database manager compatibility
+		WhereNull("deleted_at"). // Only get users that are not soft-deleted
+		Page(1, limit).          // Use Page instead of Limit for database manager compatibility
 		Build()
 
-	fmt.Printf("DEBUG: Created filter: %+v\n", filter)
+	fmt.Printf("DEBUG: Created filter with deleted_at IS NULL: %+v\n", filter)
 	result, err := r.BaseFilterableRepository.Find(ctx, filter)
-	fmt.Printf("DEBUG: Find result: %d users, error: %v\n", len(result), err)
+	fmt.Printf("DEBUG: Find result: %d active users, error: %v\n", len(result), err)
 	return result, err
 }
 
-// ListAll retrieves all users directly from database (simple implementation)
+// ListAll retrieves all active (non-deleted) users directly from database
 func (r *UserRepository) ListAll(ctx context.Context) ([]*models.User, error) {
-	// Use a large page size to get all users
+	// Use a large page size to get all active users
 	filter := base.NewFilterBuilder().
-		Page(1, 1000). // Get up to 1000 users
+		WhereNull("deleted_at"). // Only get users that are not soft-deleted
+		Page(1, 1000).           // Get up to 1000 users
 		Build()
 
 	return r.BaseFilterableRepository.Find(ctx, filter)
@@ -175,21 +177,14 @@ func (r *UserRepository) getDB(ctx context.Context, readOnly bool) (*gorm.DB, er
 	return nil, fmt.Errorf("database manager does not support GetDB method")
 }
 
-// GetByUsername retrieves a user by username using kisanlink-db filters
+// GetByUsername retrieves an active (non-deleted) user by username using kisanlink-db filters
 func (r *UserRepository) GetByUsername(ctx context.Context, username string) (*models.User, error) {
-	filters := []base.FilterCondition{
-		{Field: "username", Operator: base.OpEqual, Value: username},
-	}
+	filter := base.NewFilterBuilder().
+		Where("username", base.OpEqual, username).
+		WhereNull("deleted_at"). // Only get users that are not soft-deleted
+		Build()
 
-	var users []*models.User
-	filter := &base.Filter{
-		Group: base.FilterGroup{
-			Conditions: filters,
-			Logic:      base.LogicAnd,
-		},
-	}
-
-	// Use the base repository's Find method instead of trying to call List on GORM DB
+	// Use the base repository's Find method
 	users, err := r.BaseFilterableRepository.Find(ctx, filter)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user by username: %w", err)
@@ -202,22 +197,15 @@ func (r *UserRepository) GetByUsername(ctx context.Context, username string) (*m
 	return users[0], nil
 }
 
-// GetByPhoneNumber retrieves a user by phone number using kisanlink-db filters
+// GetByPhoneNumber retrieves an active (non-deleted) user by phone number using kisanlink-db filters
 func (r *UserRepository) GetByPhoneNumber(ctx context.Context, phoneNumber string, countryCode string) (*models.User, error) {
-	filters := []base.FilterCondition{
-		{Field: "phone_number", Operator: base.OpEqual, Value: phoneNumber},
-		{Field: "country_code", Operator: base.OpEqual, Value: countryCode},
-	}
+	filter := base.NewFilterBuilder().
+		Where("phone_number", base.OpEqual, phoneNumber).
+		Where("country_code", base.OpEqual, countryCode).
+		WhereNull("deleted_at"). // Only get users that are not soft-deleted
+		Build()
 
-	var users []*models.User
-	filter := &base.Filter{
-		Group: base.FilterGroup{
-			Conditions: filters,
-			Logic:      base.LogicAnd,
-		},
-	}
-
-	// Use the base repository's Find method instead of trying to call List on GORM DB
+	// Use the base repository's Find method
 	users, err := r.BaseFilterableRepository.Find(ctx, filter)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user by phone number: %w", err)
@@ -501,7 +489,8 @@ func (r *UserRepository) Search(ctx context.Context, keyword string, limit, offs
 			base.FilterCondition{Field: "username", Operator: base.OpContains, Value: keyword},
 			base.FilterCondition{Field: "phone_number", Operator: base.OpContains, Value: keyword},
 		).
-		Page(1, limit). // Use page-based pagination for database manager compatibility
+		WhereNull("deleted_at"). // Only get users that are not soft-deleted
+		Page(1, limit).          // Use page-based pagination for database manager compatibility
 		Build()
 
 	fmt.Printf("DEBUG: Search filter created: %+v\n", filter)
@@ -904,6 +893,152 @@ func (r *UserRepository) GetByValidationStatusAndDeletedDateRange(ctx context.Co
 		Build()
 
 	return r.BaseFilterableRepository.Find(ctx, filter)
+}
+
+// SoftDeleteWithCascade performs a soft delete of a user with proper cascade operations for related entities
+// This method handles role cleanup, contact deactivation, and profile archiving in a transaction
+func (r *UserRepository) SoftDeleteWithCascade(ctx context.Context, userID, deletedBy string) error {
+	// Get the GORM DB instance for transaction support
+	db, err := r.getDB(ctx, false)
+	if err != nil {
+		return fmt.Errorf("failed to get database connection: %w", err)
+	}
+
+	// Use transaction to ensure all cascade operations succeed or fail together
+	return db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// First check if the user exists and is not already deleted
+		var count int64
+		if err := tx.Table("users").Where("id = ? AND deleted_at IS NULL", userID).Count(&count).Error; err != nil {
+			return fmt.Errorf("failed to check user existence: %w", err)
+		}
+
+		if count == 0 {
+			return fmt.Errorf("user with id %s not found or already deleted", userID)
+		}
+
+		now := time.Now()
+
+		// 1. Deactivate all user role assignments
+		if err := tx.Table("user_roles").
+			Where("user_id = ? AND is_active = ?", userID, true).
+			Updates(map[string]interface{}{
+				"is_active":  false,
+				"updated_at": now,
+				"deleted_by": deletedBy,
+			}).Error; err != nil {
+			return fmt.Errorf("failed to deactivate user roles: %w", err)
+		}
+
+		// 2. Soft delete user contacts
+		if err := tx.Table("contacts").
+			Where("user_id = ? AND deleted_at IS NULL", userID).
+			Updates(map[string]interface{}{
+				"deleted_at": now,
+				"deleted_by": deletedBy,
+				"updated_at": now,
+			}).Error; err != nil {
+			return fmt.Errorf("failed to soft delete user contacts: %w", err)
+		}
+
+		// 3. Soft delete user profile
+		if err := tx.Table("user_profiles").
+			Where("user_id = ? AND deleted_at IS NULL", userID).
+			Updates(map[string]interface{}{
+				"deleted_at": now,
+				"deleted_by": deletedBy,
+				"updated_at": now,
+			}).Error; err != nil {
+			return fmt.Errorf("failed to soft delete user profile: %w", err)
+		}
+
+		// 4. Finally, soft delete the user
+		if err := tx.Table("users").
+			Where("id = ? AND deleted_at IS NULL", userID).
+			Updates(map[string]interface{}{
+				"deleted_at": now,
+				"deleted_by": deletedBy,
+				"updated_at": now,
+			}).Error; err != nil {
+			return fmt.Errorf("failed to soft delete user: %w", err)
+		}
+
+		return nil
+	})
+}
+
+// GetWithActiveRoles retrieves a user with their active roles and role details efficiently loaded
+// This method uses optimized queries with proper preloading to minimize database round trips
+func (r *UserRepository) GetWithActiveRoles(ctx context.Context, userID string) (*models.User, error) {
+	// Get the GORM DB instance for complex queries with preloading
+	db, err := r.getDB(ctx, false)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get database connection: %w", err)
+	}
+
+	var user models.User
+
+	// Use a single query with preloading to efficiently load user and active roles
+	err = db.WithContext(ctx).
+		Preload("Roles", "is_active = ?", true).
+		Preload("Roles.Role", "is_active = ?", true).
+		Where("id = ? AND deleted_at IS NULL", userID).
+		First(&user).Error
+
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("user with id %s not found", userID)
+		}
+		return nil, fmt.Errorf("failed to get user with active roles: %w", err)
+	}
+
+	// Filter out any user roles where the role itself is inactive
+	// This is a safety check in case the preload condition doesn't work as expected
+	activeUserRoles := make([]models.UserRole, 0, len(user.Roles))
+	for _, userRole := range user.Roles {
+		if userRole.IsActive && userRole.Role.IsActive {
+			activeUserRoles = append(activeUserRoles, userRole)
+		}
+	}
+	user.Roles = activeUserRoles
+
+	return &user, nil
+}
+
+// VerifyMPin verifies a user's MPIN against the stored hash
+// This method uses secure comparison and proper error handling for authentication
+func (r *UserRepository) VerifyMPin(ctx context.Context, userID, plainMPin string) error {
+	// Get the GORM DB instance for direct query
+	db, err := r.getDB(ctx, true) // Use read-only connection for verification
+	if err != nil {
+		return fmt.Errorf("failed to get database connection: %w", err)
+	}
+
+	var user models.User
+	err = db.WithContext(ctx).
+		Select("id, m_pin").
+		Where("id = ? AND deleted_at IS NULL", userID).
+		First(&user).Error
+
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return fmt.Errorf("user with id %s not found", userID)
+		}
+		return fmt.Errorf("failed to get user for MPIN verification: %w", err)
+	}
+
+	// Check if user has MPIN set
+	if !user.HasMPin() {
+		return fmt.Errorf("user does not have MPIN set")
+	}
+
+	// Use bcrypt to compare the plain MPIN with the stored hash
+	// Note: This assumes MPIN is stored as a bcrypt hash like passwords
+	// If a different hashing method is used, this should be updated accordingly
+	if err := bcrypt.CompareHashAndPassword([]byte(*user.MPin), []byte(plainMPin)); err != nil {
+		return fmt.Errorf("invalid MPIN")
+	}
+
+	return nil
 }
 
 // GetByUsernameAndStatusAndValidationStatus retrieves users by username, status and validation status using database-level filtering

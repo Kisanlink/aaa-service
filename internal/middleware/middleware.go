@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/Kisanlink/aaa-service/internal/interfaces"
@@ -100,6 +101,204 @@ func RateLimit() gin.HandlerFunc {
 
 		c.Next()
 	}
+}
+
+// SensitiveOperationRateLimit implements stricter rate limiting for sensitive operations
+func SensitiveOperationRateLimit() gin.HandlerFunc {
+	// Create a rate limiter: 10 requests per minute per IP for sensitive operations
+	limiters := make(map[string]*rate.Limiter)
+
+	return func(c *gin.Context) {
+		clientIP := c.ClientIP()
+
+		limiter, exists := limiters[clientIP]
+		if !exists {
+			// 10 requests per minute with burst of 5
+			limiter = rate.NewLimiter(rate.Every(time.Minute/10), 5)
+			limiters[clientIP] = limiter
+		}
+
+		if !limiter.Allow() {
+			c.JSON(http.StatusTooManyRequests, gin.H{
+				"error":       "Rate limit exceeded for sensitive operation",
+				"message":     "Too many sensitive requests from this IP. Please try again later.",
+				"retry_after": "60", // seconds
+			})
+			c.Abort()
+			return
+		}
+
+		c.Next()
+	}
+}
+
+// AuthenticationRateLimit implements sophisticated rate limiting for authentication attempts
+func AuthenticationRateLimit() gin.HandlerFunc {
+	// Create rate limiters for different time windows
+	ipLimiters := make(map[string]*rate.Limiter)
+	failedAttempts := make(map[string]int)
+	lastAttempt := make(map[string]time.Time)
+
+	return func(c *gin.Context) {
+		clientIP := c.ClientIP()
+		now := time.Now()
+
+		// Clean up old entries (older than 1 hour)
+		if len(lastAttempt) > 1000 { // Prevent memory leak
+			for ip, lastTime := range lastAttempt {
+				if now.Sub(lastTime) > time.Hour {
+					delete(ipLimiters, ip)
+					delete(failedAttempts, ip)
+					delete(lastAttempt, ip)
+				}
+			}
+		}
+
+		// Check if IP is temporarily blocked due to too many failed attempts
+		if attempts, exists := failedAttempts[clientIP]; exists {
+			if attempts >= 10 { // Block after 10 failed attempts
+				if lastTime, exists := lastAttempt[clientIP]; exists {
+					// Block for exponential backoff: 2^(attempts-10) minutes, max 60 minutes
+					blockDuration := time.Duration(1<<uint(min(attempts-10, 6))) * time.Minute
+					if now.Sub(lastTime) < blockDuration {
+						c.JSON(http.StatusTooManyRequests, gin.H{
+							"error":       "IP temporarily blocked",
+							"message":     "Too many failed authentication attempts. Please try again later.",
+							"retry_after": fmt.Sprintf("%.0f", blockDuration.Seconds()),
+						})
+						c.Abort()
+						return
+					} else {
+						// Reset after block period
+						delete(failedAttempts, clientIP)
+					}
+				}
+			}
+		}
+
+		// Apply rate limiting
+		limiter, exists := ipLimiters[clientIP]
+		if !exists {
+			// 5 requests per minute with burst of 3
+			limiter = rate.NewLimiter(rate.Every(time.Minute/5), 3)
+			ipLimiters[clientIP] = limiter
+		}
+
+		if !limiter.Allow() {
+			// Increment failed attempts counter
+			failedAttempts[clientIP]++
+			lastAttempt[clientIP] = now
+
+			c.JSON(http.StatusTooManyRequests, gin.H{
+				"error":       "Authentication rate limit exceeded",
+				"message":     "Too many authentication attempts. Please try again later.",
+				"retry_after": "60",
+			})
+			c.Abort()
+			return
+		}
+
+		// Store the limiter and timestamp for potential failure tracking
+		c.Set("rate_limiter_ip", clientIP)
+		c.Set("rate_limiter_timestamp", now)
+
+		c.Next()
+
+		// Track failed authentication attempts
+		if c.Writer.Status() == http.StatusUnauthorized {
+			failedAttempts[clientIP]++
+			lastAttempt[clientIP] = now
+		} else if c.Writer.Status() == http.StatusOK {
+			// Reset failed attempts on successful authentication
+			delete(failedAttempts, clientIP)
+		}
+	}
+}
+
+// MPinRateLimit implements specific rate limiting for MPIN operations
+func MPinRateLimit() gin.HandlerFunc {
+	// More restrictive rate limiting for MPIN operations
+	limiters := make(map[string]*rate.Limiter)
+	failedAttempts := make(map[string]int)
+	lastAttempt := make(map[string]time.Time)
+
+	return func(c *gin.Context) {
+		clientIP := c.ClientIP()
+		now := time.Now()
+
+		// Clean up old entries
+		if len(lastAttempt) > 500 {
+			for ip, lastTime := range lastAttempt {
+				if now.Sub(lastTime) > time.Hour {
+					delete(limiters, ip)
+					delete(failedAttempts, ip)
+					delete(lastAttempt, ip)
+				}
+			}
+		}
+
+		// Check for MPIN-specific blocking (more restrictive)
+		if attempts, exists := failedAttempts[clientIP]; exists {
+			if attempts >= 5 { // Block after 5 failed MPIN attempts
+				if lastTime, exists := lastAttempt[clientIP]; exists {
+					// Block for 15 minutes after 5 failed attempts
+					blockDuration := 15 * time.Minute
+					if now.Sub(lastTime) < blockDuration {
+						c.JSON(http.StatusTooManyRequests, gin.H{
+							"error":       "MPIN operations temporarily blocked",
+							"message":     "Too many failed MPIN attempts. Please try again later.",
+							"retry_after": fmt.Sprintf("%.0f", blockDuration.Seconds()),
+						})
+						c.Abort()
+						return
+					} else {
+						delete(failedAttempts, clientIP)
+					}
+				}
+			}
+		}
+
+		// Apply MPIN-specific rate limiting: 3 requests per minute
+		limiter, exists := limiters[clientIP]
+		if !exists {
+			limiter = rate.NewLimiter(rate.Every(time.Minute/3), 2)
+			limiters[clientIP] = limiter
+		}
+
+		if !limiter.Allow() {
+			failedAttempts[clientIP]++
+			lastAttempt[clientIP] = now
+
+			c.JSON(http.StatusTooManyRequests, gin.H{
+				"error":       "MPIN rate limit exceeded",
+				"message":     "Too many MPIN operations. Please try again later.",
+				"retry_after": "60",
+			})
+			c.Abort()
+			return
+		}
+
+		c.Set("mpin_rate_limiter_ip", clientIP)
+		c.Set("mpin_rate_limiter_timestamp", now)
+
+		c.Next()
+
+		// Track failed MPIN attempts
+		if c.Writer.Status() == http.StatusUnauthorized || c.Writer.Status() == http.StatusBadRequest {
+			failedAttempts[clientIP]++
+			lastAttempt[clientIP] = now
+		} else if c.Writer.Status() == http.StatusOK {
+			delete(failedAttempts, clientIP)
+		}
+	}
+}
+
+// min returns the minimum of two integers
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
 
 // Timeout adds a timeout to requests
@@ -246,16 +445,75 @@ func PanicRecoveryHandler(logger interfaces.Logger) gin.HandlerFunc {
 	}
 }
 
-// SecurityHeaders adds security headers to responses
+// SecurityHeaders adds comprehensive security headers to responses
 func SecurityHeaders() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// Prevent MIME type sniffing
 		c.Header("X-Content-Type-Options", "nosniff")
+
+		// Prevent clickjacking
 		c.Header("X-Frame-Options", "DENY")
+
+		// Enable XSS protection
 		c.Header("X-XSS-Protection", "1; mode=block")
-		c.Header("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
-		c.Header("Content-Security-Policy", "default-src 'self'")
+
+		// Force HTTPS (only in production)
+		if gin.Mode() == gin.ReleaseMode {
+			c.Header("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload")
+		}
+
+		// Content Security Policy
+		csp := "default-src 'self'; " +
+			"script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com; " +
+			"style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com; " +
+			"img-src 'self' data: https:; " +
+			"font-src 'self' https://cdn.jsdelivr.net https://unpkg.com; " +
+			"connect-src 'self'; " +
+			"frame-ancestors 'none'; " +
+			"base-uri 'self'; " +
+			"form-action 'self'"
+		c.Header("Content-Security-Policy", csp)
+
+		// Referrer Policy
+		c.Header("Referrer-Policy", "strict-origin-when-cross-origin")
+
+		// Permissions Policy (formerly Feature Policy)
+		c.Header("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+
+		// Remove server information
+		c.Header("Server", "")
+
+		// Prevent caching of sensitive responses
+		if isSensitiveEndpoint(c.Request.URL.Path) {
+			c.Header("Cache-Control", "no-store, no-cache, must-revalidate, private")
+			c.Header("Pragma", "no-cache")
+			c.Header("Expires", "0")
+		}
+
 		c.Next()
 	}
+}
+
+// isSensitiveEndpoint checks if an endpoint handles sensitive data
+func isSensitiveEndpoint(path string) bool {
+	sensitiveEndpoints := []string{
+		"/api/v2/auth/login",
+		"/api/v2/auth/register",
+		"/api/v2/auth/refresh",
+		"/api/v2/auth/set-mpin",
+		"/api/v2/auth/update-mpin",
+		"/api/v2/users",
+		"/api/v2/roles",
+		"/api/v2/admin",
+	}
+
+	for _, endpoint := range sensitiveEndpoints {
+		if strings.HasPrefix(path, endpoint) {
+			return true
+		}
+	}
+
+	return false
 }
 
 // RequestSizeLimit limits the size of request bodies

@@ -6,16 +6,16 @@ import (
 	"github.com/Kisanlink/aaa-service/internal/entities/requests/users"
 	"github.com/Kisanlink/aaa-service/internal/interfaces"
 	"github.com/Kisanlink/aaa-service/internal/services"
-	"github.com/Kisanlink/aaa-service/pkg/proto"
+	pb "github.com/Kisanlink/aaa-service/pkg/proto"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-// CombinedUserHandler implements the UserServiceV2 gRPC service with both auth and user methods
+// CombinedUserHandler implements the UserService gRPC service with both auth and user methods
 type CombinedUserHandler struct {
-	proto.UnimplementedUserServiceV2Server
+	pb.UnimplementedUserServiceServer
 	authService *services.AuthService
 	userService interfaces.UserService
 	logger      *zap.Logger
@@ -31,7 +31,7 @@ func NewCombinedUserHandler(authService *services.AuthService, userService inter
 }
 
 // Login authenticates a user and returns JWT tokens
-func (h *CombinedUserHandler) Login(ctx context.Context, req *proto.LoginRequestV2) (*proto.LoginResponseV2, error) {
+func (h *CombinedUserHandler) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResponse, error) {
 	h.logger.Info("gRPC Login request", zap.String("username", req.Username))
 
 	// Convert gRPC request to service request
@@ -45,14 +45,14 @@ func (h *CombinedUserHandler) Login(ctx context.Context, req *proto.LoginRequest
 	response, err := h.authService.LoginWithUsername(ctx, loginReq)
 	if err != nil {
 		h.logger.Error("Login failed", zap.String("username", req.Username), zap.Error(err))
-		return &proto.LoginResponseV2{
+		return &pb.LoginResponse{
 			StatusCode: 401,
 			Message:    "Authentication failed",
 		}, status.Error(codes.Unauthenticated, err.Error())
 	}
 
 	// Convert service response to gRPC response
-	grpcResponse := &proto.LoginResponseV2{
+	grpcResponse := &pb.LoginResponse{
 		StatusCode:   200,
 		Message:      "Login successful",
 		AccessToken:  response.AccessToken,
@@ -64,7 +64,7 @@ func (h *CombinedUserHandler) Login(ctx context.Context, req *proto.LoginRequest
 
 	// Add user information if available
 	if response.User.ID != "" {
-		grpcResponse.User = &proto.UserV2{
+		grpcResponse.User = &pb.User{
 			Id:          response.User.ID,
 			Username:    getStringValue(response.User.Username),
 			PhoneNumber: response.User.PhoneNumber,
@@ -79,12 +79,12 @@ func (h *CombinedUserHandler) Login(ctx context.Context, req *proto.LoginRequest
 }
 
 // Register creates a new user
-func (h *CombinedUserHandler) Register(ctx context.Context, req *proto.RegisterRequestV2) (*proto.RegisterResponseV2, error) {
+func (h *CombinedUserHandler) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.RegisterResponse, error) {
 	h.logger.Info("gRPC Register request", zap.String("username", req.Username))
 
 	// Validate request
 	if req.Username == "" || req.Password == "" {
-		return &proto.RegisterResponseV2{
+		return &pb.RegisterResponse{
 			StatusCode: 400,
 			Message:    "Username and password are required",
 		}, status.Error(codes.InvalidArgument, "username and password are required")
@@ -106,20 +106,20 @@ func (h *CombinedUserHandler) Register(ctx context.Context, req *proto.RegisterR
 		// Check if it's a conflict error
 		if err.Error() == "user with this phone number already exists" ||
 			err.Error() == "username is already taken" {
-			return &proto.RegisterResponseV2{
+			return &pb.RegisterResponse{
 				StatusCode: 409,
 				Message:    "User already exists",
 			}, status.Error(codes.AlreadyExists, err.Error())
 		}
 
-		return &proto.RegisterResponseV2{
+		return &pb.RegisterResponse{
 			StatusCode: 500,
 			Message:    "Internal server error",
 		}, status.Error(codes.Internal, err.Error())
 	}
 
 	// Convert to protobuf user
-	pbUser := &proto.UserV2{
+	pbUser := &pb.User{
 		Id:          userResponse.ID,
 		Username:    getStringValue(userResponse.Username),
 		PhoneNumber: userResponse.PhoneNumber,
@@ -129,7 +129,7 @@ func (h *CombinedUserHandler) Register(ctx context.Context, req *proto.RegisterR
 		UpdatedAt:   timestamppb.New(userResponse.UpdatedAt).String(),
 	}
 
-	return &proto.RegisterResponseV2{
+	return &pb.RegisterResponse{
 		StatusCode: 201,
 		Message:    "User created successfully",
 		User:       pbUser,
@@ -137,12 +137,12 @@ func (h *CombinedUserHandler) Register(ctx context.Context, req *proto.RegisterR
 }
 
 // GetUser retrieves a user by ID
-func (h *CombinedUserHandler) GetUser(ctx context.Context, req *proto.GetUserRequestV2) (*proto.GetUserResponseV2, error) {
+func (h *CombinedUserHandler) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.GetUserResponse, error) {
 	h.logger.Info("gRPC GetUser request", zap.String("user_id", req.Id))
 
 	// Validate request
 	if req.Id == "" {
-		return &proto.GetUserResponseV2{
+		return &pb.GetUserResponse{
 			StatusCode: 400,
 			Message:    "User ID is required",
 		}, status.Error(codes.InvalidArgument, "user ID is required")
@@ -155,20 +155,20 @@ func (h *CombinedUserHandler) GetUser(ctx context.Context, req *proto.GetUserReq
 
 		// Check if it's a not found error
 		if err.Error() == "user not found" {
-			return &proto.GetUserResponseV2{
+			return &pb.GetUserResponse{
 				StatusCode: 404,
 				Message:    "User not found",
 			}, status.Error(codes.NotFound, "user not found")
 		}
 
-		return &proto.GetUserResponseV2{
+		return &pb.GetUserResponse{
 			StatusCode: 500,
 			Message:    "Internal server error",
 		}, status.Error(codes.Internal, err.Error())
 	}
 
 	// Convert to protobuf user
-	pbUser := &proto.UserV2{
+	pbUser := &pb.User{
 		Id:          userResponse.ID,
 		Username:    getStringValue(userResponse.Username),
 		PhoneNumber: userResponse.PhoneNumber,
@@ -178,7 +178,7 @@ func (h *CombinedUserHandler) GetUser(ctx context.Context, req *proto.GetUserReq
 		UpdatedAt:   timestamppb.New(userResponse.UpdatedAt).String(),
 	}
 
-	return &proto.GetUserResponseV2{
+	return &pb.GetUserResponse{
 		StatusCode: 200,
 		Message:    "User retrieved successfully",
 		User:       pbUser,
@@ -186,7 +186,7 @@ func (h *CombinedUserHandler) GetUser(ctx context.Context, req *proto.GetUserReq
 }
 
 // GetAllUsers retrieves all users with pagination
-func (h *CombinedUserHandler) GetAllUsers(ctx context.Context, req *proto.GetAllUsersRequestV2) (*proto.GetAllUsersResponseV2, error) {
+func (h *CombinedUserHandler) GetAllUsers(ctx context.Context, req *pb.GetAllUsersRequest) (*pb.GetAllUsersResponse, error) {
 	h.logger.Info("gRPC GetAllUsers request")
 
 	// Set default pagination values
@@ -216,21 +216,21 @@ func (h *CombinedUserHandler) GetAllUsers(ctx context.Context, req *proto.GetAll
 
 	if err != nil {
 		h.logger.Error("Failed to get users", zap.Error(err))
-		return &proto.GetAllUsersResponseV2{
+		return &pb.GetAllUsersResponse{
 			StatusCode: 500,
 			Message:    "Internal server error",
 		}, status.Error(codes.Internal, err.Error())
 	}
 
 	// Convert interface{} to slice - this is a limitation of the current service interface
-	var pbUsers []*proto.UserV2
+	var pbUsers []*pb.User
 
 	// For now, return empty list with success status
 	// TODO: Fix the service interface to return proper typed responses
 	// Log the type for debugging
 	h.logger.Debug("Retrieved users", zap.Any("users_type", usersInterface))
 
-	return &proto.GetAllUsersResponseV2{
+	return &pb.GetAllUsersResponse{
 		StatusCode: 200,
 		Message:    "Users retrieved successfully",
 		Users:      pbUsers,
@@ -241,12 +241,12 @@ func (h *CombinedUserHandler) GetAllUsers(ctx context.Context, req *proto.GetAll
 }
 
 // GetUserByPhone retrieves a user by phone number
-func (h *CombinedUserHandler) GetUserByPhone(ctx context.Context, req *proto.GetUserByPhoneRequestV2) (*proto.GetUserResponseV2, error) {
+func (h *CombinedUserHandler) GetUserByPhone(ctx context.Context, req *pb.GetUserByPhoneRequest) (*pb.GetUserResponse, error) {
 	h.logger.Info("gRPC GetUserByPhone request", zap.String("phone", req.PhoneNumber))
 
 	// Validate request
 	if req.PhoneNumber == "" {
-		return &proto.GetUserResponseV2{
+		return &pb.GetUserResponse{
 			StatusCode: 400,
 			Message:    "Phone number is required",
 		}, status.Error(codes.InvalidArgument, "phone number is required")
@@ -263,20 +263,20 @@ func (h *CombinedUserHandler) GetUserByPhone(ctx context.Context, req *proto.Get
 		h.logger.Error("Failed to get user by phone", zap.String("phone", req.PhoneNumber), zap.Error(err))
 
 		if err.Error() == "user not found" {
-			return &proto.GetUserResponseV2{
+			return &pb.GetUserResponse{
 				StatusCode: 404,
 				Message:    "User not found",
 			}, status.Error(codes.NotFound, "user not found")
 		}
 
-		return &proto.GetUserResponseV2{
+		return &pb.GetUserResponse{
 			StatusCode: 500,
 			Message:    "Internal server error",
 		}, status.Error(codes.Internal, err.Error())
 	}
 
 	// Convert to protobuf user
-	pbUser := &proto.UserV2{
+	pbUser := &pb.User{
 		Id:          userResponse.ID,
 		Username:    getStringValue(userResponse.Username),
 		PhoneNumber: userResponse.PhoneNumber,
@@ -286,7 +286,7 @@ func (h *CombinedUserHandler) GetUserByPhone(ctx context.Context, req *proto.Get
 		UpdatedAt:   timestamppb.New(userResponse.UpdatedAt).String(),
 	}
 
-	return &proto.GetUserResponseV2{
+	return &pb.GetUserResponse{
 		StatusCode: 200,
 		Message:    "User retrieved successfully",
 		User:       pbUser,
@@ -294,12 +294,12 @@ func (h *CombinedUserHandler) GetUserByPhone(ctx context.Context, req *proto.Get
 }
 
 // VerifyUserPassword verifies a user's password
-func (h *CombinedUserHandler) VerifyUserPassword(ctx context.Context, req *proto.VerifyPasswordRequestV2) (*proto.VerifyPasswordResponseV2, error) {
+func (h *CombinedUserHandler) VerifyUserPassword(ctx context.Context, req *pb.VerifyPasswordRequest) (*pb.VerifyPasswordResponse, error) {
 	h.logger.Info("gRPC VerifyUserPassword request", zap.String("username", req.Username))
 
 	// Validate request
 	if req.Username == "" || req.Password == "" {
-		return &proto.VerifyPasswordResponseV2{
+		return &pb.VerifyPasswordResponse{
 			StatusCode: 400,
 			Message:    "Username and password are required",
 			Valid:      false,
@@ -311,7 +311,7 @@ func (h *CombinedUserHandler) VerifyUserPassword(ctx context.Context, req *proto
 	if err != nil {
 		h.logger.Error("Password verification failed", zap.String("username", req.Username), zap.Error(err))
 
-		return &proto.VerifyPasswordResponseV2{
+		return &pb.VerifyPasswordResponse{
 			StatusCode: 401,
 			Message:    "Invalid credentials",
 			Valid:      false,
@@ -319,7 +319,7 @@ func (h *CombinedUserHandler) VerifyUserPassword(ctx context.Context, req *proto
 	}
 
 	// Convert to protobuf user
-	pbUser := &proto.UserV2{
+	pbUser := &pb.User{
 		Id:          userResponse.ID,
 		Username:    getStringValue(userResponse.Username),
 		PhoneNumber: userResponse.PhoneNumber,
@@ -329,7 +329,7 @@ func (h *CombinedUserHandler) VerifyUserPassword(ctx context.Context, req *proto
 		UpdatedAt:   timestamppb.New(userResponse.UpdatedAt).String(),
 	}
 
-	return &proto.VerifyPasswordResponseV2{
+	return &pb.VerifyPasswordResponse{
 		StatusCode: 200,
 		Message:    "Password verified successfully",
 		Valid:      true,
@@ -338,23 +338,23 @@ func (h *CombinedUserHandler) VerifyUserPassword(ctx context.Context, req *proto
 }
 
 // UpdateUser updates a user
-func (h *CombinedUserHandler) UpdateUser(ctx context.Context, req *proto.UpdateUserRequestV2) (*proto.UpdateUserResponseV2, error) {
+func (h *CombinedUserHandler) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest) (*pb.UpdateUserResponse, error) {
 	h.logger.Info("gRPC UpdateUser request", zap.String("user_id", req.Id))
 
 	// TODO: Implement update user functionality
-	return &proto.UpdateUserResponseV2{
+	return &pb.UpdateUserResponse{
 		StatusCode: 501,
 		Message:    "Update user not implemented yet",
 	}, status.Error(codes.Unimplemented, "update user not implemented")
 }
 
 // DeleteUser deletes a user
-func (h *CombinedUserHandler) DeleteUser(ctx context.Context, req *proto.DeleteUserRequestV2) (*proto.DeleteUserResponseV2, error) {
+func (h *CombinedUserHandler) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest) (*pb.DeleteUserResponse, error) {
 	h.logger.Info("gRPC DeleteUser request", zap.String("user_id", req.Id))
 
 	// Validate request
 	if req.Id == "" {
-		return &proto.DeleteUserResponseV2{
+		return &pb.DeleteUserResponse{
 			StatusCode: 400,
 			Message:    "User ID is required",
 		}, status.Error(codes.InvalidArgument, "user ID is required")
@@ -366,41 +366,41 @@ func (h *CombinedUserHandler) DeleteUser(ctx context.Context, req *proto.DeleteU
 		h.logger.Error("Failed to delete user", zap.String("user_id", req.Id), zap.Error(err))
 
 		if err.Error() == "user not found" {
-			return &proto.DeleteUserResponseV2{
+			return &pb.DeleteUserResponse{
 				StatusCode: 404,
 				Message:    "User not found",
 			}, status.Error(codes.NotFound, "user not found")
 		}
 
-		return &proto.DeleteUserResponseV2{
+		return &pb.DeleteUserResponse{
 			StatusCode: 500,
 			Message:    "Internal server error",
 		}, status.Error(codes.Internal, err.Error())
 	}
 
-	return &proto.DeleteUserResponseV2{
+	return &pb.DeleteUserResponse{
 		StatusCode: 200,
 		Message:    "User deleted successfully",
 	}, nil
 }
 
 // RefreshToken refreshes an access token
-func (h *CombinedUserHandler) RefreshToken(ctx context.Context, req *proto.RefreshTokenRequestV2) (*proto.RefreshTokenResponseV2, error) {
+func (h *CombinedUserHandler) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequest) (*pb.RefreshTokenResponse, error) {
 	h.logger.Info("gRPC RefreshToken request")
 
 	// TODO: Implement refresh token functionality
-	return &proto.RefreshTokenResponseV2{
+	return &pb.RefreshTokenResponse{
 		StatusCode: 501,
 		Message:    "Refresh token not implemented yet",
 	}, status.Error(codes.Unimplemented, "refresh token not implemented")
 }
 
 // Logout logs out a user
-func (h *CombinedUserHandler) Logout(ctx context.Context, req *proto.LogoutRequestV2) (*proto.LogoutResponseV2, error) {
+func (h *CombinedUserHandler) Logout(ctx context.Context, req *pb.LogoutRequest) (*pb.LogoutResponse, error) {
 	h.logger.Info("gRPC Logout request")
 
 	// TODO: Implement logout functionality
-	return &proto.LogoutResponseV2{
+	return &pb.LogoutResponse{
 		StatusCode: 501,
 		Message:    "Logout not implemented yet",
 	}, status.Error(codes.Unimplemented, "logout not implemented")

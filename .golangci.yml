@@ -1,4 +1,6 @@
 # golangci-lint configuration for AAA Service
+# Compatible with golangci-lint v1.54+ and v2.x
+
 run:
   timeout: 5m
   issues-exit-code: 1
@@ -22,7 +24,7 @@ linters-settings:
     simplify: true
   goimports:
     local-prefixes: github.com/Kisanlink/aaa-service
-  golint:
+  revive:
     min-confidence: 0.8
   gocyclo:
     min-complexity: 15
@@ -49,8 +51,6 @@ linters-settings:
     statements: 50
   lll:
     line-length: 120
-  maligned:
-    suggest-new: true
   misspell:
     locale: US
   unused:
@@ -68,28 +68,25 @@ linters-settings:
     allow-unused: false
     require-explanation: false
     require-specific: false
+  govet:
+    check-shadowing: true
 
 linters:
   enable:
     # Default linters
     - errcheck
-    - gosimple
     - govet
     - ineffassign
     - staticcheck
-    - typecheck
     - unused
 
     # Additional recommended linters
     - asciicheck
     - bodyclose
-    - cyclop
     - dogsled
     - dupl
-    - durationcheck
     - errorlint
     - exhaustive
-    - exportloopref
     - forbidigo
     - forcetypeassert
     - gochecknoglobals
@@ -99,10 +96,7 @@ linters:
     - gocritic
     - gocyclo
     - godot
-    - gofmt
-    - gofumpt
     - goheader
-    - goimports
     - gomodguard
     - goprintffuncname
     - gosec
@@ -119,30 +113,15 @@ linters:
     - nolintlint
     - prealloc
     - predeclared
-    - promlinter
     - revive
     - rowserrcheck
     - sqlclosecheck
-    - stylecheck
     - thelper
     - tparallel
     - unconvert
     - unparam
     - wastedassign
     - whitespace
-
-  disable:
-    - deadcode      # deprecated
-    - exhaustivestruct # too strict
-    - golint        # deprecated
-    - ifshort       # deprecated
-    - interfacer    # deprecated
-    - maligned      # deprecated
-    - nosnakecase   # deprecated
-    - scopelint     # deprecated
-    - structcheck   # deprecated
-    - varcheck      # deprecated
-    - wsl           # too opinionated
 
 issues:
   exclude-rules:

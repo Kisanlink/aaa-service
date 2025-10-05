@@ -27,7 +27,7 @@ type UserResponse struct {
 	Message       *string          `json:"message,omitempty"`
 	Tokens        int              `json:"tokens"`
 	Address       *AddressResponse `json:"address,omitempty"`
-	Roles         []RoleDetail     `json:"roles"`
+	Roles         []UserRoleDetail `json:"roles"`
 	HasMPin       bool             `json:"has_mpin"`
 }
 
@@ -55,14 +55,20 @@ func (r *UserResponse) FromModel(user *models.User) {
 	r.HasMPin = user.HasMPin()
 
 	// Convert roles
-	r.Roles = make([]RoleDetail, len(user.Roles))
+	r.Roles = make([]UserRoleDetail, len(user.Roles))
 	for i, userRole := range user.Roles {
-		r.Roles[i] = RoleDetail{
-			ID:          userRole.RoleID,
-			Name:        userRole.Role.Name,
-			Description: userRole.Role.Description,
-			IsActive:    userRole.IsActive,
-			AssignedAt:  userRole.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		r.Roles[i] = UserRoleDetail{
+			ID:       userRole.ID,
+			UserID:   userRole.UserID,
+			RoleID:   userRole.RoleID,
+			IsActive: userRole.IsActive,
+			Role: RoleDetail{
+				ID:          userRole.Role.ID,
+				Name:        userRole.Role.Name,
+				Description: userRole.Role.Description,
+				IsActive:    userRole.Role.IsActive,
+				AssignedAt:  userRole.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+			},
 		}
 	}
 }
@@ -110,4 +116,13 @@ type RoleDetail struct {
 	Description string `json:"description"`
 	IsActive    bool   `json:"is_active"`
 	AssignedAt  string `json:"assigned_at"`
+}
+
+// UserRoleDetail represents detailed user-role relationship information
+type UserRoleDetail struct {
+	ID       string     `json:"id"`
+	UserID   string     `json:"user_id"`
+	RoleID   string     `json:"role_id"`
+	Role     RoleDetail `json:"role"`
+	IsActive bool       `json:"is_active"`
 }

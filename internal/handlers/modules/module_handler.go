@@ -31,19 +31,20 @@ func NewModuleHandler(moduleService *services.ModuleService, logger *zap.Logger,
 }
 
 // RegisterModule handles POST /api/v2/modules/register
-// @Summary Register a new module
-// @Description Register a complete module with actions, roles, resources, and permissions
-// @Tags modules
-// @Accept json
-// @Produce json
-// @Param module body requests.ModuleRegistrationRequest true "Module registration request"
-// @Success 201 {object} responses.ModuleDetailResponse
-// @Failure 400 {object} map[string]interface{}
-// @Failure 401 {object} map[string]interface{}
-// @Failure 403 {object} map[string]interface{}
-// @Failure 409 {object} map[string]interface{}
-// @Failure 500 {object} map[string]interface{}
-// @Router /api/v2/modules/register [post]
+//
+//	@Summary		Register a new module
+//	@Description	Register a complete module with actions, roles, resources, and permissions
+//	@Tags			modules
+//	@Accept			json
+//	@Produce		json
+//	@Param			module	body		requests.ModuleRegistrationRequest	true	"Module registration request"
+//	@Success		201		{object}	responses.ModuleDetailResponse
+//	@Failure		400		{object}	map[string]interface{}
+//	@Failure		401		{object}	map[string]interface{}
+//	@Failure		403		{object}	map[string]interface{}
+//	@Failure		409		{object}	map[string]interface{}
+//	@Failure		500		{object}	map[string]interface{}
+//	@Router			/api/v2/modules/register [post]
 func (h *ModuleHandler) RegisterModule(c *gin.Context) {
 	h.logger.Info("Processing module registration request")
 
@@ -89,17 +90,18 @@ func (h *ModuleHandler) RegisterModule(c *gin.Context) {
 }
 
 // GetModule handles GET /api/v2/modules/{service_name}
-// @Summary Get module information
-// @Description Get detailed information about a registered module
-// @Tags modules
-// @Produce json
-// @Param service_name path string true "Service name"
-// @Success 200 {object} responses.ModuleDetailResponse
-// @Failure 400 {object} map[string]interface{}
-// @Failure 401 {object} map[string]interface{}
-// @Failure 404 {object} map[string]interface{}
-// @Failure 500 {object} map[string]interface{}
-// @Router /api/v2/modules/{service_name} [get]
+//
+//	@Summary		Get module information
+//	@Description	Get detailed information about a registered module
+//	@Tags			modules
+//	@Produce		json
+//	@Param			service_name	path		string	true	"Service name"
+//	@Success		200				{object}	responses.ModuleDetailResponse
+//	@Failure		400				{object}	map[string]interface{}
+//	@Failure		401				{object}	map[string]interface{}
+//	@Failure		404				{object}	map[string]interface{}
+//	@Failure		500				{object}	map[string]interface{}
+//	@Router			/api/v2/modules/{service_name} [get]
 func (h *ModuleHandler) GetModule(c *gin.Context) {
 	serviceName := c.Param("service_name")
 	if serviceName == "" {
@@ -126,14 +128,15 @@ func (h *ModuleHandler) GetModule(c *gin.Context) {
 }
 
 // ListModules handles GET /api/v2/modules
-// @Summary List all registered modules
-// @Description Get a list of all registered modules
-// @Tags modules
-// @Produce json
-// @Success 200 {object} responses.ModuleListResponse
-// @Failure 401 {object} map[string]interface{}
-// @Failure 500 {object} map[string]interface{}
-// @Router /api/v2/modules [get]
+//
+//	@Summary		List all registered modules
+//	@Description	Get a list of all registered modules
+//	@Tags			modules
+//	@Produce		json
+//	@Success		200	{object}	responses.ModuleListResponse
+//	@Failure		401	{object}	map[string]interface{}
+//	@Failure		500	{object}	map[string]interface{}
+//	@Router			/api/v2/modules [get]
 func (h *ModuleHandler) ListModules(c *gin.Context) {
 	h.logger.Info("Listing all modules")
 
@@ -151,17 +154,18 @@ func (h *ModuleHandler) ListModules(c *gin.Context) {
 }
 
 // ModuleHealthCheck handles GET /api/v2/modules/{service_name}/health
-// @Summary Check module health
-// @Description Check if a module is healthy and operational
-// @Tags modules
-// @Produce json
-// @Param service_name path string true "Service name"
-// @Success 200 {object} map[string]interface{}
-// @Failure 400 {object} map[string]interface{}
-// @Failure 401 {object} map[string]interface{}
-// @Failure 404 {object} map[string]interface{}
-// @Failure 500 {object} map[string]interface{}
-// @Router /api/v2/modules/{service_name}/health [get]
+//
+//	@Summary		Check module health
+//	@Description	Check if a module is healthy and operational
+//	@Tags			modules
+//	@Produce		json
+//	@Param			service_name	path		string	true	"Service name"
+//	@Success		200				{object}	map[string]interface{}
+//	@Failure		400				{object}	map[string]interface{}
+//	@Failure		401				{object}	map[string]interface{}
+//	@Failure		404				{object}	map[string]interface{}
+//	@Failure		500				{object}	map[string]interface{}
+//	@Router			/api/v2/modules/{service_name}/health [get]
 func (h *ModuleHandler) ModuleHealthCheck(c *gin.Context) {
 	serviceName := c.Param("service_name")
 	if serviceName == "" {
