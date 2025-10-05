@@ -3,6 +3,7 @@ package grpc_server
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/Kisanlink/aaa-service/internal/services"
 	pb "github.com/Kisanlink/aaa-service/pkg/proto"
@@ -228,44 +229,152 @@ func (h *AuthorizationHandler) ListAllowedColumns(ctx context.Context, req *pb.L
 	}, nil
 }
 
-// Explain implements the Explain RPC method for authorization
-func (h *AuthorizationHandler) ExplainLegacy(ctx context.Context, req *pb.CheckRequest) (*pb.CheckResponse, error) {
-	h.logger.Info("gRPC Explain request",
+// EvaluatePermission implements the EvaluatePermission RPC method for authorization
+func (h *AuthorizationHandler) EvaluatePermission(ctx context.Context, req *pb.EvaluatePermissionRequest) (*pb.EvaluatePermissionResponse, error) {
+	h.logger.Info("gRPC EvaluatePermission request",
 		zap.String("principal_id", req.PrincipalId),
-		zap.String("resource_type", req.ResourceType),
-		zap.String("action", req.Action))
+		zap.String("permission", req.Permission),
+		zap.String("resource_context", req.ResourceContext))
 
-	// Check the permission to explain
+	// Parse permission format (e.g., "resource:action" or "resource.action")
+	resourceType := req.ResourceContext
+	action := req.ActionContext
+
+	if req.Permission != "" {
+		// Try to split permission string by : or .
+		if strings.Contains(req.Permission, ":") {
+			parts := strings.SplitN(req.Permission, ":", 2)
+			if len(parts) == 2 {
+				resourceType = parts[0]
+				action = parts[1]
+			}
+		} else if strings.Contains(req.Permission, ".") {
+			parts := strings.SplitN(req.Permission, ".", 2)
+			if len(parts) == 2 {
+				resourceType = parts[0]
+				action = parts[1]
+			}
+		}
+	}
+
+	// Check the permission
 	permission := &services.Permission{
 		UserID:     req.PrincipalId,
-		Resource:   req.ResourceType,
-		ResourceID: req.ResourceId,
-		Action:     req.Action,
+		Resource:   resourceType,
+		ResourceID: "*", // Default to wildcard
+		Action:     action,
 	}
 
 	result, err := h.authzService.CheckPermission(ctx, permission)
 	if err != nil {
-		h.logger.Error("Explain failed", zap.Error(err))
-		return nil, status.Errorf(codes.Internal, "explain failed: %v", err)
+		h.logger.Error("EvaluatePermission failed", zap.Error(err))
+		return nil, status.Errorf(codes.Internal, "evaluate permission failed: %v", err)
 	}
 
-	// Create a basic explanation
-	var explanation string
+	// Create response with reasons
+	var reasons []string
 	if result.Allowed {
-		explanation = fmt.Sprintf("User %s is allowed to perform %s on %s:%s based on role-based permissions",
-			req.PrincipalId, req.Action, req.ResourceType, req.ResourceId)
+		reasons = append(reasons, fmt.Sprintf("User %s has permission %s on %s based on role-based permissions",
+			req.PrincipalId, action, resourceType))
 	} else {
-		explanation = fmt.Sprintf("User %s is denied access to perform %s on %s:%s - insufficient permissions",
-			req.PrincipalId, req.Action, req.ResourceType, req.ResourceId)
+		reasons = append(reasons, fmt.Sprintf("User %s lacks permission %s on %s - insufficient permissions",
+			req.PrincipalId, action, resourceType))
 	}
 
-	h.logger.Info("Explain completed",
+	h.logger.Info("EvaluatePermission completed",
 		zap.String("principal_id", req.PrincipalId),
 		zap.Bool("allowed", result.Allowed))
 
-	return &pb.CheckResponse{
-		Allowed:    result.Allowed,
-		DecisionId: result.DecisionID,
-		Reasons:    []string{explanation},
+	return &pb.EvaluatePermissionResponse{
+		Allowed:         result.Allowed,
+		DecisionId:      result.DecisionID,
+		Reasons:         reasons,
+		ConfidenceScore: 100, // Full confidence in RBAC decisions
+	}, nil
+}
+
+// BulkEvaluatePermissions implements the BulkEvaluatePermissions RPC method for authorization
+func (h *AuthorizationHandler) BulkEvaluatePermissions(ctx context.Context, req *pb.BulkEvaluatePermissionsRequest) (*pb.BulkEvaluatePermissionsResponse, error) {
+	h.logger.Info("gRPC BulkEvaluatePermissions request",
+		zap.String("principal_id", req.PrincipalId),
+		zap.Int("permission_count", len(req.Permissions)))
+
+	results := make([]*pb.PermissionResult, 0, len(req.Permissions))
+	var allowedCount, deniedCount int32
+
+	for _, permCheck := range req.Permissions {
+		// Parse permission
+		resourceType := permCheck.ResourceContext
+		action := permCheck.ActionContext
+
+		if permCheck.Permission != "" {
+			// Try to parse permission string by : or .
+			if strings.Contains(permCheck.Permission, ":") {
+				parts := strings.SplitN(permCheck.Permission, ":", 2)
+				if len(parts) == 2 {
+					resourceType = parts[0]
+					action = parts[1]
+				}
+			} else if strings.Contains(permCheck.Permission, ".") {
+				parts := strings.SplitN(permCheck.Permission, ".", 2)
+				if len(parts) == 2 {
+					resourceType = parts[0]
+					action = parts[1]
+				}
+			}
+		}
+
+		permission := &services.Permission{
+			UserID:     req.PrincipalId,
+			Resource:   resourceType,
+			ResourceID: "*",
+			Action:     action,
+		}
+
+		result, err := h.authzService.CheckPermission(ctx, permission)
+		if err != nil {
+			h.logger.Error("Permission check failed in bulk evaluation", zap.Error(err))
+			deniedCount++
+			results = append(results, &pb.PermissionResult{
+				Permission:      permCheck.Permission,
+				Allowed:         false,
+				Reasons:         []string{fmt.Sprintf("Error checking permission: %v", err)},
+				ConfidenceScore: 0,
+			})
+			continue
+		}
+
+		if result.Allowed {
+			allowedCount++
+		} else {
+			deniedCount++
+		}
+
+		var reasons []string
+		if result.Allowed {
+			reasons = append(reasons, "Permission granted based on role-based access")
+		} else {
+			reasons = append(reasons, "Permission denied - insufficient privileges")
+		}
+
+		results = append(results, &pb.PermissionResult{
+			Permission:      permCheck.Permission,
+			Allowed:         result.Allowed,
+			DecisionId:      result.DecisionID,
+			Reasons:         reasons,
+			ConfidenceScore: 100,
+		})
+	}
+
+	h.logger.Info("BulkEvaluatePermissions completed",
+		zap.String("principal_id", req.PrincipalId),
+		zap.Int32("allowed", allowedCount),
+		zap.Int32("denied", deniedCount))
+
+	return &pb.BulkEvaluatePermissionsResponse{
+		Results:       results,
+		TotalChecks:   int32(len(req.Permissions)),
+		AllowedChecks: allowedCount,
+		DeniedChecks:  deniedCount,
 	}, nil
 }
