@@ -21,17 +21,18 @@ import (
 
 // GRPCServer represents the gRPC server with authentication and authorization
 type GRPCServer struct {
-	server       *grpc.Server
-	logger       *zap.Logger
-	authService  *services.AuthService
-	authzService *services.AuthorizationService
-	auditService *services.AuditService
-	userService  interfaces.UserService
-	roleService  interfaces.RoleService
-	cacheService interfaces.CacheService
-	dbManager    db.DBManager
-	port         string
-	listener     net.Listener
+	server         *grpc.Server
+	logger         *zap.Logger
+	authService    *services.AuthService
+	authzService   *services.AuthorizationService
+	auditService   *services.AuditService
+	userService    interfaces.UserService
+	roleService    interfaces.RoleService
+	cacheService   interfaces.CacheService
+	userRepository interfaces.UserRepository
+	dbManager      db.DBManager
+	port           string
+	listener       net.Listener
 }
 
 // GRPCServerConfig contains configuration for the gRPC server
@@ -119,15 +120,16 @@ func NewGRPCServer(
 	}
 
 	return &GRPCServer{
-		logger:       logger,
-		authService:  authService,
-		authzService: authzService,
-		auditService: auditService,
-		userService:  userService,
-		roleService:  roleService,
-		cacheService: cacheService,
-		dbManager:    dbManager,
-		port:         config.Port,
+		logger:         logger,
+		authService:    authService,
+		authzService:   authzService,
+		auditService:   auditService,
+		userService:    userService,
+		roleService:    roleService,
+		cacheService:   cacheService,
+		userRepository: userRepository,
+		dbManager:      dbManager,
+		port:           config.Port,
 	}, nil
 }
 
@@ -206,9 +208,20 @@ func (s *GRPCServer) registerServices() {
 	authzHandler := NewAuthorizationHandler(s.authzService, s.logger)
 	pb.RegisterAuthorizationServiceServer(s.server, authzHandler)
 
+	// Register TokenService for remote token validation
+	tokenHandler := NewTokenHandler(
+		s.authService,
+		s.userService,
+		s.authzService,
+		s.cacheService,
+		s.userRepository,
+		s.logger,
+	)
+	pb.RegisterTokenServiceServer(s.server, tokenHandler)
+
 	s.logger.Info("gRPC services registered successfully",
 		zap.String("primary_service", "AAAService"),
-		zap.Strings("legacy_services", []string{"UserServiceV2", "AuthorizationService"}))
+		zap.Strings("services", []string{"UserServiceV2", "AuthorizationService", "TokenService"}))
 }
 
 // loggingInterceptor logs gRPC requests
