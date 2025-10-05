@@ -31,6 +31,7 @@ type GRPCServer struct {
 	cacheService        interfaces.CacheService
 	userRepository      interfaces.UserRepository
 	organizationService interfaces.OrganizationService
+	serviceRepository   interfaces.ServiceRepository
 	dbManager           db.DBManager
 	port                string
 	listener            net.Listener
@@ -58,6 +59,7 @@ func NewGRPCServer(
 	userRepository interfaces.UserRepository,
 	cacheService interfaces.CacheService,
 	organizationService interfaces.OrganizationService,
+	serviceRepository interfaces.ServiceRepository,
 	logger *zap.Logger,
 	validator interfaces.Validator,
 ) (*GRPCServer, error) {
@@ -131,6 +133,7 @@ func NewGRPCServer(
 		cacheService:        cacheService,
 		userRepository:      userRepository,
 		organizationService: organizationService,
+		serviceRepository:   serviceRepository,
 		dbManager:           dbManager,
 		port:                config.Port,
 	}, nil
@@ -147,7 +150,7 @@ func (s *GRPCServer) Start() error {
 	// Create gRPC server with interceptors
 	// Build unified auth middleware for gRPC
 	jwtCfg := cfg.LoadJWTConfigFromEnv()
-	authMW := middleware.NewAuthMiddleware(s.authService, s.authzService, s.auditService, s.logger, middleware.NewHS256Verifier(), jwtCfg)
+	authMW := middleware.NewAuthMiddleware(s.authService, s.authzService, s.auditService, s.serviceRepository, s.logger, middleware.NewHS256Verifier(), jwtCfg)
 
 	opts := []grpc.ServerOption{
 		grpc.ChainUnaryInterceptor(

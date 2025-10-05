@@ -2,13 +2,15 @@ package middleware
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"net/http"
 	"strings"
-
 	"time"
 
 	"github.com/Kisanlink/aaa-service/internal/config"
+	"github.com/Kisanlink/aaa-service/internal/entities/models"
 	"github.com/Kisanlink/aaa-service/internal/services"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -20,12 +22,18 @@ import (
 
 // AuthMiddleware provides authentication and authorization middleware
 type AuthMiddleware struct {
-	authService  *services.AuthService
-	authzService *services.AuthorizationService
-	auditService *services.AuditService
-	logger       *zap.Logger
-	jwtVerifier  JWTVerifier
-	jwtCfg       *config.JWTConfig
+	authService       *services.AuthService
+	authzService      *services.AuthorizationService
+	auditService      *services.AuditService
+	serviceRepository ServiceRepository
+	logger            *zap.Logger
+	jwtVerifier       JWTVerifier
+	jwtCfg            *config.JWTConfig
+}
+
+// ServiceRepository defines methods for service authentication (imported from interfaces package)
+type ServiceRepository interface {
+	GetByAPIKey(ctx context.Context, apiKeyHash string) (*models.Service, error)
 }
 
 // NewAuthMiddleware creates a new authentication middleware
@@ -33,17 +41,19 @@ func NewAuthMiddleware(
 	authService *services.AuthService,
 	authzService *services.AuthorizationService,
 	auditService *services.AuditService,
+	serviceRepository ServiceRepository,
 	logger *zap.Logger,
 	jwtVerifier JWTVerifier,
 	jwtCfg *config.JWTConfig,
 ) *AuthMiddleware {
 	return &AuthMiddleware{
-		authService:  authService,
-		authzService: authzService,
-		auditService: auditService,
-		logger:       logger,
-		jwtVerifier:  jwtVerifier,
-		jwtCfg:       jwtCfg,
+		authService:       authService,
+		authzService:      authzService,
+		auditService:      auditService,
+		serviceRepository: serviceRepository,
+		logger:            logger,
+		jwtVerifier:       jwtVerifier,
+		jwtCfg:            jwtCfg,
 	}
 }
 
@@ -218,11 +228,16 @@ func (m *AuthMiddleware) GRPCAuthInterceptor() grpc.UnaryServerInterceptor {
 			return nil, status.Errorf(codes.Unauthenticated, "metadata is not provided")
 		}
 
-		// Extract authorization token
+		// Check for API key authentication (for service-to-service calls)
+		if apiKeys, ok := md["x-api-key"]; ok && len(apiKeys) > 0 {
+			return m.authenticateService(ctx, apiKeys[0], info.FullMethod, handler, req)
+		}
+
+		// Fall back to JWT token authentication (for user calls)
 		authHeaders, ok := md["authorization"]
 		if !ok || len(authHeaders) == 0 {
-			m.logger.Warn("Missing authorization token in gRPC request", zap.String("method", info.FullMethod))
-			return nil, status.Errorf(codes.Unauthenticated, "authorization token is not provided")
+			m.logger.Warn("Missing authorization token or API key in gRPC request", zap.String("method", info.FullMethod))
+			return nil, status.Errorf(codes.Unauthenticated, "authorization token or API key is required")
 		}
 
 		token := authHeaders[0]
@@ -253,6 +268,55 @@ func (m *AuthMiddleware) GRPCAuthInterceptor() grpc.UnaryServerInterceptor {
 
 		return handler(ctx, req)
 	}
+}
+
+// authenticateService validates API key and sets service context
+func (m *AuthMiddleware) authenticateService(ctx context.Context, apiKey, method string, handler grpc.UnaryHandler, req interface{}) (interface{}, error) {
+	// Hash the API key to compare with stored hash
+	hashedAPIKey := m.hashAPIKey(apiKey)
+
+	// Look up service by API key hash
+	service, err := m.serviceRepository.GetByAPIKey(ctx, hashedAPIKey)
+	if err != nil {
+		m.logger.Warn("Error looking up service by API key",
+			zap.String("method", method),
+			zap.Error(err))
+		return nil, status.Errorf(codes.Unauthenticated, "invalid API key")
+	}
+
+	if service == nil {
+		m.logger.Warn("Invalid API key in gRPC request",
+			zap.String("method", method))
+		return nil, status.Errorf(codes.Unauthenticated, "invalid API key")
+	}
+
+	// Check if service is active
+	if !service.IsActive {
+		m.logger.Warn("Inactive service attempted authentication",
+			zap.String("service_id", service.ID),
+			zap.String("service_name", service.Name),
+			zap.String("method", method))
+		return nil, status.Errorf(codes.Unauthenticated, "service is inactive")
+	}
+
+	// Add service information to context
+	ctx = context.WithValue(ctx, "service_id", service.ID)
+	ctx = context.WithValue(ctx, "service_name", service.Name)
+	ctx = context.WithValue(ctx, "principal_type", "service")
+	ctx = context.WithValue(ctx, "user_id", service.ID) // Set user_id to service_id for compatibility
+
+	m.logger.Debug("gRPC service authenticated",
+		zap.String("service_id", service.ID),
+		zap.String("service_name", service.Name),
+		zap.String("method", method))
+
+	return handler(ctx, req)
+}
+
+// hashAPIKey hashes an API key using SHA-256 (same as principal service)
+func (m *AuthMiddleware) hashAPIKey(apiKey string) string {
+	hash := sha256.Sum256([]byte(apiKey))
+	return hex.EncodeToString(hash[:])
 }
 
 // RequireRole creates a middleware that requires specific roles
