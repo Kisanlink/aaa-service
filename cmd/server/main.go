@@ -17,6 +17,7 @@ import (
 	"github.com/Kisanlink/aaa-service/internal/grpc_server"
 	"github.com/Kisanlink/aaa-service/internal/handlers/admin"
 	"github.com/Kisanlink/aaa-service/internal/handlers/permissions"
+	principalHandlers "github.com/Kisanlink/aaa-service/internal/handlers/principals"
 	"github.com/Kisanlink/aaa-service/internal/handlers/roles"
 	"github.com/Kisanlink/aaa-service/internal/interfaces"
 	"github.com/Kisanlink/aaa-service/internal/middleware"
@@ -35,6 +36,7 @@ import (
 	contactService "github.com/Kisanlink/aaa-service/internal/services/contacts"
 	groupService "github.com/Kisanlink/aaa-service/internal/services/groups"
 	organizationService "github.com/Kisanlink/aaa-service/internal/services/organizations"
+	principalService "github.com/Kisanlink/aaa-service/internal/services/principals"
 	"github.com/Kisanlink/aaa-service/internal/services/user"
 	"github.com/Kisanlink/aaa-service/migrations"
 	"github.com/Kisanlink/aaa-service/utils"
@@ -312,14 +314,25 @@ func initializeServer(
 	contactRepository := contactRepo.NewContactRepository(primaryDBManager)
 	contactServiceInstance := contactService.NewContactService(contactRepository, cacheService, loggerAdapter, validator)
 
+	// Initialize principal service
+	principalRepository := principalRepo.NewPrincipalRepository(primaryDBManager)
+	principalService := principalService.NewPrincipalService(
+		organizationRepository,
+		principalRepository,
+		serviceRepository,
+		validator,
+		logger,
+	)
+
 	// Initialize handlers
 	permissionHandler := permissions.NewPermissionHandler(primaryDBManager, validator, responder, logger)
+	principalHandler := principalHandlers.NewPrincipalHandler(principalService, responder, logger)
 
 	// Initialize HTTP server
 	httpServer, err := initializeHTTPServer(
 		httpPort, jwtSecret,
 		primaryDBManager, userService, roleService, userRepository, userRoleRepository,
-		cacheService, validator, responder, maintenanceService, logger, permissionHandler, contactServiceInstance,
+		cacheService, validator, responder, maintenanceService, logger, permissionHandler, principalHandler, contactServiceInstance,
 		organizationRepository, groupRepository, groupRoleRepository, groupMembershipRepository, roleRepository,
 		serviceRepository,
 	)
@@ -366,6 +379,7 @@ func initializeHTTPServer(
 	maintenanceService interfaces.MaintenanceService,
 	logger *zap.Logger,
 	permissionHandler *permissions.PermissionHandler,
+	principalHandler *principalHandlers.Handler,
 	contactServiceInstance *contactService.ContactService,
 	organizationRepository *organizationRepo.OrganizationRepository,
 	groupRepository *groupRepo.GroupRepository,
@@ -437,7 +451,7 @@ func initializeHTTPServer(
 	setupHTTPMiddleware(router, authMiddleware, auditMiddleware, maintenanceService, responder, logger)
 
 	// Setup routes and docs
-	setupRoutesAndDocs(router, authService, authzService, auditService, authMiddleware, maintenanceService, validator, responder, logger, roleHandler, permissionHandler, userService, roleService, contactServiceInstance, organizationServiceInstance, groupServiceInstance)
+	setupRoutesAndDocs(router, authService, authzService, auditService, authMiddleware, maintenanceService, validator, responder, logger, roleHandler, permissionHandler, principalHandler, userService, roleService, contactServiceInstance, organizationServiceInstance, groupServiceInstance)
 
 	return &HTTPServer{
 		router:                      router,
@@ -556,6 +570,7 @@ func setupRoutesAndDocs(
 	logger *zap.Logger,
 	roleHandler *roles.RoleHandler,
 	permissionHandler *permissions.PermissionHandler,
+	principalHandler *principalHandlers.Handler,
 	userService interfaces.UserService,
 	roleService interfaces.RoleService,
 	contactServiceInstance *contactService.ContactService,
@@ -584,6 +599,9 @@ func setupRoutesAndDocs(
 		responder,
 		logger,
 	)
+
+	// Register principal and service management routes
+	routes.RegisterPrincipalRoutes(router, principalHandler, authMiddleware)
 
 	// Serve OpenAPI and Scalar-powered docs UI (gated by env)
 	if getEnv("AAA_ENABLE_DOCS", "true") == "true" {
