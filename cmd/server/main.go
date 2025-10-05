@@ -139,10 +139,11 @@ type Server struct {
 
 // HTTPServer wraps the gin router with middleware
 type HTTPServer struct {
-	router *gin.Engine
-	server *http.Server
-	port   string
-	logger *zap.Logger
+	router                      *gin.Engine
+	server                      *http.Server
+	port                        string
+	logger                      *zap.Logger
+	organizationServiceInstance interfaces.OrganizationService
 }
 
 func main() {
@@ -321,7 +322,7 @@ func initializeServer(
 		return nil, fmt.Errorf("failed to initialize HTTP server: %w", err)
 	}
 
-	// Initialize gRPC server
+	// Initialize gRPC server using organizationServiceInstance from httpServer
 	grpcConfig := &grpc_server.GRPCServerConfig{
 		Port:             grpcPort,
 		JWTSecret:        jwtSecret,
@@ -332,7 +333,8 @@ func initializeServer(
 
 	grpcServer, err := grpc_server.NewGRPCServer(
 		grpcConfig, primaryDBManager, userService, roleService,
-		userRoleRepository, userRepository, cacheService, logger, validator,
+		userRoleRepository, userRepository, cacheService, httpServer.organizationServiceInstance,
+		logger, validator,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize gRPC server: %w", err)
@@ -431,9 +433,10 @@ func initializeHTTPServer(
 	setupRoutesAndDocs(router, authService, authzService, auditService, authMiddleware, maintenanceService, validator, responder, logger, roleHandler, permissionHandler, userService, roleService, contactServiceInstance, organizationServiceInstance, groupServiceInstance)
 
 	return &HTTPServer{
-		router: router,
-		port:   port,
-		logger: logger,
+		router:                      router,
+		port:                        port,
+		logger:                      logger,
+		organizationServiceInstance: organizationServiceInstance,
 	}, nil
 }
 
