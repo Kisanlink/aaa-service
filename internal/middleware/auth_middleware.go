@@ -405,6 +405,10 @@ func (m *AuthMiddleware) isPublicGRPCMethod(method string) bool {
 		"/pb.UserServiceV2/Register",
 		"/pb.UserServiceV2/RefreshToken",
 		"/grpc.health.v1.Health/Check",
+		// TokenService methods - these validate tokens, so they can't require tokens
+		"/pb.TokenService/ValidateToken",
+		"/pb.TokenService/IntrospectToken",
+		"/pb.TokenService/RefreshAccessToken",
 	}
 
 	for _, publicMethod := range publicMethods {
