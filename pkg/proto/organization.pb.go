@@ -4,7 +4,7 @@
 // 	protoc        v6.32.0
 // source: organization.proto
 
-package proto
+package pb
 
 import (
 	reflect "reflect"
@@ -397,107 +397,6 @@ func (x *Organization) GetDefaultCurrency() string {
 	return ""
 }
 
-// Address information
-type Address struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	StreetLine_1  string                 `protobuf:"bytes,1,opt,name=street_line_1,json=streetLine1,proto3" json:"street_line_1,omitempty"`
-	StreetLine_2  string                 `protobuf:"bytes,2,opt,name=street_line_2,json=streetLine2,proto3" json:"street_line_2,omitempty"`
-	City          string                 `protobuf:"bytes,3,opt,name=city,proto3" json:"city,omitempty"`
-	StateProvince string                 `protobuf:"bytes,4,opt,name=state_province,json=stateProvince,proto3" json:"state_province,omitempty"`
-	PostalCode    string                 `protobuf:"bytes,5,opt,name=postal_code,json=postalCode,proto3" json:"postal_code,omitempty"`
-	Country       string                 `protobuf:"bytes,6,opt,name=country,proto3" json:"country,omitempty"`
-	CountryCode   string                 `protobuf:"bytes,7,opt,name=country_code,json=countryCode,proto3" json:"country_code,omitempty"`
-	Coordinates   *structpb.Struct       `protobuf:"bytes,8,opt,name=coordinates,proto3" json:"coordinates,omitempty"` // lat/lng
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *Address) Reset() {
-	*x = Address{}
-	mi := &file_organization_proto_msgTypes[1]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *Address) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Address) ProtoMessage() {}
-
-func (x *Address) ProtoReflect() protoreflect.Message {
-	mi := &file_organization_proto_msgTypes[1]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Address.ProtoReflect.Descriptor instead.
-func (*Address) Descriptor() ([]byte, []int) {
-	return file_organization_proto_rawDescGZIP(), []int{1}
-}
-
-func (x *Address) GetStreetLine_1() string {
-	if x != nil {
-		return x.StreetLine_1
-	}
-	return ""
-}
-
-func (x *Address) GetStreetLine_2() string {
-	if x != nil {
-		return x.StreetLine_2
-	}
-	return ""
-}
-
-func (x *Address) GetCity() string {
-	if x != nil {
-		return x.City
-	}
-	return ""
-}
-
-func (x *Address) GetStateProvince() string {
-	if x != nil {
-		return x.StateProvince
-	}
-	return ""
-}
-
-func (x *Address) GetPostalCode() string {
-	if x != nil {
-		return x.PostalCode
-	}
-	return ""
-}
-
-func (x *Address) GetCountry() string {
-	if x != nil {
-		return x.Country
-	}
-	return ""
-}
-
-func (x *Address) GetCountryCode() string {
-	if x != nil {
-		return x.CountryCode
-	}
-	return ""
-}
-
-func (x *Address) GetCoordinates() *structpb.Struct {
-	if x != nil {
-		return x.Coordinates
-	}
-	return nil
-}
-
 // Security settings for organization
 type SecuritySettings struct {
 	state                       protoimpl.MessageState `protogen:"open.v1"`
@@ -523,7 +422,7 @@ type SecuritySettings struct {
 
 func (x *SecuritySettings) Reset() {
 	*x = SecuritySettings{}
-	mi := &file_organization_proto_msgTypes[2]
+	mi := &file_organization_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -535,7 +434,7 @@ func (x *SecuritySettings) String() string {
 func (*SecuritySettings) ProtoMessage() {}
 
 func (x *SecuritySettings) ProtoReflect() protoreflect.Message {
-	mi := &file_organization_proto_msgTypes[2]
+	mi := &file_organization_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -548,7 +447,7 @@ func (x *SecuritySettings) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SecuritySettings.ProtoReflect.Descriptor instead.
 func (*SecuritySettings) Descriptor() ([]byte, []int) {
-	return file_organization_proto_rawDescGZIP(), []int{2}
+	return file_organization_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *SecuritySettings) GetMfaRequired() bool {
@@ -681,7 +580,7 @@ type ComplianceSettings struct {
 
 func (x *ComplianceSettings) Reset() {
 	*x = ComplianceSettings{}
-	mi := &file_organization_proto_msgTypes[3]
+	mi := &file_organization_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -693,7 +592,7 @@ func (x *ComplianceSettings) String() string {
 func (*ComplianceSettings) ProtoMessage() {}
 
 func (x *ComplianceSettings) ProtoReflect() protoreflect.Message {
-	mi := &file_organization_proto_msgTypes[3]
+	mi := &file_organization_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -706,7 +605,7 @@ func (x *ComplianceSettings) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ComplianceSettings.ProtoReflect.Descriptor instead.
 func (*ComplianceSettings) Descriptor() ([]byte, []int) {
-	return file_organization_proto_rawDescGZIP(), []int{3}
+	return file_organization_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *ComplianceSettings) GetGdprEnabled() bool {
@@ -790,7 +689,7 @@ type IntegrationConfig struct {
 
 func (x *IntegrationConfig) Reset() {
 	*x = IntegrationConfig{}
-	mi := &file_organization_proto_msgTypes[4]
+	mi := &file_organization_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -802,7 +701,7 @@ func (x *IntegrationConfig) String() string {
 func (*IntegrationConfig) ProtoMessage() {}
 
 func (x *IntegrationConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_organization_proto_msgTypes[4]
+	mi := &file_organization_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -815,7 +714,7 @@ func (x *IntegrationConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IntegrationConfig.ProtoReflect.Descriptor instead.
 func (*IntegrationConfig) Descriptor() ([]byte, []int) {
-	return file_organization_proto_rawDescGZIP(), []int{4}
+	return file_organization_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *IntegrationConfig) GetIntegrationId() string {
@@ -906,7 +805,7 @@ type Role struct {
 
 func (x *Role) Reset() {
 	*x = Role{}
-	mi := &file_organization_proto_msgTypes[5]
+	mi := &file_organization_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -918,7 +817,7 @@ func (x *Role) String() string {
 func (*Role) ProtoMessage() {}
 
 func (x *Role) ProtoReflect() protoreflect.Message {
-	mi := &file_organization_proto_msgTypes[5]
+	mi := &file_organization_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -931,7 +830,7 @@ func (x *Role) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Role.ProtoReflect.Descriptor instead.
 func (*Role) Descriptor() ([]byte, []int) {
-	return file_organization_proto_rawDescGZIP(), []int{5}
+	return file_organization_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *Role) GetId() string {
@@ -1067,7 +966,7 @@ type Permission struct {
 
 func (x *Permission) Reset() {
 	*x = Permission{}
-	mi := &file_organization_proto_msgTypes[6]
+	mi := &file_organization_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1079,7 +978,7 @@ func (x *Permission) String() string {
 func (*Permission) ProtoMessage() {}
 
 func (x *Permission) ProtoReflect() protoreflect.Message {
-	mi := &file_organization_proto_msgTypes[6]
+	mi := &file_organization_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1092,7 +991,7 @@ func (x *Permission) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Permission.ProtoReflect.Descriptor instead.
 func (*Permission) Descriptor() ([]byte, []int) {
-	return file_organization_proto_rawDescGZIP(), []int{6}
+	return file_organization_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *Permission) GetId() string {
@@ -1203,7 +1102,7 @@ type CreateOrganizationRequest struct {
 
 func (x *CreateOrganizationRequest) Reset() {
 	*x = CreateOrganizationRequest{}
-	mi := &file_organization_proto_msgTypes[7]
+	mi := &file_organization_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1215,7 +1114,7 @@ func (x *CreateOrganizationRequest) String() string {
 func (*CreateOrganizationRequest) ProtoMessage() {}
 
 func (x *CreateOrganizationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_organization_proto_msgTypes[7]
+	mi := &file_organization_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1228,7 +1127,7 @@ func (x *CreateOrganizationRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateOrganizationRequest.ProtoReflect.Descriptor instead.
 func (*CreateOrganizationRequest) Descriptor() ([]byte, []int) {
-	return file_organization_proto_rawDescGZIP(), []int{7}
+	return file_organization_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *CreateOrganizationRequest) GetName() string {
@@ -1350,7 +1249,7 @@ type CreateOrganizationResponse struct {
 
 func (x *CreateOrganizationResponse) Reset() {
 	*x = CreateOrganizationResponse{}
-	mi := &file_organization_proto_msgTypes[8]
+	mi := &file_organization_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1362,7 +1261,7 @@ func (x *CreateOrganizationResponse) String() string {
 func (*CreateOrganizationResponse) ProtoMessage() {}
 
 func (x *CreateOrganizationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_organization_proto_msgTypes[8]
+	mi := &file_organization_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1375,7 +1274,7 @@ func (x *CreateOrganizationResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateOrganizationResponse.ProtoReflect.Descriptor instead.
 func (*CreateOrganizationResponse) Descriptor() ([]byte, []int) {
-	return file_organization_proto_rawDescGZIP(), []int{8}
+	return file_organization_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *CreateOrganizationResponse) GetStatusCode() int32 {
@@ -1428,7 +1327,7 @@ type GetOrganizationRequest struct {
 
 func (x *GetOrganizationRequest) Reset() {
 	*x = GetOrganizationRequest{}
-	mi := &file_organization_proto_msgTypes[9]
+	mi := &file_organization_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1440,7 +1339,7 @@ func (x *GetOrganizationRequest) String() string {
 func (*GetOrganizationRequest) ProtoMessage() {}
 
 func (x *GetOrganizationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_organization_proto_msgTypes[9]
+	mi := &file_organization_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1453,7 +1352,7 @@ func (x *GetOrganizationRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetOrganizationRequest.ProtoReflect.Descriptor instead.
 func (*GetOrganizationRequest) Descriptor() ([]byte, []int) {
-	return file_organization_proto_rawDescGZIP(), []int{9}
+	return file_organization_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *GetOrganizationRequest) GetId() string {
@@ -1514,7 +1413,7 @@ type GetOrganizationResponse struct {
 
 func (x *GetOrganizationResponse) Reset() {
 	*x = GetOrganizationResponse{}
-	mi := &file_organization_proto_msgTypes[10]
+	mi := &file_organization_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1526,7 +1425,7 @@ func (x *GetOrganizationResponse) String() string {
 func (*GetOrganizationResponse) ProtoMessage() {}
 
 func (x *GetOrganizationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_organization_proto_msgTypes[10]
+	mi := &file_organization_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1539,7 +1438,7 @@ func (x *GetOrganizationResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetOrganizationResponse.ProtoReflect.Descriptor instead.
 func (*GetOrganizationResponse) Descriptor() ([]byte, []int) {
-	return file_organization_proto_rawDescGZIP(), []int{10}
+	return file_organization_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *GetOrganizationResponse) GetStatusCode() int32 {
@@ -1613,7 +1512,7 @@ type ListOrganizationsRequest struct {
 
 func (x *ListOrganizationsRequest) Reset() {
 	*x = ListOrganizationsRequest{}
-	mi := &file_organization_proto_msgTypes[11]
+	mi := &file_organization_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1625,7 +1524,7 @@ func (x *ListOrganizationsRequest) String() string {
 func (*ListOrganizationsRequest) ProtoMessage() {}
 
 func (x *ListOrganizationsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_organization_proto_msgTypes[11]
+	mi := &file_organization_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1638,7 +1537,7 @@ func (x *ListOrganizationsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListOrganizationsRequest.ProtoReflect.Descriptor instead.
 func (*ListOrganizationsRequest) Descriptor() ([]byte, []int) {
-	return file_organization_proto_rawDescGZIP(), []int{11}
+	return file_organization_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *ListOrganizationsRequest) GetPage() int32 {
@@ -1752,7 +1651,7 @@ type ListOrganizationsResponse struct {
 
 func (x *ListOrganizationsResponse) Reset() {
 	*x = ListOrganizationsResponse{}
-	mi := &file_organization_proto_msgTypes[12]
+	mi := &file_organization_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1764,7 +1663,7 @@ func (x *ListOrganizationsResponse) String() string {
 func (*ListOrganizationsResponse) ProtoMessage() {}
 
 func (x *ListOrganizationsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_organization_proto_msgTypes[12]
+	mi := &file_organization_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1777,7 +1676,7 @@ func (x *ListOrganizationsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListOrganizationsResponse.ProtoReflect.Descriptor instead.
 func (*ListOrganizationsResponse) Descriptor() ([]byte, []int) {
-	return file_organization_proto_rawDescGZIP(), []int{12}
+	return file_organization_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *ListOrganizationsResponse) GetStatusCode() int32 {
@@ -1880,7 +1779,7 @@ type UpdateOrganizationRequest struct {
 
 func (x *UpdateOrganizationRequest) Reset() {
 	*x = UpdateOrganizationRequest{}
-	mi := &file_organization_proto_msgTypes[13]
+	mi := &file_organization_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1892,7 +1791,7 @@ func (x *UpdateOrganizationRequest) String() string {
 func (*UpdateOrganizationRequest) ProtoMessage() {}
 
 func (x *UpdateOrganizationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_organization_proto_msgTypes[13]
+	mi := &file_organization_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1905,7 +1804,7 @@ func (x *UpdateOrganizationRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateOrganizationRequest.ProtoReflect.Descriptor instead.
 func (*UpdateOrganizationRequest) Descriptor() ([]byte, []int) {
-	return file_organization_proto_rawDescGZIP(), []int{13}
+	return file_organization_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *UpdateOrganizationRequest) GetId() string {
@@ -2020,7 +1919,7 @@ type UpdateOrganizationResponse struct {
 
 func (x *UpdateOrganizationResponse) Reset() {
 	*x = UpdateOrganizationResponse{}
-	mi := &file_organization_proto_msgTypes[14]
+	mi := &file_organization_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2032,7 +1931,7 @@ func (x *UpdateOrganizationResponse) String() string {
 func (*UpdateOrganizationResponse) ProtoMessage() {}
 
 func (x *UpdateOrganizationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_organization_proto_msgTypes[14]
+	mi := &file_organization_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2045,7 +1944,7 @@ func (x *UpdateOrganizationResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateOrganizationResponse.ProtoReflect.Descriptor instead.
 func (*UpdateOrganizationResponse) Descriptor() ([]byte, []int) {
-	return file_organization_proto_rawDescGZIP(), []int{14}
+	return file_organization_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *UpdateOrganizationResponse) GetStatusCode() int32 {
@@ -2097,7 +1996,7 @@ type DeleteOrganizationRequest struct {
 
 func (x *DeleteOrganizationRequest) Reset() {
 	*x = DeleteOrganizationRequest{}
-	mi := &file_organization_proto_msgTypes[15]
+	mi := &file_organization_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2109,7 +2008,7 @@ func (x *DeleteOrganizationRequest) String() string {
 func (*DeleteOrganizationRequest) ProtoMessage() {}
 
 func (x *DeleteOrganizationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_organization_proto_msgTypes[15]
+	mi := &file_organization_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2122,7 +2021,7 @@ func (x *DeleteOrganizationRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteOrganizationRequest.ProtoReflect.Descriptor instead.
 func (*DeleteOrganizationRequest) Descriptor() ([]byte, []int) {
-	return file_organization_proto_rawDescGZIP(), []int{15}
+	return file_organization_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *DeleteOrganizationRequest) GetId() string {
@@ -2174,7 +2073,7 @@ type DeleteOrganizationResponse struct {
 
 func (x *DeleteOrganizationResponse) Reset() {
 	*x = DeleteOrganizationResponse{}
-	mi := &file_organization_proto_msgTypes[16]
+	mi := &file_organization_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2186,7 +2085,7 @@ func (x *DeleteOrganizationResponse) String() string {
 func (*DeleteOrganizationResponse) ProtoMessage() {}
 
 func (x *DeleteOrganizationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_organization_proto_msgTypes[16]
+	mi := &file_organization_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2199,7 +2098,7 @@ func (x *DeleteOrganizationResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteOrganizationResponse.ProtoReflect.Descriptor instead.
 func (*DeleteOrganizationResponse) Descriptor() ([]byte, []int) {
-	return file_organization_proto_rawDescGZIP(), []int{16}
+	return file_organization_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *DeleteOrganizationResponse) GetStatusCode() int32 {
@@ -2252,7 +2151,7 @@ type AddUserToOrganizationRequest struct {
 
 func (x *AddUserToOrganizationRequest) Reset() {
 	*x = AddUserToOrganizationRequest{}
-	mi := &file_organization_proto_msgTypes[17]
+	mi := &file_organization_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2264,7 +2163,7 @@ func (x *AddUserToOrganizationRequest) String() string {
 func (*AddUserToOrganizationRequest) ProtoMessage() {}
 
 func (x *AddUserToOrganizationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_organization_proto_msgTypes[17]
+	mi := &file_organization_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2277,7 +2176,7 @@ func (x *AddUserToOrganizationRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddUserToOrganizationRequest.ProtoReflect.Descriptor instead.
 func (*AddUserToOrganizationRequest) Descriptor() ([]byte, []int) {
-	return file_organization_proto_rawDescGZIP(), []int{17}
+	return file_organization_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *AddUserToOrganizationRequest) GetOrganizationId() string {
@@ -2335,7 +2234,7 @@ type AddUserToOrganizationResponse struct {
 
 func (x *AddUserToOrganizationResponse) Reset() {
 	*x = AddUserToOrganizationResponse{}
-	mi := &file_organization_proto_msgTypes[18]
+	mi := &file_organization_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2347,7 +2246,7 @@ func (x *AddUserToOrganizationResponse) String() string {
 func (*AddUserToOrganizationResponse) ProtoMessage() {}
 
 func (x *AddUserToOrganizationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_organization_proto_msgTypes[18]
+	mi := &file_organization_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2360,7 +2259,7 @@ func (x *AddUserToOrganizationResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddUserToOrganizationResponse.ProtoReflect.Descriptor instead.
 func (*AddUserToOrganizationResponse) Descriptor() ([]byte, []int) {
-	return file_organization_proto_rawDescGZIP(), []int{18}
+	return file_organization_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *AddUserToOrganizationResponse) GetStatusCode() int32 {
@@ -2405,7 +2304,7 @@ type RemoveUserFromOrganizationRequest struct {
 
 func (x *RemoveUserFromOrganizationRequest) Reset() {
 	*x = RemoveUserFromOrganizationRequest{}
-	mi := &file_organization_proto_msgTypes[19]
+	mi := &file_organization_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2417,7 +2316,7 @@ func (x *RemoveUserFromOrganizationRequest) String() string {
 func (*RemoveUserFromOrganizationRequest) ProtoMessage() {}
 
 func (x *RemoveUserFromOrganizationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_organization_proto_msgTypes[19]
+	mi := &file_organization_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2430,7 +2329,7 @@ func (x *RemoveUserFromOrganizationRequest) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use RemoveUserFromOrganizationRequest.ProtoReflect.Descriptor instead.
 func (*RemoveUserFromOrganizationRequest) Descriptor() ([]byte, []int) {
-	return file_organization_proto_rawDescGZIP(), []int{19}
+	return file_organization_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *RemoveUserFromOrganizationRequest) GetOrganizationId() string {
@@ -2481,7 +2380,7 @@ type RemoveUserFromOrganizationResponse struct {
 
 func (x *RemoveUserFromOrganizationResponse) Reset() {
 	*x = RemoveUserFromOrganizationResponse{}
-	mi := &file_organization_proto_msgTypes[20]
+	mi := &file_organization_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2493,7 +2392,7 @@ func (x *RemoveUserFromOrganizationResponse) String() string {
 func (*RemoveUserFromOrganizationResponse) ProtoMessage() {}
 
 func (x *RemoveUserFromOrganizationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_organization_proto_msgTypes[20]
+	mi := &file_organization_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2506,7 +2405,7 @@ func (x *RemoveUserFromOrganizationResponse) ProtoReflect() protoreflect.Message
 
 // Deprecated: Use RemoveUserFromOrganizationResponse.ProtoReflect.Descriptor instead.
 func (*RemoveUserFromOrganizationResponse) Descriptor() ([]byte, []int) {
-	return file_organization_proto_rawDescGZIP(), []int{20}
+	return file_organization_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *RemoveUserFromOrganizationResponse) GetStatusCode() int32 {
@@ -2558,7 +2457,7 @@ type OrganizationUser struct {
 
 func (x *OrganizationUser) Reset() {
 	*x = OrganizationUser{}
-	mi := &file_organization_proto_msgTypes[21]
+	mi := &file_organization_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2570,7 +2469,7 @@ func (x *OrganizationUser) String() string {
 func (*OrganizationUser) ProtoMessage() {}
 
 func (x *OrganizationUser) ProtoReflect() protoreflect.Message {
-	mi := &file_organization_proto_msgTypes[21]
+	mi := &file_organization_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2583,7 +2482,7 @@ func (x *OrganizationUser) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OrganizationUser.ProtoReflect.Descriptor instead.
 func (*OrganizationUser) Descriptor() ([]byte, []int) {
-	return file_organization_proto_rawDescGZIP(), []int{21}
+	return file_organization_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *OrganizationUser) GetId() string {
@@ -2684,7 +2583,7 @@ type ValidateOrganizationAccessRequest struct {
 
 func (x *ValidateOrganizationAccessRequest) Reset() {
 	*x = ValidateOrganizationAccessRequest{}
-	mi := &file_organization_proto_msgTypes[22]
+	mi := &file_organization_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2696,7 +2595,7 @@ func (x *ValidateOrganizationAccessRequest) String() string {
 func (*ValidateOrganizationAccessRequest) ProtoMessage() {}
 
 func (x *ValidateOrganizationAccessRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_organization_proto_msgTypes[22]
+	mi := &file_organization_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2709,7 +2608,7 @@ func (x *ValidateOrganizationAccessRequest) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use ValidateOrganizationAccessRequest.ProtoReflect.Descriptor instead.
 func (*ValidateOrganizationAccessRequest) Descriptor() ([]byte, []int) {
-	return file_organization_proto_rawDescGZIP(), []int{22}
+	return file_organization_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *ValidateOrganizationAccessRequest) GetUserId() string {
@@ -2761,7 +2660,7 @@ type ValidateOrganizationAccessResponse struct {
 
 func (x *ValidateOrganizationAccessResponse) Reset() {
 	*x = ValidateOrganizationAccessResponse{}
-	mi := &file_organization_proto_msgTypes[23]
+	mi := &file_organization_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2773,7 +2672,7 @@ func (x *ValidateOrganizationAccessResponse) String() string {
 func (*ValidateOrganizationAccessResponse) ProtoMessage() {}
 
 func (x *ValidateOrganizationAccessResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_organization_proto_msgTypes[23]
+	mi := &file_organization_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2786,7 +2685,7 @@ func (x *ValidateOrganizationAccessResponse) ProtoReflect() protoreflect.Message
 
 // Deprecated: Use ValidateOrganizationAccessResponse.ProtoReflect.Descriptor instead.
 func (*ValidateOrganizationAccessResponse) Descriptor() ([]byte, []int) {
-	return file_organization_proto_rawDescGZIP(), []int{23}
+	return file_organization_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *ValidateOrganizationAccessResponse) GetAllowed() bool {
@@ -2824,371 +2723,9 @@ func (x *ValidateOrganizationAccessResponse) GetEffectivePermissions() []string 
 	return nil
 }
 
-// Create Role Request
-type CreateRoleRequest struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	OrganizationId string                 `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
-	Name           string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	DisplayName    string                 `protobuf:"bytes,3,opt,name=display_name,json=displayName,proto3" json:"display_name,omitempty"`
-	Description    string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
-	Permissions    []string               `protobuf:"bytes,5,rep,name=permissions,proto3" json:"permissions,omitempty"`
-	IsDefault      bool                   `protobuf:"varint,6,opt,name=is_default,json=isDefault,proto3" json:"is_default,omitempty"`
-	Level          int32                  `protobuf:"varint,7,opt,name=level,proto3" json:"level,omitempty"`
-	ParentRoleId   string                 `protobuf:"bytes,8,opt,name=parent_role_id,json=parentRoleId,proto3" json:"parent_role_id,omitempty"`
-	Metadata       *structpb.Struct       `protobuf:"bytes,9,opt,name=metadata,proto3" json:"metadata,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
-}
-
-func (x *CreateRoleRequest) Reset() {
-	*x = CreateRoleRequest{}
-	mi := &file_organization_proto_msgTypes[24]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *CreateRoleRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*CreateRoleRequest) ProtoMessage() {}
-
-func (x *CreateRoleRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_organization_proto_msgTypes[24]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use CreateRoleRequest.ProtoReflect.Descriptor instead.
-func (*CreateRoleRequest) Descriptor() ([]byte, []int) {
-	return file_organization_proto_rawDescGZIP(), []int{24}
-}
-
-func (x *CreateRoleRequest) GetOrganizationId() string {
-	if x != nil {
-		return x.OrganizationId
-	}
-	return ""
-}
-
-func (x *CreateRoleRequest) GetName() string {
-	if x != nil {
-		return x.Name
-	}
-	return ""
-}
-
-func (x *CreateRoleRequest) GetDisplayName() string {
-	if x != nil {
-		return x.DisplayName
-	}
-	return ""
-}
-
-func (x *CreateRoleRequest) GetDescription() string {
-	if x != nil {
-		return x.Description
-	}
-	return ""
-}
-
-func (x *CreateRoleRequest) GetPermissions() []string {
-	if x != nil {
-		return x.Permissions
-	}
-	return nil
-}
-
-func (x *CreateRoleRequest) GetIsDefault() bool {
-	if x != nil {
-		return x.IsDefault
-	}
-	return false
-}
-
-func (x *CreateRoleRequest) GetLevel() int32 {
-	if x != nil {
-		return x.Level
-	}
-	return 0
-}
-
-func (x *CreateRoleRequest) GetParentRoleId() string {
-	if x != nil {
-		return x.ParentRoleId
-	}
-	return ""
-}
-
-func (x *CreateRoleRequest) GetMetadata() *structpb.Struct {
-	if x != nil {
-		return x.Metadata
-	}
-	return nil
-}
-
 // Create Role Response
-type CreateRoleResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	StatusCode    int32                  `protobuf:"varint,1,opt,name=status_code,json=statusCode,proto3" json:"status_code,omitempty"`
-	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
-	Role          *Role                  `protobuf:"bytes,3,opt,name=role,proto3" json:"role,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *CreateRoleResponse) Reset() {
-	*x = CreateRoleResponse{}
-	mi := &file_organization_proto_msgTypes[25]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *CreateRoleResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*CreateRoleResponse) ProtoMessage() {}
-
-func (x *CreateRoleResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_organization_proto_msgTypes[25]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use CreateRoleResponse.ProtoReflect.Descriptor instead.
-func (*CreateRoleResponse) Descriptor() ([]byte, []int) {
-	return file_organization_proto_rawDescGZIP(), []int{25}
-}
-
-func (x *CreateRoleResponse) GetStatusCode() int32 {
-	if x != nil {
-		return x.StatusCode
-	}
-	return 0
-}
-
-func (x *CreateRoleResponse) GetMessage() string {
-	if x != nil {
-		return x.Message
-	}
-	return ""
-}
-
-func (x *CreateRoleResponse) GetRole() *Role {
-	if x != nil {
-		return x.Role
-	}
-	return nil
-}
-
 // List Roles Request
-type ListRolesRequest struct {
-	state              protoimpl.MessageState `protogen:"open.v1"`
-	OrganizationId     string                 `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
-	Page               int32                  `protobuf:"varint,2,opt,name=page,proto3" json:"page,omitempty"`
-	PerPage            int32                  `protobuf:"varint,3,opt,name=per_page,json=perPage,proto3" json:"per_page,omitempty"`
-	Search             string                 `protobuf:"bytes,4,opt,name=search,proto3" json:"search,omitempty"`
-	IncludeSystemRoles bool                   `protobuf:"varint,5,opt,name=include_system_roles,json=includeSystemRoles,proto3" json:"include_system_roles,omitempty"`
-	IncludePermissions bool                   `protobuf:"varint,6,opt,name=include_permissions,json=includePermissions,proto3" json:"include_permissions,omitempty"`
-	SortBy             string                 `protobuf:"bytes,7,opt,name=sort_by,json=sortBy,proto3" json:"sort_by,omitempty"`
-	SortOrder          string                 `protobuf:"bytes,8,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
-}
-
-func (x *ListRolesRequest) Reset() {
-	*x = ListRolesRequest{}
-	mi := &file_organization_proto_msgTypes[26]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ListRolesRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ListRolesRequest) ProtoMessage() {}
-
-func (x *ListRolesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_organization_proto_msgTypes[26]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ListRolesRequest.ProtoReflect.Descriptor instead.
-func (*ListRolesRequest) Descriptor() ([]byte, []int) {
-	return file_organization_proto_rawDescGZIP(), []int{26}
-}
-
-func (x *ListRolesRequest) GetOrganizationId() string {
-	if x != nil {
-		return x.OrganizationId
-	}
-	return ""
-}
-
-func (x *ListRolesRequest) GetPage() int32 {
-	if x != nil {
-		return x.Page
-	}
-	return 0
-}
-
-func (x *ListRolesRequest) GetPerPage() int32 {
-	if x != nil {
-		return x.PerPage
-	}
-	return 0
-}
-
-func (x *ListRolesRequest) GetSearch() string {
-	if x != nil {
-		return x.Search
-	}
-	return ""
-}
-
-func (x *ListRolesRequest) GetIncludeSystemRoles() bool {
-	if x != nil {
-		return x.IncludeSystemRoles
-	}
-	return false
-}
-
-func (x *ListRolesRequest) GetIncludePermissions() bool {
-	if x != nil {
-		return x.IncludePermissions
-	}
-	return false
-}
-
-func (x *ListRolesRequest) GetSortBy() string {
-	if x != nil {
-		return x.SortBy
-	}
-	return ""
-}
-
-func (x *ListRolesRequest) GetSortOrder() string {
-	if x != nil {
-		return x.SortOrder
-	}
-	return ""
-}
-
 // List Roles Response
-type ListRolesResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	StatusCode    int32                  `protobuf:"varint,1,opt,name=status_code,json=statusCode,proto3" json:"status_code,omitempty"`
-	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
-	Roles         []*Role                `protobuf:"bytes,3,rep,name=roles,proto3" json:"roles,omitempty"`
-	TotalCount    int32                  `protobuf:"varint,4,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
-	Page          int32                  `protobuf:"varint,5,opt,name=page,proto3" json:"page,omitempty"`
-	PerPage       int32                  `protobuf:"varint,6,opt,name=per_page,json=perPage,proto3" json:"per_page,omitempty"`
-	TotalPages    int32                  `protobuf:"varint,7,opt,name=total_pages,json=totalPages,proto3" json:"total_pages,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ListRolesResponse) Reset() {
-	*x = ListRolesResponse{}
-	mi := &file_organization_proto_msgTypes[27]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ListRolesResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ListRolesResponse) ProtoMessage() {}
-
-func (x *ListRolesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_organization_proto_msgTypes[27]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ListRolesResponse.ProtoReflect.Descriptor instead.
-func (*ListRolesResponse) Descriptor() ([]byte, []int) {
-	return file_organization_proto_rawDescGZIP(), []int{27}
-}
-
-func (x *ListRolesResponse) GetStatusCode() int32 {
-	if x != nil {
-		return x.StatusCode
-	}
-	return 0
-}
-
-func (x *ListRolesResponse) GetMessage() string {
-	if x != nil {
-		return x.Message
-	}
-	return ""
-}
-
-func (x *ListRolesResponse) GetRoles() []*Role {
-	if x != nil {
-		return x.Roles
-	}
-	return nil
-}
-
-func (x *ListRolesResponse) GetTotalCount() int32 {
-	if x != nil {
-		return x.TotalCount
-	}
-	return 0
-}
-
-func (x *ListRolesResponse) GetPage() int32 {
-	if x != nil {
-		return x.Page
-	}
-	return 0
-}
-
-func (x *ListRolesResponse) GetPerPage() int32 {
-	if x != nil {
-		return x.PerPage
-	}
-	return 0
-}
-
-func (x *ListRolesResponse) GetTotalPages() int32 {
-	if x != nil {
-		return x.TotalPages
-	}
-	return 0
-}
-
-// Update Role Request
 type UpdateRoleRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	Id             string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -3208,7 +2745,7 @@ type UpdateRoleRequest struct {
 
 func (x *UpdateRoleRequest) Reset() {
 	*x = UpdateRoleRequest{}
-	mi := &file_organization_proto_msgTypes[28]
+	mi := &file_organization_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3220,7 +2757,7 @@ func (x *UpdateRoleRequest) String() string {
 func (*UpdateRoleRequest) ProtoMessage() {}
 
 func (x *UpdateRoleRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_organization_proto_msgTypes[28]
+	mi := &file_organization_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3233,7 +2770,7 @@ func (x *UpdateRoleRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateRoleRequest.ProtoReflect.Descriptor instead.
 func (*UpdateRoleRequest) Descriptor() ([]byte, []int) {
-	return file_organization_proto_rawDescGZIP(), []int{28}
+	return file_organization_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *UpdateRoleRequest) GetId() string {
@@ -3326,7 +2863,7 @@ type UpdateRoleResponse struct {
 
 func (x *UpdateRoleResponse) Reset() {
 	*x = UpdateRoleResponse{}
-	mi := &file_organization_proto_msgTypes[29]
+	mi := &file_organization_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3338,7 +2875,7 @@ func (x *UpdateRoleResponse) String() string {
 func (*UpdateRoleResponse) ProtoMessage() {}
 
 func (x *UpdateRoleResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_organization_proto_msgTypes[29]
+	mi := &file_organization_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3351,7 +2888,7 @@ func (x *UpdateRoleResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateRoleResponse.ProtoReflect.Descriptor instead.
 func (*UpdateRoleResponse) Descriptor() ([]byte, []int) {
-	return file_organization_proto_rawDescGZIP(), []int{29}
+	return file_organization_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *UpdateRoleResponse) GetStatusCode() int32 {
@@ -3394,7 +2931,7 @@ type DeleteRoleRequest struct {
 
 func (x *DeleteRoleRequest) Reset() {
 	*x = DeleteRoleRequest{}
-	mi := &file_organization_proto_msgTypes[30]
+	mi := &file_organization_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3406,7 +2943,7 @@ func (x *DeleteRoleRequest) String() string {
 func (*DeleteRoleRequest) ProtoMessage() {}
 
 func (x *DeleteRoleRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_organization_proto_msgTypes[30]
+	mi := &file_organization_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3419,7 +2956,7 @@ func (x *DeleteRoleRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteRoleRequest.ProtoReflect.Descriptor instead.
 func (*DeleteRoleRequest) Descriptor() ([]byte, []int) {
-	return file_organization_proto_rawDescGZIP(), []int{30}
+	return file_organization_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *DeleteRoleRequest) GetId() string {
@@ -3456,7 +2993,7 @@ type DeleteRoleResponse struct {
 
 func (x *DeleteRoleResponse) Reset() {
 	*x = DeleteRoleResponse{}
-	mi := &file_organization_proto_msgTypes[31]
+	mi := &file_organization_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3468,7 +3005,7 @@ func (x *DeleteRoleResponse) String() string {
 func (*DeleteRoleResponse) ProtoMessage() {}
 
 func (x *DeleteRoleResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_organization_proto_msgTypes[31]
+	mi := &file_organization_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3481,7 +3018,7 @@ func (x *DeleteRoleResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteRoleResponse.ProtoReflect.Descriptor instead.
 func (*DeleteRoleResponse) Descriptor() ([]byte, []int) {
-	return file_organization_proto_rawDescGZIP(), []int{31}
+	return file_organization_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *DeleteRoleResponse) GetStatusCode() int32 {
@@ -3516,7 +3053,7 @@ var File_organization_proto protoreflect.FileDescriptor
 
 const file_organization_proto_rawDesc = "" +
 	"\n" +
-	"\x12organization.proto\x12\x02pb\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1cgoogle/protobuf/struct.proto\"\x82\r\n" +
+	"\x12organization.proto\x12\x02pb\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1cgoogle/protobuf/struct.proto\x1a\raddress.proto\x1a\rcatalog.proto\"\x82\r\n" +
 	"\fOrganization\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12!\n" +
@@ -3565,17 +3102,7 @@ const file_organization_proto_rawDesc = "" +
 	"\x0eemployee_count\x18& \x01(\x05R\remployeeCount\x12\x1a\n" +
 	"\btimezone\x18' \x01(\tR\btimezone\x12)\n" +
 	"\x10default_language\x18( \x01(\tR\x0fdefaultLanguage\x12)\n" +
-	"\x10default_currency\x18) \x01(\tR\x0fdefaultCurrency\"\xa5\x02\n" +
-	"\aAddress\x12\"\n" +
-	"\rstreet_line_1\x18\x01 \x01(\tR\vstreetLine1\x12\"\n" +
-	"\rstreet_line_2\x18\x02 \x01(\tR\vstreetLine2\x12\x12\n" +
-	"\x04city\x18\x03 \x01(\tR\x04city\x12%\n" +
-	"\x0estate_province\x18\x04 \x01(\tR\rstateProvince\x12\x1f\n" +
-	"\vpostal_code\x18\x05 \x01(\tR\n" +
-	"postalCode\x12\x18\n" +
-	"\acountry\x18\x06 \x01(\tR\acountry\x12!\n" +
-	"\fcountry_code\x18\a \x01(\tR\vcountryCode\x129\n" +
-	"\vcoordinates\x18\b \x01(\v2\x17.google.protobuf.StructR\vcoordinates\"\x93\a\n" +
+	"\x10default_currency\x18) \x01(\tR\x0fdefaultCurrency\"\x93\a\n" +
 	"\x10SecuritySettings\x12!\n" +
 	"\fmfa_required\x18\x01 \x01(\bR\vmfaRequired\x12.\n" +
 	"\x13allowed_mfa_methods\x18\x02 \x03(\tR\x11allowedMfaMethods\x12.\n" +
@@ -3824,44 +3351,7 @@ const file_organization_proto_rawDesc = "" +
 	"decisionId\x12\x18\n" +
 	"\areasons\x18\x03 \x03(\tR\areasons\x12=\n" +
 	"\x0fuser_membership\x18\x04 \x01(\v2\x14.pb.OrganizationUserR\x0euserMembership\x123\n" +
-	"\x15effective_permissions\x18\x05 \x03(\tR\x14effectivePermissions\"\xc7\x02\n" +
-	"\x11CreateRoleRequest\x12'\n" +
-	"\x0forganization_id\x18\x01 \x01(\tR\x0eorganizationId\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\x12!\n" +
-	"\fdisplay_name\x18\x03 \x01(\tR\vdisplayName\x12 \n" +
-	"\vdescription\x18\x04 \x01(\tR\vdescription\x12 \n" +
-	"\vpermissions\x18\x05 \x03(\tR\vpermissions\x12\x1d\n" +
-	"\n" +
-	"is_default\x18\x06 \x01(\bR\tisDefault\x12\x14\n" +
-	"\x05level\x18\a \x01(\x05R\x05level\x12$\n" +
-	"\x0eparent_role_id\x18\b \x01(\tR\fparentRoleId\x123\n" +
-	"\bmetadata\x18\t \x01(\v2\x17.google.protobuf.StructR\bmetadata\"m\n" +
-	"\x12CreateRoleResponse\x12\x1f\n" +
-	"\vstatus_code\x18\x01 \x01(\x05R\n" +
-	"statusCode\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessage\x12\x1c\n" +
-	"\x04role\x18\x03 \x01(\v2\b.pb.RoleR\x04role\"\x9d\x02\n" +
-	"\x10ListRolesRequest\x12'\n" +
-	"\x0forganization_id\x18\x01 \x01(\tR\x0eorganizationId\x12\x12\n" +
-	"\x04page\x18\x02 \x01(\x05R\x04page\x12\x19\n" +
-	"\bper_page\x18\x03 \x01(\x05R\aperPage\x12\x16\n" +
-	"\x06search\x18\x04 \x01(\tR\x06search\x120\n" +
-	"\x14include_system_roles\x18\x05 \x01(\bR\x12includeSystemRoles\x12/\n" +
-	"\x13include_permissions\x18\x06 \x01(\bR\x12includePermissions\x12\x17\n" +
-	"\asort_by\x18\a \x01(\tR\x06sortBy\x12\x1d\n" +
-	"\n" +
-	"sort_order\x18\b \x01(\tR\tsortOrder\"\xdf\x01\n" +
-	"\x11ListRolesResponse\x12\x1f\n" +
-	"\vstatus_code\x18\x01 \x01(\x05R\n" +
-	"statusCode\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessage\x12\x1e\n" +
-	"\x05roles\x18\x03 \x03(\v2\b.pb.RoleR\x05roles\x12\x1f\n" +
-	"\vtotal_count\x18\x04 \x01(\x05R\n" +
-	"totalCount\x12\x12\n" +
-	"\x04page\x18\x05 \x01(\x05R\x04page\x12\x19\n" +
-	"\bper_page\x18\x06 \x01(\x05R\aperPage\x12\x1f\n" +
-	"\vtotal_pages\x18\a \x01(\x05R\n" +
-	"totalPages\"\x81\x03\n" +
+	"\x15effective_permissions\x18\x05 \x03(\tR\x14effectivePermissions\"\x81\x03\n" +
 	"\x11UpdateRoleRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12'\n" +
 	"\x0forganization_id\x18\x02 \x01(\tR\x0eorganizationId\x12\x12\n" +
@@ -3907,7 +3397,7 @@ const file_organization_proto_rawDesc = "" +
 	"\n" +
 	"UpdateRole\x12\x15.pb.UpdateRoleRequest\x1a\x16.pb.UpdateRoleResponse\x12;\n" +
 	"\n" +
-	"DeleteRole\x12\x15.pb.DeleteRoleRequest\x1a\x16.pb.DeleteRoleResponseB,Z*github.com/Kisanlink/aaa-service/pkg/protob\x06proto3"
+	"DeleteRole\x12\x15.pb.DeleteRoleRequest\x1a\x16.pb.DeleteRoleResponseB/Z-github.com/Kisanlink/aaa-service/pkg/proto;pbb\x06proto3"
 
 var (
 	file_organization_proto_rawDescOnce sync.Once
@@ -3921,116 +3411,112 @@ func file_organization_proto_rawDescGZIP() []byte {
 	return file_organization_proto_rawDescData
 }
 
-var file_organization_proto_msgTypes = make([]protoimpl.MessageInfo, 32)
+var file_organization_proto_msgTypes = make([]protoimpl.MessageInfo, 27)
 var file_organization_proto_goTypes = []any{
 	(*Organization)(nil),                       // 0: pb.Organization
-	(*Address)(nil),                            // 1: pb.Address
-	(*SecuritySettings)(nil),                   // 2: pb.SecuritySettings
-	(*ComplianceSettings)(nil),                 // 3: pb.ComplianceSettings
-	(*IntegrationConfig)(nil),                  // 4: pb.IntegrationConfig
-	(*Role)(nil),                               // 5: pb.Role
-	(*Permission)(nil),                         // 6: pb.Permission
-	(*CreateOrganizationRequest)(nil),          // 7: pb.CreateOrganizationRequest
-	(*CreateOrganizationResponse)(nil),         // 8: pb.CreateOrganizationResponse
-	(*GetOrganizationRequest)(nil),             // 9: pb.GetOrganizationRequest
-	(*GetOrganizationResponse)(nil),            // 10: pb.GetOrganizationResponse
-	(*ListOrganizationsRequest)(nil),           // 11: pb.ListOrganizationsRequest
-	(*ListOrganizationsResponse)(nil),          // 12: pb.ListOrganizationsResponse
-	(*UpdateOrganizationRequest)(nil),          // 13: pb.UpdateOrganizationRequest
-	(*UpdateOrganizationResponse)(nil),         // 14: pb.UpdateOrganizationResponse
-	(*DeleteOrganizationRequest)(nil),          // 15: pb.DeleteOrganizationRequest
-	(*DeleteOrganizationResponse)(nil),         // 16: pb.DeleteOrganizationResponse
-	(*AddUserToOrganizationRequest)(nil),       // 17: pb.AddUserToOrganizationRequest
-	(*AddUserToOrganizationResponse)(nil),      // 18: pb.AddUserToOrganizationResponse
-	(*RemoveUserFromOrganizationRequest)(nil),  // 19: pb.RemoveUserFromOrganizationRequest
-	(*RemoveUserFromOrganizationResponse)(nil), // 20: pb.RemoveUserFromOrganizationResponse
-	(*OrganizationUser)(nil),                   // 21: pb.OrganizationUser
-	(*ValidateOrganizationAccessRequest)(nil),  // 22: pb.ValidateOrganizationAccessRequest
-	(*ValidateOrganizationAccessResponse)(nil), // 23: pb.ValidateOrganizationAccessResponse
-	(*CreateRoleRequest)(nil),                  // 24: pb.CreateRoleRequest
-	(*CreateRoleResponse)(nil),                 // 25: pb.CreateRoleResponse
-	(*ListRolesRequest)(nil),                   // 26: pb.ListRolesRequest
-	(*ListRolesResponse)(nil),                  // 27: pb.ListRolesResponse
-	(*UpdateRoleRequest)(nil),                  // 28: pb.UpdateRoleRequest
-	(*UpdateRoleResponse)(nil),                 // 29: pb.UpdateRoleResponse
-	(*DeleteRoleRequest)(nil),                  // 30: pb.DeleteRoleRequest
-	(*DeleteRoleResponse)(nil),                 // 31: pb.DeleteRoleResponse
-	(*timestamppb.Timestamp)(nil),              // 32: google.protobuf.Timestamp
-	(*structpb.Struct)(nil),                    // 33: google.protobuf.Struct
+	(*SecuritySettings)(nil),                   // 1: pb.SecuritySettings
+	(*ComplianceSettings)(nil),                 // 2: pb.ComplianceSettings
+	(*IntegrationConfig)(nil),                  // 3: pb.IntegrationConfig
+	(*Role)(nil),                               // 4: pb.Role
+	(*Permission)(nil),                         // 5: pb.Permission
+	(*CreateOrganizationRequest)(nil),          // 6: pb.CreateOrganizationRequest
+	(*CreateOrganizationResponse)(nil),         // 7: pb.CreateOrganizationResponse
+	(*GetOrganizationRequest)(nil),             // 8: pb.GetOrganizationRequest
+	(*GetOrganizationResponse)(nil),            // 9: pb.GetOrganizationResponse
+	(*ListOrganizationsRequest)(nil),           // 10: pb.ListOrganizationsRequest
+	(*ListOrganizationsResponse)(nil),          // 11: pb.ListOrganizationsResponse
+	(*UpdateOrganizationRequest)(nil),          // 12: pb.UpdateOrganizationRequest
+	(*UpdateOrganizationResponse)(nil),         // 13: pb.UpdateOrganizationResponse
+	(*DeleteOrganizationRequest)(nil),          // 14: pb.DeleteOrganizationRequest
+	(*DeleteOrganizationResponse)(nil),         // 15: pb.DeleteOrganizationResponse
+	(*AddUserToOrganizationRequest)(nil),       // 16: pb.AddUserToOrganizationRequest
+	(*AddUserToOrganizationResponse)(nil),      // 17: pb.AddUserToOrganizationResponse
+	(*RemoveUserFromOrganizationRequest)(nil),  // 18: pb.RemoveUserFromOrganizationRequest
+	(*RemoveUserFromOrganizationResponse)(nil), // 19: pb.RemoveUserFromOrganizationResponse
+	(*OrganizationUser)(nil),                   // 20: pb.OrganizationUser
+	(*ValidateOrganizationAccessRequest)(nil),  // 21: pb.ValidateOrganizationAccessRequest
+	(*ValidateOrganizationAccessResponse)(nil), // 22: pb.ValidateOrganizationAccessResponse
+	(*UpdateRoleRequest)(nil),                  // 23: pb.UpdateRoleRequest
+	(*UpdateRoleResponse)(nil),                 // 24: pb.UpdateRoleResponse
+	(*DeleteRoleRequest)(nil),                  // 25: pb.DeleteRoleRequest
+	(*DeleteRoleResponse)(nil),                 // 26: pb.DeleteRoleResponse
+	(*Address)(nil),                            // 27: pb.Address
+	(*timestamppb.Timestamp)(nil),              // 28: google.protobuf.Timestamp
+	(*structpb.Struct)(nil),                    // 29: google.protobuf.Struct
+	(*CreateRoleRequest)(nil),                  // 30: pb.CreateRoleRequest
+	(*ListRolesRequest)(nil),                   // 31: pb.ListRolesRequest
+	(*CreateRoleResponse)(nil),                 // 32: pb.CreateRoleResponse
+	(*ListRolesResponse)(nil),                  // 33: pb.ListRolesResponse
 }
 var file_organization_proto_depIdxs = []int32{
-	1,  // 0: pb.Organization.primary_address:type_name -> pb.Address
-	32, // 1: pb.Organization.subscription_expires_at:type_name -> google.protobuf.Timestamp
-	33, // 2: pb.Organization.branding:type_name -> google.protobuf.Struct
-	2,  // 3: pb.Organization.security_settings:type_name -> pb.SecuritySettings
-	3,  // 4: pb.Organization.compliance_settings:type_name -> pb.ComplianceSettings
-	33, // 5: pb.Organization.metadata:type_name -> google.protobuf.Struct
-	33, // 6: pb.Organization.custom_fields:type_name -> google.protobuf.Struct
-	4,  // 7: pb.Organization.integrations:type_name -> pb.IntegrationConfig
-	33, // 8: pb.Organization.api_settings:type_name -> google.protobuf.Struct
-	33, // 9: pb.Address.coordinates:type_name -> google.protobuf.Struct
-	33, // 10: pb.SecuritySettings.custom_security_rules:type_name -> google.protobuf.Struct
-	33, // 11: pb.ComplianceSettings.custom_policies:type_name -> google.protobuf.Struct
-	33, // 12: pb.IntegrationConfig.configuration:type_name -> google.protobuf.Struct
-	33, // 13: pb.Role.metadata:type_name -> google.protobuf.Struct
-	33, // 14: pb.Permission.conditions:type_name -> google.protobuf.Struct
-	1,  // 15: pb.CreateOrganizationRequest.primary_address:type_name -> pb.Address
-	2,  // 16: pb.CreateOrganizationRequest.security_settings:type_name -> pb.SecuritySettings
-	3,  // 17: pb.CreateOrganizationRequest.compliance_settings:type_name -> pb.ComplianceSettings
-	33, // 18: pb.CreateOrganizationRequest.metadata:type_name -> google.protobuf.Struct
-	33, // 19: pb.CreateOrganizationRequest.custom_fields:type_name -> google.protobuf.Struct
-	0,  // 20: pb.CreateOrganizationResponse.organization:type_name -> pb.Organization
-	0,  // 21: pb.GetOrganizationResponse.organization:type_name -> pb.Organization
-	0,  // 22: pb.GetOrganizationResponse.child_organizations:type_name -> pb.Organization
-	21, // 23: pb.GetOrganizationResponse.users:type_name -> pb.OrganizationUser
-	5,  // 24: pb.GetOrganizationResponse.roles:type_name -> pb.Role
-	4,  // 25: pb.GetOrganizationResponse.integrations:type_name -> pb.IntegrationConfig
-	33, // 26: pb.ListOrganizationsRequest.filters:type_name -> google.protobuf.Struct
-	0,  // 27: pb.ListOrganizationsResponse.organizations:type_name -> pb.Organization
-	1,  // 28: pb.UpdateOrganizationRequest.primary_address:type_name -> pb.Address
-	2,  // 29: pb.UpdateOrganizationRequest.security_settings:type_name -> pb.SecuritySettings
-	3,  // 30: pb.UpdateOrganizationRequest.compliance_settings:type_name -> pb.ComplianceSettings
-	33, // 31: pb.UpdateOrganizationRequest.metadata:type_name -> google.protobuf.Struct
-	33, // 32: pb.UpdateOrganizationRequest.custom_fields:type_name -> google.protobuf.Struct
-	0,  // 33: pb.UpdateOrganizationResponse.organization:type_name -> pb.Organization
-	33, // 34: pb.AddUserToOrganizationRequest.user_metadata:type_name -> google.protobuf.Struct
-	21, // 35: pb.AddUserToOrganizationResponse.organization_user:type_name -> pb.OrganizationUser
-	33, // 36: pb.OrganizationUser.metadata:type_name -> google.protobuf.Struct
-	21, // 37: pb.ValidateOrganizationAccessResponse.user_membership:type_name -> pb.OrganizationUser
-	33, // 38: pb.CreateRoleRequest.metadata:type_name -> google.protobuf.Struct
-	5,  // 39: pb.CreateRoleResponse.role:type_name -> pb.Role
-	5,  // 40: pb.ListRolesResponse.roles:type_name -> pb.Role
-	33, // 41: pb.UpdateRoleRequest.metadata:type_name -> google.protobuf.Struct
-	5,  // 42: pb.UpdateRoleResponse.role:type_name -> pb.Role
-	7,  // 43: pb.OrganizationService.CreateOrganization:input_type -> pb.CreateOrganizationRequest
-	9,  // 44: pb.OrganizationService.GetOrganization:input_type -> pb.GetOrganizationRequest
-	11, // 45: pb.OrganizationService.ListOrganizations:input_type -> pb.ListOrganizationsRequest
-	13, // 46: pb.OrganizationService.UpdateOrganization:input_type -> pb.UpdateOrganizationRequest
-	15, // 47: pb.OrganizationService.DeleteOrganization:input_type -> pb.DeleteOrganizationRequest
-	17, // 48: pb.OrganizationService.AddUserToOrganization:input_type -> pb.AddUserToOrganizationRequest
-	19, // 49: pb.OrganizationService.RemoveUserFromOrganization:input_type -> pb.RemoveUserFromOrganizationRequest
-	22, // 50: pb.OrganizationService.ValidateOrganizationAccess:input_type -> pb.ValidateOrganizationAccessRequest
-	24, // 51: pb.OrganizationService.CreateRole:input_type -> pb.CreateRoleRequest
-	26, // 52: pb.OrganizationService.ListRoles:input_type -> pb.ListRolesRequest
-	28, // 53: pb.OrganizationService.UpdateRole:input_type -> pb.UpdateRoleRequest
-	30, // 54: pb.OrganizationService.DeleteRole:input_type -> pb.DeleteRoleRequest
-	8,  // 55: pb.OrganizationService.CreateOrganization:output_type -> pb.CreateOrganizationResponse
-	10, // 56: pb.OrganizationService.GetOrganization:output_type -> pb.GetOrganizationResponse
-	12, // 57: pb.OrganizationService.ListOrganizations:output_type -> pb.ListOrganizationsResponse
-	14, // 58: pb.OrganizationService.UpdateOrganization:output_type -> pb.UpdateOrganizationResponse
-	16, // 59: pb.OrganizationService.DeleteOrganization:output_type -> pb.DeleteOrganizationResponse
-	18, // 60: pb.OrganizationService.AddUserToOrganization:output_type -> pb.AddUserToOrganizationResponse
-	20, // 61: pb.OrganizationService.RemoveUserFromOrganization:output_type -> pb.RemoveUserFromOrganizationResponse
-	23, // 62: pb.OrganizationService.ValidateOrganizationAccess:output_type -> pb.ValidateOrganizationAccessResponse
-	25, // 63: pb.OrganizationService.CreateRole:output_type -> pb.CreateRoleResponse
-	27, // 64: pb.OrganizationService.ListRoles:output_type -> pb.ListRolesResponse
-	29, // 65: pb.OrganizationService.UpdateRole:output_type -> pb.UpdateRoleResponse
-	31, // 66: pb.OrganizationService.DeleteRole:output_type -> pb.DeleteRoleResponse
-	55, // [55:67] is the sub-list for method output_type
-	43, // [43:55] is the sub-list for method input_type
-	43, // [43:43] is the sub-list for extension type_name
-	43, // [43:43] is the sub-list for extension extendee
-	0,  // [0:43] is the sub-list for field type_name
+	27, // 0: pb.Organization.primary_address:type_name -> pb.Address
+	28, // 1: pb.Organization.subscription_expires_at:type_name -> google.protobuf.Timestamp
+	29, // 2: pb.Organization.branding:type_name -> google.protobuf.Struct
+	1,  // 3: pb.Organization.security_settings:type_name -> pb.SecuritySettings
+	2,  // 4: pb.Organization.compliance_settings:type_name -> pb.ComplianceSettings
+	29, // 5: pb.Organization.metadata:type_name -> google.protobuf.Struct
+	29, // 6: pb.Organization.custom_fields:type_name -> google.protobuf.Struct
+	3,  // 7: pb.Organization.integrations:type_name -> pb.IntegrationConfig
+	29, // 8: pb.Organization.api_settings:type_name -> google.protobuf.Struct
+	29, // 9: pb.SecuritySettings.custom_security_rules:type_name -> google.protobuf.Struct
+	29, // 10: pb.ComplianceSettings.custom_policies:type_name -> google.protobuf.Struct
+	29, // 11: pb.IntegrationConfig.configuration:type_name -> google.protobuf.Struct
+	29, // 12: pb.Role.metadata:type_name -> google.protobuf.Struct
+	29, // 13: pb.Permission.conditions:type_name -> google.protobuf.Struct
+	27, // 14: pb.CreateOrganizationRequest.primary_address:type_name -> pb.Address
+	1,  // 15: pb.CreateOrganizationRequest.security_settings:type_name -> pb.SecuritySettings
+	2,  // 16: pb.CreateOrganizationRequest.compliance_settings:type_name -> pb.ComplianceSettings
+	29, // 17: pb.CreateOrganizationRequest.metadata:type_name -> google.protobuf.Struct
+	29, // 18: pb.CreateOrganizationRequest.custom_fields:type_name -> google.protobuf.Struct
+	0,  // 19: pb.CreateOrganizationResponse.organization:type_name -> pb.Organization
+	0,  // 20: pb.GetOrganizationResponse.organization:type_name -> pb.Organization
+	0,  // 21: pb.GetOrganizationResponse.child_organizations:type_name -> pb.Organization
+	20, // 22: pb.GetOrganizationResponse.users:type_name -> pb.OrganizationUser
+	4,  // 23: pb.GetOrganizationResponse.roles:type_name -> pb.Role
+	3,  // 24: pb.GetOrganizationResponse.integrations:type_name -> pb.IntegrationConfig
+	29, // 25: pb.ListOrganizationsRequest.filters:type_name -> google.protobuf.Struct
+	0,  // 26: pb.ListOrganizationsResponse.organizations:type_name -> pb.Organization
+	27, // 27: pb.UpdateOrganizationRequest.primary_address:type_name -> pb.Address
+	1,  // 28: pb.UpdateOrganizationRequest.security_settings:type_name -> pb.SecuritySettings
+	2,  // 29: pb.UpdateOrganizationRequest.compliance_settings:type_name -> pb.ComplianceSettings
+	29, // 30: pb.UpdateOrganizationRequest.metadata:type_name -> google.protobuf.Struct
+	29, // 31: pb.UpdateOrganizationRequest.custom_fields:type_name -> google.protobuf.Struct
+	0,  // 32: pb.UpdateOrganizationResponse.organization:type_name -> pb.Organization
+	29, // 33: pb.AddUserToOrganizationRequest.user_metadata:type_name -> google.protobuf.Struct
+	20, // 34: pb.AddUserToOrganizationResponse.organization_user:type_name -> pb.OrganizationUser
+	29, // 35: pb.OrganizationUser.metadata:type_name -> google.protobuf.Struct
+	20, // 36: pb.ValidateOrganizationAccessResponse.user_membership:type_name -> pb.OrganizationUser
+	29, // 37: pb.UpdateRoleRequest.metadata:type_name -> google.protobuf.Struct
+	4,  // 38: pb.UpdateRoleResponse.role:type_name -> pb.Role
+	6,  // 39: pb.OrganizationService.CreateOrganization:input_type -> pb.CreateOrganizationRequest
+	8,  // 40: pb.OrganizationService.GetOrganization:input_type -> pb.GetOrganizationRequest
+	10, // 41: pb.OrganizationService.ListOrganizations:input_type -> pb.ListOrganizationsRequest
+	12, // 42: pb.OrganizationService.UpdateOrganization:input_type -> pb.UpdateOrganizationRequest
+	14, // 43: pb.OrganizationService.DeleteOrganization:input_type -> pb.DeleteOrganizationRequest
+	16, // 44: pb.OrganizationService.AddUserToOrganization:input_type -> pb.AddUserToOrganizationRequest
+	18, // 45: pb.OrganizationService.RemoveUserFromOrganization:input_type -> pb.RemoveUserFromOrganizationRequest
+	21, // 46: pb.OrganizationService.ValidateOrganizationAccess:input_type -> pb.ValidateOrganizationAccessRequest
+	30, // 47: pb.OrganizationService.CreateRole:input_type -> pb.CreateRoleRequest
+	31, // 48: pb.OrganizationService.ListRoles:input_type -> pb.ListRolesRequest
+	23, // 49: pb.OrganizationService.UpdateRole:input_type -> pb.UpdateRoleRequest
+	25, // 50: pb.OrganizationService.DeleteRole:input_type -> pb.DeleteRoleRequest
+	7,  // 51: pb.OrganizationService.CreateOrganization:output_type -> pb.CreateOrganizationResponse
+	9,  // 52: pb.OrganizationService.GetOrganization:output_type -> pb.GetOrganizationResponse
+	11, // 53: pb.OrganizationService.ListOrganizations:output_type -> pb.ListOrganizationsResponse
+	13, // 54: pb.OrganizationService.UpdateOrganization:output_type -> pb.UpdateOrganizationResponse
+	15, // 55: pb.OrganizationService.DeleteOrganization:output_type -> pb.DeleteOrganizationResponse
+	17, // 56: pb.OrganizationService.AddUserToOrganization:output_type -> pb.AddUserToOrganizationResponse
+	19, // 57: pb.OrganizationService.RemoveUserFromOrganization:output_type -> pb.RemoveUserFromOrganizationResponse
+	22, // 58: pb.OrganizationService.ValidateOrganizationAccess:output_type -> pb.ValidateOrganizationAccessResponse
+	32, // 59: pb.OrganizationService.CreateRole:output_type -> pb.CreateRoleResponse
+	33, // 60: pb.OrganizationService.ListRoles:output_type -> pb.ListRolesResponse
+	24, // 61: pb.OrganizationService.UpdateRole:output_type -> pb.UpdateRoleResponse
+	26, // 62: pb.OrganizationService.DeleteRole:output_type -> pb.DeleteRoleResponse
+	51, // [51:63] is the sub-list for method output_type
+	39, // [39:51] is the sub-list for method input_type
+	39, // [39:39] is the sub-list for extension type_name
+	39, // [39:39] is the sub-list for extension extendee
+	0,  // [0:39] is the sub-list for field type_name
 }
 
 func init() { file_organization_proto_init() }
@@ -4038,13 +3524,15 @@ func file_organization_proto_init() {
 	if File_organization_proto != nil {
 		return
 	}
+	file_address_proto_init()
+	file_catalog_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_organization_proto_rawDesc), len(file_organization_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   32,
+			NumMessages:   27,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

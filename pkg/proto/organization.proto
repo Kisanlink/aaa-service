@@ -7,6 +7,8 @@ option go_package = "github.com/Kisanlink/aaa-service/pkg/proto;pb";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/struct.proto";
 
+import "address.proto";
+import "catalog.proto";
 // Enhanced Organization model
 message Organization {
     string id = 1;
@@ -66,18 +68,6 @@ message Organization {
     string timezone = 39;
     string default_language = 40;
     string default_currency = 41;
-}
-
-// Address information
-message Address {
-    string street_line_1 = 1;
-    string street_line_2 = 2;
-    string city = 3;
-    string state_province = 4;
-    string postal_code = 5;
-    string country = 6;
-    string country_code = 7;
-    google.protobuf.Struct coordinates = 8; // lat/lng
 }
 
 // Security settings for organization
@@ -358,49 +348,10 @@ message ValidateOrganizationAccessResponse {
 }
 
 // Create Role Request
-message CreateRoleRequest {
-    string organization_id = 1;
-    string name = 2;
-    string display_name = 3;
-    string description = 4;
-    repeated string permissions = 5;
-    bool is_default = 6;
-    int32 level = 7;
-    string parent_role_id = 8;
-    google.protobuf.Struct metadata = 9;
-}
 
 // Create Role Response
-message CreateRoleResponse {
-    int32 status_code = 1;
-    string message = 2;
-    Role role = 3;
-}
-
 // List Roles Request
-message ListRolesRequest {
-    string organization_id = 1;
-    int32 page = 2;
-    int32 per_page = 3;
-    string search = 4;
-    bool include_system_roles = 5;
-    bool include_permissions = 6;
-    string sort_by = 7;
-    string sort_order = 8;
-}
-
 // List Roles Response
-message ListRolesResponse {
-    int32 status_code = 1;
-    string message = 2;
-    repeated Role roles = 3;
-    int32 total_count = 4;
-    int32 page = 5;
-    int32 per_page = 6;
-    int32 total_pages = 7;
-}
-
-// Update Role Request
 message UpdateRoleRequest {
     string id = 1;
     string organization_id = 2;

@@ -11,7 +11,7 @@ import (
 	"github.com/Kisanlink/aaa-service/internal/middleware"
 	auditRepo "github.com/Kisanlink/aaa-service/internal/repositories/audit"
 	"github.com/Kisanlink/aaa-service/internal/services"
-	"github.com/Kisanlink/aaa-service/pkg/proto"
+	pb "github.com/Kisanlink/aaa-service/pkg/proto"
 	"github.com/Kisanlink/kisanlink-db/pkg/db"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -188,23 +188,23 @@ func (s *GRPCServer) Stop() {
 // registerServices registers all gRPC services
 func (s *GRPCServer) registerServices() {
 	// Register the unified AAA service handler
-	aaaHandler := NewAAAHandler(
-		s.authService,
-		s.authzService,
-		s.auditService,
-		s.userService,
-		s.roleService,
-		s.cacheService,
-		s.logger,
-	)
-	proto.RegisterAAAServiceServer(s.server, aaaHandler)
+	// 	aaaHandler := NewAAAHandler(
+	// 		s.authService,
+	// 		s.authzService,
+	// 		s.auditService,
+	// 		s.userService,
+	// 		s.roleService,
+	// 		s.cacheService,
+	// 		s.logger,
+	// 	)
+	// 	pb.RegisterAAAServiceServer(s.server, aaaHandler)
 
 	// Keep legacy services for backward compatibility
 	combinedHandler := NewCombinedUserHandler(s.authService, s.userService, s.logger)
-	proto.RegisterUserServiceV2Server(s.server, combinedHandler)
+	pb.RegisterUserServiceServer(s.server, combinedHandler)
 
 	authzHandler := NewAuthorizationHandler(s.authzService, s.logger)
-	proto.RegisterAuthorizationServiceServer(s.server, authzHandler)
+	pb.RegisterAuthorizationServiceServer(s.server, authzHandler)
 
 	s.logger.Info("gRPC services registered successfully",
 		zap.String("primary_service", "AAAService"),

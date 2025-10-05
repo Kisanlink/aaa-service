@@ -4,7 +4,7 @@
 // 	protoc        v6.32.0
 // source: authorization.proto
 
-package proto
+package pb
 
 import (
 	reflect "reflect"
@@ -2947,7 +2947,7 @@ const file_authorization_proto_rawDesc = "" +
 	"\fCheckColumns\x12\x17.pb.CheckColumnsRequest\x1a\x18.pb.CheckColumnsResponse\x12S\n" +
 	"\x12ListAllowedColumns\x12\x1d.pb.ListAllowedColumnsRequest\x1a\x1e.pb.ListAllowedColumnsResponse\x12S\n" +
 	"\x12EvaluatePermission\x12\x1d.pb.EvaluatePermissionRequest\x1a\x1e.pb.EvaluatePermissionResponse\x12b\n" +
-	"\x17BulkEvaluatePermissions\x12\".pb.BulkEvaluatePermissionsRequest\x1a#.pb.BulkEvaluatePermissionsResponseB,Z*github.com/Kisanlink/aaa-service/pkg/protob\x06proto3"
+	"\x17BulkEvaluatePermissions\x12\".pb.BulkEvaluatePermissionsRequest\x1a#.pb.BulkEvaluatePermissionsResponseB/Z-github.com/Kisanlink/aaa-service/pkg/proto;pbb\x06proto3"
 
 var (
 	file_authorization_proto_rawDescOnce sync.Once

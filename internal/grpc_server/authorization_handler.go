@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/Kisanlink/aaa-service/internal/services"
-	"github.com/Kisanlink/aaa-service/pkg/proto"
+	pb "github.com/Kisanlink/aaa-service/pkg/proto"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -13,7 +13,7 @@ import (
 
 // AuthorizationHandler implements authorization-related gRPC services
 type AuthorizationHandler struct {
-	proto.UnimplementedAuthorizationServiceServer
+	pb.UnimplementedAuthorizationServiceServer
 	authzService *services.AuthorizationService
 	logger       *zap.Logger
 }
@@ -27,7 +27,7 @@ func NewAuthorizationHandler(authzService *services.AuthorizationService, logger
 }
 
 // Check implements the Check RPC method for authorization
-func (h *AuthorizationHandler) Check(ctx context.Context, req *proto.CheckRequest) (*proto.CheckResponse, error) {
+func (h *AuthorizationHandler) Check(ctx context.Context, req *pb.CheckRequest) (*pb.CheckResponse, error) {
 	h.logger.Info("gRPC Check request",
 		zap.String("principal_id", req.PrincipalId),
 		zap.String("resource_type", req.ResourceType),
@@ -52,7 +52,7 @@ func (h *AuthorizationHandler) Check(ctx context.Context, req *proto.CheckReques
 		zap.String("principal_id", req.PrincipalId),
 		zap.Bool("allowed", result.Allowed))
 
-	return &proto.CheckResponse{
+	return &pb.CheckResponse{
 		Allowed:          result.Allowed,
 		DecisionId:       result.DecisionID,
 		ConsistencyToken: result.ConsistencyToken,
@@ -60,7 +60,7 @@ func (h *AuthorizationHandler) Check(ctx context.Context, req *proto.CheckReques
 }
 
 // BatchCheck implements the BatchCheck RPC method for authorization
-func (h *AuthorizationHandler) BatchCheck(ctx context.Context, req *proto.BatchCheckRequest) (*proto.BatchCheckResponse, error) {
+func (h *AuthorizationHandler) BatchCheck(ctx context.Context, req *pb.BatchCheckRequest) (*pb.BatchCheckResponse, error) {
 	h.logger.Info("gRPC BatchCheck request",
 		zap.Int("request_count", len(req.Items)))
 
@@ -93,7 +93,7 @@ func (h *AuthorizationHandler) BatchCheck(ctx context.Context, req *proto.BatchC
 	}
 
 	// Convert result to protobuf format
-	results := make([]*proto.CheckResult, 0, len(req.Items))
+	results := make([]*pb.CheckResult, 0, len(req.Items))
 	for _, checkReq := range req.Items {
 		// Find corresponding result by creating a key
 		key := fmt.Sprintf("%s:%s:%s:%s", checkReq.PrincipalId, checkReq.ResourceType, checkReq.ResourceId, checkReq.Action)
@@ -106,7 +106,7 @@ func (h *AuthorizationHandler) BatchCheck(ctx context.Context, req *proto.BatchC
 			decisionId = permResult.DecisionID
 		}
 
-		result := &proto.CheckResult{
+		result := &pb.CheckResult{
 			RequestId:  checkReq.RequestId,
 			Allowed:    allowed,
 			DecisionId: decisionId,
@@ -117,13 +117,13 @@ func (h *AuthorizationHandler) BatchCheck(ctx context.Context, req *proto.BatchC
 	h.logger.Info("Batch permission check completed",
 		zap.Int("results_count", len(results)))
 
-	return &proto.BatchCheckResponse{
+	return &pb.BatchCheckResponse{
 		Results: results,
 	}, nil
 }
 
 // LookupResources implements the LookupResources RPC method for authorization
-func (h *AuthorizationHandler) LookupResources(ctx context.Context, req *proto.LookupResourcesRequest) (*proto.LookupResourcesResponse, error) {
+func (h *AuthorizationHandler) LookupResources(ctx context.Context, req *pb.LookupResourcesRequest) (*pb.LookupResourcesResponse, error) {
 	h.logger.Info("gRPC LookupResources request",
 		zap.String("principal_id", req.PrincipalId),
 		zap.String("resource_type", req.ResourceType),
@@ -140,21 +140,21 @@ func (h *AuthorizationHandler) LookupResources(ctx context.Context, req *proto.L
 		zap.Int("resource_count", len(resources)))
 
 	// Convert string slice to ResourceAccess slice
-	resourceAccess := make([]*proto.ResourceAccess, 0, len(resources))
+	resourceAccess := make([]*pb.ResourceAccess, 0, len(resources))
 	for _, resourceID := range resources {
-		resourceAccess = append(resourceAccess, &proto.ResourceAccess{
+		resourceAccess = append(resourceAccess, &pb.ResourceAccess{
 			ResourceId:   resourceID,
 			ResourceType: req.ResourceType,
 		})
 	}
 
-	return &proto.LookupResourcesResponse{
+	return &pb.LookupResourcesResponse{
 		Resources: resourceAccess,
 	}, nil
 }
 
 // CheckColumns implements the CheckColumns RPC method for authorization
-func (h *AuthorizationHandler) CheckColumns(ctx context.Context, req *proto.CheckColumnsRequest) (*proto.CheckColumnsResponse, error) {
+func (h *AuthorizationHandler) CheckColumns(ctx context.Context, req *pb.CheckColumnsRequest) (*pb.CheckColumnsResponse, error) {
 	h.logger.Info("gRPC CheckColumns request",
 		zap.String("principal_id", req.PrincipalId),
 		zap.String("table_name", req.TableName),
@@ -185,14 +185,14 @@ func (h *AuthorizationHandler) CheckColumns(ctx context.Context, req *proto.Chec
 		zap.Bool("allowed", result.Allowed),
 		zap.Int("allowed_columns_count", len(allowedColumns)))
 
-	return &proto.CheckColumnsResponse{
+	return &pb.CheckColumnsResponse{
 		Allowed:        result.Allowed,
 		AllowedColumns: allowedColumns,
 	}, nil
 }
 
 // ListAllowedColumns implements the ListAllowedColumns RPC method for authorization
-func (h *AuthorizationHandler) ListAllowedColumns(ctx context.Context, req *proto.ListAllowedColumnsRequest) (*proto.ListAllowedColumnsResponse, error) {
+func (h *AuthorizationHandler) ListAllowedColumns(ctx context.Context, req *pb.ListAllowedColumnsRequest) (*pb.ListAllowedColumnsResponse, error) {
 	h.logger.Info("gRPC ListAllowedColumns request",
 		zap.String("principal_id", req.PrincipalId),
 		zap.String("table_name", req.TableName),
@@ -223,13 +223,13 @@ func (h *AuthorizationHandler) ListAllowedColumns(ctx context.Context, req *prot
 		zap.String("principal_id", req.PrincipalId),
 		zap.Int("allowed_columns_count", len(allowedColumns)))
 
-	return &proto.ListAllowedColumnsResponse{
+	return &pb.ListAllowedColumnsResponse{
 		AllowedColumns: allowedColumns,
 	}, nil
 }
 
 // Explain implements the Explain RPC method for authorization
-func (h *AuthorizationHandler) ExplainLegacy(ctx context.Context, req *proto.CheckRequest) (*proto.CheckResponse, error) {
+func (h *AuthorizationHandler) ExplainLegacy(ctx context.Context, req *pb.CheckRequest) (*pb.CheckResponse, error) {
 	h.logger.Info("gRPC Explain request",
 		zap.String("principal_id", req.PrincipalId),
 		zap.String("resource_type", req.ResourceType),
@@ -263,7 +263,7 @@ func (h *AuthorizationHandler) ExplainLegacy(ctx context.Context, req *proto.Che
 		zap.String("principal_id", req.PrincipalId),
 		zap.Bool("allowed", result.Allowed))
 
-	return &proto.CheckResponse{
+	return &pb.CheckResponse{
 		Allowed:    result.Allowed,
 		DecisionId: result.DecisionID,
 		Reasons:    []string{explanation},
