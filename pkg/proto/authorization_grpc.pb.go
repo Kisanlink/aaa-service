@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v6.32.0
-// source: authorization.proto
+// source: pkg/proto/authorization.proto
 
 package pb
 
@@ -350,5 +350,5 @@ var AuthorizationService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "authorization.proto",
+	Metadata: "pkg/proto/authorization.proto",
 }
