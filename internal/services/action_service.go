@@ -10,6 +10,7 @@ import (
 	"github.com/Kisanlink/aaa-service/internal/interfaces"
 	actionRepo "github.com/Kisanlink/aaa-service/internal/repositories/actions"
 	"github.com/Kisanlink/aaa-service/pkg/errors"
+	"github.com/Kisanlink/kisanlink-db/pkg/base"
 	"go.uber.org/zap"
 )
 
@@ -250,14 +251,15 @@ func (s *ActionService) ListActions(ctx context.Context, limit, offset int) (*ac
 	s.logger.Info("Listing actions", zap.Int("limit", limit), zap.Int("offset", offset))
 
 	// Get actions from repository
-	actions, err := s.actionRepo.List(ctx, limit, offset)
+	filter := base.NewFilterBuilder().Limit(limit, offset).Build()
+	actions, err := s.actionRepo.List(ctx, filter)
 	if err != nil {
 		s.logger.Error("Failed to list actions", zap.Error(err))
 		return nil, errors.NewInternalError(err)
 	}
 
 	// Get total count
-	total, err := s.actionRepo.Count(ctx)
+	total, err := s.actionRepo.Count(ctx, base.NewFilter())
 	if err != nil {
 		s.logger.Error("Failed to count actions", zap.Error(err))
 		return nil, errors.NewInternalError(err)
@@ -295,7 +297,7 @@ func (s *ActionService) GetActionsByService(ctx context.Context, serviceName str
 	s.logger.Info("Getting actions by service", zap.String("service", serviceName))
 
 	// Get actions from repository
-	actions, err := s.actionRepo.GetByServiceName(ctx, serviceName, limit, offset)
+	actions, err := s.actionRepo.GetByServiceID(ctx, serviceName, limit, offset)
 	if err != nil {
 		s.logger.Error("Failed to get actions by service", zap.Error(err))
 		return nil, errors.NewInternalError(err)
