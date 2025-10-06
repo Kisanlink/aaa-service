@@ -235,11 +235,24 @@ func seedComprehensivePermissions(ctx context.Context, primary db.DBManager, log
 				act.ID,
 			)
 			if err := primary.Create(ctx, newPerm); err != nil {
-				return fmt.Errorf("create permission %s: %w", permName, err)
-			}
-			perm = *newPerm
-			if logger != nil {
-				logger.Debug("Created permission", zap.String("permission", permName))
+				// Check if it's a duplicate key error (permission was created by another process/goroutine)
+				// If so, try to fetch it again
+				if err := primary.List(ctx, permFilter, &perms); err != nil {
+					return fmt.Errorf("retry fetch permission %s: %w", permName, err)
+				}
+				if len(perms) > 0 {
+					perm = perms[0]
+					if logger != nil {
+						logger.Debug("Permission exists (created concurrently)", zap.String("permission", permName))
+					}
+				} else {
+					return fmt.Errorf("create permission %s: %w", permName, err)
+				}
+			} else {
+				perm = *newPerm
+				if logger != nil {
+					logger.Debug("Created permission", zap.String("permission", permName))
+				}
 			}
 		} else {
 			perm = perms[0]
