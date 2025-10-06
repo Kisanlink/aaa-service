@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package pb;
 
-option go_package = "github.com/Kisanlink/aaa-service/pb";
+option go_package = "github.com/Kisanlink/aaa-service/pkg/proto;pb";
 
 import "google/protobuf/timestamp.proto";
 
@@ -35,8 +35,8 @@ message Resource {
     repeated Resource children = 13;
 }
 
-// Enhanced Role model with scope
-message Role {
+// Enhanced Role model with scope (Catalog version)
+message CatalogRole {
     string id = 1;
     string name = 2;
     string description = 3;
@@ -48,13 +48,13 @@ message Role {
     map<string, string> metadata = 9;
     google.protobuf.Timestamp created_at = 10;
     google.protobuf.Timestamp updated_at = 11;
-    Role parent = 12;
-    repeated Role children = 13;
-    repeated Permission permissions = 14;
+    CatalogRole parent = 12;
+    repeated CatalogRole children = 13;
+    repeated CatalogPermission permissions = 14;
 }
 
-// Permission model
-message Permission {
+// Permission model (Catalog version)
+message CatalogPermission {
     string id = 1;
     string name = 2;
     string description = 3;
@@ -169,7 +169,7 @@ message CreateRoleRequest {
 message CreateRoleResponse {
     int32 status_code = 1;
     string message = 2;
-    Role role = 3;
+    CatalogRole role = 3;
 }
 
 // List Roles Request
@@ -186,7 +186,7 @@ message ListRolesRequest {
 message ListRolesResponse {
     int32 status_code = 1;
     string message = 2;
-    repeated Role roles = 3;
+    repeated CatalogRole roles = 3;
     int32 total_count = 4;
     int32 page = 5;
     int32 page_size = 6;
@@ -204,7 +204,7 @@ message CreatePermissionRequest {
 message CreatePermissionResponse {
     int32 status_code = 1;
     string message = 2;
-    Permission permission = 3;
+    CatalogPermission permission = 3;
 }
 
 // Attach Permissions Request
@@ -217,7 +217,7 @@ message AttachPermissionsRequest {
 message AttachPermissionsResponse {
     int32 status_code = 1;
     string message = 2;
-    Role role = 3;
+    CatalogRole role = 3;
 }
 
 // List Permissions Request
@@ -233,10 +233,27 @@ message ListPermissionsRequest {
 message ListPermissionsResponse {
     int32 status_code = 1;
     string message = 2;
-    repeated Permission permissions = 3;
+    repeated CatalogPermission permissions = 3;
     int32 total_count = 4;
     int32 page = 5;
     int32 page_size = 6;
+}
+
+// Seed Roles and Permissions Request
+message SeedRolesAndPermissionsRequest {
+    bool force = 1;  // Force re-seed even if data exists
+    string organization_id = 2;  // Optional - seed for specific org
+}
+
+// Seed Roles and Permissions Response
+message SeedRolesAndPermissionsResponse {
+    int32 status_code = 1;
+    string message = 2;
+    int32 roles_created = 3;
+    int32 permissions_created = 4;
+    int32 resources_created = 5;
+    int32 actions_created = 6;
+    repeated string created_roles = 7;
 }
 
 // Catalog Service - manages actions, resources, roles, and permissions
@@ -258,4 +275,7 @@ service CatalogService {
     rpc CreatePermission(CreatePermissionRequest) returns (CreatePermissionResponse);
     rpc AttachPermissions(AttachPermissionsRequest) returns (AttachPermissionsResponse);
     rpc ListPermissions(ListPermissionsRequest) returns (ListPermissionsResponse);
+
+    // Seeding
+    rpc SeedRolesAndPermissions(SeedRolesAndPermissionsRequest) returns (SeedRolesAndPermissionsResponse);
 }

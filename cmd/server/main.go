@@ -17,6 +17,7 @@ import (
 	"github.com/Kisanlink/aaa-service/internal/grpc_server"
 	"github.com/Kisanlink/aaa-service/internal/handlers/admin"
 	"github.com/Kisanlink/aaa-service/internal/handlers/permissions"
+	principalHandlers "github.com/Kisanlink/aaa-service/internal/handlers/principals"
 	"github.com/Kisanlink/aaa-service/internal/handlers/roles"
 	"github.com/Kisanlink/aaa-service/internal/interfaces"
 	"github.com/Kisanlink/aaa-service/internal/middleware"
@@ -26,6 +27,7 @@ import (
 	contactRepo "github.com/Kisanlink/aaa-service/internal/repositories/contacts"
 	groupRepo "github.com/Kisanlink/aaa-service/internal/repositories/groups"
 	organizationRepo "github.com/Kisanlink/aaa-service/internal/repositories/organizations"
+	principalRepo "github.com/Kisanlink/aaa-service/internal/repositories/principals"
 	roleRepo "github.com/Kisanlink/aaa-service/internal/repositories/roles"
 	userRepo "github.com/Kisanlink/aaa-service/internal/repositories/users"
 	"github.com/Kisanlink/aaa-service/internal/routes"
@@ -34,6 +36,7 @@ import (
 	contactService "github.com/Kisanlink/aaa-service/internal/services/contacts"
 	groupService "github.com/Kisanlink/aaa-service/internal/services/groups"
 	organizationService "github.com/Kisanlink/aaa-service/internal/services/organizations"
+	principalService "github.com/Kisanlink/aaa-service/internal/services/principals"
 	"github.com/Kisanlink/aaa-service/internal/services/user"
 	"github.com/Kisanlink/aaa-service/migrations"
 	"github.com/Kisanlink/aaa-service/utils"
@@ -139,10 +142,11 @@ type Server struct {
 
 // HTTPServer wraps the gin router with middleware
 type HTTPServer struct {
-	router *gin.Engine
-	server *http.Server
-	port   string
-	logger *zap.Logger
+	router                      *gin.Engine
+	server                      *http.Server
+	port                        string
+	logger                      *zap.Logger
+	organizationServiceInstance interfaces.OrganizationService
 }
 
 func main() {
@@ -271,6 +275,9 @@ func initializeServer(
 	groupRoleRepository := groupRepo.NewGroupRoleRepository(primaryDBManager)
 	groupMembershipRepository := groupRepo.NewGroupMembershipRepository(primaryDBManager)
 
+	// Initialize principal repositories for service authentication
+	serviceRepository := principalRepo.NewServiceRepository(primaryDBManager)
+
 	// Initialize cache service
 	// FIX: Check CACHE_DISABLED environment variable to optionally disable Redis
 	var cacheService interfaces.CacheService
@@ -307,21 +314,33 @@ func initializeServer(
 	contactRepository := contactRepo.NewContactRepository(primaryDBManager)
 	contactServiceInstance := contactService.NewContactService(contactRepository, cacheService, loggerAdapter, validator)
 
+	// Initialize principal service
+	principalRepository := principalRepo.NewPrincipalRepository(primaryDBManager)
+	principalService := principalService.NewPrincipalService(
+		organizationRepository,
+		principalRepository,
+		serviceRepository,
+		validator,
+		logger,
+	)
+
 	// Initialize handlers
 	permissionHandler := permissions.NewPermissionHandler(primaryDBManager, validator, responder, logger)
+	principalHandler := principalHandlers.NewPrincipalHandler(principalService, responder, logger)
 
 	// Initialize HTTP server
 	httpServer, err := initializeHTTPServer(
 		httpPort, jwtSecret,
 		primaryDBManager, userService, roleService, userRepository, userRoleRepository,
-		cacheService, validator, responder, maintenanceService, logger, permissionHandler, contactServiceInstance,
+		cacheService, validator, responder, maintenanceService, logger, permissionHandler, principalHandler, contactServiceInstance,
 		organizationRepository, groupRepository, groupRoleRepository, groupMembershipRepository, roleRepository,
+		serviceRepository,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize HTTP server: %w", err)
 	}
 
-	// Initialize gRPC server
+	// Initialize gRPC server using organizationServiceInstance from httpServer
 	grpcConfig := &grpc_server.GRPCServerConfig{
 		Port:             grpcPort,
 		JWTSecret:        jwtSecret,
@@ -332,7 +351,8 @@ func initializeServer(
 
 	grpcServer, err := grpc_server.NewGRPCServer(
 		grpcConfig, primaryDBManager, userService, roleService,
-		userRoleRepository, userRepository, cacheService, logger, validator,
+		userRoleRepository, userRepository, cacheService, httpServer.organizationServiceInstance,
+		serviceRepository, logger, validator,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize gRPC server: %w", err)
@@ -359,12 +379,14 @@ func initializeHTTPServer(
 	maintenanceService interfaces.MaintenanceService,
 	logger *zap.Logger,
 	permissionHandler *permissions.PermissionHandler,
+	principalHandler *principalHandlers.Handler,
 	contactServiceInstance *contactService.ContactService,
 	organizationRepository *organizationRepo.OrganizationRepository,
 	groupRepository *groupRepo.GroupRepository,
 	groupRoleRepository *groupRepo.GroupRoleRepository,
 	groupMembershipRepository *groupRepo.GroupMembershipRepository,
 	roleRepository *roleRepo.RoleRepository,
+	serviceRepository interfaces.ServiceRepository,
 ) (*HTTPServer, error) {
 	// Build auth, authorization, and audit stack
 	auditService, authzService, authService, authMiddleware, auditMiddleware, err := setupAuthStack(
@@ -374,6 +396,7 @@ func initializeHTTPServer(
 		userRepository,
 		roleService,
 		userRoleRepository,
+		serviceRepository,
 		jwtSecret,
 		logger,
 		validator,
@@ -428,12 +451,13 @@ func initializeHTTPServer(
 	setupHTTPMiddleware(router, authMiddleware, auditMiddleware, maintenanceService, responder, logger)
 
 	// Setup routes and docs
-	setupRoutesAndDocs(router, authService, authzService, auditService, authMiddleware, maintenanceService, validator, responder, logger, roleHandler, permissionHandler, userService, roleService, contactServiceInstance, organizationServiceInstance, groupServiceInstance)
+	setupRoutesAndDocs(router, authService, authzService, auditService, authMiddleware, maintenanceService, validator, responder, logger, roleHandler, permissionHandler, principalHandler, userService, roleService, contactServiceInstance, organizationServiceInstance, groupServiceInstance)
 
 	return &HTTPServer{
-		router: router,
-		port:   port,
-		logger: logger,
+		router:                      router,
+		port:                        port,
+		logger:                      logger,
+		organizationServiceInstance: organizationServiceInstance,
 	}, nil
 }
 
@@ -445,6 +469,7 @@ func setupAuthStack(
 	userRepository interfaces.UserRepository,
 	roleService interfaces.RoleService,
 	userRoleRepository interfaces.UserRoleRepository,
+	serviceRepository interfaces.ServiceRepository,
 	jwtSecret string,
 	logger *zap.Logger,
 	validator interfaces.Validator,
@@ -503,7 +528,7 @@ func setupAuthStack(
 		return nil, nil, nil, nil, nil, fmt.Errorf("failed to create authentication service: %w", err)
 	}
 
-	authMiddleware := middleware.NewAuthMiddleware(authService, authzService, auditService, logger, middleware.NewHS256Verifier(), jwtCfg)
+	authMiddleware := middleware.NewAuthMiddleware(authService, authzService, auditService, serviceRepository, logger, middleware.NewHS256Verifier(), jwtCfg)
 	auditMiddleware := middleware.NewAuditMiddleware(auditService, logger)
 	return auditService, authzService, authService, authMiddleware, auditMiddleware, nil
 }
@@ -545,6 +570,7 @@ func setupRoutesAndDocs(
 	logger *zap.Logger,
 	roleHandler *roles.RoleHandler,
 	permissionHandler *permissions.PermissionHandler,
+	principalHandler *principalHandlers.Handler,
 	userService interfaces.UserService,
 	roleService interfaces.RoleService,
 	contactServiceInstance *contactService.ContactService,
@@ -573,6 +599,9 @@ func setupRoutesAndDocs(
 		responder,
 		logger,
 	)
+
+	// Register principal and service management routes
+	routes.RegisterPrincipalRoutes(router, principalHandler, authMiddleware)
 
 	// Serve OpenAPI and Scalar-powered docs UI (gated by env)
 	if getEnv("AAA_ENABLE_DOCS", "true") == "true" {

@@ -1,0 +1,81 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "github.com/Kisanlink/aaa-service/pkg/proto;pb";
+
+// Assign permission to group
+message AssignPermissionToGroupRequest {
+    string group_id = 1;
+    string resource = 2;
+    string action = 3;
+}
+
+message AssignPermissionToGroupResponse {
+    int32 status_code = 1;
+    string message = 2;
+}
+
+// Check if group has permission
+message CheckGroupPermissionRequest {
+    string group_id = 1;
+    string resource = 2;
+    string action = 3;
+}
+
+message CheckGroupPermissionResponse {
+    bool has_permission = 1;
+}
+
+// List all permissions for a group
+message ListGroupPermissionsRequest {
+    string group_id = 1;
+}
+
+message PermissionItem {
+    string id = 1;
+    string resource = 2;
+    string action = 3;
+    string description = 4;
+}
+
+message ListGroupPermissionsResponse {
+    int32 status_code = 1;
+    string message = 2;
+    repeated PermissionItem permissions = 3;
+}
+
+// Remove permission from group
+message RemovePermissionFromGroupRequest {
+    string group_id = 1;
+    string resource = 2;
+    string action = 3;
+}
+
+message RemovePermissionFromGroupResponse {
+    int32 status_code = 1;
+    string message = 2;
+}
+
+// Get user's effective permissions (from all groups and roles)
+message GetUserEffectivePermissionsRequest {
+    string user_id = 1;
+    string org_id = 2;  // optional - filter by organization
+}
+
+message GetUserEffectivePermissionsResponse {
+    int32 status_code = 1;
+    string message = 2;
+    repeated PermissionItem permissions = 3;
+    repeated string roles = 4;      // Roles that contributed to permissions
+    repeated string groups = 5;     // Groups that contributed to permissions
+}
+
+// PermissionService - manages group permissions
+service PermissionService {
+    rpc AssignPermissionToGroup(AssignPermissionToGroupRequest) returns (AssignPermissionToGroupResponse);
+    rpc CheckGroupPermission(CheckGroupPermissionRequest) returns (CheckGroupPermissionResponse);
+    rpc ListGroupPermissions(ListGroupPermissionsRequest) returns (ListGroupPermissionsResponse);
+    rpc RemovePermissionFromGroup(RemovePermissionFromGroupRequest) returns (RemovePermissionFromGroupResponse);
+    rpc GetUserEffectivePermissions(GetUserEffectivePermissionsRequest) returns (GetUserEffectivePermissionsResponse);
+}

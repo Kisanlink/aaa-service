@@ -2,9 +2,9 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v6.32.0
-// source: auth_enhanced.proto
+// source: auth.proto
 
-package proto
+package pb
 
 import (
 	context "context"
@@ -36,7 +36,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// Enhanced User Service
+// V2 User Service
 type UserServiceClient interface {
 	Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error)
 	Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*RegisterResponse, error)
@@ -162,7 +162,7 @@ func (c *userServiceClient) VerifyUserPassword(ctx context.Context, in *VerifyPa
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility.
 //
-// Enhanced User Service
+// V2 User Service
 type UserServiceServer interface {
 	Login(context.Context, *LoginRequest) (*LoginResponse, error)
 	Register(context.Context, *RegisterRequest) (*RegisterResponse, error)
@@ -464,5 +464,5 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "auth_enhanced.proto",
+	Metadata: "auth.proto",
 }

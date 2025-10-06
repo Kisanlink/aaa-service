@@ -4,7 +4,7 @@
 // 	protoc        v6.32.0
 // source: token.proto
 
-package proto
+package pb
 
 import (
 	reflect "reflect"
@@ -2079,7 +2079,7 @@ const file_token_proto_rawDesc = "" +
 	"\x0fIntrospectToken\x12\x1a.pb.IntrospectTokenRequest\x1a\x1b.pb.IntrospectTokenResponse\x12>\n" +
 	"\vCreateToken\x12\x16.pb.CreateTokenRequest\x1a\x17.pb.CreateTokenResponse\x12M\n" +
 	"\x10ListActiveTokens\x12\x1b.pb.ListActiveTokensRequest\x1a\x1c.pb.ListActiveTokensResponse\x12G\n" +
-	"\x0eBlacklistToken\x12\x19.pb.BlacklistTokenRequest\x1a\x1a.pb.BlacklistTokenResponseB,Z*github.com/Kisanlink/aaa-service/pkg/protob\x06proto3"
+	"\x0eBlacklistToken\x12\x19.pb.BlacklistTokenRequest\x1a\x1a.pb.BlacklistTokenResponseB/Z-github.com/Kisanlink/aaa-service/pkg/proto;pbb\x06proto3"
 
 var (
 	file_token_proto_rawDescOnce sync.Once
