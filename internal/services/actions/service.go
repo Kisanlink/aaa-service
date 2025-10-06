@@ -14,9 +14,31 @@ import (
 	"go.uber.org/zap"
 )
 
+// ActionService defines the interface for action management operations
+type ActionServiceInterface interface {
+	// Basic CRUD
+	CreateAction(ctx context.Context, req *actionRequests.CreateActionRequest) (*actionResponses.ActionResponse, error)
+	GetAction(ctx context.Context, id string) (*actionResponses.ActionResponse, error)
+	UpdateAction(ctx context.Context, id string, req *actionRequests.UpdateActionRequest) (*actionResponses.ActionResponse, error)
+	DeleteAction(ctx context.Context, id string, deletedBy string) error
+	ListActions(ctx context.Context, limit, offset int) (*actionResponses.ActionListResponse, error)
+
+	// Lifecycle operations
+	ActivateAction(ctx context.Context, id string) error
+	DeactivateAction(ctx context.Context, id string) error
+	IsStaticAction(ctx context.Context, id string) (bool, error)
+
+	// Query operations
+	GetActionsByCategory(ctx context.Context, category string, limit, offset int) (*actionResponses.ActionListResponse, error)
+	GetActionsByService(ctx context.Context, serviceName string, limit, offset int) (*actionResponses.ActionListResponse, error)
+	GetStaticActions(ctx context.Context, limit, offset int) (*actionResponses.ActionListResponse, error)
+	GetDynamicActions(ctx context.Context, limit, offset int) (*actionResponses.ActionListResponse, error)
+	GetActiveActions(ctx context.Context, limit, offset int) (*actionResponses.ActionListResponse, error)
+}
+
 // ActionService handles business logic for Action entities
 type ActionService struct {
-	actionRepo actionRepo.ActionRepository
+	actionRepo *actionRepo.ActionRepository
 	cache      interfaces.CacheService
 	logger     interfaces.Logger
 	validator  interfaces.Validator
@@ -24,7 +46,7 @@ type ActionService struct {
 
 // NewActionService creates a new ActionService instance
 func NewActionService(
-	repo actionRepo.ActionRepository,
+	repo *actionRepo.ActionRepository,
 	cache interfaces.CacheService,
 	logger interfaces.Logger,
 	validator interfaces.Validator,
@@ -74,21 +96,11 @@ func (s *ActionService) CreateAction(ctx context.Context, req *actionRequests.Cr
 
 	s.logger.Info("Action created successfully", zap.String("action_id", action.ID))
 
-	// Convert to response format
-	response := &actionResponses.ActionResponse{
-		ID:          action.ID,
-		Name:        action.Name,
-		Description: action.Description,
-		Category:    action.Category,
-		IsStatic:    action.IsStatic,
-		ServiceID:   action.ServiceID,
-		Metadata:    action.Metadata,
-		IsActive:    action.IsActive,
-		CreatedAt:   action.CreatedAt,
-		UpdatedAt:   action.UpdatedAt,
-	}
+	// Clear list cache
+	s.invalidateActionListCache()
 
-	return response, nil
+	// Convert to response format
+	return s.toActionResponse(action), nil
 }
 
 // GetAction retrieves an action by ID
@@ -116,20 +128,9 @@ func (s *ActionService) GetAction(ctx context.Context, id string) (*actionRespon
 	}
 
 	// Convert to response format
-	response := &actionResponses.ActionResponse{
-		ID:          action.ID,
-		Name:        action.Name,
-		Description: action.Description,
-		Category:    action.Category,
-		IsStatic:    action.IsStatic,
-		ServiceID:   action.ServiceID,
-		Metadata:    action.Metadata,
-		IsActive:    action.IsActive,
-		CreatedAt:   action.CreatedAt,
-		UpdatedAt:   action.UpdatedAt,
-	}
+	response := s.toActionResponse(action)
 
-	// Cache the response
+	// Cache the response (TTL: 5 minutes)
 	if err := s.cache.Set(cacheKey, response, 300); err != nil {
 		s.logger.Warn("Failed to cache action response", zap.Error(err))
 	}
@@ -156,6 +157,14 @@ func (s *ActionService) UpdateAction(ctx context.Context, id string, req *action
 
 	if existingAction == nil {
 		return nil, errors.NewNotFoundError("action not found")
+	}
+
+	// Check if it's a static action and prevent certain updates
+	if existingAction.IsStatic {
+		// Static actions should not be made non-static or change certain core properties
+		if req.IsStatic != nil && !*req.IsStatic {
+			return nil, errors.NewValidationError("cannot change static action to dynamic", "static action protection")
+		}
 	}
 
 	// Update fields if provided
@@ -191,41 +200,27 @@ func (s *ActionService) UpdateAction(ctx context.Context, id string, req *action
 	s.logger.Info("Action updated successfully", zap.String("action_id", id))
 
 	// Clear cache
-	cacheKey := fmt.Sprintf("action:%s", id)
-	if err := s.cache.Delete(cacheKey); err != nil {
-		s.logger.Warn("Failed to delete action cache", zap.Error(err))
-	}
+	s.invalidateActionCache(id)
+	s.invalidateActionListCache()
 
-	// Convert to response format
-	response := &actionResponses.ActionResponse{
-		ID:          existingAction.ID,
-		Name:        existingAction.Name,
-		Description: existingAction.Description,
-		Category:    existingAction.Category,
-		IsStatic:    existingAction.IsStatic,
-		ServiceID:   existingAction.ServiceID,
-		Metadata:    existingAction.Metadata,
-		IsActive:    existingAction.IsActive,
-		CreatedAt:   existingAction.CreatedAt,
-		UpdatedAt:   existingAction.UpdatedAt,
-	}
-
-	return response, nil
+	return s.toActionResponse(existingAction), nil
 }
 
-// DeleteAction deletes an action by ID
+// DeleteAction deletes an action by ID with static action protection
 func (s *ActionService) DeleteAction(ctx context.Context, id string, deletedBy string) error {
 	s.logger.Info("Deleting action", zap.String("id", id), zap.String("deleted_by", deletedBy))
 
-	// Check if action exists
-	exists, err := s.actionRepo.Exists(ctx, id)
+	// Check if action exists and is static
+	action, err := s.actionRepo.GetByID(ctx, id)
 	if err != nil {
-		s.logger.Error("Failed to check action existence", zap.Error(err))
-		return errors.NewInternalError(err)
+		s.logger.Error("Failed to get action for deletion", zap.Error(err))
+		return errors.NewNotFoundError("action not found")
 	}
 
-	if !exists {
-		return errors.NewNotFoundError("action not found")
+	// Protect static actions from deletion
+	if action.IsStatic {
+		s.logger.Warn("Attempted to delete static action", zap.String("action_id", id))
+		return errors.NewValidationError("cannot delete static action", "static actions are protected")
 	}
 
 	// Soft delete the action
@@ -238,10 +233,8 @@ func (s *ActionService) DeleteAction(ctx context.Context, id string, deletedBy s
 	s.logger.Info("Action deleted successfully", zap.String("action_id", id))
 
 	// Clear cache
-	cacheKey := fmt.Sprintf("action:%s", id)
-	if err := s.cache.Delete(cacheKey); err != nil {
-		s.logger.Warn("Failed to delete action cache", zap.Error(err))
-	}
+	s.invalidateActionCache(id)
+	s.invalidateActionListCache()
 
 	return nil
 }
@@ -266,66 +259,5 @@ func (s *ActionService) ListActions(ctx context.Context, limit, offset int) (*ac
 	}
 
 	// Convert to response format
-	actionResponseList := make([]*actionResponses.ActionResponse, len(actions))
-	for i, action := range actions {
-		actionResponseList[i] = &actionResponses.ActionResponse{
-			ID:          action.ID,
-			Name:        action.Name,
-			Description: action.Description,
-			Category:    action.Category,
-			IsStatic:    action.IsStatic,
-			ServiceID:   action.ServiceID,
-			Metadata:    action.Metadata,
-			IsActive:    action.IsActive,
-			CreatedAt:   action.CreatedAt,
-			UpdatedAt:   action.UpdatedAt,
-		}
-	}
-
-	response := &actionResponses.ActionListResponse{
-		Actions: actionResponseList,
-		Total:   total,
-		Limit:   limit,
-		Offset:  offset,
-	}
-
-	return response, nil
-}
-
-// GetActionsByService retrieves actions by service name
-func (s *ActionService) GetActionsByService(ctx context.Context, serviceName string, limit, offset int) (*actionResponses.ActionListResponse, error) {
-	s.logger.Info("Getting actions by service", zap.String("service", serviceName))
-
-	// Get actions from repository
-	actions, err := s.actionRepo.GetByServiceID(ctx, serviceName, limit, offset)
-	if err != nil {
-		s.logger.Error("Failed to get actions by service", zap.Error(err))
-		return nil, errors.NewInternalError(err)
-	}
-
-	// Convert to response format
-	actionResponseList := make([]*actionResponses.ActionResponse, len(actions))
-	for i, action := range actions {
-		actionResponseList[i] = &actionResponses.ActionResponse{
-			ID:          action.ID,
-			Name:        action.Name,
-			Description: action.Description,
-			Category:    action.Category,
-			IsStatic:    action.IsStatic,
-			ServiceID:   action.ServiceID,
-			Metadata:    action.Metadata,
-			IsActive:    action.IsActive,
-			CreatedAt:   action.CreatedAt,
-			UpdatedAt:   action.UpdatedAt,
-		}
-	}
-
-	response := &actionResponses.ActionListResponse{
-		Actions: actionResponseList,
-		Total:   int64(len(actions)),
-		Limit:   limit,
-		Offset:  offset,
-	}
-
-	return response, nil
+	return s.toActionListResponse(actions, total, limit, offset), nil
 }
