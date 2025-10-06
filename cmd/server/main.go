@@ -85,6 +85,11 @@ func runSeedScripts(ctx context.Context, dbManager *db.DatabaseManager, logger *
 		if err := migrations.SeedCoreResourcesRolesPermissionsWithDBManager(ctx, dbManager, logger); err != nil {
 			return fmt.Errorf("failed to seed core roles/permissions: %w", err)
 		}
+
+		// Seed comprehensive RBAC resources and permissions
+		if err := migrations.SeedComprehensiveRBACWithDBManager(ctx, dbManager, logger); err != nil {
+			return fmt.Errorf("failed to seed comprehensive RBAC: %w", err)
+		}
 	}
 
 	// 2. Seed default roles
