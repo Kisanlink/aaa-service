@@ -68,7 +68,7 @@ func (r *PermissionRepository) List(ctx context.Context, limit, offset int) ([]*
 // Count returns the total number of permissions
 func (r *PermissionRepository) Count(ctx context.Context) (int64, error) {
 	filter := base.NewFilter()
-	return r.BaseFilterableRepository.CountWithFilter(ctx, filter)
+	return r.BaseFilterableRepository.Count(ctx, filter, models.Permission{})
 }
 
 // Exists checks if a permission exists by ID

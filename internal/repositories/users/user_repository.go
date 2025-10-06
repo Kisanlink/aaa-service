@@ -115,7 +115,7 @@ func (r *UserRepository) ListAll(ctx context.Context) ([]*models.User, error) {
 // Count returns the total number of users using database-level counting
 func (r *UserRepository) Count(ctx context.Context) (int64, error) {
 	filter := base.NewFilter()
-	return r.BaseFilterableRepository.CountWithFilter(ctx, filter)
+	return r.BaseFilterableRepository.Count(ctx, filter, models.User{})
 }
 
 // Exists checks if a user exists by ID using the base repository

@@ -65,7 +65,7 @@ func (r *AddressRepository) List(ctx context.Context, limit, offset int) ([]*mod
 // Count returns the total number of addresses using database-level counting
 func (r *AddressRepository) Count(ctx context.Context) (int64, error) {
 	filter := base.NewFilter()
-	return r.BaseFilterableRepository.CountWithFilter(ctx, filter)
+	return r.BaseFilterableRepository.Count(ctx, filter, models.Address{})
 }
 
 // GetByUserID retrieves addresses by user ID using database-level filtering

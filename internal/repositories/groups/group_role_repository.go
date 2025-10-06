@@ -247,7 +247,7 @@ func (r *GroupRoleRepository) List(ctx context.Context, limit, offset int) ([]*m
 // Count returns the total number of group roles
 func (r *GroupRoleRepository) Count(ctx context.Context) (int64, error) {
 	filter := base.NewFilter()
-	return r.BaseFilterableRepository.CountWithFilter(ctx, filter)
+	return r.BaseFilterableRepository.Count(ctx, filter, models.GroupRole{})
 }
 
 // Exists checks if a group role exists by ID

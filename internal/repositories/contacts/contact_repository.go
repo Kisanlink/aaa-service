@@ -58,7 +58,7 @@ func (r *ContactRepository) List(ctx context.Context, limit, offset int) ([]*mod
 // Count returns the total number of contacts using database-level counting
 func (r *ContactRepository) Count(ctx context.Context) (int64, error) {
 	filter := base.NewFilter()
-	return r.BaseFilterableRepository.CountWithFilter(ctx, filter)
+	return r.BaseFilterableRepository.Count(ctx, filter, models.Contact{})
 }
 
 // Exists checks if a contact exists by ID using the base repository

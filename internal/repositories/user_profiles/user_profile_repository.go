@@ -59,7 +59,7 @@ func (r *UserProfileRepository) List(ctx context.Context, limit, offset int) ([]
 // Count returns the total number of user profiles using database-level counting
 func (r *UserProfileRepository) Count(ctx context.Context) (int64, error) {
 	filter := base.NewFilter()
-	return r.BaseFilterableRepository.CountWithFilter(ctx, filter)
+	return r.BaseFilterableRepository.Count(ctx, filter, models.UserProfile{})
 }
 
 // Exists checks if a user profile exists by ID using the base repository

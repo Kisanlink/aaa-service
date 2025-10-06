@@ -59,7 +59,7 @@ func (r *GroupRepository) List(ctx context.Context, limit, offset int) ([]*model
 // Count returns the total number of groups using database-level counting
 func (r *GroupRepository) Count(ctx context.Context) (int64, error) {
 	filter := base.NewFilter()
-	return r.BaseFilterableRepository.CountWithFilter(ctx, filter)
+	return r.BaseFilterableRepository.Count(ctx, filter, models.Group{})
 }
 
 // Exists checks if a group exists by ID using the base repository

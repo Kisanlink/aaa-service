@@ -59,7 +59,7 @@ func (r *ResourceRepository) List(ctx context.Context, limit, offset int) ([]*mo
 // Count returns the total number of resources using database-level counting
 func (r *ResourceRepository) Count(ctx context.Context) (int64, error) {
 	filter := base.NewFilter()
-	return r.BaseFilterableRepository.CountWithFilter(ctx, filter)
+	return r.BaseFilterableRepository.Count(ctx, filter, models.Resource{})
 }
 
 // Exists checks if a resource exists by ID using the base repository
