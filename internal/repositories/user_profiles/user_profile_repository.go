@@ -84,7 +84,7 @@ func (r *UserProfileRepository) ListWithDeleted(ctx context.Context, limit, offs
 
 // CountWithDeleted returns count including soft-deleted user profiles using the base repository
 func (r *UserProfileRepository) CountWithDeleted(ctx context.Context) (int64, error) {
-	return r.BaseFilterableRepository.CountWithDeleted(ctx)
+	return r.BaseFilterableRepository.CountWithDeleted(ctx, &models.UserProfile{})
 }
 
 // ExistsWithDeleted checks if user profile exists including soft-deleted ones using the base repository

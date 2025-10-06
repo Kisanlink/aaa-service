@@ -83,7 +83,7 @@ func (r *EventRepository) ListWithDeleted(ctx context.Context, limit, offset int
 
 // CountWithDeleted returns count including soft-deleted events using the base repository
 func (r *EventRepository) CountWithDeleted(ctx context.Context) (int64, error) {
-	return r.BaseFilterableRepository.CountWithDeleted(ctx)
+	return r.BaseFilterableRepository.CountWithDeleted(ctx, &models.Event{})
 }
 
 // ExistsWithDeleted checks if event exists including soft-deleted ones using the base repository

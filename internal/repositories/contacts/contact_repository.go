@@ -58,7 +58,7 @@ func (r *ContactRepository) List(ctx context.Context, limit, offset int) ([]*mod
 // Count returns the total number of contacts using database-level counting
 func (r *ContactRepository) Count(ctx context.Context) (int64, error) {
 	filter := base.NewFilter()
-	return r.BaseFilterableRepository.Count(ctx, filter, models.Contact{})
+	return r.BaseFilterableRepository.Count(ctx, filter, &models.Contact{})
 }
 
 // Exists checks if a contact exists by ID using the base repository
@@ -83,7 +83,7 @@ func (r *ContactRepository) ListWithDeleted(ctx context.Context, limit, offset i
 
 // CountWithDeleted returns count including soft-deleted contacts using the base repository
 func (r *ContactRepository) CountWithDeleted(ctx context.Context) (int64, error) {
-	return r.BaseFilterableRepository.CountWithDeleted(ctx)
+	return r.BaseFilterableRepository.CountWithDeleted(ctx, &models.Contact{})
 }
 
 // ExistsWithDeleted checks if contact exists including soft-deleted ones using the base repository

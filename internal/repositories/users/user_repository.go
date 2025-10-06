@@ -118,6 +118,11 @@ func (r *UserRepository) Count(ctx context.Context) (int64, error) {
 	return r.BaseFilterableRepository.Count(ctx, filter, models.User{})
 }
 
+// CountWithDeleted returns count including soft-deleted users
+func (r *UserRepository) CountWithDeleted(ctx context.Context) (int64, error) {
+	return r.BaseFilterableRepository.CountWithDeleted(ctx, &models.User{})
+}
+
 // Exists checks if a user exists by ID using the base repository
 func (r *UserRepository) Exists(ctx context.Context, id string) (bool, error) {
 	return r.BaseFilterableRepository.Exists(ctx, id)

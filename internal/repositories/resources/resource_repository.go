@@ -84,7 +84,7 @@ func (r *ResourceRepository) ListWithDeleted(ctx context.Context, limit, offset 
 
 // CountWithDeleted returns count including soft-deleted resources using the base repository
 func (r *ResourceRepository) CountWithDeleted(ctx context.Context) (int64, error) {
-	return r.BaseFilterableRepository.CountWithDeleted(ctx)
+	return r.BaseFilterableRepository.CountWithDeleted(ctx, &models.Resource{})
 }
 
 // ExistsWithDeleted checks if resource exists including soft-deleted ones using the base repository

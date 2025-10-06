@@ -84,7 +84,7 @@ func (r *OrganizationRepository) ListWithDeleted(ctx context.Context, limit, off
 
 // CountWithDeleted returns count including soft-deleted organizations using the base repository
 func (r *OrganizationRepository) CountWithDeleted(ctx context.Context) (int64, error) {
-	return r.BaseFilterableRepository.CountWithDeleted(ctx)
+	return r.BaseFilterableRepository.CountWithDeleted(ctx, &models.Organization{})
 }
 
 // ExistsWithDeleted checks if organization exists including soft-deleted ones using the base repository

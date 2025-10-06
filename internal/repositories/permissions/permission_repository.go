@@ -83,7 +83,7 @@ func (r *PermissionRepository) ListWithDeleted(ctx context.Context, limit, offse
 
 // CountWithDeleted returns count including soft-deleted permissions
 func (r *PermissionRepository) CountWithDeleted(ctx context.Context) (int64, error) {
-	return r.BaseFilterableRepository.CountWithDeleted(ctx)
+	return r.BaseFilterableRepository.CountWithDeleted(ctx, &models.Permission{})
 }
 
 // ExistsWithDeleted checks if permission exists including soft-deleted ones

@@ -84,7 +84,7 @@ func (r *GroupRepository) ListWithDeleted(ctx context.Context, limit, offset int
 
 // CountWithDeleted returns count including soft-deleted groups using the base repository
 func (r *GroupRepository) CountWithDeleted(ctx context.Context) (int64, error) {
-	return r.BaseFilterableRepository.CountWithDeleted(ctx)
+	return r.BaseFilterableRepository.CountWithDeleted(ctx, &models.Group{})
 }
 
 // ExistsWithDeleted checks if group exists including soft-deleted ones using the base repository

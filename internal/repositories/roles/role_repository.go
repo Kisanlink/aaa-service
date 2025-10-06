@@ -79,6 +79,11 @@ func (r *RoleRepository) Count(ctx context.Context) (int64, error) {
 	return r.BaseFilterableRepository.Count(ctx, filter, models.Role{})
 }
 
+// CountWithDeleted returns count including soft-deleted roles
+func (r *RoleRepository) CountWithDeleted(ctx context.Context) (int64, error) {
+	return r.BaseFilterableRepository.CountWithDeleted(ctx, &models.Role{})
+}
+
 // GetByName retrieves a role by name using base filterable repository
 func (r *RoleRepository) GetByName(ctx context.Context, name string) (*models.Role, error) {
 	filter := base.NewFilterBuilder().
