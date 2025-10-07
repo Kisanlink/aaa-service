@@ -5,12 +5,13 @@ import (
 	"regexp"
 )
 
-// LoginRequest represents a user login request supporting both password and MPIN authentication
+// LoginRequest represents a user login request supporting password, MPIN, and refresh token authentication
 type LoginRequest struct {
-	PhoneNumber     string  `json:"phone_number" validate:"required"`
-	CountryCode     string  `json:"country_code" validate:"required"`
+	PhoneNumber     string  `json:"phone_number,omitempty" validate:"omitempty"`
+	CountryCode     string  `json:"country_code,omitempty" validate:"omitempty"`
 	Password        *string `json:"password,omitempty" validate:"omitempty,min=8"`
 	MPin            *string `json:"mpin,omitempty" validate:"omitempty,len=4|len=6"`
+	RefreshToken    *string `json:"refresh_token,omitempty" validate:"omitempty"`
 	MFACode         *string `json:"mfa_code,omitempty"`
 	IncludeProfile  *bool   `json:"include_profile,omitempty"`
 	IncludeRoles    *bool   `json:"include_roles,omitempty"`
@@ -19,27 +20,47 @@ type LoginRequest struct {
 
 // Validate validates the LoginRequest
 func (r *LoginRequest) Validate() error {
-	if r.PhoneNumber == "" {
-		return fmt.Errorf("phone number is required")
+	// Determine authentication flow
+	hasRefreshToken := r.RefreshToken != nil && *r.RefreshToken != ""
+	hasPhoneNumber := r.PhoneNumber != "" && r.CountryCode != ""
+	hasPassword := r.Password != nil && *r.Password != ""
+	hasMPin := r.MPin != nil && *r.MPin != ""
+
+	// Flow 1: refresh_token + mPin (no phone required)
+	if hasRefreshToken {
+		if !hasMPin {
+			return fmt.Errorf("mpin is required when using refresh_token")
+		}
+		// Validate mPin format
+		if len(*r.MPin) != 4 && len(*r.MPin) != 6 {
+			return fmt.Errorf("mpin must be 4 or 6 digits")
+		}
+		mPinRegex := regexp.MustCompile(`^\d+$`)
+		if !mPinRegex.MatchString(*r.MPin) {
+			return fmt.Errorf("mpin must contain only digits")
+		}
+		return nil
 	}
-	if r.CountryCode == "" {
-		return fmt.Errorf("country code is required")
+
+	// Flow 2 & 3: phone + password OR phone + mPin
+	if !hasPhoneNumber {
+		return fmt.Errorf("phone number and country code are required")
 	}
 
 	// At least one authentication method must be provided
-	if (r.Password == nil || *r.Password == "") && (r.MPin == nil || *r.MPin == "") {
+	if !hasPassword && !hasMPin {
 		return fmt.Errorf("either password or mpin is required")
 	}
 
 	// Validate password if provided
-	if r.Password != nil && *r.Password != "" {
+	if hasPassword {
 		if len(*r.Password) < 8 {
 			return fmt.Errorf("password must be at least 8 characters long")
 		}
 	}
 
 	// Validate MPIN if provided
-	if r.MPin != nil && *r.MPin != "" {
+	if hasMPin {
 		if len(*r.MPin) != 4 && len(*r.MPin) != 6 {
 			return fmt.Errorf("mpin must be 4 or 6 digits")
 		}
@@ -67,6 +88,11 @@ func (r *LoginRequest) HasMPin() bool {
 	return r.MPin != nil && *r.MPin != ""
 }
 
+// HasRefreshToken checks if refresh token is provided
+func (r *LoginRequest) HasRefreshToken() bool {
+	return r.RefreshToken != nil && *r.RefreshToken != ""
+}
+
 // GetPassword returns the password value or empty string if not provided
 func (r *LoginRequest) GetPassword() string {
 	if r.Password == nil {
@@ -81,6 +107,14 @@ func (r *LoginRequest) GetMPin() string {
 		return ""
 	}
 	return *r.MPin
+}
+
+// GetRefreshToken returns the refresh token value or empty string if not provided
+func (r *LoginRequest) GetRefreshToken() string {
+	if r.RefreshToken == nil {
+		return ""
+	}
+	return *r.RefreshToken
 }
 
 // ShouldIncludeProfile returns true if profile should be included in response

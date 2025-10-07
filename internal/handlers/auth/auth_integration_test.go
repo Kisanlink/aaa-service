@@ -290,7 +290,7 @@ func TestLoginV2_ErrorHandling(t *testing.T) {
 
 		err := loginReq.Validate()
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "phone number is required")
+		assert.Contains(t, err.Error(), "phone number and country code are required")
 	})
 
 	t.Run("Missing Country Code", func(t *testing.T) {
@@ -302,7 +302,7 @@ func TestLoginV2_ErrorHandling(t *testing.T) {
 
 		err := loginReq.Validate()
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "country code is required")
+		assert.Contains(t, err.Error(), "phone number and country code are required")
 	})
 }
 

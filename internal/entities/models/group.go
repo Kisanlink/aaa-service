@@ -85,7 +85,7 @@ func NewGroup(name, description, organizationID string) *Group {
 // NewGroupMembership creates a new GroupMembership instance
 func NewGroupMembership(groupID, principalID, principalType, addedByID string) *GroupMembership {
 	return &GroupMembership{
-		BaseModel:     base.NewBaseModel("GRPM", hash.Small),
+		BaseModel:     base.NewBaseModel("GRPM", hash.Medium),
 		GroupID:       groupID,
 		PrincipalID:   principalID,
 		PrincipalType: principalType,

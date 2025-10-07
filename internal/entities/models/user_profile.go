@@ -27,7 +27,7 @@ type UserProfile struct {
 // NewUserProfile creates a new UserProfile instance
 func NewUserProfile(userID string) *UserProfile {
 	return &UserProfile{
-		BaseModel: base.NewBaseModel("USERPROF", hash.Small),
+		BaseModel: base.NewBaseModel("USR_PROF", hash.Medium),
 		UserID:    userID,
 	}
 }
@@ -54,7 +54,7 @@ func (p *UserProfile) BeforeDeleteGORM(tx *gorm.DB) error {
 }
 
 func (p *UserProfile) GetTableIdentifier() string   { return "USR_PROF" }
-func (p *UserProfile) GetTableSize() hash.TableSize { return hash.Small }
+func (p *UserProfile) GetTableSize() hash.TableSize { return hash.Medium }
 
 // TableName returns the GORM table name for this model
 func (p *UserProfile) TableName() string { return "user_profiles" }

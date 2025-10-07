@@ -175,7 +175,7 @@ type Permission struct {
 // NewPermission creates a new Permission instance
 func NewPermission(name, description string) *Permission {
 	return &Permission{
-		BaseModel:   base.NewBaseModel("PERM", hash.Small),
+		BaseModel:   base.NewBaseModel("PERM", hash.Medium),
 		Name:        name,
 		Description: description,
 		IsActive:    true,
