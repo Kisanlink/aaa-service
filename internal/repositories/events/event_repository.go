@@ -58,7 +58,7 @@ func (r *EventRepository) List(ctx context.Context, limit, offset int) ([]*model
 // Count returns the total number of events using database-level counting
 func (r *EventRepository) Count(ctx context.Context) (int64, error) {
 	filter := base.NewFilter()
-	return r.BaseFilterableRepository.CountWithFilter(ctx, filter)
+	return r.BaseFilterableRepository.Count(ctx, filter, models.Event{})
 }
 
 // Exists checks if an event exists by ID using the base repository
@@ -83,7 +83,7 @@ func (r *EventRepository) ListWithDeleted(ctx context.Context, limit, offset int
 
 // CountWithDeleted returns count including soft-deleted events using the base repository
 func (r *EventRepository) CountWithDeleted(ctx context.Context) (int64, error) {
-	return r.BaseFilterableRepository.CountWithDeleted(ctx)
+	return r.BaseFilterableRepository.CountWithDeleted(ctx, &models.Event{})
 }
 
 // ExistsWithDeleted checks if event exists including soft-deleted ones using the base repository

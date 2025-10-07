@@ -151,7 +151,7 @@ func (r *PrincipalRepository) ListActive(ctx context.Context, limit, offset int)
 // Count returns the total number of principals using database-level counting
 func (r *PrincipalRepository) Count(ctx context.Context) (int64, error) {
 	filter := base.NewFilter()
-	return r.BaseFilterableRepository.CountWithFilter(ctx, filter)
+	return r.BaseFilterableRepository.Count(ctx, filter, models.Principal{})
 }
 
 // Exists checks if a principal exists by ID using the base repository
@@ -259,7 +259,7 @@ func (r *ServiceRepository) ListActive(ctx context.Context, limit, offset int) (
 // Count returns the total number of services using database-level counting
 func (r *ServiceRepository) Count(ctx context.Context) (int64, error) {
 	filter := base.NewFilter()
-	return r.BaseFilterableRepository.CountWithFilter(ctx, filter)
+	return r.BaseFilterableRepository.Count(ctx, filter, models.Service{})
 }
 
 // Exists checks if a service exists by ID using the base repository

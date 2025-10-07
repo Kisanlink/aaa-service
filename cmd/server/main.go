@@ -15,28 +15,39 @@ import (
 	"github.com/Kisanlink/aaa-service/internal/config"
 	"github.com/Kisanlink/aaa-service/internal/entities/models"
 	"github.com/Kisanlink/aaa-service/internal/grpc_server"
+	actionHandlers "github.com/Kisanlink/aaa-service/internal/handlers/actions"
 	"github.com/Kisanlink/aaa-service/internal/handlers/admin"
 	"github.com/Kisanlink/aaa-service/internal/handlers/permissions"
 	principalHandlers "github.com/Kisanlink/aaa-service/internal/handlers/principals"
+	resourceHandlers "github.com/Kisanlink/aaa-service/internal/handlers/resources"
 	"github.com/Kisanlink/aaa-service/internal/handlers/roles"
 	"github.com/Kisanlink/aaa-service/internal/interfaces"
 	"github.com/Kisanlink/aaa-service/internal/middleware"
+	actionRepo "github.com/Kisanlink/aaa-service/internal/repositories/actions"
 	repositoryAdapters "github.com/Kisanlink/aaa-service/internal/repositories/adapters"
 	addressRepo "github.com/Kisanlink/aaa-service/internal/repositories/addresses"
 	auditRepo "github.com/Kisanlink/aaa-service/internal/repositories/audit"
 	contactRepo "github.com/Kisanlink/aaa-service/internal/repositories/contacts"
 	groupRepo "github.com/Kisanlink/aaa-service/internal/repositories/groups"
 	organizationRepo "github.com/Kisanlink/aaa-service/internal/repositories/organizations"
+	permissionRepo "github.com/Kisanlink/aaa-service/internal/repositories/permissions"
 	principalRepo "github.com/Kisanlink/aaa-service/internal/repositories/principals"
+	resourcePermRepo "github.com/Kisanlink/aaa-service/internal/repositories/resource_permissions"
+	resourceRepo "github.com/Kisanlink/aaa-service/internal/repositories/resources"
+	rolePermRepo "github.com/Kisanlink/aaa-service/internal/repositories/role_permissions"
 	roleRepo "github.com/Kisanlink/aaa-service/internal/repositories/roles"
 	userRepo "github.com/Kisanlink/aaa-service/internal/repositories/users"
 	"github.com/Kisanlink/aaa-service/internal/routes"
 	"github.com/Kisanlink/aaa-service/internal/services"
+	actionService "github.com/Kisanlink/aaa-service/internal/services/actions"
 	serviceAdapters "github.com/Kisanlink/aaa-service/internal/services/adapters"
 	contactService "github.com/Kisanlink/aaa-service/internal/services/contacts"
 	groupService "github.com/Kisanlink/aaa-service/internal/services/groups"
 	organizationService "github.com/Kisanlink/aaa-service/internal/services/organizations"
+	permissionService "github.com/Kisanlink/aaa-service/internal/services/permissions"
 	principalService "github.com/Kisanlink/aaa-service/internal/services/principals"
+	resourceService "github.com/Kisanlink/aaa-service/internal/services/resources"
+	roleAssignmentService "github.com/Kisanlink/aaa-service/internal/services/role_assignments"
 	"github.com/Kisanlink/aaa-service/internal/services/user"
 	"github.com/Kisanlink/aaa-service/migrations"
 	"github.com/Kisanlink/aaa-service/utils"
@@ -76,6 +87,11 @@ func runSeedScripts(ctx context.Context, dbManager *db.DatabaseManager, logger *
 		// Seed core resources, roles, and permissions using PostgreSQL
 		if err := migrations.SeedCoreResourcesRolesPermissionsWithDBManager(ctx, dbManager, logger); err != nil {
 			return fmt.Errorf("failed to seed core roles/permissions: %w", err)
+		}
+
+		// Seed comprehensive RBAC resources and permissions
+		if err := migrations.SeedComprehensiveRBACWithDBManager(ctx, dbManager, logger); err != nil {
+			return fmt.Errorf("failed to seed comprehensive RBAC: %w", err)
 		}
 	}
 
@@ -278,6 +294,13 @@ func initializeServer(
 	// Initialize principal repositories for service authentication
 	serviceRepository := principalRepo.NewServiceRepository(primaryDBManager)
 
+	// Initialize RBAC repositories for fine-grained permissions
+	resourceRepository := resourceRepo.NewResourceRepository(primaryDBManager)
+	actionRepository := actionRepo.NewActionRepository(primaryDBManager)
+	permissionRepository := permissionRepo.NewPermissionRepository(primaryDBManager)
+	rolePermissionRepository := rolePermRepo.NewRolePermissionRepository(primaryDBManager)
+	resourcePermissionRepository := resourcePermRepo.NewResourcePermissionRepository(primaryDBManager)
+
 	// Initialize cache service
 	// FIX: Check CACHE_DISABLED environment variable to optionally disable Redis
 	var cacheService interfaces.CacheService
@@ -324,15 +347,56 @@ func initializeServer(
 		logger,
 	)
 
+	// Initialize audit service early for RBAC services to use
+	auditRepository := auditRepo.NewAuditRepository(primaryDBManager)
+	auditServiceConcrete := services.NewAuditService(primaryDBManager, auditRepository, cacheService, logger)
+	auditServiceAdapter := serviceAdapters.NewAuditServiceAdapter(auditServiceConcrete)
+
+	// Initialize RBAC services with proper dependencies
+	resourceService := resourceService.NewService(
+		resourceRepository,
+		cacheService,
+		logger,
+	)
+
+	actionService := actionService.NewActionService(
+		actionRepository,
+		cacheService,
+		loggerAdapter,
+		validator,
+	)
+
+	permissionService := permissionService.NewService(
+		permissionRepository,
+		rolePermissionRepository,
+		resourcePermissionRepository,
+		roleRepository,
+		cacheService,
+		auditServiceAdapter,
+		loggerAdapter,
+	)
+
+	roleAssignmentService := roleAssignmentService.NewService(
+		roleRepository,
+		rolePermissionRepository,
+		resourcePermissionRepository,
+		permissionRepository,
+		cacheService,
+		auditServiceAdapter,
+		loggerAdapter,
+	)
+
 	// Initialize handlers
-	permissionHandler := permissions.NewPermissionHandler(primaryDBManager, validator, responder, logger)
+	permissionHandler := permissions.NewPermissionHandler(permissionService, roleAssignmentService, validator, responder, logger)
+	resourceHandler := resourceHandlers.NewResourceHandler(resourceService, validator, responder, logger)
+	actionHandler := actionHandlers.NewActionHandler(actionService, validator, responder, logger)
 	principalHandler := principalHandlers.NewPrincipalHandler(principalService, responder, logger)
 
 	// Initialize HTTP server
 	httpServer, err := initializeHTTPServer(
 		httpPort, jwtSecret,
 		primaryDBManager, userService, roleService, userRepository, userRoleRepository,
-		cacheService, validator, responder, maintenanceService, logger, permissionHandler, principalHandler, contactServiceInstance,
+		cacheService, validator, responder, maintenanceService, logger, permissionHandler, resourceHandler, actionHandler, principalHandler, contactServiceInstance,
 		organizationRepository, groupRepository, groupRoleRepository, groupMembershipRepository, roleRepository,
 		serviceRepository,
 	)
@@ -379,6 +443,8 @@ func initializeHTTPServer(
 	maintenanceService interfaces.MaintenanceService,
 	logger *zap.Logger,
 	permissionHandler *permissions.PermissionHandler,
+	resourceHandler *resourceHandlers.ResourceHandler,
+	actionHandler *actionHandlers.ActionHandler,
 	principalHandler *principalHandlers.Handler,
 	contactServiceInstance *contactService.ContactService,
 	organizationRepository *organizationRepo.OrganizationRepository,
@@ -451,7 +517,7 @@ func initializeHTTPServer(
 	setupHTTPMiddleware(router, authMiddleware, auditMiddleware, maintenanceService, responder, logger)
 
 	// Setup routes and docs
-	setupRoutesAndDocs(router, authService, authzService, auditService, authMiddleware, maintenanceService, validator, responder, logger, roleHandler, permissionHandler, principalHandler, userService, roleService, contactServiceInstance, organizationServiceInstance, groupServiceInstance)
+	setupRoutesAndDocs(router, authService, authzService, auditService, authMiddleware, maintenanceService, validator, responder, logger, roleHandler, permissionHandler, resourceHandler, actionHandler, principalHandler, userService, roleService, contactServiceInstance, organizationServiceInstance, groupServiceInstance)
 
 	return &HTTPServer{
 		router:                      router,
@@ -570,6 +636,8 @@ func setupRoutesAndDocs(
 	logger *zap.Logger,
 	roleHandler *roles.RoleHandler,
 	permissionHandler *permissions.PermissionHandler,
+	resourceHandler *resourceHandlers.ResourceHandler,
+	actionHandler *actionHandlers.ActionHandler,
 	principalHandler *principalHandlers.Handler,
 	userService interfaces.UserService,
 	roleService interfaces.RoleService,
@@ -602,6 +670,12 @@ func setupRoutesAndDocs(
 
 	// Register principal and service management routes
 	routes.RegisterPrincipalRoutes(router, principalHandler, authMiddleware)
+
+	// Register RBAC resource routes
+	routes.RegisterResourceRoutes(router, resourceHandler, authMiddleware)
+
+	// Register RBAC action routes
+	routes.RegisterActionRoutes(router.Group("/api/v2"), actionHandler)
 
 	// Serve OpenAPI and Scalar-powered docs UI (gated by env)
 	if getEnv("AAA_ENABLE_DOCS", "true") == "true" {

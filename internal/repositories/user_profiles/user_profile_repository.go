@@ -59,7 +59,7 @@ func (r *UserProfileRepository) List(ctx context.Context, limit, offset int) ([]
 // Count returns the total number of user profiles using database-level counting
 func (r *UserProfileRepository) Count(ctx context.Context) (int64, error) {
 	filter := base.NewFilter()
-	return r.BaseFilterableRepository.CountWithFilter(ctx, filter)
+	return r.BaseFilterableRepository.Count(ctx, filter, models.UserProfile{})
 }
 
 // Exists checks if a user profile exists by ID using the base repository
@@ -84,7 +84,7 @@ func (r *UserProfileRepository) ListWithDeleted(ctx context.Context, limit, offs
 
 // CountWithDeleted returns count including soft-deleted user profiles using the base repository
 func (r *UserProfileRepository) CountWithDeleted(ctx context.Context) (int64, error) {
-	return r.BaseFilterableRepository.CountWithDeleted(ctx)
+	return r.BaseFilterableRepository.CountWithDeleted(ctx, &models.UserProfile{})
 }
 
 // ExistsWithDeleted checks if user profile exists including soft-deleted ones using the base repository

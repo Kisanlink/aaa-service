@@ -6,7 +6,7 @@ import (
 
 	"github.com/Kisanlink/aaa-service/internal/entities/requests/actions"
 	"github.com/Kisanlink/aaa-service/internal/interfaces"
-	"github.com/Kisanlink/aaa-service/internal/services"
+	actionService "github.com/Kisanlink/aaa-service/internal/services/actions"
 	"github.com/Kisanlink/aaa-service/pkg/errors"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -14,7 +14,7 @@ import (
 
 // ActionHandler handles HTTP requests for action operations
 type ActionHandler struct {
-	actionService *services.ActionService
+	actionService *actionService.ActionService
 	validator     interfaces.Validator
 	responder     interfaces.Responder
 	logger        *zap.Logger
@@ -22,7 +22,7 @@ type ActionHandler struct {
 
 // NewActionHandler creates a new ActionHandler instance
 func NewActionHandler(
-	actionService *services.ActionService,
+	actionService *actionService.ActionService,
 	validator interfaces.Validator,
 	responder interfaces.Responder,
 	logger *zap.Logger,

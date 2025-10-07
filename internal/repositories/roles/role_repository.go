@@ -76,7 +76,12 @@ func (r *RoleRepository) List(ctx context.Context, limit, offset int) ([]*models
 // Count returns the total number of roles using database-level counting
 func (r *RoleRepository) Count(ctx context.Context) (int64, error) {
 	filter := base.NewFilter()
-	return r.BaseFilterableRepository.CountWithFilter(ctx, filter)
+	return r.BaseFilterableRepository.Count(ctx, filter, models.Role{})
+}
+
+// CountWithDeleted returns count including soft-deleted roles
+func (r *RoleRepository) CountWithDeleted(ctx context.Context) (int64, error) {
+	return r.BaseFilterableRepository.CountWithDeleted(ctx, &models.Role{})
 }
 
 // GetByName retrieves a role by name using base filterable repository

@@ -3086,7 +3086,7 @@ const docTemplate = `{
         },
         "/api/v2/permissions": {
             "get": {
-                "description": "Get a paginated list of permissions",
+                "description": "Get a paginated list of permissions with optional filters",
                 "consumes": [
                     "application/json"
                 ],
@@ -3098,6 +3098,36 @@ const docTemplate = `{
                 ],
                 "summary": "List permissions",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Role ID filter",
+                        "name": "role_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Resource ID filter",
+                        "name": "resource_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Action ID filter",
+                        "name": "action_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Active status filter",
+                        "name": "is_active",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search term",
+                        "name": "search",
+                        "in": "query"
+                    },
                     {
                         "type": "integer",
                         "default": 10,
@@ -3117,25 +3147,27 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/responses.PermissionsListResponse"
+                            "$ref": "#/definitions/permissions.PermissionListResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/responses.ErrorResponseSwagger"
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/responses.ErrorResponseSwagger"
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     }
                 }
             },
             "post": {
-                "description": "Create a new permission with resource, effect, and actions",
+                "description": "Create a new permission with name, resource, and action",
                 "consumes": [
                     "application/json"
                 ],
@@ -3161,8 +3193,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/permissions.PermissionResponse"
                         }
                     },
                     "400": {
@@ -3194,26 +3225,15 @@ const docTemplate = `{
                 "tags": [
                     "permissions"
                 ],
-                "summary": "Evaluate permission",
+                "summary": "Evaluate user permission",
                 "parameters": [
                     {
-                        "description": "Permission evaluation data",
-                        "name": "evaluation",
+                        "description": "Evaluation request",
+                        "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "action": {
-                                    "type": "string"
-                                },
-                                "resource": {
-                                    "type": "string"
-                                },
-                                "user_id": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/permissions.EvaluatePermissionRequest"
                         }
                     }
                 ],
@@ -3221,74 +3241,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v2/permissions/temporary": {
-            "post": {
-                "description": "Grant temporary permission to a user for specific actions on a resource",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "permissions"
-                ],
-                "summary": "Grant temporary permission",
-                "parameters": [
-                    {
-                        "description": "Temporary permission data",
-                        "name": "permission",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "actions": {
-                                    "type": "array",
-                                    "items": {
-                                        "type": "string"
-                                    }
-                                },
-                                "expires_at": {
-                                    "type": "string"
-                                },
-                                "resource": {
-                                    "type": "string"
-                                },
-                                "user_id": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/permissions.EvaluationResponse"
                         }
                     },
                     "400": {
@@ -3334,8 +3287,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/permissions.PermissionResponse"
                         }
                     },
                     "400": {
@@ -3395,8 +3347,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/permissions.PermissionResponse"
                         }
                     },
                     "400": {
@@ -3444,11 +3395,424 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK",
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/resources": {
+            "get": {
+                "description": "Get a paginated list of resources with optional filters",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "resources"
+                ],
+                "summary": "List resources",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Resource type filter",
+                        "name": "type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Parent ID filter",
+                        "name": "parent_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Owner ID filter",
+                        "name": "owner_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Active status filter",
+                        "name": "is_active",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search term",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Number of resources to return",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Number of resources to skip",
+                        "name": "offset",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/resources.ResourceListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a new resource with name, type, and description",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "resources"
+                ],
+                "summary": "Create a new resource",
+                "parameters": [
+                    {
+                        "description": "Resource creation data",
+                        "name": "resource",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/resources.CreateResourceRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/resources.ResourceResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/resources/{id}": {
+            "get": {
+                "description": "Retrieve a resource by its unique identifier",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "resources"
+                ],
+                "summary": "Get resource by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Resource ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/resources.ResourceResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update an existing resource",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "resources"
+                ],
+                "summary": "Update resource",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Resource ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Resource update data",
+                        "name": "resource",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/resources.UpdateResourceRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/resources.ResourceResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a resource by its unique identifier",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "resources"
+                ],
+                "summary": "Delete resource",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Resource ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Delete children recursively",
+                        "name": "cascade",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/resources/{id}/children": {
+            "get": {
+                "description": "Get all direct children of a resource",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "resources"
+                ],
+                "summary": "Get child resources",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Resource ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/resources.ResourceWithChildrenResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/resources/{id}/hierarchy": {
+            "get": {
+                "description": "Get the full hierarchical tree starting from a resource",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "resources"
+                ],
+                "summary": "Get resource hierarchy",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Resource ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/resources.ResourceHierarchyResponse"
                         }
                     },
                     "400": {
@@ -3745,6 +4109,355 @@ const docTemplate = `{
                         "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/responses.ErrorResponseSwagger"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/roles/{id}/permissions": {
+            "get": {
+                "description": "Get all permissions assigned to a specific role",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "permissions"
+                ],
+                "summary": "Get role permissions",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Role ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/permissions.PermissionListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Assign one or more permissions to a role",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "permissions"
+                ],
+                "summary": "Assign permissions to role",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Role ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Assignment request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/role_assignments.AssignPermissionsToRoleRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/roles/{id}/permissions/{permId}": {
+            "delete": {
+                "description": "Revoke a specific permission from a role",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "permissions"
+                ],
+                "summary": "Revoke permission from role",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Role ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Permission ID",
+                        "name": "permId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/roles/{id}/resources": {
+            "get": {
+                "description": "Get all resource-action combinations assigned to a role",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "permissions"
+                ],
+                "summary": "Get role resources",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Role ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Assign resource-action combinations to a role",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "permissions"
+                ],
+                "summary": "Assign resources to role",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Role ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Assignment request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/role_assignments.AssignResourcesToRoleRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/roles/{id}/resources/{resId}": {
+            "delete": {
+                "description": "Revoke a specific resource from a role",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "permissions"
+                ],
+                "summary": "Revoke resource from role",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Role ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Resource ID",
+                        "name": "resId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Specific action to revoke",
+                        "name": "action",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     }
                 }
@@ -4078,6 +4791,61 @@ const docTemplate = `{
                         "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/responses.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/users/{id}/evaluate": {
+            "post": {
+                "description": "Check if a specific user has permission to perform an action on a resource",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "permissions"
+                ],
+                "summary": "Evaluate user-specific permission",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Evaluation request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/permissions.EvaluatePermissionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/permissions.EvaluationResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     }
                 }
@@ -5016,6 +5784,37 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_Kisanlink_aaa-service_internal_entities_requests_role_assignments.ResourceActionAssignment": {
+            "type": "object",
+            "required": [
+                "actions",
+                "resource_id",
+                "resource_type"
+            ],
+            "properties": {
+                "actions": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "read",
+                        "write"
+                    ]
+                },
+                "resource_id": {
+                    "type": "string",
+                    "example": "USR_abc123"
+                },
+                "resource_type": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 1,
+                    "example": "aaa/user"
+                }
+            }
+        },
         "groups.GroupResponse": {
             "type": "object",
             "properties": {
@@ -5610,47 +6409,247 @@ const docTemplate = `{
             }
         },
         "permissions.CreatePermissionRequest": {
+            "description": "Request payload for creating a new permission",
             "type": "object",
             "required": [
-                "actions",
-                "effect",
-                "resource"
+                "action_id",
+                "name",
+                "resource_id"
             ],
             "properties": {
-                "actions": {
+                "action_id": {
+                    "type": "string",
+                    "example": "ACT_xyz789"
+                },
+                "description": {
+                    "type": "string",
+                    "maxLength": 500,
+                    "example": "Permission to manage users"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 3,
+                    "example": "manage_users"
+                },
+                "resource_id": {
+                    "type": "string",
+                    "example": "RES_abc123"
+                }
+            }
+        },
+        "permissions.EvaluatePermissionRequest": {
+            "type": "object"
+        },
+        "permissions.EvaluationData": {
+            "type": "object",
+            "properties": {
+                "allowed": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "cache_hit": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "effective_roles": {
                     "type": "array",
                     "items": {
-                        "type": "string"
+                        "$ref": "#/definitions/permissions.RoleInfo"
                     }
                 },
-                "effect": {
-                    "type": "string"
+                "evaluated_at": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
                 },
-                "resource": {
-                    "type": "string"
+                "evaluation_time_ms": {
+                    "type": "integer",
+                    "example": 5
+                },
+                "reason": {
+                    "type": "string",
+                    "example": "Permission granted through role 'admin'"
+                }
+            }
+        },
+        "permissions.EvaluationResponse": {
+            "description": "Response structure for permission evaluation",
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/permissions.EvaluationData"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Permission evaluated successfully"
+                },
+                "request_id": {
+                    "type": "string",
+                    "example": "req_abc123"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                }
+            }
+        },
+        "permissions.PaginationInfo": {
+            "type": "object",
+            "properties": {
+                "limit": {
+                    "type": "integer",
+                    "example": 10
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 100
+                },
+                "total_pages": {
+                    "type": "integer",
+                    "example": 10
+                }
+            }
+        },
+        "permissions.PermissionListData": {
+            "type": "object",
+            "properties": {
+                "permissions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/permissions.PermissionResponse"
+                    }
+                }
+            }
+        },
+        "permissions.PermissionListResponse": {
+            "description": "Response structure for a list of permissions with pagination",
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/permissions.PermissionListData"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Permissions retrieved successfully"
+                },
+                "pagination": {
+                    "$ref": "#/definitions/permissions.PaginationInfo"
+                },
+                "request_id": {
+                    "type": "string",
+                    "example": "req_abc123"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                }
+            }
+        },
+        "permissions.PermissionResponse": {
+            "description": "Response structure for a single permission",
+            "type": "object",
+            "properties": {
+                "action_id": {
+                    "type": "string",
+                    "example": "ACT_xyz789"
+                },
+                "action_name": {
+                    "type": "string",
+                    "example": "manage"
+                },
+                "created_at": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                },
+                "deleted_at": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "Permission to manage users"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "PERM_abc123"
+                },
+                "is_active": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "name": {
+                    "type": "string",
+                    "example": "manage_users"
+                },
+                "resource_id": {
+                    "type": "string",
+                    "example": "RES_abc123"
+                },
+                "resource_name": {
+                    "type": "string",
+                    "example": "User Management"
+                },
+                "updated_at": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                }
+            }
+        },
+        "permissions.RoleInfo": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "example": "Administrator role"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "ROLE_abc123"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "admin"
                 }
             }
         },
         "permissions.UpdatePermissionRequest": {
+            "description": "Request payload for updating a permission",
             "type": "object",
-            "required": [
-                "id"
-            ],
             "properties": {
-                "actions": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
+                "action_id": {
+                    "type": "string",
+                    "example": "ACT_xyz789"
                 },
-                "effect": {
-                    "type": "string"
+                "description": {
+                    "type": "string",
+                    "maxLength": 500,
+                    "example": "Updated description"
                 },
-                "id": {
-                    "type": "string"
+                "is_active": {
+                    "type": "boolean",
+                    "example": true
                 },
-                "resource": {
-                    "type": "string"
+                "name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 3,
+                    "example": "updated_permission"
+                },
+                "resource_id": {
+                    "type": "string",
+                    "example": "RES_abc123"
                 }
             }
         },
@@ -5875,6 +6874,286 @@ const docTemplate = `{
                 },
                 "new_mpin": {
                     "type": "string"
+                }
+            }
+        },
+        "resources.CreateResourceRequest": {
+            "description": "Request payload for creating a new resource",
+            "type": "object",
+            "required": [
+                "name",
+                "type"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "maxLength": 500,
+                    "example": "Resource for managing users"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 3,
+                    "example": "User Management"
+                },
+                "owner_id": {
+                    "type": "string",
+                    "example": "USR_xyz789"
+                },
+                "parent_id": {
+                    "type": "string",
+                    "example": "RES_abc123"
+                },
+                "type": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 3,
+                    "example": "aaa/user"
+                }
+            }
+        },
+        "resources.PaginationInfo": {
+            "type": "object",
+            "properties": {
+                "limit": {
+                    "type": "integer",
+                    "example": 10
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 100
+                },
+                "total_pages": {
+                    "type": "integer",
+                    "example": 10
+                }
+            }
+        },
+        "resources.ResourceHierarchyResponse": {
+            "description": "Response structure for hierarchical resource tree",
+            "type": "object",
+            "properties": {
+                "children": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/resources.ResourceHierarchyResponse"
+                    }
+                },
+                "created_at": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                },
+                "deleted_at": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "Resource for managing users"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "RES_abc123"
+                },
+                "is_active": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "name": {
+                    "type": "string",
+                    "example": "User Management"
+                },
+                "owner_id": {
+                    "type": "string",
+                    "example": "USR_owner123"
+                },
+                "parent_id": {
+                    "type": "string",
+                    "example": "RES_parent123"
+                },
+                "type": {
+                    "type": "string",
+                    "example": "aaa/user"
+                },
+                "updated_at": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                }
+            }
+        },
+        "resources.ResourceListData": {
+            "type": "object",
+            "properties": {
+                "resources": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/resources.ResourceResponse"
+                    }
+                }
+            }
+        },
+        "resources.ResourceListResponse": {
+            "description": "Response structure for a list of resources with pagination",
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/resources.ResourceListData"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Resources retrieved successfully"
+                },
+                "pagination": {
+                    "$ref": "#/definitions/resources.PaginationInfo"
+                },
+                "request_id": {
+                    "type": "string",
+                    "example": "req_abc123"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                }
+            }
+        },
+        "resources.ResourceResponse": {
+            "description": "Response structure for a single resource",
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                },
+                "deleted_at": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "Resource for managing users"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "RES_abc123"
+                },
+                "is_active": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "name": {
+                    "type": "string",
+                    "example": "User Management"
+                },
+                "owner_id": {
+                    "type": "string",
+                    "example": "USR_owner123"
+                },
+                "parent_id": {
+                    "type": "string",
+                    "example": "RES_parent123"
+                },
+                "type": {
+                    "type": "string",
+                    "example": "aaa/user"
+                },
+                "updated_at": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                }
+            }
+        },
+        "resources.ResourceWithChildrenResponse": {
+            "description": "Response structure for a resource with children",
+            "type": "object",
+            "properties": {
+                "children": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/resources.ResourceResponse"
+                    }
+                },
+                "created_at": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                },
+                "deleted_at": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "Resource for managing users"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "RES_abc123"
+                },
+                "is_active": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "name": {
+                    "type": "string",
+                    "example": "User Management"
+                },
+                "owner_id": {
+                    "type": "string",
+                    "example": "USR_owner123"
+                },
+                "parent_id": {
+                    "type": "string",
+                    "example": "RES_parent123"
+                },
+                "type": {
+                    "type": "string",
+                    "example": "aaa/user"
+                },
+                "updated_at": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                }
+            }
+        },
+        "resources.UpdateResourceRequest": {
+            "description": "Request payload for updating a resource",
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "maxLength": 500,
+                    "example": "Updated description"
+                },
+                "is_active": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 3,
+                    "example": "Updated User Management"
+                },
+                "owner_id": {
+                    "type": "string",
+                    "example": "USR_xyz789"
+                },
+                "parent_id": {
+                    "type": "string",
+                    "example": "RES_abc123"
+                },
+                "type": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 3,
+                    "example": "aaa/user"
                 }
             }
         },
@@ -6273,103 +7552,6 @@ const docTemplate = `{
                 }
             }
         },
-        "responses.PaginationInfo": {
-            "type": "object",
-            "properties": {
-                "has_next": {
-                    "type": "boolean"
-                },
-                "has_prev": {
-                    "type": "boolean"
-                },
-                "limit": {
-                    "type": "integer"
-                },
-                "page": {
-                    "type": "integer"
-                },
-                "total": {
-                    "type": "integer"
-                },
-                "total_pages": {
-                    "type": "integer"
-                }
-            }
-        },
-        "responses.PermissionInfo": {
-            "description": "Permission information structure",
-            "type": "object",
-            "properties": {
-                "action": {
-                    "type": "string",
-                    "example": "read"
-                },
-                "created_at": {
-                    "type": "string",
-                    "example": "2024-01-01T00:00:00Z"
-                },
-                "description": {
-                    "type": "string",
-                    "example": "Read access to user resources"
-                },
-                "id": {
-                    "type": "string",
-                    "example": "PERM123456789"
-                },
-                "name": {
-                    "type": "string",
-                    "example": "users:read"
-                },
-                "resource": {
-                    "type": "string",
-                    "example": "user"
-                },
-                "updated_at": {
-                    "type": "string",
-                    "example": "2024-01-01T00:00:00Z"
-                }
-            }
-        },
-        "responses.PermissionsListData": {
-            "description": "Permissions list data structure",
-            "type": "object",
-            "properties": {
-                "permissions": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/responses.PermissionInfo"
-                    }
-                }
-            }
-        },
-        "responses.PermissionsListResponse": {
-            "description": "Permissions list response structure",
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/responses.PermissionsListData"
-                },
-                "message": {
-                    "type": "string",
-                    "example": "Permissions retrieved successfully"
-                },
-                "pagination": {
-                    "$ref": "#/definitions/responses.PaginationInfo"
-                },
-                "request_id": {
-                    "type": "string",
-                    "example": "req-123456789"
-                },
-                "success": {
-                    "type": "boolean",
-                    "example": true
-                },
-                "timestamp": {
-                    "type": "string",
-                    "example": "2024-01-01T00:00:00Z"
-                }
-            }
-        },
         "responses.RefreshTokenResponseData": {
             "description": "Refresh token response data",
             "type": "object",
@@ -6733,6 +7915,42 @@ const docTemplate = `{
                 "user_id": {
                     "type": "string",
                     "example": "USER123456789"
+                }
+            }
+        },
+        "role_assignments.AssignPermissionsToRoleRequest": {
+            "description": "Request payload for assigning permissions to a role",
+            "type": "object",
+            "required": [
+                "permission_ids"
+            ],
+            "properties": {
+                "permission_ids": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "PERM_abc123",
+                        "PERM_xyz789"
+                    ]
+                }
+            }
+        },
+        "role_assignments.AssignResourcesToRoleRequest": {
+            "description": "Request payload for assigning resource-action combinations to a role",
+            "type": "object",
+            "required": [
+                "assignments"
+            ],
+            "properties": {
+                "assignments": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/github_com_Kisanlink_aaa-service_internal_entities_requests_role_assignments.ResourceActionAssignment"
+                    }
                 }
             }
         },

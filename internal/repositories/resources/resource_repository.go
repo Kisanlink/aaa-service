@@ -59,7 +59,7 @@ func (r *ResourceRepository) List(ctx context.Context, limit, offset int) ([]*mo
 // Count returns the total number of resources using database-level counting
 func (r *ResourceRepository) Count(ctx context.Context) (int64, error) {
 	filter := base.NewFilter()
-	return r.BaseFilterableRepository.CountWithFilter(ctx, filter)
+	return r.BaseFilterableRepository.Count(ctx, filter, models.Resource{})
 }
 
 // Exists checks if a resource exists by ID using the base repository
@@ -84,7 +84,7 @@ func (r *ResourceRepository) ListWithDeleted(ctx context.Context, limit, offset 
 
 // CountWithDeleted returns count including soft-deleted resources using the base repository
 func (r *ResourceRepository) CountWithDeleted(ctx context.Context) (int64, error) {
-	return r.BaseFilterableRepository.CountWithDeleted(ctx)
+	return r.BaseFilterableRepository.CountWithDeleted(ctx, &models.Resource{})
 }
 
 // ExistsWithDeleted checks if resource exists including soft-deleted ones using the base repository
@@ -138,4 +138,52 @@ func (r *ResourceRepository) GetByType(ctx context.Context, resourceType string,
 		Build()
 
 	return r.BaseFilterableRepository.Find(ctx, filter)
+}
+
+// GetChildren retrieves all child resources for a given parent ID
+func (r *ResourceRepository) GetChildren(ctx context.Context, parentID string) ([]*models.Resource, error) {
+	filter := base.NewFilterBuilder().
+		Where("parent_id", base.OpEqual, parentID).
+		Build()
+
+	return r.BaseFilterableRepository.Find(ctx, filter)
+}
+
+// GetByParentID retrieves resources by parent ID with pagination
+func (r *ResourceRepository) GetByParentID(ctx context.Context, parentID string, limit, offset int) ([]*models.Resource, error) {
+	filter := base.NewFilterBuilder().
+		Where("parent_id", base.OpEqual, parentID).
+		Limit(limit, offset).
+		Build()
+
+	return r.BaseFilterableRepository.Find(ctx, filter)
+}
+
+// GetByOwnerID retrieves resources by owner ID
+func (r *ResourceRepository) GetByOwnerID(ctx context.Context, ownerID string, limit, offset int) ([]*models.Resource, error) {
+	filter := base.NewFilterBuilder().
+		Where("owner_id", base.OpEqual, ownerID).
+		Limit(limit, offset).
+		Build()
+
+	return r.BaseFilterableRepository.Find(ctx, filter)
+}
+
+// GetActive retrieves only active resources
+func (r *ResourceRepository) GetActive(ctx context.Context, limit, offset int) ([]*models.Resource, error) {
+	filter := base.NewFilterBuilder().
+		Where("is_active", base.OpEqual, true).
+		Limit(limit, offset).
+		Build()
+
+	return r.BaseFilterableRepository.Find(ctx, filter)
+}
+
+// CountChildren returns the number of child resources for a parent
+func (r *ResourceRepository) CountChildren(ctx context.Context, parentID string) (int64, error) {
+	filter := base.NewFilterBuilder().
+		Where("parent_id", base.OpEqual, parentID).
+		Build()
+
+	return r.BaseFilterableRepository.CountWithFilter(ctx, filter)
 }
