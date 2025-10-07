@@ -5,6 +5,7 @@ import (
 
 	reqPermissions "github.com/Kisanlink/aaa-service/internal/entities/requests/permissions"
 	respPermissions "github.com/Kisanlink/aaa-service/internal/entities/responses/permissions"
+	"github.com/Kisanlink/aaa-service/pkg/errors"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
@@ -19,6 +20,7 @@ import (
 //	@Param			permission	body		reqPermissions.CreatePermissionRequest	true	"Permission creation data"
 //	@Success		201			{object}	respPermissions.PermissionResponse
 //	@Failure		400			{object}	map[string]interface{}
+//	@Failure		409			{object}	map[string]interface{}	"Permission with the same name already exists"
 //	@Failure		500			{object}	map[string]interface{}
 //	@Router			/api/v2/permissions [post]
 func (h *PermissionHandler) CreatePermission(c *gin.Context) {
@@ -44,6 +46,13 @@ func (h *PermissionHandler) CreatePermission(c *gin.Context) {
 	// Create permission through service
 	if err := h.permissionService.CreatePermission(c.Request.Context(), permission); err != nil {
 		h.logger.Error("Failed to create permission", zap.Error(err))
+
+		// Handle conflict error (duplicate permission)
+		if conflictErr, ok := err.(*errors.ConflictError); ok {
+			h.responder.SendError(c, http.StatusConflict, "Permission already exists", conflictErr)
+			return
+		}
+
 		h.responder.SendError(c, http.StatusInternalServerError, "Failed to create permission", err)
 		return
 	}

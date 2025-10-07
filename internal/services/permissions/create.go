@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/Kisanlink/aaa-service/internal/entities/models"
+	"github.com/Kisanlink/aaa-service/pkg/errors"
 	"go.uber.org/zap"
 )
 
@@ -27,7 +28,7 @@ func (s *Service) CreatePermission(ctx context.Context, permission *models.Permi
 		s.logger.Warn("Permission already exists",
 			zap.String("name", permission.Name),
 			zap.String("existing_id", existing.ID))
-		return fmt.Errorf("permission with name '%s' already exists", permission.Name)
+		return errors.NewConflictError(fmt.Sprintf("permission with name '%s' already exists", permission.Name))
 	}
 
 	// Verify resource exists if provided
