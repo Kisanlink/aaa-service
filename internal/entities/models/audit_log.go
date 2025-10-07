@@ -88,7 +88,7 @@ const (
 // NewAuditLog creates a new AuditLog instance
 func NewAuditLog(action, resourceType, status, message string) *AuditLog {
 	return &AuditLog{
-		BaseModel:    base.NewBaseModel("audit", hash.Medium),
+		BaseModel:    base.NewBaseModel("AUDIT", hash.Medium),
 		Action:       action,
 		ResourceType: resourceType,
 		Status:       status,

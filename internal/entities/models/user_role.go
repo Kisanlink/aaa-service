@@ -21,7 +21,7 @@ type UserRole struct {
 // NewUserRole creates a new UserRole instance linking a user to a role
 func NewUserRole(userID, roleID string) *UserRole {
 	return &UserRole{
-		BaseModel: base.NewBaseModel("USERROLE", hash.Small),
+		BaseModel: base.NewBaseModel("USR_ROL", hash.Small),
 		UserID:    userID,
 		RoleID:    roleID,
 		IsActive:  true,

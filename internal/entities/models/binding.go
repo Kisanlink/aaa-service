@@ -238,7 +238,7 @@ func (b *Binding) HasColumnCaveat() bool {
 // CreateHistoryRecord creates a history record for this binding
 func (b *Binding) CreateHistoryRecord(action string, changedByID string) *BindingHistory {
 	return &BindingHistory{
-		BaseModel:      base.NewBaseModel("bnh", hash.Medium),
+		BaseModel:      base.NewBaseModel("BNH", hash.Medium),
 		BindingID:      b.GetID(),
 		SubjectID:      b.SubjectID,
 		SubjectType:    b.SubjectType,

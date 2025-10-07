@@ -11,7 +11,7 @@ import (
 
 const (
 	ContactTable     = "CONTACT"
-	ContactTableSize = hash.Small
+	ContactTableSize = hash.Medium
 
 	// Contact types
 	ContactTypeMobile   = "mobile"
