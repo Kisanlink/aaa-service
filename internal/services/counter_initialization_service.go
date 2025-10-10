@@ -114,6 +114,16 @@ func (cis *CounterInitializationService) InitializeAllCounters(ctx context.Conte
 		return err
 	}
 
+	if err := cis.initializePrincipalCounters(ctx); err != nil {
+		cis.logger.Error("Failed to initialize principal counters", zap.Error(err))
+		return err
+	}
+
+	if err := cis.initializeServiceCounters(ctx); err != nil {
+		cis.logger.Error("Failed to initialize service counters", zap.Error(err))
+		return err
+	}
+
 	cis.logger.Info("Counter initialization completed successfully")
 	return nil
 }
@@ -217,10 +227,10 @@ func (cis *CounterInitializationService) initializeActionCounters(ctx context.Co
 		cis.logger.Info("Initializing action counters from existing records",
 			zap.Int("count", len(existingIDs)),
 			zap.String("sample_id", existingIDs[0]))
-		hash.InitializeGlobalCountersFromDatabase("ACTN", existingIDs, hash.Medium)
+		hash.InitializeGlobalCountersFromDatabase("ACT", existingIDs, hash.Small)
 	} else {
 		cis.logger.Info("No existing actions found, initializing counter to start from 1")
-		hash.InitializeGlobalCountersFromDatabase("ACTN", []string{"ACTN00000000"}, hash.Medium)
+		hash.InitializeGlobalCountersFromDatabase("ACT", []string{"ACT00000000"}, hash.Small)
 	}
 
 	return nil
@@ -546,6 +556,56 @@ func (cis *CounterInitializationService) initializeAuditLogCounters(ctx context.
 	} else {
 		cis.logger.Info("No existing audit logs found, initializing counter to start from 1")
 		hash.InitializeGlobalCountersFromDatabase("AUDIT", []string{"AUDIT00000000"}, hash.Medium)
+	}
+
+	return nil
+}
+
+// initializePrincipalCounters initializes principal ID counters
+func (cis *CounterInitializationService) initializePrincipalCounters(ctx context.Context) error {
+	var principals []models.Principal
+	if err := cis.db.WithContext(ctx).Select("id").Find(&principals).Error; err != nil {
+		return fmt.Errorf("failed to fetch principal IDs: %w", err)
+	}
+
+	var existingIDs []string
+	for _, principal := range principals {
+		existingIDs = append(existingIDs, principal.ID)
+	}
+
+	if len(existingIDs) > 0 {
+		cis.logger.Info("Initializing principal counters from existing records",
+			zap.Int("count", len(existingIDs)),
+			zap.String("sample_id", existingIDs[0]))
+		hash.InitializeGlobalCountersFromDatabase("PRN", existingIDs, hash.Medium)
+	} else {
+		cis.logger.Info("No existing principals found, initializing counter to start from 1")
+		hash.InitializeGlobalCountersFromDatabase("PRN", []string{"PRN00000000"}, hash.Medium)
+	}
+
+	return nil
+}
+
+// initializeServiceCounters initializes service ID counters
+func (cis *CounterInitializationService) initializeServiceCounters(ctx context.Context) error {
+	var services []models.Service
+	if err := cis.db.WithContext(ctx).Select("id").Find(&services).Error; err != nil {
+		return fmt.Errorf("failed to fetch service IDs: %w", err)
+	}
+
+	var existingIDs []string
+	for _, service := range services {
+		existingIDs = append(existingIDs, service.ID)
+	}
+
+	if len(existingIDs) > 0 {
+		cis.logger.Info("Initializing service counters from existing records",
+			zap.Int("count", len(existingIDs)),
+			zap.String("sample_id", existingIDs[0]))
+		hash.InitializeGlobalCountersFromDatabase("SVC", existingIDs, hash.Small)
+	} else {
+		cis.logger.Info("No existing services found, initializing counter to start from 1")
+		hash.InitializeGlobalCountersFromDatabase("SVC", []string{"SVC00000000"}, hash.Small)
 	}
 
 	return nil
