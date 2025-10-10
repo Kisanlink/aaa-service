@@ -50,7 +50,20 @@ func (h *Handler) CreatePrincipal(c *gin.Context) {
 	h.responder.SendSuccess(c, http.StatusCreated, response)
 }
 
-// CreateService handles POST /services
+// CreateService handles POST /api/v1/services
+//
+//	@Summary		Create a new service
+//	@Description	Register a new service principal with organization context
+//	@Tags			services
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			service	body		principals.CreateServiceRequest	true	"Service creation request"
+//	@Success		201		{object}	map[string]interface{}	"Service created successfully"
+//	@Failure		400		{object}	map[string]interface{}	"Invalid request format"
+//	@Failure		401		{object}	map[string]interface{}	"Unauthorized"
+//	@Failure		500		{object}	map[string]interface{}	"Internal server error"
+//	@Router			/api/v1/services [post]
 func (h *Handler) CreateService(c *gin.Context) {
 	var req principalRequests.CreateServiceRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -87,7 +100,20 @@ func (h *Handler) GetPrincipal(c *gin.Context) {
 	h.responder.SendSuccess(c, http.StatusOK, response)
 }
 
-// GetService handles GET /services/:id
+// GetService handles GET /api/v1/services/:id
+//
+//	@Summary		Get service by ID
+//	@Description	Retrieve detailed information about a specific service
+//	@Tags			services
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Security		ApiKeyAuth
+//	@Param			id	path		string	true	"Service ID"
+//	@Success		200	{object}	map[string]interface{}	"Service details"
+//	@Failure		400	{object}	map[string]interface{}	"Invalid service ID"
+//	@Failure		404	{object}	map[string]interface{}	"Service not found"
+//	@Failure		500	{object}	map[string]interface{}	"Internal server error"
+//	@Router			/api/v1/services/{id} [get]
 func (h *Handler) GetService(c *gin.Context) {
 	serviceID := c.Param("id")
 	if serviceID == "" {
@@ -155,7 +181,20 @@ func (h *Handler) DeletePrincipal(c *gin.Context) {
 	h.responder.SendSuccess(c, http.StatusOK, nil)
 }
 
-// DeleteService handles DELETE /services/:id
+// DeleteService handles DELETE /api/v1/services/:id
+//
+//	@Summary		Delete a service
+//	@Description	Remove a service principal from the system
+//	@Tags			services
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			id	path		string	true	"Service ID"
+//	@Success		200	{object}	map[string]interface{}	"Service deleted successfully"
+//	@Failure		400	{object}	map[string]interface{}	"Invalid service ID"
+//	@Failure		401	{object}	map[string]interface{}	"Unauthorized"
+//	@Failure		404	{object}	map[string]interface{}	"Service not found"
+//	@Failure		500	{object}	map[string]interface{}	"Internal server error"
+//	@Router			/api/v1/services/{id} [delete]
 func (h *Handler) DeleteService(c *gin.Context) {
 	serviceID := c.Param("id")
 	if serviceID == "" {
@@ -213,7 +252,20 @@ func (h *Handler) ListPrincipals(c *gin.Context) {
 	h.responder.SendSuccess(c, http.StatusOK, response)
 }
 
-// ListServices handles GET /services
+// ListServices handles GET /api/v1/services
+//
+//	@Summary		List all services
+//	@Description	Get a paginated list of registered services
+//	@Tags			services
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Security		ApiKeyAuth
+//	@Param			limit			query		int		false	"Number of items to return (default: 10, max: 100)"	default(10)
+//	@Param			offset			query		int		false	"Number of items to skip"	default(0)
+//	@Param			organization_id	query		string	false	"Filter by organization ID"
+//	@Success		200				{object}	map[string]interface{}	"List of services"
+//	@Failure		500				{object}	map[string]interface{}	"Internal server error"
+//	@Router			/api/v1/services [get]
 func (h *Handler) ListServices(c *gin.Context) {
 	// Parse query parameters
 	limitStr := c.DefaultQuery("limit", "10")
@@ -245,7 +297,17 @@ func (h *Handler) ListServices(c *gin.Context) {
 	h.responder.SendSuccess(c, http.StatusOK, response)
 }
 
-// GenerateAPIKey handles POST /services/generate-api-key
+// GenerateAPIKey handles POST /api/v1/services/generate-api-key
+//
+//	@Summary		Generate a new API key
+//	@Description	Generate a cryptographically secure API key for service authentication
+//	@Tags			services
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Success		200	{object}	map[string]string	"Generated API key"
+//	@Failure		401	{object}	map[string]interface{}	"Unauthorized"
+//	@Failure		500	{object}	map[string]interface{}	"Failed to generate API key"
+//	@Router			/api/v1/services/generate-api-key [post]
 func (h *Handler) GenerateAPIKey(c *gin.Context) {
 	apiKey, err := h.principalService.GenerateAPIKey()
 	if err != nil {

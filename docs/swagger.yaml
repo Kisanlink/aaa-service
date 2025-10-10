@@ -915,6 +915,34 @@ definitions:
         example: RES_abc123
         type: string
     type: object
+  principals.CreateServiceRequest:
+    description: Request body for creating a new service principal.
+    properties:
+      api_key:
+        example: sk_live_abc
+        maxLength: 255
+        minLength: 1
+        type: string
+      description:
+        example: Service for payments
+        maxLength: 1000
+        type: string
+      metadata:
+        example: '{"version":"v1"}'
+        type: string
+      name:
+        example: Payment API
+        maxLength: 100
+        minLength: 1
+        type: string
+      organization_id:
+        example: ORGN00000001
+        type: string
+    required:
+    - api_key
+    - name
+    - organization_id
+    type: object
   requests.LoginRequest:
     properties:
       country_code:
@@ -2731,6 +2759,188 @@ paths:
       summary: Get user groups in organization
       tags:
       - organizations
+  /api/v1/services:
+    get:
+      description: Get a paginated list of registered services
+      parameters:
+      - default: 10
+        description: 'Number of items to return (default: 10, max: 100)'
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Number of items to skip
+        in: query
+        name: offset
+        type: integer
+      - description: Filter by organization ID
+        in: query
+        name: organization_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of services
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      - ApiKeyAuth: []
+      summary: List all services
+      tags:
+      - services
+    post:
+      consumes:
+      - application/json
+      description: Register a new service principal with organization context
+      parameters:
+      - description: Service creation request
+        in: body
+        name: service
+        required: true
+        schema:
+          $ref: '#/definitions/principals.CreateServiceRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Service created successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request format
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new service
+      tags:
+      - services
+  /api/v1/services/{id}:
+    delete:
+      description: Remove a service principal from the system
+      parameters:
+      - description: Service ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Service deleted successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid service ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Service not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete a service
+      tags:
+      - services
+    get:
+      description: Retrieve detailed information about a specific service
+      parameters:
+      - description: Service ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Service details
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid service ID
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Service not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      - ApiKeyAuth: []
+      summary: Get service by ID
+      tags:
+      - services
+  /api/v1/services/generate-api-key:
+    post:
+      description: Generate a cryptographically secure API key for service authentication
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Generated API key
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Failed to generate API key
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Generate a new API key
+      tags:
+      - services
   /api/v2/actions:
     get:
       description: Retrieve a paginated list of actions
