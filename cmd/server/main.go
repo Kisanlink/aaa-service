@@ -69,6 +69,10 @@ import (
 //	@in							header
 //	@name						Authorization
 //	@description				Type "Bearer" followed by a space and JWT token.
+//	@securityDefinitions.apikey	ApiKeyAuth
+//	@in							header
+//	@name						X-API-Key
+//	@description				API key for service-to-service authentication
 
 // runSeedScripts runs all seeding scripts to initialize default data
 func runSeedScripts(ctx context.Context, dbManager *db.DatabaseManager, logger *zap.Logger) error {

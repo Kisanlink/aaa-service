@@ -33,10 +33,11 @@ func NewModuleHandler(moduleService *services.ModuleService, logger *zap.Logger,
 // RegisterModule handles POST /api/v2/modules/register
 //
 //	@Summary		Register a new module
-//	@Description	Register a complete module with actions, roles, resources, and permissions
+//	@Description	Register a complete module with actions, roles, resources, and permissions. Requires API key authentication.
 //	@Tags			modules
 //	@Accept			json
 //	@Produce		json
+//	@Security		ApiKeyAuth
 //	@Param			module	body		requests.ModuleRegistrationRequest	true	"Module registration request"
 //	@Success		201		{object}	responses.ModuleDetailResponse
 //	@Failure		400		{object}	map[string]interface{}
@@ -95,6 +96,8 @@ func (h *ModuleHandler) RegisterModule(c *gin.Context) {
 //	@Description	Get detailed information about a registered module
 //	@Tags			modules
 //	@Produce		json
+//	@Security		BearerAuth
+//	@Security		ApiKeyAuth
 //	@Param			service_name	path		string	true	"Service name"
 //	@Success		200				{object}	responses.ModuleDetailResponse
 //	@Failure		400				{object}	map[string]interface{}
@@ -133,6 +136,8 @@ func (h *ModuleHandler) GetModule(c *gin.Context) {
 //	@Description	Get a list of all registered modules
 //	@Tags			modules
 //	@Produce		json
+//	@Security		BearerAuth
+//	@Security		ApiKeyAuth
 //	@Success		200	{object}	responses.ModuleListResponse
 //	@Failure		401	{object}	map[string]interface{}
 //	@Failure		500	{object}	map[string]interface{}
@@ -159,6 +164,8 @@ func (h *ModuleHandler) ListModules(c *gin.Context) {
 //	@Description	Check if a module is healthy and operational
 //	@Tags			modules
 //	@Produce		json
+//	@Security		BearerAuth
+//	@Security		ApiKeyAuth
 //	@Param			service_name	path		string	true	"Service name"
 //	@Success		200				{object}	map[string]interface{}
 //	@Failure		400				{object}	map[string]interface{}

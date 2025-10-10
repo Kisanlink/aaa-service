@@ -2408,6 +2408,14 @@ const docTemplate = `{
         },
         "/api/v2/modules": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Get a list of all registered modules",
                 "produces": [
                     "application/json"
@@ -2442,7 +2450,12 @@ const docTemplate = `{
         },
         "/api/v2/modules/register": {
             "post": {
-                "description": "Register a complete module with actions, roles, resources, and permissions",
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Register a complete module with actions, roles, resources, and permissions. Requires API key authentication.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2511,6 +2524,14 @@ const docTemplate = `{
         },
         "/api/v2/modules/{service_name}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Get detailed information about a registered module",
                 "produces": [
                     "application/json"
@@ -2568,6 +2589,14 @@ const docTemplate = `{
         },
         "/api/v2/modules/{service_name}/health": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Check if a module is healthy and operational",
                 "produces": [
                     "application/json"
@@ -3198,6 +3227,13 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "409": {
+                        "description": "Permission with the same name already exists",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -6655,10 +6691,6 @@ const docTemplate = `{
         },
         "requests.LoginRequest": {
             "type": "object",
-            "required": [
-                "country_code",
-                "phone_number"
-            ],
             "properties": {
                 "country_code": {
                     "type": "string"
@@ -6683,6 +6715,9 @@ const docTemplate = `{
                     "minLength": 8
                 },
                 "phone_number": {
+                    "type": "string"
+                },
+                "refresh_token": {
                     "type": "string"
                 }
             }
@@ -8438,6 +8473,12 @@ const docTemplate = `{
         }
     },
     "securityDefinitions": {
+        "ApiKeyAuth": {
+            "description": "API key for service-to-service authentication",
+            "type": "apiKey",
+            "name": "X-API-Key",
+            "in": "header"
+        },
         "BearerAuth": {
             "description": "Type \"Bearer\" followed by a space and JWT token.",
             "type": "apiKey",
