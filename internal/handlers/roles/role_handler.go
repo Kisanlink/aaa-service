@@ -181,16 +181,28 @@ func (h *RoleHandler) UpdateRole(c *gin.Context) {
 		return
 	}
 
-	// Convert to domain model
-	description := ""
-	if req.Description != nil {
-		description = *req.Description
+	// Get existing role first
+	role, err := h.roleService.GetRoleByID(c.Request.Context(), roleID)
+	if err != nil {
+		h.logger.Error("Failed to get role for update", zap.Error(err), zap.String("roleID", roleID))
+		if notFoundErr, ok := err.(*errors.NotFoundError); ok {
+			h.responder.SendError(c, http.StatusNotFound, notFoundErr.Error(), notFoundErr)
+			return
+		}
+		h.responder.SendInternalError(c, err)
+		return
 	}
-	role := models.NewRole(*req.Name, description, models.RoleScopeOrg)
-	role.ID = roleID
+
+	// Update only provided fields
+	if req.Name != nil {
+		role.Name = *req.Name
+	}
+	if req.Description != nil {
+		role.Description = *req.Description
+	}
 
 	// Update role through service
-	err := h.roleService.UpdateRole(c.Request.Context(), role)
+	err = h.roleService.UpdateRole(c.Request.Context(), role)
 	if err != nil {
 		h.logger.Error("Failed to update role", zap.Error(err))
 		if notFoundErr, ok := err.(*errors.NotFoundError); ok {

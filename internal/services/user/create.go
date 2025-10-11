@@ -55,8 +55,13 @@ func (s *Service) CreateUser(ctx context.Context, req *users.CreateUserRequest) 
 		return nil, errors.NewInternalError(err)
 	}
 
-	// Create user model using the constructor
-	user := models.NewUserWithUsername(req.PhoneNumber, req.CountryCode, *req.Username, hashedPassword)
+	// Create user model using the appropriate constructor
+	var user *models.User
+	if req.Username != nil && *req.Username != "" {
+		user = models.NewUserWithUsername(req.PhoneNumber, req.CountryCode, *req.Username, hashedPassword)
+	} else {
+		user = models.NewUser(req.PhoneNumber, req.CountryCode, hashedPassword)
+	}
 
 	// Save user to repository
 	err = s.userRepo.Create(ctx, user)
@@ -71,9 +76,14 @@ func (s *Service) CreateUser(ctx context.Context, req *users.CreateUserRequest) 
 		return nil, errors.NewInternalError(err)
 	}
 
+	// Log user creation with safe username extraction
+	username := ""
+	if user.Username != nil {
+		username = *user.Username
+	}
 	s.logger.Info("User created successfully",
 		zap.String("user_id", user.ID),
-		zap.String("username", *user.Username))
+		zap.String("username", username))
 
 	// Convert to response format
 	response := &userResponses.UserResponse{
