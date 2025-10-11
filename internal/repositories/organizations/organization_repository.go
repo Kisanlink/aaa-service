@@ -59,7 +59,7 @@ func (r *OrganizationRepository) List(ctx context.Context, limit, offset int) ([
 // Count returns the total number of organizations using database-level counting
 func (r *OrganizationRepository) Count(ctx context.Context) (int64, error) {
 	filter := base.NewFilter()
-	return r.BaseFilterableRepository.CountWithFilter(ctx, filter)
+	return r.BaseFilterableRepository.Count(ctx, filter, models.Organization{})
 }
 
 // Exists checks if an organization exists by ID using the base repository
@@ -84,7 +84,7 @@ func (r *OrganizationRepository) ListWithDeleted(ctx context.Context, limit, off
 
 // CountWithDeleted returns count including soft-deleted organizations using the base repository
 func (r *OrganizationRepository) CountWithDeleted(ctx context.Context) (int64, error) {
-	return r.BaseFilterableRepository.CountWithDeleted(ctx)
+	return r.BaseFilterableRepository.CountWithDeleted(ctx, &models.Organization{})
 }
 
 // ExistsWithDeleted checks if organization exists including soft-deleted ones using the base repository

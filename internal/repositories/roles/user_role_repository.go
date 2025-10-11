@@ -70,7 +70,12 @@ func (r *UserRoleRepository) List(ctx context.Context, limit, offset int) ([]*mo
 func (r *UserRoleRepository) Count(ctx context.Context) (int64, error) {
 	// Create an empty filter to count all user roles
 	filter := base.NewFilter()
-	return r.BaseFilterableRepository.CountWithFilter(ctx, filter)
+	return r.BaseFilterableRepository.Count(ctx, filter, models.UserRole{})
+}
+
+// CountWithDeleted returns count including soft-deleted user roles
+func (r *UserRoleRepository) CountWithDeleted(ctx context.Context) (int64, error) {
+	return r.BaseFilterableRepository.CountWithDeleted(ctx, &models.UserRole{})
 }
 
 // GetByUserID retrieves all roles for a user using base filterable repository

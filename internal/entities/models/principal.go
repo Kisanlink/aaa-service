@@ -56,7 +56,7 @@ func (s *Service) TableName() string {
 // NewPrincipal creates a new Principal instance
 func NewPrincipal(principalType PrincipalType, name string) *Principal {
 	return &Principal{
-		BaseModel: base.NewBaseModel("prn", hash.Medium),
+		BaseModel: base.NewBaseModel("PRN", hash.Medium),
 		Type:      principalType,
 		Name:      name,
 		IsActive:  true,
@@ -80,7 +80,7 @@ func NewServicePrincipal(serviceID, name string) *Principal {
 // NewService creates a new Service instance
 func NewService(name, description, organizationID, hashedAPIKey string) *Service {
 	return &Service{
-		BaseModel:      base.NewBaseModel("PRINCIPAL", hash.Small),
+		BaseModel:      base.NewBaseModel("SVC", hash.Small),
 		Name:           name,
 		Description:    description,
 		OrganizationID: organizationID,

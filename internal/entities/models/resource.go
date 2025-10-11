@@ -53,7 +53,7 @@ const (
 // NewResource creates a new Resource instance
 func NewResource(name, resourceType, description string) *Resource {
 	return &Resource{
-		BaseModel:   base.NewBaseModel("RES", hash.Small),
+		BaseModel:   base.NewBaseModel("RES", hash.Medium),
 		Name:        name,
 		Type:        resourceType,
 		Description: description,

@@ -579,7 +579,8 @@ func (s *AuthService) validateToken(tokenString string) (*TokenClaims, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
-		return s.jwtSecret, nil
+		// Use the same secret as token generation (jwtCfg.Secret)
+		return []byte(s.jwtCfg.Secret), nil
 	})
 
 	if err != nil {

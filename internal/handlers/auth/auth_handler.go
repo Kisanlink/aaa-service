@@ -77,34 +77,74 @@ func (h *AuthHandler) LoginV2(c *gin.Context) {
 		return
 	}
 
-	// Use enhanced credential verification that supports both password and MPIN
-	var password, mpin *string
-	if req.HasPassword() {
-		pwd := req.GetPassword()
-		password = &pwd
-	}
-	if req.HasMPin() {
-		mp := req.GetMPin()
-		mpin = &mp
-	}
+	var userResponse *userResponses.UserResponse
+	var authMethod string
+	var err error
 
-	userResponse, err := h.userService.VerifyUserCredentials(c.Request.Context(), req.PhoneNumber, req.CountryCode, password, mpin)
-	if err != nil {
-		h.logger.Error("Failed to verify user credentials", zap.Error(err))
-		if notFoundErr, ok := err.(*errors.NotFoundError); ok {
-			h.responder.SendError(c, http.StatusUnauthorized, "Invalid credentials", notFoundErr)
+	// Check if refresh token flow is being used
+	if req.HasRefreshToken() {
+		// Flow 1: Refresh token + mPin
+		h.logger.Info("Processing refresh token login flow")
+
+		// Validate refresh token and get user ID
+		var userID string
+		userID, err = helper.ValidateToken(req.GetRefreshToken())
+		if err != nil {
+			h.logger.Error("Invalid refresh token", zap.Error(err))
+			h.responder.SendError(c, http.StatusUnauthorized, "Invalid refresh token", err)
 			return
 		}
-		if unauthorizedErr, ok := err.(*errors.UnauthorizedError); ok {
-			h.responder.SendError(c, http.StatusUnauthorized, "Invalid credentials", unauthorizedErr)
+
+		// Verify mPin
+		err = h.userService.VerifyMPin(c.Request.Context(), userID, req.GetMPin())
+		if err != nil {
+			h.logger.Error("Failed to verify mPin", zap.Error(err))
+			h.responder.SendError(c, http.StatusUnauthorized, "Invalid mPin", err)
 			return
 		}
-		if badRequestErr, ok := err.(*errors.BadRequestError); ok {
-			h.responder.SendError(c, http.StatusBadRequest, badRequestErr.Error(), badRequestErr)
+
+		// Get user details
+		userResponse, err = h.userService.GetUserByID(c.Request.Context(), userID)
+		if err != nil {
+			h.logger.Error("Failed to get user for refresh token login", zap.Error(err))
+			h.responder.SendInternalError(c, err)
 			return
 		}
-		h.responder.SendInternalError(c, err)
-		return
+		authMethod = "refresh_token_mpin"
+	} else {
+		// Flow 2 & 3: Phone + password OR Phone + mPin
+		h.logger.Info("Processing credential-based login flow")
+
+		var password, mpin *string
+		if req.HasPassword() {
+			pwd := req.GetPassword()
+			password = &pwd
+			authMethod = "password"
+		}
+		if req.HasMPin() {
+			mp := req.GetMPin()
+			mpin = &mp
+			authMethod = "mpin"
+		}
+
+		userResponse, err = h.userService.VerifyUserCredentials(c.Request.Context(), req.PhoneNumber, req.CountryCode, password, mpin)
+		if err != nil {
+			h.logger.Error("Failed to verify user credentials", zap.Error(err))
+			if notFoundErr, ok := err.(*errors.NotFoundError); ok {
+				h.responder.SendError(c, http.StatusUnauthorized, "Invalid credentials", notFoundErr)
+				return
+			}
+			if unauthorizedErr, ok := err.(*errors.UnauthorizedError); ok {
+				h.responder.SendError(c, http.StatusUnauthorized, "Invalid credentials", unauthorizedErr)
+				return
+			}
+			if badRequestErr, ok := err.(*errors.BadRequestError); ok {
+				h.responder.SendError(c, http.StatusBadRequest, badRequestErr.Error(), badRequestErr)
+				return
+			}
+			h.responder.SendInternalError(c, err)
+			return
+		}
 	}
 
 	// Convert user roles for token generation
@@ -192,10 +232,6 @@ func (h *AuthHandler) LoginV2(c *gin.Context) {
 		Message:      "Login successful",
 	}
 
-	authMethod := "password"
-	if mpin != nil {
-		authMethod = "mpin"
-	}
 	h.logger.Info("User logged in successfully",
 		zap.String("userID", userResponse.ID),
 		zap.String("method", authMethod),

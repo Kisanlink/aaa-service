@@ -188,6 +188,11 @@ type UserRepository interface {
 	GetWithProfile(ctx context.Context, userID string) (*models.User, error)
 }
 
+// ServiceRepository interface for service data operations (for service-to-service auth)
+type ServiceRepository interface {
+	GetByAPIKey(ctx context.Context, apiKeyHash string) (*models.Service, error)
+}
+
 // AddressRepository interface for address data operations
 type AddressRepository interface {
 	base.Repository[*models.Address]
