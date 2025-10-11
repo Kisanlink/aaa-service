@@ -3,7 +3,7 @@ package requests
 import (
 	"fmt"
 
-	"github.com/Kisanlink/aaa-service/pkg/errors"
+	"github.com/Kisanlink/aaa-service/v2/pkg/errors"
 )
 
 // ValidationError represents a validation error

@@ -3,7 +3,7 @@ package actions
 import (
 	"context"
 
-	"github.com/Kisanlink/aaa-service/pkg/errors"
+	"github.com/Kisanlink/aaa-service/v2/pkg/errors"
 	"go.uber.org/zap"
 )
 

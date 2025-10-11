@@ -3,8 +3,8 @@ package organizations
 import (
 	"testing"
 
-	groupResponses "github.com/Kisanlink/aaa-service/internal/entities/responses/groups"
-	organizationResponses "github.com/Kisanlink/aaa-service/internal/entities/responses/organizations"
+	groupResponses "github.com/Kisanlink/aaa-service/v2/internal/entities/responses/groups"
+	organizationResponses "github.com/Kisanlink/aaa-service/v2/internal/entities/responses/organizations"
 	"github.com/stretchr/testify/assert"
 )
 

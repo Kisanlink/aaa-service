@@ -3,8 +3,8 @@ package resources
 import (
 	"fmt"
 
-	"github.com/Kisanlink/aaa-service/internal/interfaces"
-	"github.com/Kisanlink/aaa-service/internal/services/resources"
+	"github.com/Kisanlink/aaa-service/v2/internal/interfaces"
+	"github.com/Kisanlink/aaa-service/v2/internal/services/resources"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )

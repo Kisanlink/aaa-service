@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Kisanlink/aaa-service/internal/entities/models"
+	"github.com/Kisanlink/aaa-service/v2/internal/entities/models"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )

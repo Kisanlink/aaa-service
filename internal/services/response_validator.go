@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Kisanlink/aaa-service/internal/entities/responses"
+	"github.com/Kisanlink/aaa-service/v2/internal/entities/responses"
 )
 
 // ResponseValidator validates response structures for consistency

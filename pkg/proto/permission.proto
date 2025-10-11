@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package pb;
 
-option go_package = "github.com/Kisanlink/aaa-service/pkg/proto;pb";
+option go_package = "github.com/Kisanlink/aaa-service/v2/pkg/proto;pb";
 
 // Assign permission to group
 message AssignPermissionToGroupRequest {

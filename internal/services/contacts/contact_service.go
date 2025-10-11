@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Kisanlink/aaa-service/internal/entities/models"
-	contactRequests "github.com/Kisanlink/aaa-service/internal/entities/requests/contacts"
-	contactResponses "github.com/Kisanlink/aaa-service/internal/entities/responses/contacts"
-	"github.com/Kisanlink/aaa-service/internal/interfaces"
-	contactRepo "github.com/Kisanlink/aaa-service/internal/repositories/contacts"
-	"github.com/Kisanlink/aaa-service/pkg/errors"
+	"github.com/Kisanlink/aaa-service/v2/internal/entities/models"
+	contactRequests "github.com/Kisanlink/aaa-service/v2/internal/entities/requests/contacts"
+	contactResponses "github.com/Kisanlink/aaa-service/v2/internal/entities/responses/contacts"
+	"github.com/Kisanlink/aaa-service/v2/internal/interfaces"
+	contactRepo "github.com/Kisanlink/aaa-service/v2/internal/repositories/contacts"
+	"github.com/Kisanlink/aaa-service/v2/pkg/errors"
 	"go.uber.org/zap"
 )
 

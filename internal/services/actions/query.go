@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	actionResponses "github.com/Kisanlink/aaa-service/internal/entities/responses/actions"
-	"github.com/Kisanlink/aaa-service/pkg/errors"
+	actionResponses "github.com/Kisanlink/aaa-service/v2/internal/entities/responses/actions"
+	"github.com/Kisanlink/aaa-service/v2/pkg/errors"
 	"go.uber.org/zap"
 )
 

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/Kisanlink/aaa-service/internal/entities/models"
+	"github.com/Kisanlink/aaa-service/v2/internal/entities/models"
 	"github.com/stretchr/testify/assert"
 )
 

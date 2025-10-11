@@ -3,8 +3,8 @@ package resources
 import (
 	"net/http"
 
-	reqResources "github.com/Kisanlink/aaa-service/internal/entities/requests/resources"
-	respResources "github.com/Kisanlink/aaa-service/internal/entities/responses/resources"
+	reqResources "github.com/Kisanlink/aaa-service/v2/internal/entities/requests/resources"
+	respResources "github.com/Kisanlink/aaa-service/v2/internal/entities/responses/resources"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )

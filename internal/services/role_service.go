@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Kisanlink/aaa-service/internal/entities/models"
-	"github.com/Kisanlink/aaa-service/internal/interfaces"
-	"github.com/Kisanlink/aaa-service/pkg/errors"
+	"github.com/Kisanlink/aaa-service/v2/internal/entities/models"
+	"github.com/Kisanlink/aaa-service/v2/internal/interfaces"
+	"github.com/Kisanlink/aaa-service/v2/pkg/errors"
 	"go.uber.org/zap"
 )
 

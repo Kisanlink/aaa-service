@@ -1,9 +1,9 @@
 package routes
 
 import (
-	"github.com/Kisanlink/aaa-service/internal/handlers/admin"
-	"github.com/Kisanlink/aaa-service/internal/middleware"
-	"github.com/Kisanlink/aaa-service/internal/services"
+	"github.com/Kisanlink/aaa-service/v2/internal/handlers/admin"
+	"github.com/Kisanlink/aaa-service/v2/internal/middleware"
+	"github.com/Kisanlink/aaa-service/v2/internal/services"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )

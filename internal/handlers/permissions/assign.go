@@ -3,7 +3,7 @@ package permissions
 import (
 	"net/http"
 
-	reqRoleAssignments "github.com/Kisanlink/aaa-service/internal/entities/requests/role_assignments"
+	reqRoleAssignments "github.com/Kisanlink/aaa-service/v2/internal/entities/requests/role_assignments"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )

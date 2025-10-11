@@ -1,8 +1,8 @@
 package routes
 
 import (
-	resourceHandlers "github.com/Kisanlink/aaa-service/internal/handlers/resources"
-	"github.com/Kisanlink/aaa-service/internal/middleware"
+	resourceHandlers "github.com/Kisanlink/aaa-service/v2/internal/handlers/resources"
+	"github.com/Kisanlink/aaa-service/v2/internal/middleware"
 	"github.com/gin-gonic/gin"
 )
 

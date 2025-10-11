@@ -3,10 +3,10 @@ package grpc_server
 import (
 	"context"
 
-	"github.com/Kisanlink/aaa-service/internal/entities/requests/organizations"
-	organizationResponses "github.com/Kisanlink/aaa-service/internal/entities/responses/organizations"
-	"github.com/Kisanlink/aaa-service/internal/interfaces"
-	pb "github.com/Kisanlink/aaa-service/pkg/proto"
+	"github.com/Kisanlink/aaa-service/v2/internal/entities/requests/organizations"
+	organizationResponses "github.com/Kisanlink/aaa-service/v2/internal/entities/responses/organizations"
+	"github.com/Kisanlink/aaa-service/v2/internal/interfaces"
+	pb "github.com/Kisanlink/aaa-service/v2/pkg/proto"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

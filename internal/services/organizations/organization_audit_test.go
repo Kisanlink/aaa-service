@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Kisanlink/aaa-service/internal/entities/models"
-	"github.com/Kisanlink/aaa-service/internal/entities/requests/organizations"
+	"github.com/Kisanlink/aaa-service/v2/internal/entities/models"
+	"github.com/Kisanlink/aaa-service/v2/internal/entities/requests/organizations"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"

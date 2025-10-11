@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Kisanlink/aaa-service/internal/entities/models"
+	"github.com/Kisanlink/aaa-service/v2/internal/entities/models"
 )
 
 // Create creates a new action using the database manager

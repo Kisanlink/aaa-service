@@ -3,9 +3,9 @@ package adapters
 import (
 	"context"
 
-	"github.com/Kisanlink/aaa-service/internal/entities/models"
-	"github.com/Kisanlink/aaa-service/internal/interfaces"
-	userRepo "github.com/Kisanlink/aaa-service/internal/repositories/users"
+	"github.com/Kisanlink/aaa-service/v2/internal/entities/models"
+	"github.com/Kisanlink/aaa-service/v2/internal/interfaces"
+	userRepo "github.com/Kisanlink/aaa-service/v2/internal/repositories/users"
 )
 
 // UserRepositoryAdapter adapts the concrete user repository to the UserRepositoryInterface

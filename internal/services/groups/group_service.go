@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Kisanlink/aaa-service/internal/entities/models"
-	groupRequests "github.com/Kisanlink/aaa-service/internal/entities/requests/groups"
-	groupResponses "github.com/Kisanlink/aaa-service/internal/entities/responses/groups"
-	"github.com/Kisanlink/aaa-service/internal/interfaces"
-	"github.com/Kisanlink/aaa-service/internal/repositories/groups"
-	"github.com/Kisanlink/aaa-service/internal/repositories/organizations"
-	"github.com/Kisanlink/aaa-service/internal/repositories/roles"
-	"github.com/Kisanlink/aaa-service/pkg/errors"
+	"github.com/Kisanlink/aaa-service/v2/internal/entities/models"
+	groupRequests "github.com/Kisanlink/aaa-service/v2/internal/entities/requests/groups"
+	groupResponses "github.com/Kisanlink/aaa-service/v2/internal/entities/responses/groups"
+	"github.com/Kisanlink/aaa-service/v2/internal/interfaces"
+	"github.com/Kisanlink/aaa-service/v2/internal/repositories/groups"
+	"github.com/Kisanlink/aaa-service/v2/internal/repositories/organizations"
+	"github.com/Kisanlink/aaa-service/v2/internal/repositories/roles"
+	"github.com/Kisanlink/aaa-service/v2/pkg/errors"
 	"go.uber.org/zap"
 )
 

@@ -3,8 +3,8 @@ package organizations
 import (
 	"time"
 
-	groupResponses "github.com/Kisanlink/aaa-service/internal/entities/responses/groups"
-	userResponses "github.com/Kisanlink/aaa-service/internal/entities/responses/users"
+	groupResponses "github.com/Kisanlink/aaa-service/v2/internal/entities/responses/groups"
+	userResponses "github.com/Kisanlink/aaa-service/v2/internal/entities/responses/users"
 )
 
 // OrganizationGroupResponse represents the response for organization group operations

@@ -3,8 +3,8 @@ package adapters
 import (
 	"context"
 
-	"github.com/Kisanlink/aaa-service/internal/interfaces"
-	"github.com/Kisanlink/aaa-service/internal/services"
+	"github.com/Kisanlink/aaa-service/v2/internal/interfaces"
+	"github.com/Kisanlink/aaa-service/v2/internal/services"
 )
 
 // AuditServiceAdapter adapts the concrete audit service to the interface

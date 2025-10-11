@@ -3,7 +3,7 @@ package role_assignments
 import (
 	"time"
 
-	"github.com/Kisanlink/aaa-service/internal/entities/models"
+	"github.com/Kisanlink/aaa-service/v2/internal/entities/models"
 )
 
 // RoleAssignmentResponse represents the result of a role assignment operation

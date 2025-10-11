@@ -4,12 +4,12 @@ import (
 	"context"
 	"time"
 
-	"github.com/Kisanlink/aaa-service/internal/entities/models"
-	"github.com/Kisanlink/aaa-service/internal/interfaces"
-	"github.com/Kisanlink/aaa-service/internal/repositories/permissions"
-	"github.com/Kisanlink/aaa-service/internal/repositories/resource_permissions"
-	"github.com/Kisanlink/aaa-service/internal/repositories/role_permissions"
-	"github.com/Kisanlink/aaa-service/internal/repositories/roles"
+	"github.com/Kisanlink/aaa-service/v2/internal/entities/models"
+	"github.com/Kisanlink/aaa-service/v2/internal/interfaces"
+	"github.com/Kisanlink/aaa-service/v2/internal/repositories/permissions"
+	"github.com/Kisanlink/aaa-service/v2/internal/repositories/resource_permissions"
+	"github.com/Kisanlink/aaa-service/v2/internal/repositories/role_permissions"
+	"github.com/Kisanlink/aaa-service/v2/internal/repositories/roles"
 )
 
 // Service handles permission business logic and evaluation

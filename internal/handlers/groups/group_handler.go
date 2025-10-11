@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"strconv"
 
-	groupRequests "github.com/Kisanlink/aaa-service/internal/entities/requests/groups"
-	"github.com/Kisanlink/aaa-service/internal/interfaces"
+	groupRequests "github.com/Kisanlink/aaa-service/v2/internal/entities/requests/groups"
+	"github.com/Kisanlink/aaa-service/v2/internal/interfaces"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )

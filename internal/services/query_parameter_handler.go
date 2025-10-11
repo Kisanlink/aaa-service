@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Kisanlink/aaa-service/internal/interfaces"
+	"github.com/Kisanlink/aaa-service/v2/internal/interfaces"
 	"github.com/gin-gonic/gin"
 )
 

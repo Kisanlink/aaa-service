@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Kisanlink/aaa-service/internal/entities/models"
-	organizationResponses "github.com/Kisanlink/aaa-service/internal/entities/responses/organizations"
-	"github.com/Kisanlink/aaa-service/internal/services/groups"
+	"github.com/Kisanlink/aaa-service/v2/internal/entities/models"
+	organizationResponses "github.com/Kisanlink/aaa-service/v2/internal/entities/responses/organizations"
+	"github.com/Kisanlink/aaa-service/v2/internal/services/groups"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"go.uber.org/zap"

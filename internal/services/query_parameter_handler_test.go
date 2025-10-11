@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/Kisanlink/aaa-service/internal/interfaces"
+	"github.com/Kisanlink/aaa-service/v2/internal/interfaces"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

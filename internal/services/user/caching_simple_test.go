@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"testing"
 
-	userResponses "github.com/Kisanlink/aaa-service/internal/entities/responses/users"
-	"github.com/Kisanlink/aaa-service/pkg/errors"
+	userResponses "github.com/Kisanlink/aaa-service/v2/internal/entities/responses/users"
+	"github.com/Kisanlink/aaa-service/v2/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 )

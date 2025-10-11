@@ -1,8 +1,8 @@
 package routes
 
 import (
-	"github.com/Kisanlink/aaa-service/internal/handlers/organizations"
-	"github.com/Kisanlink/aaa-service/internal/middleware"
+	"github.com/Kisanlink/aaa-service/v2/internal/handlers/organizations"
+	"github.com/Kisanlink/aaa-service/v2/internal/middleware"
 	"github.com/gin-gonic/gin"
 )
 
@@ -13,8 +13,8 @@ func SetupOrganizationRoutes(apiGroup *gin.RouterGroup, orgHandler *organization
 	// Note: The apiGroup is expected to be /api/v2 with auth middleware already applied
 	org := apiGroup.Group("/organizations")
 	{
-		org.POST("/", orgHandler.CreateOrganization)
-		org.GET("/", orgHandler.ListOrganizations)
+		org.POST("", orgHandler.CreateOrganization)
+		org.GET("", orgHandler.ListOrganizations)
 		org.GET("/:id", orgHandler.GetOrganization)
 		org.PUT("/:id", orgHandler.UpdateOrganization)
 		org.DELETE("/:id", orgHandler.DeleteOrganization)

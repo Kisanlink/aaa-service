@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Kisanlink/aaa-service/internal/repositories/resource_permissions"
+	"github.com/Kisanlink/aaa-service/v2/internal/repositories/resource_permissions"
 	"go.uber.org/zap"
 )
 

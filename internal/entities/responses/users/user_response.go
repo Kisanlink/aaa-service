@@ -3,7 +3,7 @@ package users
 import (
 	"time"
 
-	"github.com/Kisanlink/aaa-service/internal/entities/models"
+	"github.com/Kisanlink/aaa-service/v2/internal/entities/models"
 )
 
 // UserResponse represents the user data sent in API responses

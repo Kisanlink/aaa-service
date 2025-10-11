@@ -3,10 +3,10 @@ package grpc_server
 import (
 	"context"
 
-	"github.com/Kisanlink/aaa-service/internal/entities/requests/users"
-	"github.com/Kisanlink/aaa-service/internal/interfaces"
-	"github.com/Kisanlink/aaa-service/internal/services"
-	pb "github.com/Kisanlink/aaa-service/pkg/proto"
+	"github.com/Kisanlink/aaa-service/v2/internal/entities/requests/users"
+	"github.com/Kisanlink/aaa-service/v2/internal/interfaces"
+	"github.com/Kisanlink/aaa-service/v2/internal/services"
+	pb "github.com/Kisanlink/aaa-service/v2/pkg/proto"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -82,20 +82,36 @@ func (h *CombinedUserHandler) Login(ctx context.Context, req *pb.LoginRequest) (
 func (h *CombinedUserHandler) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.RegisterResponse, error) {
 	h.logger.Info("gRPC Register request", zap.String("username", req.Username))
 
-	// Validate request
-	if req.Username == "" || req.Password == "" {
+	// Validate request - phone_number, country_code, and password are required
+	if req.PhoneNumber == "" {
 		return &pb.RegisterResponse{
 			StatusCode: 400,
-			Message:    "Username and password are required",
-		}, status.Error(codes.InvalidArgument, "username and password are required")
+			Message:    "Phone number is required",
+		}, status.Error(codes.InvalidArgument, "phone number is required")
+	}
+	if req.CountryCode == "" {
+		return &pb.RegisterResponse{
+			StatusCode: 400,
+			Message:    "Country code is required",
+		}, status.Error(codes.InvalidArgument, "country code is required")
+	}
+	if req.Password == "" {
+		return &pb.RegisterResponse{
+			StatusCode: 400,
+			Message:    "Password is required",
+		}, status.Error(codes.InvalidArgument, "password is required")
 	}
 
 	// Create user request
+	var username *string
+	if req.Username != "" {
+		username = &req.Username
+	}
 	createReq := &users.CreateUserRequest{
-		Username:    &req.Username,
+		Username:    username,
 		Password:    req.Password,
-		PhoneNumber: req.Email, // Using email as phone for now
-		CountryCode: "+1",      // Default country code
+		PhoneNumber: req.PhoneNumber,
+		CountryCode: req.CountryCode,
 	}
 
 	// Create user via service

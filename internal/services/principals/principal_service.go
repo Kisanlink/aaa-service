@@ -8,13 +8,13 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Kisanlink/aaa-service/internal/entities/models"
-	principalRequests "github.com/Kisanlink/aaa-service/internal/entities/requests/principals"
-	principalResponses "github.com/Kisanlink/aaa-service/internal/entities/responses/principals"
-	"github.com/Kisanlink/aaa-service/internal/interfaces"
-	"github.com/Kisanlink/aaa-service/internal/repositories/organizations"
-	principalRepo "github.com/Kisanlink/aaa-service/internal/repositories/principals"
-	"github.com/Kisanlink/aaa-service/pkg/errors"
+	"github.com/Kisanlink/aaa-service/v2/internal/entities/models"
+	principalRequests "github.com/Kisanlink/aaa-service/v2/internal/entities/requests/principals"
+	principalResponses "github.com/Kisanlink/aaa-service/v2/internal/entities/responses/principals"
+	"github.com/Kisanlink/aaa-service/v2/internal/interfaces"
+	"github.com/Kisanlink/aaa-service/v2/internal/repositories/organizations"
+	principalRepo "github.com/Kisanlink/aaa-service/v2/internal/repositories/principals"
+	"github.com/Kisanlink/aaa-service/v2/pkg/errors"
 	"go.uber.org/zap"
 )
 

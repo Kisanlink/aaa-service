@@ -3,7 +3,7 @@ package permissions
 import (
 	"time"
 
-	"github.com/Kisanlink/aaa-service/internal/entities/models"
+	"github.com/Kisanlink/aaa-service/v2/internal/entities/models"
 )
 
 // PermissionResponse represents a single permission in API responses

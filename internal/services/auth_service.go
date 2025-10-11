@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	configPkg "github.com/Kisanlink/aaa-service/internal/config"
-	"github.com/Kisanlink/aaa-service/internal/entities/models"
-	"github.com/Kisanlink/aaa-service/internal/interfaces"
-	"github.com/Kisanlink/aaa-service/pkg/errors"
+	configPkg "github.com/Kisanlink/aaa-service/v2/internal/config"
+	"github.com/Kisanlink/aaa-service/v2/internal/entities/models"
+	"github.com/Kisanlink/aaa-service/v2/internal/interfaces"
+	"github.com/Kisanlink/aaa-service/v2/pkg/errors"
 	jwt "github.com/golang-jwt/jwt/v4"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
@@ -390,7 +390,11 @@ func (s *AuthService) Register(ctx context.Context, req *RegisterRequest) (*Logi
 		})
 	}
 
-	s.logger.Info("User registered successfully", zap.String("user_id", user.ID), zap.String("username", *user.Username))
+	username := ""
+	if user.Username != nil {
+		username = *user.Username
+	}
+	s.logger.Info("User registered successfully", zap.String("user_id", user.ID), zap.String("username", username))
 
 	// Return successful registration without auto-login for now
 	return &LoginResponse{

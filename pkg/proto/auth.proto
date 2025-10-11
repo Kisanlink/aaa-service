@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package pb;
 
-option go_package = "github.com/Kisanlink/aaa-service/pkg/proto;pb";
+option go_package = "github.com/Kisanlink/aaa-service/v2/pkg/proto;pb";
 
 // V2 User model with enhanced fields
 message User {
@@ -52,11 +52,13 @@ message LoginResponse {
 
 // V2 Register Request
 message RegisterRequest {
-    string username = 1;
-    string email = 2;
-    string full_name = 3;
-    string password = 4;
-    repeated string role_ids = 5;
+    string username = 1; // Optional
+    string email = 2; // Optional
+    string full_name = 3; // Optional
+    string password = 4; // Required
+    repeated string role_ids = 5; // Optional
+    string phone_number = 6; // Required - mobile number
+    string country_code = 7; // Required - country code with + prefix
 }
 
 // V2 Register Response

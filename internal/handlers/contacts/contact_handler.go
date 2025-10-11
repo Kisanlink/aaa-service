@@ -4,10 +4,10 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/Kisanlink/aaa-service/internal/entities/requests/contacts"
-	"github.com/Kisanlink/aaa-service/internal/interfaces"
-	contactService "github.com/Kisanlink/aaa-service/internal/services/contacts"
-	"github.com/Kisanlink/aaa-service/pkg/errors"
+	"github.com/Kisanlink/aaa-service/v2/internal/entities/requests/contacts"
+	"github.com/Kisanlink/aaa-service/v2/internal/interfaces"
+	contactService "github.com/Kisanlink/aaa-service/v2/internal/services/contacts"
+	"github.com/Kisanlink/aaa-service/v2/pkg/errors"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )

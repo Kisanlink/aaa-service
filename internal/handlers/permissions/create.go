@@ -3,9 +3,9 @@ package permissions
 import (
 	"net/http"
 
-	reqPermissions "github.com/Kisanlink/aaa-service/internal/entities/requests/permissions"
-	respPermissions "github.com/Kisanlink/aaa-service/internal/entities/responses/permissions"
-	"github.com/Kisanlink/aaa-service/pkg/errors"
+	reqPermissions "github.com/Kisanlink/aaa-service/v2/internal/entities/requests/permissions"
+	respPermissions "github.com/Kisanlink/aaa-service/v2/internal/entities/responses/permissions"
+	"github.com/Kisanlink/aaa-service/v2/pkg/errors"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
