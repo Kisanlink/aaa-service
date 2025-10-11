@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/Kisanlink/aaa-service/internal/entities/requests"
-	"github.com/Kisanlink/aaa-service/internal/entities/responses"
-	userResponses "github.com/Kisanlink/aaa-service/internal/entities/responses/users"
+	"github.com/Kisanlink/aaa-service/v2/internal/entities/requests"
+	"github.com/Kisanlink/aaa-service/v2/internal/entities/responses"
+	userResponses "github.com/Kisanlink/aaa-service/v2/internal/entities/responses/users"
 	"github.com/stretchr/testify/assert"
 )
 

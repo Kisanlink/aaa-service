@@ -1,7 +1,7 @@
 package resources
 
 import (
-	"github.com/Kisanlink/aaa-service/pkg/errors"
+	"github.com/Kisanlink/aaa-service/v2/pkg/errors"
 )
 
 // UpdateResourceRequest represents the request to update an existing resource

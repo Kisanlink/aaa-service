@@ -1,7 +1,7 @@
 package routes
 
 import (
-	"github.com/Kisanlink/aaa-service/internal/handlers/actions"
+	"github.com/Kisanlink/aaa-service/v2/internal/handlers/actions"
 	"github.com/gin-gonic/gin"
 )
 

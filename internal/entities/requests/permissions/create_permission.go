@@ -1,8 +1,8 @@
 package permissions
 
 import (
-	"github.com/Kisanlink/aaa-service/internal/entities/models"
-	"github.com/Kisanlink/aaa-service/pkg/errors"
+	"github.com/Kisanlink/aaa-service/v2/internal/entities/models"
+	"github.com/Kisanlink/aaa-service/v2/pkg/errors"
 )
 
 // CreatePermissionRequest represents the request to create a new permission

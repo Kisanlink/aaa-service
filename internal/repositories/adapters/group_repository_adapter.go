@@ -3,9 +3,9 @@ package adapters
 import (
 	"context"
 
-	"github.com/Kisanlink/aaa-service/internal/entities/models"
-	"github.com/Kisanlink/aaa-service/internal/interfaces"
-	groupRepo "github.com/Kisanlink/aaa-service/internal/repositories/groups"
+	"github.com/Kisanlink/aaa-service/v2/internal/entities/models"
+	"github.com/Kisanlink/aaa-service/v2/internal/interfaces"
+	groupRepo "github.com/Kisanlink/aaa-service/v2/internal/repositories/groups"
 )
 
 // GroupRepositoryAdapter adapts the concrete group repository to the GroupRepository interface

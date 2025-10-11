@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Kisanlink/aaa-service/internal/entities/models"
-	"github.com/Kisanlink/aaa-service/internal/entities/requests/users"
-	userResponses "github.com/Kisanlink/aaa-service/internal/entities/responses/users"
-	"github.com/Kisanlink/aaa-service/pkg/errors"
+	"github.com/Kisanlink/aaa-service/v2/internal/entities/models"
+	"github.com/Kisanlink/aaa-service/v2/internal/entities/requests/users"
+	userResponses "github.com/Kisanlink/aaa-service/v2/internal/entities/responses/users"
+	"github.com/Kisanlink/aaa-service/v2/pkg/errors"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 )

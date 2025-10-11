@@ -5,9 +5,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Kisanlink/aaa-service/internal/interfaces"
-	"github.com/Kisanlink/aaa-service/internal/services/groups"
-	"github.com/Kisanlink/aaa-service/internal/services/organizations"
+	"github.com/Kisanlink/aaa-service/v2/internal/interfaces"
+	"github.com/Kisanlink/aaa-service/v2/internal/services/groups"
+	"github.com/Kisanlink/aaa-service/v2/internal/services/organizations"
 	"go.uber.org/zap"
 )
 

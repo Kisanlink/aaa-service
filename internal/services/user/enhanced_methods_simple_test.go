@@ -3,8 +3,8 @@ package user
 import (
 	"testing"
 
-	"github.com/Kisanlink/aaa-service/internal/entities/models"
-	userResponses "github.com/Kisanlink/aaa-service/internal/entities/responses/users"
+	"github.com/Kisanlink/aaa-service/v2/internal/entities/models"
+	userResponses "github.com/Kisanlink/aaa-service/v2/internal/entities/responses/users"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/bcrypt"
 )

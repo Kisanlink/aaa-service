@@ -1,7 +1,7 @@
 package roles
 
 import (
-	"github.com/Kisanlink/aaa-service/internal/entities/requests"
+	"github.com/Kisanlink/aaa-service/v2/internal/entities/requests"
 )
 
 // RemoveRoleRequest represents a request to remove a role from a user

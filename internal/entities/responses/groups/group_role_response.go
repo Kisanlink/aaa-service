@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Kisanlink/aaa-service/internal/entities/models"
-	"github.com/Kisanlink/aaa-service/internal/entities/responses"
+	"github.com/Kisanlink/aaa-service/v2/internal/entities/models"
+	"github.com/Kisanlink/aaa-service/v2/internal/entities/responses"
 )
 
 // GroupRoleResponse represents the response for group role assignment operations

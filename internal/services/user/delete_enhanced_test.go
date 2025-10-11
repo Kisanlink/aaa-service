@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/Kisanlink/aaa-service/pkg/errors"
+	"github.com/Kisanlink/aaa-service/v2/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 )

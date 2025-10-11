@@ -3,8 +3,8 @@ package permissions
 import (
 	"time"
 
-	"github.com/Kisanlink/aaa-service/internal/entities/models"
-	permissionService "github.com/Kisanlink/aaa-service/internal/services/permissions"
+	"github.com/Kisanlink/aaa-service/v2/internal/entities/models"
+	permissionService "github.com/Kisanlink/aaa-service/v2/internal/services/permissions"
 )
 
 // EvaluationResponse represents the result of a permission evaluation

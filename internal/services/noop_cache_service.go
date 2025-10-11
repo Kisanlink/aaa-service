@@ -1,7 +1,7 @@
 package services
 
 import (
-	"github.com/Kisanlink/aaa-service/internal/interfaces"
+	"github.com/Kisanlink/aaa-service/v2/internal/interfaces"
 )
 
 // NoOpCacheService is a no-operation cache service that does nothing

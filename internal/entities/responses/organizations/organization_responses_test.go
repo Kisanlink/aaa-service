@@ -4,9 +4,9 @@ import (
 	"testing"
 	"time"
 
-	groupResponses "github.com/Kisanlink/aaa-service/internal/entities/responses/groups"
-	roleResponses "github.com/Kisanlink/aaa-service/internal/entities/responses/roles"
-	userResponses "github.com/Kisanlink/aaa-service/internal/entities/responses/users"
+	groupResponses "github.com/Kisanlink/aaa-service/v2/internal/entities/responses/groups"
+	roleResponses "github.com/Kisanlink/aaa-service/v2/internal/entities/responses/roles"
+	userResponses "github.com/Kisanlink/aaa-service/v2/internal/entities/responses/users"
 	"github.com/stretchr/testify/assert"
 )
 

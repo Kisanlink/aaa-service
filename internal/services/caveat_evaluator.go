@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Kisanlink/aaa-service/internal/entities/models"
+	"github.com/Kisanlink/aaa-service/v2/internal/entities/models"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/structpb"
 	"gorm.io/gorm"

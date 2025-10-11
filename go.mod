@@ -1,4 +1,4 @@
-module github.com/Kisanlink/aaa-service
+module github.com/Kisanlink/aaa-service/v2
 
 go 1.24
 

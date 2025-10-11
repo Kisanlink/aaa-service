@@ -1,9 +1,9 @@
 package permissions
 
 import (
-	"github.com/Kisanlink/aaa-service/internal/interfaces"
-	permissionService "github.com/Kisanlink/aaa-service/internal/services/permissions"
-	roleAssignmentService "github.com/Kisanlink/aaa-service/internal/services/role_assignments"
+	"github.com/Kisanlink/aaa-service/v2/internal/interfaces"
+	permissionService "github.com/Kisanlink/aaa-service/v2/internal/services/permissions"
+	roleAssignmentService "github.com/Kisanlink/aaa-service/v2/internal/services/role_assignments"
 	"go.uber.org/zap"
 )
 

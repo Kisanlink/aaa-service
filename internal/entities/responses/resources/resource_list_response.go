@@ -3,7 +3,7 @@ package resources
 import (
 	"time"
 
-	"github.com/Kisanlink/aaa-service/internal/entities/models"
+	"github.com/Kisanlink/aaa-service/v2/internal/entities/models"
 )
 
 // ResourceListResponse represents a paginated list of resources

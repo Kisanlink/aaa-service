@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Kisanlink/aaa-service/internal/interfaces"
+	"github.com/Kisanlink/aaa-service/v2/internal/interfaces"
 	"github.com/go-redis/redis/v8"
 	"go.uber.org/zap"
 	"golang.org/x/net/context"

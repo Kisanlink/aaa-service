@@ -3,11 +3,11 @@ package modules
 import (
 	"net/http"
 
-	"github.com/Kisanlink/aaa-service/internal/entities/requests"
-	"github.com/Kisanlink/aaa-service/internal/interfaces"
-	"github.com/Kisanlink/aaa-service/internal/services"
-	"github.com/Kisanlink/aaa-service/pkg/errors"
-	"github.com/Kisanlink/aaa-service/utils"
+	"github.com/Kisanlink/aaa-service/v2/internal/entities/requests"
+	"github.com/Kisanlink/aaa-service/v2/internal/interfaces"
+	"github.com/Kisanlink/aaa-service/v2/internal/services"
+	"github.com/Kisanlink/aaa-service/v2/pkg/errors"
+	"github.com/Kisanlink/aaa-service/v2/utils"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )

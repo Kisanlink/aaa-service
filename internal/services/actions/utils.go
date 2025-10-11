@@ -3,8 +3,8 @@ package actions
 import (
 	"fmt"
 
-	"github.com/Kisanlink/aaa-service/internal/entities/models"
-	actionResponses "github.com/Kisanlink/aaa-service/internal/entities/responses/actions"
+	"github.com/Kisanlink/aaa-service/v2/internal/entities/models"
+	actionResponses "github.com/Kisanlink/aaa-service/v2/internal/entities/responses/actions"
 	"go.uber.org/zap"
 )
 

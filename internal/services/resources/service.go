@@ -3,9 +3,9 @@ package resources
 import (
 	"context"
 
-	"github.com/Kisanlink/aaa-service/internal/entities/models"
-	"github.com/Kisanlink/aaa-service/internal/interfaces"
-	resourceRepo "github.com/Kisanlink/aaa-service/internal/repositories/resources"
+	"github.com/Kisanlink/aaa-service/v2/internal/entities/models"
+	"github.com/Kisanlink/aaa-service/v2/internal/interfaces"
+	resourceRepo "github.com/Kisanlink/aaa-service/v2/internal/repositories/resources"
 	"go.uber.org/zap"
 )
 

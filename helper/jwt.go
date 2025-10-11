@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Kisanlink/aaa-service/internal/config"
-	"github.com/Kisanlink/aaa-service/internal/entities/models"
+	"github.com/Kisanlink/aaa-service/v2/internal/config"
+	"github.com/Kisanlink/aaa-service/v2/internal/entities/models"
 	jwt "github.com/golang-jwt/jwt/v4"
 )
 

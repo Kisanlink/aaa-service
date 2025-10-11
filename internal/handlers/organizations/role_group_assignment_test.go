@@ -11,8 +11,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	groupRequests "github.com/Kisanlink/aaa-service/internal/entities/requests/groups"
-	groupResponses "github.com/Kisanlink/aaa-service/internal/entities/responses/groups"
+	groupRequests "github.com/Kisanlink/aaa-service/v2/internal/entities/requests/groups"
+	groupResponses "github.com/Kisanlink/aaa-service/v2/internal/entities/responses/groups"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"

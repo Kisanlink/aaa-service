@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Kisanlink/aaa-service/pkg/models"
+	"github.com/Kisanlink/aaa-service/v2/pkg/models"
 )
 
 // Client represents the AAA service client

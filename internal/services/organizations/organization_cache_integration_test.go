@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Kisanlink/aaa-service/internal/entities/models"
-	organizationResponses "github.com/Kisanlink/aaa-service/internal/entities/responses/organizations"
+	"github.com/Kisanlink/aaa-service/v2/internal/entities/models"
+	organizationResponses "github.com/Kisanlink/aaa-service/v2/internal/entities/responses/organizations"
 	"github.com/Kisanlink/kisanlink-db/pkg/base"
 	"github.com/Kisanlink/kisanlink-db/pkg/core/hash"
 	"github.com/go-redis/redis/v8"

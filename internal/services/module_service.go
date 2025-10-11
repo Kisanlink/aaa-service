@@ -3,9 +3,9 @@ package services
 import (
 	"context"
 
-	"github.com/Kisanlink/aaa-service/internal/entities/requests"
-	"github.com/Kisanlink/aaa-service/internal/entities/responses"
-	"github.com/Kisanlink/aaa-service/pkg/errors"
+	"github.com/Kisanlink/aaa-service/v2/internal/entities/requests"
+	"github.com/Kisanlink/aaa-service/v2/internal/entities/responses"
+	"github.com/Kisanlink/aaa-service/v2/pkg/errors"
 	"go.uber.org/zap"
 )
 

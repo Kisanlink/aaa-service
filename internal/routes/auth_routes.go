@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Kisanlink/aaa-service/internal/services"
-	"github.com/Kisanlink/aaa-service/pkg/errors"
+	"github.com/Kisanlink/aaa-service/v2/internal/services"
+	"github.com/Kisanlink/aaa-service/v2/pkg/errors"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )

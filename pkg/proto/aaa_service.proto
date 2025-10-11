@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package pb;
 
-option go_package = "github.com/Kisanlink/aaa-service/pkg/proto;pb";
+option go_package = "github.com/Kisanlink/aaa-service/v2/pkg/proto;pb";
 
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/struct.proto";
@@ -10,6 +10,7 @@ import "auth.proto";
 import "token.proto";
 import "authorization.proto";
 import "organization.proto";
+import "catalog.proto";
 
 // Health Check Request
 message HealthCheckRequest {
@@ -333,16 +334,16 @@ service AAAService {
     rpc GetSystemInfo(SystemInfoRequest) returns (SystemInfoResponse);
 
     // User Management (from UserService)
-    rpc Login(LoginRequestV2) returns (LoginResponseV2);
-    rpc Register(RegisterRequestV2) returns (RegisterResponseV2);
-    rpc GetUser(GetUserRequestV2) returns (GetUserResponseV2);
-    rpc GetAllUsers(GetAllUsersRequestV2) returns (GetAllUsersResponseV2);
-    rpc UpdateUser(UpdateUserRequestV2) returns (UpdateUserResponseV2);
-    rpc DeleteUser(DeleteUserRequestV2) returns (DeleteUserResponseV2);
-    rpc RefreshToken(RefreshTokenRequestV2) returns (RefreshTokenResponseV2);
-    rpc Logout(LogoutRequestV2) returns (LogoutResponseV2);
-    rpc GetUserByPhone(GetUserByPhoneRequestV2) returns (GetUserResponseV2);
-    rpc VerifyUserPassword(VerifyPasswordRequestV2) returns (VerifyPasswordResponseV2);
+    rpc Login(LoginRequest) returns (LoginResponse);
+    rpc Register(RegisterRequest) returns (RegisterResponse);
+    rpc GetUser(GetUserRequest) returns (GetUserResponse);
+    rpc GetAllUsers(GetAllUsersRequest) returns (GetAllUsersResponse);
+    rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse);
+    rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
+    rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
+    rpc Logout(LogoutRequest) returns (LogoutResponse);
+    rpc GetUserByPhone(GetUserByPhoneRequest) returns (GetUserResponse);
+    rpc VerifyUserPassword(VerifyPasswordRequest) returns (VerifyPasswordResponse);
 
     // Token Management (from TokenService)
     rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse);

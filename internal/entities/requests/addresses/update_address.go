@@ -1,8 +1,8 @@
 package addresses
 
 import (
-	"github.com/Kisanlink/aaa-service/internal/entities/models"
-	"github.com/Kisanlink/aaa-service/internal/entities/requests"
+	"github.com/Kisanlink/aaa-service/v2/internal/entities/models"
+	"github.com/Kisanlink/aaa-service/v2/internal/entities/requests"
 )
 
 // UpdateAddressRequest represents a request to update an address

@@ -1,7 +1,7 @@
 package permissions
 
 import (
-	"github.com/Kisanlink/aaa-service/pkg/errors"
+	"github.com/Kisanlink/aaa-service/v2/pkg/errors"
 )
 
 // AssignPermissionRequest represents the request to assign permissions to a role

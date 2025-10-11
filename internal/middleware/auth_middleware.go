@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Kisanlink/aaa-service/internal/config"
-	"github.com/Kisanlink/aaa-service/internal/entities/models"
-	"github.com/Kisanlink/aaa-service/internal/services"
+	"github.com/Kisanlink/aaa-service/v2/internal/config"
+	"github.com/Kisanlink/aaa-service/v2/internal/entities/models"
+	"github.com/Kisanlink/aaa-service/v2/internal/services"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"

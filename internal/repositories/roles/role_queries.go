@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/Kisanlink/aaa-service/internal/entities/models"
+	"github.com/Kisanlink/aaa-service/v2/internal/entities/models"
 )
 
 // GetByName is implemented in role_repository.go

@@ -1,0 +1,163 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "github.com/Kisanlink/aaa-service/v2/pkg/proto;pb";
+
+import "google/protobuf/timestamp.proto";
+import "aaa_service.proto";
+
+// Client Configuration for connecting to AAA Service
+message AAAClientConfig {
+    string service_address = 1;     // gRPC server address (e.g., "localhost:50051")
+    bool use_tls = 2;              // Enable TLS connection
+    string tls_cert_path = 3;      // Path to TLS certificate
+    string tls_key_path = 4;       // Path to TLS private key
+    string tls_ca_cert_path = 5;   // Path to CA certificate
+    int32 timeout_seconds = 6;     // Request timeout in seconds
+    int32 max_retry_attempts = 7;  // Maximum retry attempts
+    bool enable_compression = 8;   // Enable gRPC compression
+    string api_key = 9;            // API key for authentication
+    map<string, string> metadata = 10;  // Additional metadata headers
+}
+
+// Client Connection Status
+message ClientConnectionStatus {
+    bool is_connected = 1;
+    string status = 2;                       // "connected", "disconnected", "connecting", "error"
+    google.protobuf.Timestamp last_connected = 3;
+    google.protobuf.Timestamp last_heartbeat = 4;
+    int32 active_requests = 5;
+    int64 total_requests = 6;
+    int64 failed_requests = 7;
+    string error_message = 8;
+    double average_latency_ms = 9;
+}
+
+// Client Health Check Request
+message ClientHealthCheckRequest {
+    bool include_server_info = 1;
+    bool include_metrics = 2;
+}
+
+// Client Health Check Response
+message ClientHealthCheckResponse {
+    ClientConnectionStatus connection_status = 1;
+    HealthCheckResponse server_health = 2;
+    google.protobuf.Timestamp checked_at = 3;
+}
+
+// Batch Request wrapper for efficient bulk operations
+message BatchRequest {
+    repeated string request_ids = 1;
+    repeated bytes serialized_requests = 2;  // Serialized individual requests
+    int32 batch_size = 3;
+    string batch_id = 4;
+    bool fail_fast = 5;                      // Stop processing on first error
+}
+
+// Batch Response wrapper
+message BatchResponse {
+    string batch_id = 1;
+    repeated BatchItemResponse responses = 2;
+    int32 success_count = 3;
+    int32 failure_count = 4;
+    int64 processing_time_ms = 5;
+}
+
+// Individual batch item response
+message BatchItemResponse {
+    string request_id = 1;
+    bool success = 2;
+    bytes serialized_response = 3;  // Serialized individual response
+    string error_message = 4;
+    int32 status_code = 5;
+}
+
+// Client Authentication Context
+message ClientAuthContext {
+    string access_token = 1;
+    string refresh_token = 2;
+    google.protobuf.Timestamp token_expires_at = 3;
+    string user_id = 4;
+    string organization_id = 5;
+    repeated string permissions = 6;
+    map<string, string> session_metadata = 7;
+}
+
+// Client Session Management
+message ClientSession {
+    string session_id = 1;
+    ClientAuthContext auth_context = 2;
+    google.protobuf.Timestamp created_at = 3;
+    google.protobuf.Timestamp last_activity = 4;
+    bool is_active = 5;
+}
+
+// Refresh Client Session Request
+message RefreshClientSessionRequest {
+    string session_id = 1;
+    string refresh_token = 2;
+}
+
+// Refresh Client Session Response
+message RefreshClientSessionResponse {
+    int32 status_code = 1;
+    string message = 2;
+    ClientSession session = 3;
+    ClientAuthContext updated_auth = 4;
+}
+
+// Client Request Tracing
+message ClientRequestTrace {
+    string trace_id = 1;
+    string span_id = 2;
+    string parent_span_id = 3;
+    string operation_name = 4;
+    google.protobuf.Timestamp start_time = 5;
+    google.protobuf.Timestamp end_time = 6;
+    int64 duration_ms = 7;
+    map<string, string> tags = 8;
+    repeated string logs = 9;
+}
+
+// Client Metrics
+message ClientMetrics {
+    int64 total_requests = 1;
+    int64 successful_requests = 2;
+    int64 failed_requests = 3;
+    double success_rate = 4;
+    double average_latency_ms = 5;
+    double p50_latency_ms = 6;
+    double p95_latency_ms = 7;
+    double p99_latency_ms = 8;
+    int32 active_connections = 9;
+    google.protobuf.Timestamp metrics_collected_at = 10;
+}
+
+// Get Client Metrics Request
+message GetClientMetricsRequest {
+    bool reset_after_read = 1;
+    google.protobuf.Timestamp start_time = 2;
+    google.protobuf.Timestamp end_time = 3;
+}
+
+// Get Client Metrics Response
+message GetClientMetricsResponse {
+    int32 status_code = 1;
+    string message = 2;
+    ClientMetrics metrics = 3;
+}
+
+// AAA Client Management Service
+// This service is implemented by the client library itself for client-side operations
+service AAAClientService {
+    // Get current connection status
+    rpc GetConnectionStatus(ClientHealthCheckRequest) returns (ClientHealthCheckResponse);
+
+    // Refresh the client session
+    rpc RefreshSession(RefreshClientSessionRequest) returns (RefreshClientSessionResponse);
+
+    // Get client-side metrics
+    rpc GetClientMetrics(GetClientMetricsRequest) returns (GetClientMetricsResponse);
+}

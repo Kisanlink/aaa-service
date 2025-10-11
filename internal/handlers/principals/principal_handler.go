@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"strconv"
 
-	principalRequests "github.com/Kisanlink/aaa-service/internal/entities/requests/principals"
-	"github.com/Kisanlink/aaa-service/internal/interfaces"
-	"github.com/Kisanlink/aaa-service/internal/services/principals"
+	principalRequests "github.com/Kisanlink/aaa-service/v2/internal/entities/requests/principals"
+	"github.com/Kisanlink/aaa-service/v2/internal/interfaces"
+	"github.com/Kisanlink/aaa-service/v2/internal/services/principals"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )

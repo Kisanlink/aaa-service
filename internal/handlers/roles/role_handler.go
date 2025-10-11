@@ -6,12 +6,12 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/Kisanlink/aaa-service/internal/entities/models"
-	"github.com/Kisanlink/aaa-service/internal/entities/requests/roles"
-	responses "github.com/Kisanlink/aaa-service/internal/entities/responses"
-	roleResponses "github.com/Kisanlink/aaa-service/internal/entities/responses/roles"
-	"github.com/Kisanlink/aaa-service/internal/interfaces"
-	"github.com/Kisanlink/aaa-service/pkg/errors"
+	"github.com/Kisanlink/aaa-service/v2/internal/entities/models"
+	"github.com/Kisanlink/aaa-service/v2/internal/entities/requests/roles"
+	responses "github.com/Kisanlink/aaa-service/v2/internal/entities/responses"
+	roleResponses "github.com/Kisanlink/aaa-service/v2/internal/entities/responses/roles"
+	"github.com/Kisanlink/aaa-service/v2/internal/interfaces"
+	"github.com/Kisanlink/aaa-service/v2/pkg/errors"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )

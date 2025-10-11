@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/Kisanlink/aaa-service/internal/entities/models"
-	userRequests "github.com/Kisanlink/aaa-service/internal/entities/requests/users"
-	userResponses "github.com/Kisanlink/aaa-service/internal/entities/responses/users"
+	"github.com/Kisanlink/aaa-service/v2/internal/entities/models"
+	userRequests "github.com/Kisanlink/aaa-service/v2/internal/entities/requests/users"
+	userResponses "github.com/Kisanlink/aaa-service/v2/internal/entities/responses/users"
 	"github.com/Kisanlink/kisanlink-db/pkg/base"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"

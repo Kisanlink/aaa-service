@@ -1,8 +1,8 @@
 package organizations
 
 import (
-	groupResponses "github.com/Kisanlink/aaa-service/internal/entities/responses/groups"
-	roleResponses "github.com/Kisanlink/aaa-service/internal/entities/responses/roles"
+	groupResponses "github.com/Kisanlink/aaa-service/v2/internal/entities/responses/groups"
+	roleResponses "github.com/Kisanlink/aaa-service/v2/internal/entities/responses/roles"
 )
 
 // OrganizationHierarchyGroupNode represents a group node in the organization hierarchy

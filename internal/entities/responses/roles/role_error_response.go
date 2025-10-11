@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/Kisanlink/aaa-service/internal/entities/responses"
+	"github.com/Kisanlink/aaa-service/v2/internal/entities/responses"
 )
 
 // RoleErrorType represents different types of role-related errors

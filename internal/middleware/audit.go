@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Kisanlink/aaa-service/internal/services"
+	"github.com/Kisanlink/aaa-service/v2/internal/services"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )

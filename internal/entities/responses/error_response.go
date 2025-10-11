@@ -3,7 +3,7 @@ package responses
 import (
 	"time"
 
-	"github.com/Kisanlink/aaa-service/pkg/errors"
+	"github.com/Kisanlink/aaa-service/v2/pkg/errors"
 )
 
 // ErrorResponse represents a standardized error response
