@@ -390,7 +390,11 @@ func (s *AuthService) Register(ctx context.Context, req *RegisterRequest) (*Logi
 		})
 	}
 
-	s.logger.Info("User registered successfully", zap.String("user_id", user.ID), zap.String("username", *user.Username))
+	username := ""
+	if user.Username != nil {
+		username = *user.Username
+	}
+	s.logger.Info("User registered successfully", zap.String("user_id", user.ID), zap.String("username", username))
 
 	// Return successful registration without auto-login for now
 	return &LoginResponse{
