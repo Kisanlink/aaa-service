@@ -13,8 +13,8 @@ func SetupOrganizationRoutes(apiGroup *gin.RouterGroup, orgHandler *organization
 	// Note: The apiGroup is expected to be /api/v2 with auth middleware already applied
 	org := apiGroup.Group("/organizations")
 	{
-		org.POST("/", orgHandler.CreateOrganization)
-		org.GET("/", orgHandler.ListOrganizations)
+		org.POST("", orgHandler.CreateOrganization)
+		org.GET("", orgHandler.ListOrganizations)
 		org.GET("/:id", orgHandler.GetOrganization)
 		org.PUT("/:id", orgHandler.UpdateOrganization)
 		org.DELETE("/:id", orgHandler.DeleteOrganization)
