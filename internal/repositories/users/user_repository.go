@@ -34,9 +34,10 @@ func (r *UserRepository) Create(ctx context.Context, user *models.User) error {
 	return r.BaseFilterableRepository.Create(ctx, user)
 }
 
-// GetByID retrieves a user by ID using the base repository
+// GetByID retrieves a user by ID with active roles preloaded
 func (r *UserRepository) GetByID(ctx context.Context, id string, user *models.User) (*models.User, error) {
-	return r.BaseFilterableRepository.GetByID(ctx, id, user)
+	// Use GetWithActiveRoles for efficient loading with preloaded roles
+	return r.GetWithActiveRoles(ctx, id)
 }
 
 // Update updates an existing user using the base repository
@@ -182,7 +183,7 @@ func (r *UserRepository) getDB(ctx context.Context, readOnly bool) (*gorm.DB, er
 	return nil, fmt.Errorf("database manager does not support GetDB method")
 }
 
-// GetByUsername retrieves an active (non-deleted) user by username using kisanlink-db filters
+// GetByUsername retrieves an active (non-deleted) user by username with active roles preloaded
 func (r *UserRepository) GetByUsername(ctx context.Context, username string) (*models.User, error) {
 	filter := base.NewFilterBuilder().
 		Where("username", base.OpEqual, username).
@@ -199,10 +200,11 @@ func (r *UserRepository) GetByUsername(ctx context.Context, username string) (*m
 		return nil, fmt.Errorf("user not found with username: %s", username)
 	}
 
-	return users[0], nil
+	// Get the user with active roles preloaded
+	return r.GetWithActiveRoles(ctx, users[0].ID)
 }
 
-// GetByPhoneNumber retrieves an active (non-deleted) user by phone number using kisanlink-db filters
+// GetByPhoneNumber retrieves an active (non-deleted) user by phone number with active roles preloaded
 func (r *UserRepository) GetByPhoneNumber(ctx context.Context, phoneNumber string, countryCode string) (*models.User, error) {
 	filter := base.NewFilterBuilder().
 		Where("phone_number", base.OpEqual, phoneNumber).
@@ -220,7 +222,8 @@ func (r *UserRepository) GetByPhoneNumber(ctx context.Context, phoneNumber strin
 		return nil, fmt.Errorf("user not found with phone number: %s%s", countryCode, phoneNumber)
 	}
 
-	return users[0], nil
+	// Get the user with active roles preloaded
+	return r.GetWithActiveRoles(ctx, users[0].ID)
 }
 
 // GetByMobileNumber retrieves a user by mobile number using database-level filtering

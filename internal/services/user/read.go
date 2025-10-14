@@ -41,16 +41,9 @@ func (s *Service) GetUserByID(ctx context.Context, userID string) (*userResponse
 		return nil, errors.NewNotFoundError("user not found")
 	}
 
-	// Convert to response format
-	response := &userResponses.UserResponse{
-		ID:          user.ID,
-		Username:    user.Username,
-		PhoneNumber: user.PhoneNumber,
-		CountryCode: user.CountryCode,
-		IsValidated: user.IsValidated,
-		CreatedAt:   user.CreatedAt,
-		UpdatedAt:   user.UpdatedAt,
-	}
+	// Convert to response format using FromModel to include roles
+	response := &userResponses.UserResponse{}
+	response.FromModel(user)
 
 	// Cache the result
 	if err := s.cacheService.Set(cacheKey, response, 300); err != nil {
@@ -89,18 +82,11 @@ func (s *Service) ListUsers(ctx context.Context, limit, offset int) (interface{}
 		}
 	}
 
-	// Convert to response format
+	// Convert to response format using FromModel to include roles
 	responses := make([]*userResponses.UserResponse, len(activeUsers))
 	for i, user := range activeUsers {
-		responses[i] = &userResponses.UserResponse{
-			ID:          user.ID,
-			Username:    user.Username,
-			PhoneNumber: user.PhoneNumber,
-			CountryCode: user.CountryCode,
-			IsValidated: user.IsValidated,
-			CreatedAt:   user.CreatedAt,
-			UpdatedAt:   user.UpdatedAt,
-		}
+		responses[i] = &userResponses.UserResponse{}
+		responses[i].FromModel(user)
 	}
 
 	s.logger.Info("Users retrieved successfully",
