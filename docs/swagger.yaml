@@ -304,7 +304,7 @@ definitions:
         maxLength: 255
         type: string
     type: object
-  github_com_Kisanlink_aaa-service_internal_entities_requests_role_assignments.ResourceActionAssignment:
+  github_com_Kisanlink_aaa-service_v2_internal_entities_requests_role_assignments.ResourceActionAssignment:
     properties:
       actions:
         example:
@@ -460,6 +460,25 @@ definitions:
       parent_id:
         description: Optional parent organization ID
         example: ORGN00000001
+        type: string
+      type:
+        description: Organization type
+        enum:
+        - enterprise
+        - small_business
+        - individual
+        - fpo
+        - cooperative
+        - agribusiness
+        - farmers_group
+        - shg
+        - ngo
+        - government
+        - input_supplier
+        - trader
+        - processing_unit
+        - research_institute
+        example: fpo
         type: string
     required:
     - name
@@ -632,6 +651,8 @@ definitions:
         type: string
       parent_id:
         type: string
+      type:
+        type: string
       updated_at:
         type: string
     type: object
@@ -691,6 +712,25 @@ definitions:
       parent_id:
         description: Parent organization ID
         example: ORGN00000002
+        type: string
+      type:
+        description: Organization type
+        enum:
+        - enterprise
+        - small_business
+        - individual
+        - fpo
+        - cooperative
+        - agribusiness
+        - farmers_group
+        - shg
+        - ngo
+        - government
+        - input_supplier
+        - trader
+        - processing_unit
+        - research_institute
+        example: cooperative
         type: string
     type: object
   organizations.UserEffectiveRolesResponse:
@@ -1855,7 +1895,7 @@ definitions:
     properties:
       assignments:
         items:
-          $ref: '#/definitions/github_com_Kisanlink_aaa-service_internal_entities_requests_role_assignments.ResourceActionAssignment'
+          $ref: '#/definitions/github_com_Kisanlink_aaa-service_v2_internal_entities_requests_role_assignments.ResourceActionAssignment'
         minItems: 1
         type: array
     required:
@@ -4133,7 +4173,8 @@ paths:
       - modules
   /api/v2/organizations:
     get:
-      description: Retrieve a list of organizations with pagination
+      description: Retrieve a list of organizations with pagination and optional type
+        filter
       parameters:
       - description: 'Number of organizations to return (default: 10, max: 100)'
         in: query
@@ -4147,6 +4188,12 @@ paths:
         in: query
         name: include_inactive
         type: boolean
+      - description: Filter by organization type (enterprise, small_business, individual,
+          fpo, cooperative, agribusiness, farmers_group, shg, ngo, government, input_supplier,
+          trader, processing_unit, research_institute)
+        in: query
+        name: type
+        type: string
       produces:
       - application/json
       responses:

@@ -242,12 +242,13 @@ func (h *Handler) DeleteOrganization(c *gin.Context) {
 // ListOrganizations handles GET /organizations
 //
 //	@Summary		List organizations
-//	@Description	Retrieve a list of organizations with pagination
+//	@Description	Retrieve a list of organizations with pagination and optional type filter
 //	@Tags			organizations
 //	@Produce		json
 //	@Param			limit				query		int		false	"Number of organizations to return (default: 10, max: 100)"
 //	@Param			offset				query		int		false	"Number of organizations to skip (default: 0)"
 //	@Param			include_inactive	query		bool	false	"Include inactive organizations (default: false)"
+//	@Param			type				query		string	false	"Filter by organization type (enterprise, small_business, individual, fpo, cooperative, agribusiness, farmers_group, shg, ngo, government, input_supplier, trader, processing_unit, research_institute)"
 //	@Success		200					{array}		organizations.OrganizationResponse
 //	@Failure		500					{object}	responses.ErrorResponse
 //	@Router			/api/v2/organizations [get]
@@ -256,6 +257,7 @@ func (h *Handler) ListOrganizations(c *gin.Context) {
 	limitStr := c.DefaultQuery("limit", "10")
 	offsetStr := c.DefaultQuery("offset", "0")
 	includeInactiveStr := c.DefaultQuery("include_inactive", "false")
+	orgType := c.Query("type")
 
 	limit, err := strconv.Atoi(limitStr)
 	if err != nil || limit <= 0 {
@@ -278,7 +280,7 @@ func (h *Handler) ListOrganizations(c *gin.Context) {
 	}
 
 	// List organizations
-	orgs, err := h.orgService.ListOrganizations(c.Request.Context(), limit, offset, includeInactive)
+	orgs, err := h.orgService.ListOrganizations(c.Request.Context(), limit, offset, includeInactive, orgType)
 	if err != nil {
 		h.logger.Error("Failed to list organizations", zap.Error(err))
 		h.responder.SendError(c, http.StatusInternalServerError, "failed to list organizations", nil)

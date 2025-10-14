@@ -2934,7 +2934,7 @@ const docTemplate = `{
         },
         "/api/v2/organizations": {
             "get": {
-                "description": "Retrieve a list of organizations with pagination",
+                "description": "Retrieve a list of organizations with pagination and optional type filter",
                 "produces": [
                     "application/json"
                 ],
@@ -2959,6 +2959,12 @@ const docTemplate = `{
                         "type": "boolean",
                         "description": "Include inactive organizations (default: false)",
                         "name": "include_inactive",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by organization type (enterprise, small_business, individual, fpo, cooperative, agribusiness, farmers_group, shg, ngo, government, input_supplier, trader, processing_unit, research_institute)",
+                        "name": "type",
                         "in": "query"
                     }
                 ],
@@ -6099,7 +6105,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_Kisanlink_aaa-service_internal_entities_requests_role_assignments.ResourceActionAssignment": {
+        "github_com_Kisanlink_aaa-service_v2_internal_entities_requests_role_assignments.ResourceActionAssignment": {
             "type": "object",
             "required": [
                 "actions",
@@ -6317,6 +6323,27 @@ const docTemplate = `{
                     "description": "Optional parent organization ID",
                     "type": "string",
                     "example": "ORGN00000001"
+                },
+                "type": {
+                    "description": "Organization type",
+                    "type": "string",
+                    "enum": [
+                        "enterprise",
+                        "small_business",
+                        "individual",
+                        "fpo",
+                        "cooperative",
+                        "agribusiness",
+                        "farmers_group",
+                        "shg",
+                        "ngo",
+                        "government",
+                        "input_supplier",
+                        "trader",
+                        "processing_unit",
+                        "research_institute"
+                    ],
+                    "example": "fpo"
                 }
             }
         },
@@ -6576,6 +6603,9 @@ const docTemplate = `{
                 "parent_id": {
                     "type": "string"
                 },
+                "type": {
+                    "type": "string"
+                },
                 "updated_at": {
                     "type": "string"
                 }
@@ -6653,6 +6683,27 @@ const docTemplate = `{
                     "description": "Parent organization ID",
                     "type": "string",
                     "example": "ORGN00000002"
+                },
+                "type": {
+                    "description": "Organization type",
+                    "type": "string",
+                    "enum": [
+                        "enterprise",
+                        "small_business",
+                        "individual",
+                        "fpo",
+                        "cooperative",
+                        "agribusiness",
+                        "farmers_group",
+                        "shg",
+                        "ngo",
+                        "government",
+                        "input_supplier",
+                        "trader",
+                        "processing_unit",
+                        "research_institute"
+                    ],
+                    "example": "cooperative"
                 }
             }
         },
@@ -8299,7 +8350,7 @@ const docTemplate = `{
                     "type": "array",
                     "minItems": 1,
                     "items": {
-                        "$ref": "#/definitions/github_com_Kisanlink_aaa-service_internal_entities_requests_role_assignments.ResourceActionAssignment"
+                        "$ref": "#/definitions/github_com_Kisanlink_aaa-service_v2_internal_entities_requests_role_assignments.ResourceActionAssignment"
                     }
                 }
             }

@@ -82,7 +82,7 @@ func (h *OrganizationHandler) GetOrganization(ctx context.Context, req *pb.GetOr
 			DisplayName: org.Name, // Use name as display name
 			Description: org.Description,
 			Status:      orgStatus,
-			Type:        "enterprise", // Default type
+			Type:        org.Type,
 		},
 	}
 
@@ -125,6 +125,7 @@ func (h *OrganizationHandler) CreateOrganization(ctx context.Context, req *pb.Cr
 	// Create service request
 	createReq := &organizations.CreateOrganizationRequest{
 		Name:        req.Name,
+		Type:        req.Type,
 		Description: req.Description,
 	}
 
@@ -172,7 +173,7 @@ func (h *OrganizationHandler) CreateOrganization(ctx context.Context, req *pb.Cr
 			DisplayName: org.Name,
 			Description: org.Description,
 			Status:      orgStatus,
-			Type:        req.Type,
+			Type:        org.Type,
 		},
 	}, nil
 }
@@ -201,7 +202,7 @@ func (h *OrganizationHandler) ListOrganizations(ctx context.Context, req *pb.Lis
 	offset := (page - 1) * perPage
 
 	// List organizations
-	orgsInterface, err := h.orgService.ListOrganizations(ctx, perPage, offset, true) // include inactive
+	orgsInterface, err := h.orgService.ListOrganizations(ctx, perPage, offset, true, req.Type) // include inactive and filter by type
 	if err != nil {
 		h.logger.Error("Failed to list organizations", zap.Error(err))
 		return &pb.ListOrganizationsResponse{
@@ -230,7 +231,7 @@ func (h *OrganizationHandler) ListOrganizations(ctx context.Context, req *pb.Lis
 			DisplayName: org.Name,
 			Description: org.Description,
 			Status:      orgStatus,
-			Type:        "enterprise",
+			Type:        org.Type,
 		}
 
 		if org.ParentID != nil {

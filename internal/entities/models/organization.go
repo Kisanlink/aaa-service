@@ -10,6 +10,7 @@ import (
 type Organization struct {
 	*base.BaseModel
 	Name        string  `json:"name" gorm:"size:100;not null;uniqueIndex"`
+	Type        string  `json:"type" gorm:"size:50;default:'individual'"` // "enterprise", "small_business", "individual"
 	Description string  `json:"description" gorm:"type:text"`
 	ParentID    *string `json:"parent_id" gorm:"type:varchar(255);default:null"` // For org hierarchy
 	IsActive    bool    `json:"is_active" gorm:"default:true"`
@@ -23,16 +24,58 @@ type Organization struct {
 const (
 	OrgTable     = "ORGN"
 	OrgTableSize = hash.Medium
+
+	// Organization types
+	OrgTypeEnterprise        = "enterprise"
+	OrgTypeSmallBusiness     = "small_business"
+	OrgTypeIndividual        = "individual"
+	OrgTypeFPO               = "fpo"                // Farmer Producer Organization
+	OrgTypeCooperative       = "cooperative"        // Agricultural Cooperative
+	OrgTypeAgribusiness      = "agribusiness"       // Agribusiness Company
+	OrgTypeFarmersGroup      = "farmers_group"      // Informal Farmers Group
+	OrgTypeSHG               = "shg"                // Self Help Group
+	OrgTypeNGO               = "ngo"                // Non-Governmental Organization
+	OrgTypeGovernment        = "government"         // Government Agency
+	OrgTypeInputSupplier     = "input_supplier"     // Seeds, Fertilizers, Equipment Suppliers
+	OrgTypeTrader            = "trader"             // Agricultural Traders/Aggregators
+	OrgTypeProcessingUnit    = "processing_unit"    // Food Processing Units
+	OrgTypeResearchInstitute = "research_institute" // Agricultural Research Organizations
 )
 
 // NewOrganization creates a new Organization instance
-func NewOrganization(name, description string) *Organization {
+func NewOrganization(name, description, orgType string) *Organization {
+	// Default to individual if type is empty
+	if orgType == "" {
+		orgType = OrgTypeIndividual
+	}
 	return &Organization{
 		BaseModel:   base.NewBaseModel("ORGN", hash.Medium),
 		Name:        name,
+		Type:        orgType,
 		Description: description,
 		IsActive:    true,
 	}
+}
+
+// ValidOrganizationType checks if the provided organization type is valid
+func ValidOrganizationType(orgType string) bool {
+	validTypes := map[string]bool{
+		OrgTypeEnterprise:        true,
+		OrgTypeSmallBusiness:     true,
+		OrgTypeIndividual:        true,
+		OrgTypeFPO:               true,
+		OrgTypeCooperative:       true,
+		OrgTypeAgribusiness:      true,
+		OrgTypeFarmersGroup:      true,
+		OrgTypeSHG:               true,
+		OrgTypeNGO:               true,
+		OrgTypeGovernment:        true,
+		OrgTypeInputSupplier:     true,
+		OrgTypeTrader:            true,
+		OrgTypeProcessingUnit:    true,
+		OrgTypeResearchInstitute: true,
+	}
+	return validTypes[orgType]
 }
 
 // BeforeCreate is called before creating a new organization

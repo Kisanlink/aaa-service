@@ -10,6 +10,7 @@ import (
 type OrganizationResponse struct {
 	ID          string     `json:"id"`
 	Name        string     `json:"name"`
+	Type        string     `json:"type"`
 	Description string     `json:"description"`
 	ParentID    *string    `json:"parent_id"`
 	IsActive    bool       `json:"is_active"`

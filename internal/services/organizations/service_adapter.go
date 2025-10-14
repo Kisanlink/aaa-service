@@ -53,8 +53,8 @@ func (a *ServiceAdapter) DeleteOrganization(ctx context.Context, orgID string, d
 }
 
 // ListOrganizations adapts the concrete method to the interface
-func (a *ServiceAdapter) ListOrganizations(ctx context.Context, limit, offset int, includeInactive bool) ([]interface{}, error) {
-	orgs, err := a.service.ListOrganizations(ctx, limit, offset, includeInactive)
+func (a *ServiceAdapter) ListOrganizations(ctx context.Context, limit, offset int, includeInactive bool, orgType string) ([]interface{}, error) {
+	orgs, err := a.service.ListOrganizations(ctx, limit, offset, includeInactive, orgType)
 	if err != nil {
 		return nil, err
 	}

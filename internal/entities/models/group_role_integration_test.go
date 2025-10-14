@@ -13,7 +13,7 @@ import (
 func TestGroupRole_ModelIntegration_WithRelatedModels(t *testing.T) {
 	t.Run("integration with organization model", func(t *testing.T) {
 		// Create an organization
-		org := NewOrganization("Test Org", "Test Organization")
+		org := NewOrganization("Test Org", "Test Organization", OrgTypeIndividual)
 		require.NotNil(t, org)
 		require.NotEmpty(t, org.GetID())
 

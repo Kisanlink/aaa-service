@@ -82,8 +82,14 @@ func (s *Service) CreateOrganization(ctx context.Context, req *organizations.Cre
 		}
 	}
 
+	// Validate organization type if provided
+	if req.Type != "" && !models.ValidOrganizationType(req.Type) {
+		s.logger.Warn("Invalid organization type", zap.String("type", req.Type))
+		return nil, errors.NewValidationError("invalid organization type")
+	}
+
 	// Create organization model
-	org := models.NewOrganization(req.Name, req.Description)
+	org := models.NewOrganization(req.Name, req.Description, req.Type)
 	if req.ParentID != nil && *req.ParentID != "" {
 		org.ParentID = req.ParentID
 	}
@@ -124,6 +130,7 @@ func (s *Service) CreateOrganization(ctx context.Context, req *organizations.Cre
 	response := &organizationResponses.OrganizationResponse{
 		ID:          org.ID,
 		Name:        org.Name,
+		Type:        org.Type,
 		Description: org.Description,
 		ParentID:    org.ParentID,
 		IsActive:    org.IsActive,
@@ -147,6 +154,7 @@ func (s *Service) GetOrganization(ctx context.Context, orgID string) (*organizat
 	response := &organizationResponses.OrganizationResponse{
 		ID:          org.ID,
 		Name:        org.Name,
+		Type:        org.Type,
 		Description: org.Description,
 		ParentID:    org.ParentID,
 		IsActive:    org.IsActive,
@@ -203,9 +211,18 @@ func (s *Service) UpdateOrganization(ctx context.Context, orgID string, req *org
 		}
 	}
 
+	// Validate organization type if being changed
+	if req.Type != nil && *req.Type != org.Type {
+		if !models.ValidOrganizationType(*req.Type) {
+			s.logger.Warn("Invalid organization type", zap.String("type", *req.Type))
+			return nil, errors.NewValidationError("invalid organization type")
+		}
+	}
+
 	// Capture old values for audit logging
 	oldValues := map[string]interface{}{
 		"name":        org.Name,
+		"type":        org.Type,
 		"description": org.Description,
 		"parent_id":   org.ParentID,
 		"is_active":   org.IsActive,
@@ -222,6 +239,9 @@ func (s *Service) UpdateOrganization(ctx context.Context, orgID string, req *org
 	// Update fields
 	if req.Name != nil {
 		org.Name = *req.Name
+	}
+	if req.Type != nil {
+		org.Type = *req.Type
 	}
 	if req.Description != nil {
 		org.Description = *req.Description
@@ -242,6 +262,7 @@ func (s *Service) UpdateOrganization(ctx context.Context, orgID string, req *org
 	// Capture new values for audit logging
 	newValues := map[string]interface{}{
 		"name":        org.Name,
+		"type":        org.Type,
 		"description": org.Description,
 		"parent_id":   org.ParentID,
 		"is_active":   org.IsActive,
@@ -292,6 +313,7 @@ func (s *Service) UpdateOrganization(ctx context.Context, orgID string, req *org
 	response := &organizationResponses.OrganizationResponse{
 		ID:          org.ID,
 		Name:        org.Name,
+		Type:        org.Type,
 		Description: org.Description,
 		ParentID:    org.ParentID,
 		IsActive:    org.IsActive,
@@ -367,13 +389,25 @@ func (s *Service) DeleteOrganization(ctx context.Context, orgID string, deletedB
 }
 
 // ListOrganizations retrieves organizations with pagination and filtering
-func (s *Service) ListOrganizations(ctx context.Context, limit, offset int, includeInactive bool) ([]*organizationResponses.OrganizationResponse, error) {
-	s.logger.Info("Listing organizations", zap.Int("limit", limit), zap.Int("offset", offset))
+func (s *Service) ListOrganizations(ctx context.Context, limit, offset int, includeInactive bool, orgType string) ([]*organizationResponses.OrganizationResponse, error) {
+	s.logger.Info("Listing organizations",
+		zap.Int("limit", limit),
+		zap.Int("offset", offset),
+		zap.String("type", orgType))
+
+	// Validate organization type if provided
+	if orgType != "" && !models.ValidOrganizationType(orgType) {
+		s.logger.Warn("Invalid organization type for filter", zap.String("type", orgType))
+		return nil, errors.NewValidationError("invalid organization type")
+	}
 
 	var orgs []*models.Organization
 	var err error
 
-	if includeInactive {
+	// Apply type filter if provided
+	if orgType != "" {
+		orgs, err = s.orgRepo.GetByType(ctx, orgType, limit, offset)
+	} else if includeInactive {
 		orgs, err = s.orgRepo.List(ctx, limit, offset)
 	} else {
 		orgs, err = s.orgRepo.ListActive(ctx, limit, offset)
@@ -390,6 +424,7 @@ func (s *Service) ListOrganizations(ctx context.Context, limit, offset int, incl
 		responses[i] = &organizationResponses.OrganizationResponse{
 			ID:          org.ID,
 			Name:        org.Name,
+			Type:        org.Type,
 			Description: org.Description,
 			ParentID:    org.ParentID,
 			IsActive:    org.IsActive,
@@ -458,6 +493,7 @@ func (s *Service) GetOrganizationHierarchy(ctx context.Context, orgID string) (*
 		Organization: &organizationResponses.OrganizationResponse{
 			ID:          org.ID,
 			Name:        org.Name,
+			Type:        org.Type,
 			Description: org.Description,
 			ParentID:    org.ParentID,
 			IsActive:    org.IsActive,
@@ -474,6 +510,7 @@ func (s *Service) GetOrganizationHierarchy(ctx context.Context, orgID string) (*
 		response.Parents[i] = &organizationResponses.OrganizationResponse{
 			ID:          parent.ID,
 			Name:        parent.Name,
+			Type:        parent.Type,
 			Description: parent.Description,
 			ParentID:    parent.ParentID,
 			IsActive:    parent.IsActive,
@@ -487,6 +524,7 @@ func (s *Service) GetOrganizationHierarchy(ctx context.Context, orgID string) (*
 		response.Children[i] = &organizationResponses.OrganizationResponse{
 			ID:          child.ID,
 			Name:        child.Name,
+			Type:        child.Type,
 			Description: child.Description,
 			ParentID:    child.ParentID,
 			IsActive:    child.IsActive,

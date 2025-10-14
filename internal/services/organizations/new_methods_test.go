@@ -78,10 +78,11 @@ func TestNewOrganizationServiceMethods(t *testing.T) {
 // Test that demonstrates the business logic validation
 func TestOrganizationValidation(t *testing.T) {
 	t.Run("Organization model creation works", func(t *testing.T) {
-		org := models.NewOrganization("Test Org", "Test Description")
+		org := models.NewOrganization("Test Org", "Test Description", models.OrgTypeFPO)
 		assert.NotNil(t, org)
 		assert.Equal(t, "Test Org", org.Name)
 		assert.Equal(t, "Test Description", org.Description)
+		assert.Equal(t, models.OrgTypeFPO, org.Type)
 		assert.True(t, org.IsActive)
 	})
 

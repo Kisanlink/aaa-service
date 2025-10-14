@@ -133,7 +133,7 @@ type OrganizationService interface {
 	GetOrganization(ctx context.Context, orgID string) (interface{}, error)
 	UpdateOrganization(ctx context.Context, orgID string, req interface{}) (interface{}, error)
 	DeleteOrganization(ctx context.Context, orgID string, deletedBy string) error
-	ListOrganizations(ctx context.Context, limit, offset int, includeInactive bool) ([]interface{}, error)
+	ListOrganizations(ctx context.Context, limit, offset int, includeInactive bool, orgType string) ([]interface{}, error)
 	GetOrganizationHierarchy(ctx context.Context, orgID string) (interface{}, error)
 	ActivateOrganization(ctx context.Context, orgID string) error
 	DeactivateOrganization(ctx context.Context, orgID string) error
