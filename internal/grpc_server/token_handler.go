@@ -117,8 +117,7 @@ func (h *TokenHandler) ValidateToken(ctx context.Context, req *pb.ValidateTokenR
 
 	// Include user details if requested
 	if req.IncludeUserDetails {
-		user := &models.User{}
-		_, err := h.userRepository.GetByID(ctx, claims.UserID, user)
+		user, err := h.userRepository.GetByID(ctx, claims.UserID, &models.User{})
 		if err != nil {
 			h.logger.Warn("Failed to fetch user details", zap.String("user_id", claims.UserID), zap.Error(err))
 			response.Warnings = append(response.Warnings, "User details could not be loaded")
@@ -327,8 +326,7 @@ func (h *TokenHandler) CreateToken(ctx context.Context, req *pb.CreateTokenReque
 		zap.String("organization_id", req.OrganizationId))
 
 	// Get user details
-	user := &models.User{}
-	_, err := h.userRepository.GetByID(ctx, req.UserId, user)
+	user, err := h.userRepository.GetByID(ctx, req.UserId, &models.User{})
 	if err != nil {
 		h.logger.Error("Failed to fetch user for token creation", zap.Error(err))
 		return &pb.CreateTokenResponse{

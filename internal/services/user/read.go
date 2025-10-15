@@ -28,8 +28,7 @@ func (s *Service) GetUserByID(ctx context.Context, userID string) (*userResponse
 	}
 
 	// Get user from repository
-	user := &models.User{}
-	_, err := s.userRepo.GetByID(ctx, userID, user)
+	user, err := s.userRepo.GetByID(ctx, userID, &models.User{})
 	if err != nil {
 		s.logger.Error("Failed to get user by ID", zap.String("user_id", userID), zap.Error(err))
 		return nil, errors.NewNotFoundError("user not found")

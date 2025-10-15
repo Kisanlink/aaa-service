@@ -135,8 +135,7 @@ func (s *Service) ValidateUser(ctx context.Context, userID string) error {
 	}
 
 	// Get user to validate
-	user := &models.User{}
-	_, err := s.userRepo.GetByID(ctx, userID, user)
+	user, err := s.userRepo.GetByID(ctx, userID, &models.User{})
 	if err != nil {
 		s.logger.Error("Failed to get user for validation", zap.String("user_id", userID), zap.Error(err))
 		return errors.NewNotFoundError("user not found")
@@ -172,8 +171,7 @@ func (s *Service) DeductTokens(ctx context.Context, userID string, amount int) e
 	}
 
 	// Get user to deduct tokens from
-	user := &models.User{}
-	_, err := s.userRepo.GetByID(ctx, userID, user)
+	user, err := s.userRepo.GetByID(ctx, userID, &models.User{})
 	if err != nil {
 		s.logger.Error("Failed to get user for token deduction", zap.String("user_id", userID), zap.Error(err))
 		return errors.NewNotFoundError("user not found")
@@ -209,8 +207,7 @@ func (s *Service) AddTokens(ctx context.Context, userID string, amount int) erro
 	}
 
 	// Get user to add tokens to
-	user := &models.User{}
-	_, err := s.userRepo.GetByID(ctx, userID, user)
+	user, err := s.userRepo.GetByID(ctx, userID, &models.User{})
 	if err != nil {
 		s.logger.Error("Failed to get user for token addition", zap.String("user_id", userID), zap.Error(err))
 		return errors.NewNotFoundError("user not found")
@@ -262,8 +259,7 @@ func (s *Service) GetUserWithRoles(ctx context.Context, userID string) (*userRes
 	}
 
 	// Get user from repository
-	user := &models.User{}
-	_, err := s.userRepo.GetByID(ctx, userID, user)
+	user, err := s.userRepo.GetByID(ctx, userID, &models.User{})
 	if err != nil {
 		s.logger.Error("Failed to get user by ID", zap.String("user_id", userID), zap.Error(err))
 		return nil, errors.NewNotFoundError("user not found")
@@ -405,8 +401,7 @@ func (s *Service) SetMPin(ctx context.Context, userID string, mPin string, curre
 		}
 	}
 
-	user := &models.User{}
-	_, err := s.userRepo.GetByID(ctx, userID, user)
+	user, err := s.userRepo.GetByID(ctx, userID, &models.User{})
 	if err != nil {
 		s.logger.Error("Failed to get user for MPIN setting", zap.String("user_id", userID), zap.Error(err))
 		return errors.NewNotFoundError("user not found")
@@ -468,8 +463,7 @@ func (s *Service) UpdateMPin(ctx context.Context, userID, currentMPin, newMPin s
 		}
 	}
 
-	user := &models.User{}
-	_, err := s.userRepo.GetByID(ctx, userID, user)
+	user, err := s.userRepo.GetByID(ctx, userID, &models.User{})
 	if err != nil {
 		s.logger.Error("Failed to get user for MPIN update", zap.String("user_id", userID), zap.Error(err))
 		return errors.NewNotFoundError("user not found")
@@ -519,8 +513,7 @@ func (s *Service) VerifyMPin(ctx context.Context, userID string, mPin string) er
 		return errors.NewValidationError("user ID and mPin are required")
 	}
 
-	user := &models.User{}
-	_, err := s.userRepo.GetByID(ctx, userID, user)
+	user, err := s.userRepo.GetByID(ctx, userID, &models.User{})
 	if err != nil {
 		return errors.NewNotFoundError("user not found")
 	}
@@ -748,8 +741,7 @@ func (s *Service) SoftDeleteUserWithCascade(ctx context.Context, userID, deleted
 	}
 
 	// Check if user exists
-	user := &models.User{}
-	_, err := s.userRepo.GetByID(ctx, userID, user)
+	_, err := s.userRepo.GetByID(ctx, userID, &models.User{})
 	if err != nil {
 		s.logger.Error("Failed to get user for deletion", zap.String("user_id", userID), zap.Error(err))
 		return errors.NewNotFoundError("user not found")

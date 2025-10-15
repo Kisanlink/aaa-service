@@ -18,8 +18,7 @@ func (s *Service) DeleteUser(ctx context.Context, userID string) error {
 	}
 
 	// Get existing user
-	user := &models.User{}
-	_, err := s.userRepo.GetByID(ctx, userID, user)
+	_, err := s.userRepo.GetByID(ctx, userID, &models.User{})
 	if err != nil {
 		s.logger.Error("Failed to get existing user for deletion",
 			zap.String("user_id", userID),
@@ -77,9 +76,8 @@ func (s *Service) HardDeleteUser(ctx context.Context, userID string) error {
 		return errors.NewValidationError("user ID cannot be empty")
 	}
 
-	// Get existing user
-	user := &models.User{}
-	_, err := s.userRepo.GetByID(ctx, userID, user)
+	// Get existing user to validate existence
+	validatedUser, err := s.userRepo.GetByID(ctx, userID, &models.User{})
 	if err != nil {
 		s.logger.Error("Failed to get existing user for hard deletion",
 			zap.String("user_id", userID),
@@ -111,7 +109,7 @@ func (s *Service) HardDeleteUser(ctx context.Context, userID string) error {
 	}
 
 	// Perform hard delete
-	err = s.userRepo.Delete(ctx, userID, user)
+	err = s.userRepo.Delete(ctx, userID, validatedUser)
 	if err != nil {
 		s.logger.Error("Failed to hard delete user",
 			zap.String("user_id", userID),
