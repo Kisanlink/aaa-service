@@ -281,192 +281,54 @@ func (r *UserRepository) CountActive(ctx context.Context) (int64, error) {
 	return r.BaseFilterableRepository.CountWithFilter(ctx, filter)
 }
 
-// GetWithRoles retrieves a user with their roles using proper joins with goroutines
-func (r *UserRepository) GetWithRoles(ctx context.Context, userID string) (*models.User, error) {
-	var user models.User
-
-	// Get the GORM DB instance from the postgres manager
-	db, err := r.dbManager.(*db.PostgresManager).GetDB(ctx, false)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get database connection: %w", err)
-	}
-
-	// Use goroutine to load user data concurrently with role data
-	userChan := make(chan *models.User, 1)
-	rolesChan := make(chan error, 1)
-
-	// Load user data in goroutine
-	go func() {
-		var userData models.User
-		err := db.Where("id = ?", userID).First(&userData).Error
-		if err != nil {
-			userChan <- nil
-			return
-		}
-		userChan <- &userData
-	}()
-
-	// Load roles data in goroutine
-	go func() {
-		var roles []models.UserRole
-		err := db.Preload("Role.Permissions").
-			Where("user_id = ? AND is_active = ?", userID, true).
-			Find(&roles).Error
-		rolesChan <- err
-	}()
-
-	// Wait for user data
-	userData := <-userChan
-	if userData == nil {
-		return nil, fmt.Errorf("failed to get user: %w", err)
-	}
-	user = *userData
-
-	// Wait for roles data
-	if err := <-rolesChan; err != nil {
-		return nil, fmt.Errorf("failed to load user roles: %w", err)
-	}
-
-	// Attach roles to user (this would need to be implemented based on your model structure)
-	// For now, we'll use the preload approach as it's more efficient for this use case
-	err = db.Preload("Roles.Role.Permissions").
-		Preload("Roles", "is_active = ?", true).
-		Where("id = ?", userID).
-		First(&user).Error
-
-	if err != nil {
-		return nil, fmt.Errorf("failed to get user with roles: %w", err)
-	}
-
-	return &user, nil
-}
-
-// GetWithAddress retrieves a user with their addresses using proper joins with goroutines
+// GetWithAddress retrieves a user with their addresses using efficient preloading
 func (r *UserRepository) GetWithAddress(ctx context.Context, userID string) (*models.User, error) {
-	var user models.User
-
 	// Get the GORM DB instance from the postgres manager
-	db, err := r.dbManager.(*db.PostgresManager).GetDB(ctx, false)
+	db, err := r.getDB(ctx, true) // Use read-only for efficiency
 	if err != nil {
 		return nil, fmt.Errorf("failed to get database connection: %w", err)
 	}
 
-	// Use goroutines to load different address types concurrently
-	userChan := make(chan *models.User, 1)
-	profileAddrChan := make(chan error, 1)
-	contactAddrChan := make(chan error, 1)
+	var user models.User
 
-	// Load user data in goroutine
-	go func() {
-		var userData models.User
-		err := db.Where("id = ?", userID).First(&userData).Error
-		if err != nil {
-			userChan <- nil
-			return
-		}
-		userChan <- &userData
-	}()
-
-	// Load profile address in goroutine
-	go func() {
-		var profile models.UserProfile
-		err := db.Preload("Address").
-			Where("user_id = ?", userID).
-			First(&profile).Error
-		profileAddrChan <- err
-	}()
-
-	// Load contact addresses in goroutine
-	go func() {
-		var contacts []models.Contact
-		err := db.Preload("Address").
-			Where("user_id = ?", userID).
-			Find(&contacts).Error
-		contactAddrChan <- err
-	}()
-
-	// Wait for user data
-	userData := <-userChan
-	if userData == nil {
-		return nil, fmt.Errorf("failed to get user")
-	}
-	user = *userData
-
-	// Wait for address data
-	if err := <-profileAddrChan; err != nil {
-		return nil, fmt.Errorf("failed to load profile address: %w", err)
-	}
-
-	if err := <-contactAddrChan; err != nil {
-		return nil, fmt.Errorf("failed to load contact addresses: %w", err)
-	}
-
-	// Use preload for efficiency
-	err = db.Preload("Profile.Address").
+	// Use efficient single query with preloading for all address relationships
+	err = db.WithContext(ctx).
+		Preload("Profile.Address").
 		Preload("Contacts.Address").
-		Where("id = ?", userID).
+		Where("id = ? AND deleted_at IS NULL", userID).
 		First(&user).Error
 
 	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("user with id %s not found", userID)
+		}
 		return nil, fmt.Errorf("failed to get user with addresses: %w", err)
 	}
 
 	return &user, nil
 }
 
-// GetWithProfile retrieves a user with their profile using proper joins with goroutines
+// GetWithProfile retrieves a user with their profile using efficient preloading
 func (r *UserRepository) GetWithProfile(ctx context.Context, userID string) (*models.User, error) {
-	var user models.User
-
 	// Get the GORM DB instance from the postgres manager
-	db, err := r.dbManager.(*db.PostgresManager).GetDB(ctx, false)
+	db, err := r.getDB(ctx, true) // Use read-only for efficiency
 	if err != nil {
 		return nil, fmt.Errorf("failed to get database connection: %w", err)
 	}
 
-	// Use goroutines to load user and profile data concurrently
-	userChan := make(chan *models.User, 1)
-	profileChan := make(chan error, 1)
+	var user models.User
 
-	// Load user data in goroutine
-	go func() {
-		var userData models.User
-		err := db.Where("id = ?", userID).First(&userData).Error
-		if err != nil {
-			userChan <- nil
-			return
-		}
-		userChan <- &userData
-	}()
-
-	// Load profile data in goroutine
-	go func() {
-		var profile models.UserProfile
-		err := db.Preload("Address").
-			Where("user_id = ?", userID).
-			First(&profile).Error
-		profileChan <- err
-	}()
-
-	// Wait for user data
-	userData := <-userChan
-	if userData == nil {
-		return nil, fmt.Errorf("failed to get user")
-	}
-	user = *userData
-
-	// Wait for profile data
-	if err := <-profileChan; err != nil {
-		return nil, fmt.Errorf("failed to load profile: %w", err)
-	}
-
-	// Use preload for efficiency
-	err = db.Preload("Profile").
+	// Use efficient single query with preloading for profile and address
+	err = db.WithContext(ctx).
+		Preload("Profile").
 		Preload("Profile.Address").
-		Where("id = ?", userID).
+		Where("id = ? AND deleted_at IS NULL", userID).
 		First(&user).Error
 
 	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("user with id %s not found", userID)
+		}
 		return nil, fmt.Errorf("failed to get user with profile: %w", err)
 	}
 
@@ -587,66 +449,47 @@ func (r *UserRepository) GetUsersWithRelationships(ctx context.Context, userIDs 
 	}
 }
 
-// GetUserStats concurrently loads various user statistics using goroutines
+// GetUserStats retrieves various user statistics using BaseFilterableRepository.Count() methods
 func (r *UserRepository) GetUserStats(ctx context.Context) (map[string]int64, error) {
-	// Get the GORM DB instance from the postgres manager
-	db, err := r.dbManager.(*db.PostgresManager).GetDB(ctx, false)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get database connection: %w", err)
-	}
-
-	// Create channels for different stats
-	totalChan := make(chan int64, 1)
-	activeChan := make(chan int64, 1)
-	pendingChan := make(chan int64, 1)
-	validatedChan := make(chan int64, 1)
-
-	// Load total users count
-	go func() {
-		var count int64
-		err := db.Model(&models.User{}).Count(&count).Error
-		if err != nil {
-			count = 0
-		}
-		totalChan <- count
-	}()
-
-	// Load active users count
-	go func() {
-		var count int64
-		err := db.Model(&models.User{}).Where("status = ?", "active").Count(&count).Error
-		if err != nil {
-			count = 0
-		}
-		activeChan <- count
-	}()
-
-	// Load pending users count
-	go func() {
-		var count int64
-		err := db.Model(&models.User{}).Where("status = ?", "pending").Count(&count).Error
-		if err != nil {
-			count = 0
-		}
-		pendingChan <- count
-	}()
-
-	// Load validated users count
-	go func() {
-		var count int64
-		err := db.Model(&models.User{}).Where("is_validated = ?", true).Count(&count).Error
-		if err != nil {
-			count = 0
-		}
-		validatedChan <- count
-	}()
-
-	// Collect results
 	stats := make(map[string]int64)
-	stats["total"] = <-totalChan
-	stats["active"] = <-activeChan
-	stats["pending"] = <-pendingChan
-	stats["validated"] = <-validatedChan
+
+	// Total users count (including soft-deleted for historical stats)
+	totalFilter := base.NewFilter()
+	total, err := r.BaseFilterableRepository.Count(ctx, totalFilter, models.User{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to count total users: %w", err)
+	}
+	stats["total"] = total
+
+	// Active users count
+	activeFilter := base.NewFilterBuilder().
+		Where("status", base.OpEqual, "active").
+		Build()
+	active, err := r.BaseFilterableRepository.CountWithFilter(ctx, activeFilter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count active users: %w", err)
+	}
+	stats["active"] = active
+
+	// Pending users count
+	pendingFilter := base.NewFilterBuilder().
+		Where("status", base.OpEqual, "pending").
+		Build()
+	pending, err := r.BaseFilterableRepository.CountWithFilter(ctx, pendingFilter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count pending users: %w", err)
+	}
+	stats["pending"] = pending
+
+	// Validated users count
+	validatedFilter := base.NewFilterBuilder().
+		Where("is_validated", base.OpEqual, true).
+		Build()
+	validated, err := r.BaseFilterableRepository.CountWithFilter(ctx, validatedFilter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count validated users: %w", err)
+	}
+	stats["validated"] = validated
 
 	return stats, nil
 }

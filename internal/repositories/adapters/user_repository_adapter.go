@@ -112,11 +112,6 @@ func (a *UserRepositoryAdapter) ListAll(ctx context.Context) ([]*models.User, er
 	return a.repo.ListAll(ctx)
 }
 
-// GetWithRoles implements UserRepositoryInterface.GetWithRoles
-func (a *UserRepositoryAdapter) GetWithRoles(ctx context.Context, userID string) (*models.User, error) {
-	return a.repo.GetWithRoles(ctx, userID)
-}
-
 // GetWithAddress implements UserRepositoryInterface.GetWithAddress
 func (a *UserRepositoryAdapter) GetWithAddress(ctx context.Context, userID string) (*models.User, error) {
 	return a.repo.GetWithAddress(ctx, userID)
