@@ -11,6 +11,7 @@ import (
 	"github.com/Kisanlink/aaa-service/v2/internal/middleware"
 	auditRepo "github.com/Kisanlink/aaa-service/v2/internal/repositories/audit"
 	"github.com/Kisanlink/aaa-service/v2/internal/services"
+	"github.com/Kisanlink/aaa-service/v2/internal/services/catalog"
 	pb "github.com/Kisanlink/aaa-service/v2/pkg/proto"
 	"github.com/Kisanlink/kisanlink-db/pkg/db"
 	"go.uber.org/zap"
@@ -232,9 +233,14 @@ func (s *GRPCServer) registerServices() {
 	)
 	pb.RegisterOrganizationServiceServer(s.server, orgHandler)
 
+	// Register CatalogService for catalog management
+	catalogService := catalog.NewCatalogService(s.dbManager, s.logger)
+	catalogHandler := NewCatalogHandler(catalogService, s.logger)
+	pb.RegisterCatalogServiceServer(s.server, catalogHandler)
+
 	s.logger.Info("gRPC services registered successfully",
 		zap.String("primary_service", "AAAService"),
-		zap.Strings("services", []string{"UserServiceV2", "AuthorizationService", "TokenService", "OrganizationService"}))
+		zap.Strings("services", []string{"UserServiceV2", "AuthorizationService", "TokenService", "OrganizationService", "CatalogService"}))
 }
 
 // loggingInterceptor logs gRPC requests
