@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/Kisanlink/aaa-service/v2/helper"
 	"github.com/Kisanlink/aaa-service/v2/internal/entities/models"
 	"github.com/Kisanlink/aaa-service/v2/internal/interfaces"
 	"github.com/Kisanlink/aaa-service/v2/internal/services"
@@ -65,6 +66,13 @@ func (h *TokenHandler) ValidateToken(ctx context.Context, req *pb.ValidateTokenR
 		}, nil
 	}
 
+	// Parse full token context to extract organization info from user_context
+	tokenContext, err := helper.ValidateTokenWithContext(req.Token)
+	if err != nil {
+		h.logger.Warn("Failed to parse full token context", zap.Error(err))
+		// Continue with basic validation, but without organization context
+	}
+
 	validationID := uuid.New().String()
 	now := time.Now()
 
@@ -122,7 +130,7 @@ func (h *TokenHandler) ValidateToken(ctx context.Context, req *pb.ValidateTokenR
 			h.logger.Warn("Failed to fetch user details", zap.String("user_id", claims.UserID), zap.Error(err))
 			response.Warnings = append(response.Warnings, "User details could not be loaded")
 		} else {
-			response.UserContext = h.buildUserContext(user, claims)
+			response.UserContext = h.buildUserContext(user, claims, tokenContext)
 		}
 	}
 
@@ -171,7 +179,7 @@ func (h *TokenHandler) ValidateToken(ctx context.Context, req *pb.ValidateTokenR
 }
 
 // buildUserContext creates a UserContext from user model and claims
-func (h *TokenHandler) buildUserContext(user *models.User, claims *services.TokenClaims) *pb.UserContext {
+func (h *TokenHandler) buildUserContext(user *models.User, claims *services.TokenClaims, tokenContext *helper.TokenContext) *pb.UserContext {
 	userContext := &pb.UserContext{
 		Id:          user.ID,
 		IsValidated: user.IsValidated,
@@ -208,6 +216,19 @@ func (h *TokenHandler) buildUserContext(user *models.User, claims *services.Toke
 		}
 	}
 	userContext.Roles = roleNames
+
+	// Populate organization context from JWT token's user_context.organizations array
+	if tokenContext != nil && tokenContext.UserContext != nil && len(tokenContext.UserContext.Organizations) > 0 {
+		// Use the first organization from the token's organizations array
+		firstOrg := tokenContext.UserContext.Organizations[0]
+		userContext.OrganizationId = firstOrg.ID
+		userContext.OrganizationName = firstOrg.Name
+
+		h.logger.Debug("Populated organization context from JWT token",
+			zap.String("user_id", user.ID),
+			zap.String("organization_id", firstOrg.ID),
+			zap.String("organization_name", firstOrg.Name))
+	}
 
 	return userContext
 }
