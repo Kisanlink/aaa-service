@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/Kisanlink/aaa-service/v2/internal/entities/models"
 	"github.com/Kisanlink/aaa-service/v2/internal/repositories/resource_permissions"
 	"go.uber.org/zap"
 )
@@ -15,7 +16,8 @@ func (s *Service) AssignPermissionToRole(ctx context.Context, roleID, permission
 	}
 
 	// Verify role exists
-	role, err := s.roleRepo.GetByID(ctx, roleID, nil)
+	role := &models.Role{}
+	_, err := s.roleRepo.GetByID(ctx, roleID, role)
 	if err != nil {
 		s.logger.Error("Role not found", zap.String("role_id", roleID), zap.Error(err))
 		return fmt.Errorf("role not found: %w", err)
@@ -85,7 +87,8 @@ func (s *Service) AssignPermissionsToRole(ctx context.Context, roleID string, pe
 	}
 
 	// Verify role exists
-	role, err := s.roleRepo.GetByID(ctx, roleID, nil)
+	role := &models.Role{}
+	_, err := s.roleRepo.GetByID(ctx, roleID, role)
 	if err != nil {
 		s.logger.Error("Role not found", zap.String("role_id", roleID), zap.Error(err))
 		return fmt.Errorf("role not found: %w", err)
@@ -202,7 +205,8 @@ func (s *Service) AssignResourceActionToRole(ctx context.Context, roleID, resour
 	}
 
 	// Verify role exists
-	role, err := s.roleRepo.GetByID(ctx, roleID, nil)
+	role := &models.Role{}
+	_, err := s.roleRepo.GetByID(ctx, roleID, role)
 	if err != nil {
 		s.logger.Error("Role not found", zap.String("role_id", roleID), zap.Error(err))
 		return fmt.Errorf("role not found: %w", err)
@@ -257,7 +261,8 @@ func (s *Service) AssignResourceActionsToRole(ctx context.Context, roleID string
 	}
 
 	// Verify role exists
-	role, err := s.roleRepo.GetByID(ctx, roleID, nil)
+	role := &models.Role{}
+	_, err := s.roleRepo.GetByID(ctx, roleID, role)
 	if err != nil {
 		s.logger.Error("Role not found", zap.String("role_id", roleID), zap.Error(err))
 		return fmt.Errorf("role not found: %w", err)

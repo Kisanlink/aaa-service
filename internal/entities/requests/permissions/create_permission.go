@@ -6,12 +6,12 @@ import (
 )
 
 // CreatePermissionRequest represents the request to create a new permission
-// @Description Request payload for creating a new permission
+// @Description Request payload for creating a new permission with resource and action
 type CreatePermissionRequest struct {
-	Name        string `json:"name" validate:"required,min=3,max=100" example:"manage_users"`
-	Description string `json:"description" validate:"max=500" example:"Permission to manage users"`
-	ResourceID  string `json:"resource_id" validate:"required,uuid" example:"RES_abc123"`
-	ActionID    string `json:"action_id" validate:"required,uuid" example:"ACT_xyz789"`
+	Name        string `json:"name" validate:"required,min=3,max=100" example:"crop_management_create"`
+	Description string `json:"description" validate:"max=500" example:"Permission to create and add new crops to the farm inventory"`
+	ResourceID  string `json:"resource_id" validate:"required,uuid" example:"RES1760615540005820900"`
+	ActionID    string `json:"action_id" validate:"required,uuid" example:"ACT1760615540005820901"`
 }
 
 // Validate validates the CreatePermissionRequest

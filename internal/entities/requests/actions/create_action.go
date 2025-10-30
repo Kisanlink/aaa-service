@@ -5,14 +5,15 @@ import (
 )
 
 // CreateActionRequest represents a request to create a new action
+// @Description Define a new action that can be performed on resources
 type CreateActionRequest struct {
-	Name        string  `json:"name" binding:"required,min=1,max=100" validate:"required,min=1,max=100"`
-	Description string  `json:"description" binding:"max=1000" validate:"max=1000"`
-	Category    string  `json:"category" binding:"required,min=1,max=50" validate:"required,min=1,max=50"`
-	IsStatic    bool    `json:"is_static" validate:"omitempty"`
-	ServiceID   *string `json:"service_id" binding:"omitempty,max=255" validate:"omitempty,max=255"`
-	Metadata    *string `json:"metadata" binding:"omitempty" validate:"omitempty"`
-	IsActive    bool    `json:"is_active" validate:"omitempty"`
+	Name        string  `json:"name" binding:"required,min=1,max=100" validate:"required,min=1,max=100" example:"read"`
+	Description string  `json:"description" binding:"max=1000" validate:"max=1000" example:"Read or view data without making changes"`
+	Category    string  `json:"category" binding:"required,min=1,max=50" validate:"required,min=1,max=50" example:"data_access"`
+	IsStatic    bool    `json:"is_static" validate:"omitempty" example:"true"`
+	ServiceID   *string `json:"service_id" binding:"omitempty,max=255" validate:"omitempty,max=255" example:"aaa-service"`
+	Metadata    *string `json:"metadata" binding:"omitempty" validate:"omitempty" example:"{\"http_method\": \"GET\", \"rest_ful\": true}"`
+	IsActive    bool    `json:"is_active" validate:"omitempty" example:"true"`
 }
 
 // Validate validates the CreateActionRequest

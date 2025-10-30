@@ -5,11 +5,12 @@ import (
 )
 
 // CreateRoleRequest represents a request to create a role
+// @Description Create a new role with name, description, and optional permissions
 type CreateRoleRequest struct {
 	*requests.BaseRequest
-	Name        string   `json:"name" validate:"required,min=2,max=100"`
-	Description *string  `json:"description" validate:"omitempty,max=500"`
-	Permissions []string `json:"permissions" validate:"omitempty"`
+	Name        string   `json:"name" validate:"required,min=2,max=100" example:"farm_manager"`
+	Description *string  `json:"description" validate:"omitempty,max=500" example:"Manager role for farm operations and crop management"`
+	Permissions []string `json:"permissions" validate:"omitempty" example:"PERM00000001,PERM00000002"`
 }
 
 // NewCreateRoleRequest creates a new CreateRoleRequest instance

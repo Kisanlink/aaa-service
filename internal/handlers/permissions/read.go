@@ -152,11 +152,15 @@ func (h *PermissionHandler) GetRolePermissions(c *gin.Context) {
 		return
 	}
 
-	// Create response
+	// Create response - use a minimum limit of 10 or the actual count, whichever is greater
+	limit := len(permissions)
+	if limit == 0 {
+		limit = 10 // Default limit to prevent division by zero
+	}
 	response := respPermissions.NewPermissionListResponse(
 		permissions,
 		1,
-		len(permissions),
+		limit,
 		len(permissions),
 		h.getRequestID(c),
 	)

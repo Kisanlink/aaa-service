@@ -5,12 +5,12 @@ import (
 )
 
 // UpdatePermissionRequest represents the request to update an existing permission
-// @Description Request payload for updating a permission
+// @Description Request payload for updating a permission's details
 type UpdatePermissionRequest struct {
-	Name        *string `json:"name,omitempty" validate:"omitempty,min=3,max=100" example:"updated_permission"`
-	Description *string `json:"description,omitempty" validate:"omitempty,max=500" example:"Updated description"`
-	ResourceID  *string `json:"resource_id,omitempty" validate:"omitempty,uuid" example:"RES_abc123"`
-	ActionID    *string `json:"action_id,omitempty" validate:"omitempty,uuid" example:"ACT_xyz789"`
+	Name        *string `json:"name,omitempty" validate:"omitempty,min=3,max=100" example:"crop_management_update"`
+	Description *string `json:"description,omitempty" validate:"omitempty,max=500" example:"Updated permission to modify existing crops in the farm inventory"`
+	ResourceID  *string `json:"resource_id,omitempty" validate:"omitempty,uuid" example:"RES1760615540005820900"`
+	ActionID    *string `json:"action_id,omitempty" validate:"omitempty,uuid" example:"ACT1760615540005820902"`
 	IsActive    *bool   `json:"is_active,omitempty" example:"true"`
 }
 

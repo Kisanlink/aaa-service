@@ -5,9 +5,9 @@ import (
 )
 
 // AssignPermissionsToRoleRequest represents the request to assign permissions to a role
-// @Description Request payload for assigning permissions to a role
+// @Description Assign one or more permissions to a role for access control
 type AssignPermissionsToRoleRequest struct {
-	PermissionIDs []string `json:"permission_ids" validate:"required,min=1,dive,uuid" example:"PERM_abc123,PERM_xyz789"`
+	PermissionIDs []string `json:"permission_ids" validate:"required,min=1,dive,uuid" example:"PERM00000001,PERM00000002,PERM00000003"`
 }
 
 // Validate validates the AssignPermissionsToRoleRequest
@@ -19,10 +19,11 @@ func (r *AssignPermissionsToRoleRequest) Validate() error {
 }
 
 // ResourceActionAssignment represents a single resource-action assignment
+// @Description Specify a resource and the actions that can be performed on it
 type ResourceActionAssignment struct {
-	ResourceType string   `json:"resource_type" validate:"required,min=1,max=100" example:"aaa/user"`
-	ResourceID   string   `json:"resource_id" validate:"required" example:"USR_abc123"`
-	Actions      []string `json:"actions" validate:"required,min=1" example:"read,write"`
+	ResourceType string   `json:"resource_type" validate:"required,min=1,max=100" example:"crop_management"`
+	ResourceID   string   `json:"resource_id" validate:"required" example:"RES1760615540005820900"`
+	Actions      []string `json:"actions" validate:"required,min=1" example:"read,create,update"`
 }
 
 // AssignResourcesToRoleRequest represents the request to assign resources with actions to a role

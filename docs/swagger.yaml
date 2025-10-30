@@ -39,25 +39,33 @@ definitions:
         type: string
     type: object
   actions.CreateActionRequest:
+    description: Define a new action that can be performed on resources
     properties:
       category:
+        example: data_access
         maxLength: 50
         minLength: 1
         type: string
       description:
+        example: Read or view data without making changes
         maxLength: 1000
         type: string
       is_active:
+        example: true
         type: boolean
       is_static:
+        example: true
         type: boolean
       metadata:
+        example: '{"http_method": "GET", "rest_ful": true}'
         type: string
       name:
+        example: read
         maxLength: 100
         minLength: 1
         type: string
       service_id:
+        example: aaa-service
         maxLength: 255
         type: string
     required:
@@ -305,20 +313,22 @@ definitions:
         type: string
     type: object
   github_com_Kisanlink_aaa-service_v2_internal_entities_requests_role_assignments.ResourceActionAssignment:
+    description: Specify a resource and the actions that can be performed on it
     properties:
       actions:
         example:
         - read
-        - write
+        - create
+        - update
         items:
           type: string
         minItems: 1
         type: array
       resource_id:
-        example: USR_abc123
+        example: RES1760615540005820900
         type: string
       resource_type:
-        example: aaa/user
+        example: crop_management
         maxLength: 100
         minLength: 1
         type: string
@@ -778,22 +788,22 @@ definitions:
         type: string
     type: object
   permissions.CreatePermissionRequest:
-    description: Request payload for creating a new permission
+    description: Request payload for creating a new permission with resource and action
     properties:
       action_id:
-        example: ACT_xyz789
+        example: ACT1760615540005820901
         type: string
       description:
-        example: Permission to manage users
+        example: Permission to create and add new crops to the farm inventory
         maxLength: 500
         type: string
       name:
-        example: manage_users
+        example: crop_management_create
         maxLength: 100
         minLength: 3
         type: string
       resource_id:
-        example: RES_abc123
+        example: RES1760615540005820900
         type: string
     required:
     - action_id
@@ -885,40 +895,40 @@ definitions:
         type: string
     type: object
   permissions.PermissionResponse:
-    description: Response structure for a single permission
+    description: Complete permission details including associated resource and action
+      information
     properties:
       action_id:
-        example: ACT_xyz789
+        example: ACT1760615540005820901
         type: string
       action_name:
-        example: manage
+        example: read
         type: string
       created_at:
-        example: "2024-01-01T00:00:00Z"
+        example: "2024-01-15T10:30:00Z"
         type: string
       deleted_at:
-        example: "2024-01-01T00:00:00Z"
         type: string
       description:
-        example: Permission to manage users
+        example: Permission to view and read crop information in the farm inventory
         type: string
       id:
-        example: PERM_abc123
+        example: PERM00000001
         type: string
       is_active:
         example: true
         type: boolean
       name:
-        example: manage_users
+        example: crop_management_read
         type: string
       resource_id:
-        example: RES_abc123
+        example: RES1760615540005820900
         type: string
       resource_name:
-        example: User Management
+        example: crop_management
         type: string
       updated_at:
-        example: "2024-01-01T00:00:00Z"
+        example: "2024-01-20T14:45:00Z"
         type: string
     type: object
   permissions.RoleInfo:
@@ -934,25 +944,25 @@ definitions:
         type: string
     type: object
   permissions.UpdatePermissionRequest:
-    description: Request payload for updating a permission
+    description: Request payload for updating a permission's details
     properties:
       action_id:
-        example: ACT_xyz789
+        example: ACT1760615540005820902
         type: string
       description:
-        example: Updated description
+        example: Updated permission to modify existing crops in the farm inventory
         maxLength: 500
         type: string
       is_active:
         example: true
         type: boolean
       name:
-        example: updated_permission
+        example: crop_management_update
         maxLength: 100
         minLength: 3
         type: string
       resource_id:
-        example: RES_abc123
+        example: RES1760615540005820900
         type: string
     type: object
   principals.CreateServiceRequest:
@@ -984,25 +994,38 @@ definitions:
     - organization_id
     type: object
   requests.LoginRequest:
+    description: 'Login request with three supported flows: 1. Phone + Password: Standard
+      login with phone number and password 2. Phone + MPIN: Quick login with phone
+      number and 4-6 digit PIN 3. Refresh Token + MPIN: Re-authentication using existing
+      refresh token'
     properties:
       country_code:
+        example: "+91"
         type: string
       include_contacts:
+        example: false
         type: boolean
       include_profile:
+        example: true
         type: boolean
       include_roles:
+        example: true
         type: boolean
       mfa_code:
+        example: "123456"
         type: string
       mpin:
+        example: "1234"
         type: string
       password:
+        example: SecureP@ss123
         minLength: 8
         type: string
       phone_number:
+        example: "9876543210"
         type: string
       refresh_token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
         type: string
     type: object
   requests.ModuleActionDefinition:
@@ -1089,29 +1112,39 @@ definitions:
     - name
     type: object
   requests.RefreshTokenRequest:
+    description: Refresh an existing access token using a refresh token and MPIN
     properties:
       mpin:
+        example: "1234"
         type: string
       refresh_token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
         type: string
     required:
     - mpin
     - refresh_token
     type: object
   requests.RegisterRequest:
+    description: Register a new user account with phone number authentication
     properties:
       aadhaar_number:
+        example: 1234 5678 9012
         type: string
       country_code:
+        example: "+91"
         type: string
       name:
+        example: Ramesh Kumar
         type: string
       password:
+        example: SecureP@ss123
         minLength: 8
         type: string
       phone_number:
+        example: "9876543210"
         type: string
       username:
+        example: ramesh_kumar
         type: string
     required:
     - country_code
@@ -1139,25 +1172,25 @@ definitions:
     - new_mpin
     type: object
   resources.CreateResourceRequest:
-    description: Request payload for creating a new resource
+    description: Define a new resource that can be protected with permissions
     properties:
       description:
-        example: Resource for managing users
+        example: Resource for managing farm crop inventory and cultivation records
         maxLength: 500
         type: string
       name:
-        example: User Management
+        example: Crop Management
         maxLength: 100
         minLength: 3
         type: string
       owner_id:
-        example: USR_xyz789
+        example: USER00000001
         type: string
       parent_id:
-        example: RES_abc123
+        example: RES1760615540005820899
         type: string
       type:
-        example: aaa/user
+        example: farm/crops
         maxLength: 100
         minLength: 3
         type: string
@@ -1748,22 +1781,29 @@ definitions:
         type: string
     type: object
   responses.UserInfo:
+    description: Comprehensive user information returned in authentication responses
     properties:
       contacts:
         items:
           $ref: '#/definitions/responses.ContactInfo'
         type: array
       country_code:
+        example: "+91"
         type: string
       created_at:
+        example: "2024-01-15T10:30:00Z"
         type: string
       has_mpin:
+        example: true
         type: boolean
       id:
+        example: USER00000001
         type: string
       is_validated:
+        example: true
         type: boolean
       phone_number:
+        example: "9876543210"
         type: string
       profile:
         $ref: '#/definitions/responses.UserProfileInfo'
@@ -1772,12 +1812,16 @@ definitions:
           $ref: '#/definitions/responses.UserRoleDetail'
         type: array
       status:
+        example: active
         type: string
       tokens:
+        example: 2
         type: integer
       updated_at:
+        example: "2024-01-20T14:45:00Z"
         type: string
       username:
+        example: ramesh_kumar
         type: string
     type: object
   responses.UserInfoSwagger:
@@ -1877,12 +1921,13 @@ definitions:
         type: string
     type: object
   role_assignments.AssignPermissionsToRoleRequest:
-    description: Request payload for assigning permissions to a role
+    description: Assign one or more permissions to a role for access control
     properties:
       permission_ids:
         example:
-        - PERM_abc123
-        - PERM_xyz789
+        - PERM00000001
+        - PERM00000002
+        - PERM00000003
         items:
           type: string
         minItems: 1
@@ -1929,12 +1974,14 @@ definitions:
     - role_id
     type: object
   roles.CreateRoleRequest:
+    description: Create a new role with name, description, and optional permissions
     properties:
       body: {}
       context:
         additionalProperties: {}
         type: object
       description:
+        example: Manager role for farm operations and crop management
         maxLength: 500
         type: string
       headers:
@@ -1944,12 +1991,16 @@ definitions:
           type: array
         type: object
       name:
+        example: farm_manager
         maxLength: 100
         minLength: 2
         type: string
       operation:
         type: string
       permissions:
+        example:
+        - PERM00000001
+        - PERM00000002
         items:
           type: string
         type: array
@@ -1985,12 +2036,14 @@ definitions:
         type: string
     type: object
   roles.UpdateRoleRequest:
+    description: Update an existing role with new name, description, or permissions
     properties:
       body: {}
       context:
         additionalProperties: {}
         type: object
       description:
+        example: Senior manager role with full farm operation access
         maxLength: 500
         type: string
       headers:
@@ -2000,12 +2053,17 @@ definitions:
           type: array
         type: object
       name:
+        example: senior_farm_manager
         maxLength: 100
         minLength: 2
         type: string
       operation:
         type: string
       permissions:
+        example:
+        - PERM00000001
+        - PERM00000002
+        - PERM00000003
         items:
           type: string
         type: array
@@ -2014,6 +2072,7 @@ definitions:
       request_id:
         type: string
       role_id:
+        example: ROLE00000001
         type: string
       type:
         type: string

@@ -5,12 +5,13 @@ import (
 )
 
 // UpdateRoleRequest represents a request to update a role
+// @Description Update an existing role with new name, description, or permissions
 type UpdateRoleRequest struct {
 	*requests.BaseRequest
-	RoleID      string   `json:"role_id" validate:"required"`
-	Name        *string  `json:"name" validate:"omitempty,min=2,max=100"`
-	Description *string  `json:"description" validate:"omitempty,max=500"`
-	Permissions []string `json:"permissions" validate:"omitempty"`
+	RoleID      string   `json:"role_id" validate:"required" example:"ROLE00000001"`
+	Name        *string  `json:"name" validate:"omitempty,min=2,max=100" example:"senior_farm_manager"`
+	Description *string  `json:"description" validate:"omitempty,max=500" example:"Senior manager role with full farm operation access"`
+	Permissions []string `json:"permissions" validate:"omitempty" example:"PERM00000001,PERM00000002,PERM00000003"`
 }
 
 // NewUpdateRoleRequest creates a new UpdateRoleRequest instance

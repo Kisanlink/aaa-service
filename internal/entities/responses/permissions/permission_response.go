@@ -7,19 +7,19 @@ import (
 )
 
 // PermissionResponse represents a single permission in API responses
-// @Description Response structure for a single permission
+// @Description Complete permission details including associated resource and action information
 type PermissionResponse struct {
-	ID           string     `json:"id" example:"PERM_abc123"`
-	Name         string     `json:"name" example:"manage_users"`
-	Description  string     `json:"description" example:"Permission to manage users"`
-	ResourceID   *string    `json:"resource_id,omitempty" example:"RES_abc123"`
-	ResourceName *string    `json:"resource_name,omitempty" example:"User Management"`
-	ActionID     *string    `json:"action_id,omitempty" example:"ACT_xyz789"`
-	ActionName   *string    `json:"action_name,omitempty" example:"manage"`
+	ID           string     `json:"id" example:"PERM00000001"`
+	Name         string     `json:"name" example:"crop_management_read"`
+	Description  string     `json:"description" example:"Permission to view and read crop information in the farm inventory"`
+	ResourceID   *string    `json:"resource_id,omitempty" example:"RES1760615540005820900"`
+	ResourceName *string    `json:"resource_name,omitempty" example:"crop_management"`
+	ActionID     *string    `json:"action_id,omitempty" example:"ACT1760615540005820901"`
+	ActionName   *string    `json:"action_name,omitempty" example:"read"`
 	IsActive     bool       `json:"is_active" example:"true"`
-	CreatedAt    time.Time  `json:"created_at" example:"2024-01-01T00:00:00Z"`
-	UpdatedAt    time.Time  `json:"updated_at" example:"2024-01-01T00:00:00Z"`
-	DeletedAt    *time.Time `json:"deleted_at,omitempty" example:"2024-01-01T00:00:00Z"`
+	CreatedAt    time.Time  `json:"created_at" example:"2024-01-15T10:30:00Z"`
+	UpdatedAt    time.Time  `json:"updated_at" example:"2024-01-20T14:45:00Z"`
+	DeletedAt    *time.Time `json:"deleted_at,omitempty"`
 }
 
 // NewPermissionResponse creates a new PermissionResponse from a Permission model
@@ -88,7 +88,13 @@ func NewPermissionListResponse(
 		permissionResponses = append(permissionResponses, NewPermissionResponse(permission))
 	}
 
-	totalPages := (total + limit - 1) / limit
+	// Prevent division by zero when limit is 0
+	var totalPages int
+	if limit > 0 {
+		totalPages = (total + limit - 1) / limit
+	} else {
+		totalPages = 1
+	}
 	if totalPages < 1 {
 		totalPages = 1
 	}

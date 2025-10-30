@@ -6,16 +6,20 @@ import (
 )
 
 // LoginRequest represents a user login request supporting password, MPIN, and refresh token authentication
+// @Description Login request with three supported flows:
+// @Description 1. Phone + Password: Standard login with phone number and password
+// @Description 2. Phone + MPIN: Quick login with phone number and 4-6 digit PIN
+// @Description 3. Refresh Token + MPIN: Re-authentication using existing refresh token
 type LoginRequest struct {
-	PhoneNumber     string  `json:"phone_number,omitempty" validate:"omitempty"`
-	CountryCode     string  `json:"country_code,omitempty" validate:"omitempty"`
-	Password        *string `json:"password,omitempty" validate:"omitempty,min=8"`
-	MPin            *string `json:"mpin,omitempty" validate:"omitempty,len=4|len=6"`
-	RefreshToken    *string `json:"refresh_token,omitempty" validate:"omitempty"`
-	MFACode         *string `json:"mfa_code,omitempty"`
-	IncludeProfile  *bool   `json:"include_profile,omitempty"`
-	IncludeRoles    *bool   `json:"include_roles,omitempty"`
-	IncludeContacts *bool   `json:"include_contacts,omitempty"`
+	PhoneNumber     string  `json:"phone_number,omitempty" validate:"omitempty" example:"9876543210"`
+	CountryCode     string  `json:"country_code,omitempty" validate:"omitempty" example:"+91"`
+	Password        *string `json:"password,omitempty" validate:"omitempty,min=8" example:"SecureP@ss123"`
+	MPin            *string `json:"mpin,omitempty" validate:"omitempty,len=4|len=6" example:"1234"`
+	RefreshToken    *string `json:"refresh_token,omitempty" validate:"omitempty" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
+	MFACode         *string `json:"mfa_code,omitempty" example:"123456"`
+	IncludeProfile  *bool   `json:"include_profile,omitempty" example:"true"`
+	IncludeRoles    *bool   `json:"include_roles,omitempty" example:"true"`
+	IncludeContacts *bool   `json:"include_contacts,omitempty" example:"false"`
 }
 
 // Validate validates the LoginRequest
@@ -133,13 +137,14 @@ func (r *LoginRequest) ShouldIncludeContacts() bool {
 }
 
 // RegisterRequest represents a user registration request
+// @Description Register a new user account with phone number authentication
 type RegisterRequest struct {
-	PhoneNumber   string  `json:"phone_number" validate:"required"`
-	CountryCode   string  `json:"country_code" validate:"required"`
-	Password      string  `json:"password" validate:"required,min=8"`
-	Username      *string `json:"username,omitempty" validate:"omitempty,username"`
-	AadhaarNumber *string `json:"aadhaar_number,omitempty"`
-	Name          *string `json:"name,omitempty"`
+	PhoneNumber   string  `json:"phone_number" validate:"required" example:"9876543210"`
+	CountryCode   string  `json:"country_code" validate:"required" example:"+91"`
+	Password      string  `json:"password" validate:"required,min=8" example:"SecureP@ss123"`
+	Username      *string `json:"username,omitempty" validate:"omitempty,username" example:"ramesh_kumar"`
+	AadhaarNumber *string `json:"aadhaar_number,omitempty" example:"1234 5678 9012"`
+	Name          *string `json:"name,omitempty" example:"Ramesh Kumar"`
 }
 
 // Validate validates the RegisterRequest
@@ -192,9 +197,10 @@ func (r *RegisterRequest) GetType() string {
 }
 
 // RefreshTokenRequest represents a token refresh request
+// @Description Refresh an existing access token using a refresh token and MPIN
 type RefreshTokenRequest struct {
-	RefreshToken string `json:"refresh_token" validate:"required"`
-	MPin         string `json:"mpin" validate:"required,len=4|len=6"`
+	RefreshToken string `json:"refresh_token" validate:"required" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
+	MPin         string `json:"mpin" validate:"required,len=4|len=6" example:"1234"`
 }
 
 // Validate validates the RefreshTokenRequest
@@ -222,11 +228,12 @@ func (r *RefreshTokenRequest) GetType() string {
 }
 
 // ForgotPasswordRequest represents a forgot password request
+// @Description Request password reset with phone number, username, or email
 type ForgotPasswordRequest struct {
-	PhoneNumber *string `json:"phone_number,omitempty"`
-	CountryCode *string `json:"country_code,omitempty"`
-	Username    *string `json:"username,omitempty"`
-	Email       *string `json:"email,omitempty"`
+	PhoneNumber *string `json:"phone_number,omitempty" example:"9876543210"`
+	CountryCode *string `json:"country_code,omitempty" example:"+91"`
+	Username    *string `json:"username,omitempty" example:"ramesh_kumar"`
+	Email       *string `json:"email,omitempty" example:"ramesh.kumar@example.com"`
 }
 
 // Validate validates the ForgotPasswordRequest

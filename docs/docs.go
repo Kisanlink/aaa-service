@@ -5724,6 +5724,7 @@ const docTemplate = `{
             }
         },
         "actions.CreateActionRequest": {
+            "description": "Define a new action that can be performed on resources",
             "type": "object",
             "required": [
                 "category",
@@ -5733,29 +5734,36 @@ const docTemplate = `{
                 "category": {
                     "type": "string",
                     "maxLength": 50,
-                    "minLength": 1
+                    "minLength": 1,
+                    "example": "data_access"
                 },
                 "description": {
                     "type": "string",
-                    "maxLength": 1000
+                    "maxLength": 1000,
+                    "example": "Read or view data without making changes"
                 },
                 "is_active": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "example": true
                 },
                 "is_static": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "example": true
                 },
                 "metadata": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "{\"http_method\": \"GET\", \"rest_ful\": true}"
                 },
                 "name": {
                     "type": "string",
                     "maxLength": 100,
-                    "minLength": 1
+                    "minLength": 1,
+                    "example": "read"
                 },
                 "service_id": {
                     "type": "string",
-                    "maxLength": 255
+                    "maxLength": 255,
+                    "example": "aaa-service"
                 }
             }
         },
@@ -6100,6 +6108,7 @@ const docTemplate = `{
             }
         },
         "github_com_Kisanlink_aaa-service_v2_internal_entities_requests_role_assignments.ResourceActionAssignment": {
+            "description": "Specify a resource and the actions that can be performed on it",
             "type": "object",
             "required": [
                 "actions",
@@ -6115,18 +6124,19 @@ const docTemplate = `{
                     },
                     "example": [
                         "read",
-                        "write"
+                        "create",
+                        "update"
                     ]
                 },
                 "resource_id": {
                     "type": "string",
-                    "example": "USR_abc123"
+                    "example": "RES1760615540005820900"
                 },
                 "resource_type": {
                     "type": "string",
                     "maxLength": 100,
                     "minLength": 1,
-                    "example": "aaa/user"
+                    "example": "crop_management"
                 }
             }
         },
@@ -6769,7 +6779,7 @@ const docTemplate = `{
             }
         },
         "permissions.CreatePermissionRequest": {
-            "description": "Request payload for creating a new permission",
+            "description": "Request payload for creating a new permission with resource and action",
             "type": "object",
             "required": [
                 "action_id",
@@ -6779,22 +6789,22 @@ const docTemplate = `{
             "properties": {
                 "action_id": {
                     "type": "string",
-                    "example": "ACT_xyz789"
+                    "example": "ACT1760615540005820901"
                 },
                 "description": {
                     "type": "string",
                     "maxLength": 500,
-                    "example": "Permission to manage users"
+                    "example": "Permission to create and add new crops to the farm inventory"
                 },
                 "name": {
                     "type": "string",
                     "maxLength": 100,
                     "minLength": 3,
-                    "example": "manage_users"
+                    "example": "crop_management_create"
                 },
                 "resource_id": {
                     "type": "string",
-                    "example": "RES_abc123"
+                    "example": "RES1760615540005820900"
                 }
             }
         },
@@ -6918,32 +6928,31 @@ const docTemplate = `{
             }
         },
         "permissions.PermissionResponse": {
-            "description": "Response structure for a single permission",
+            "description": "Complete permission details including associated resource and action information",
             "type": "object",
             "properties": {
                 "action_id": {
                     "type": "string",
-                    "example": "ACT_xyz789"
+                    "example": "ACT1760615540005820901"
                 },
                 "action_name": {
                     "type": "string",
-                    "example": "manage"
+                    "example": "read"
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2024-01-01T00:00:00Z"
+                    "example": "2024-01-15T10:30:00Z"
                 },
                 "deleted_at": {
-                    "type": "string",
-                    "example": "2024-01-01T00:00:00Z"
+                    "type": "string"
                 },
                 "description": {
                     "type": "string",
-                    "example": "Permission to manage users"
+                    "example": "Permission to view and read crop information in the farm inventory"
                 },
                 "id": {
                     "type": "string",
-                    "example": "PERM_abc123"
+                    "example": "PERM00000001"
                 },
                 "is_active": {
                     "type": "boolean",
@@ -6951,19 +6960,19 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string",
-                    "example": "manage_users"
+                    "example": "crop_management_read"
                 },
                 "resource_id": {
                     "type": "string",
-                    "example": "RES_abc123"
+                    "example": "RES1760615540005820900"
                 },
                 "resource_name": {
                     "type": "string",
-                    "example": "User Management"
+                    "example": "crop_management"
                 },
                 "updated_at": {
                     "type": "string",
-                    "example": "2024-01-01T00:00:00Z"
+                    "example": "2024-01-20T14:45:00Z"
                 }
             }
         },
@@ -6985,17 +6994,17 @@ const docTemplate = `{
             }
         },
         "permissions.UpdatePermissionRequest": {
-            "description": "Request payload for updating a permission",
+            "description": "Request payload for updating a permission's details",
             "type": "object",
             "properties": {
                 "action_id": {
                     "type": "string",
-                    "example": "ACT_xyz789"
+                    "example": "ACT1760615540005820902"
                 },
                 "description": {
                     "type": "string",
                     "maxLength": 500,
-                    "example": "Updated description"
+                    "example": "Updated permission to modify existing crops in the farm inventory"
                 },
                 "is_active": {
                     "type": "boolean",
@@ -7005,11 +7014,11 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 100,
                     "minLength": 3,
-                    "example": "updated_permission"
+                    "example": "crop_management_update"
                 },
                 "resource_id": {
                     "type": "string",
-                    "example": "RES_abc123"
+                    "example": "RES1760615540005820900"
                 }
             }
         },
@@ -7050,35 +7059,45 @@ const docTemplate = `{
             }
         },
         "requests.LoginRequest": {
+            "description": "Login request with three supported flows: 1. Phone + Password: Standard login with phone number and password 2. Phone + MPIN: Quick login with phone number and 4-6 digit PIN 3. Refresh Token + MPIN: Re-authentication using existing refresh token",
             "type": "object",
             "properties": {
                 "country_code": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "+91"
                 },
                 "include_contacts": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "example": false
                 },
                 "include_profile": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "example": true
                 },
                 "include_roles": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "example": true
                 },
                 "mfa_code": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "123456"
                 },
                 "mpin": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "1234"
                 },
                 "password": {
                     "type": "string",
-                    "minLength": 8
+                    "minLength": 8,
+                    "example": "SecureP@ss123"
                 },
                 "phone_number": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "9876543210"
                 },
                 "refresh_token": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
                 }
             }
         },
@@ -7199,6 +7218,7 @@ const docTemplate = `{
             }
         },
         "requests.RefreshTokenRequest": {
+            "description": "Refresh an existing access token using a refresh token and MPIN",
             "type": "object",
             "required": [
                 "mpin",
@@ -7206,14 +7226,17 @@ const docTemplate = `{
             ],
             "properties": {
                 "mpin": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "1234"
                 },
                 "refresh_token": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
                 }
             }
         },
         "requests.RegisterRequest": {
+            "description": "Register a new user account with phone number authentication",
             "type": "object",
             "required": [
                 "country_code",
@@ -7222,23 +7245,29 @@ const docTemplate = `{
             ],
             "properties": {
                 "aadhaar_number": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "1234 5678 9012"
                 },
                 "country_code": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "+91"
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Ramesh Kumar"
                 },
                 "password": {
                     "type": "string",
-                    "minLength": 8
+                    "minLength": 8,
+                    "example": "SecureP@ss123"
                 },
                 "phone_number": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "9876543210"
                 },
                 "username": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "ramesh_kumar"
                 }
             }
         },
@@ -7273,7 +7302,7 @@ const docTemplate = `{
             }
         },
         "resources.CreateResourceRequest": {
-            "description": "Request payload for creating a new resource",
+            "description": "Define a new resource that can be protected with permissions",
             "type": "object",
             "required": [
                 "name",
@@ -7283,27 +7312,27 @@ const docTemplate = `{
                 "description": {
                     "type": "string",
                     "maxLength": 500,
-                    "example": "Resource for managing users"
+                    "example": "Resource for managing farm crop inventory and cultivation records"
                 },
                 "name": {
                     "type": "string",
                     "maxLength": 100,
                     "minLength": 3,
-                    "example": "User Management"
+                    "example": "Crop Management"
                 },
                 "owner_id": {
                     "type": "string",
-                    "example": "USR_xyz789"
+                    "example": "USER00000001"
                 },
                 "parent_id": {
                     "type": "string",
-                    "example": "RES_abc123"
+                    "example": "RES1760615540005820899"
                 },
                 "type": {
                     "type": "string",
                     "maxLength": 100,
                     "minLength": 3,
-                    "example": "aaa/user"
+                    "example": "farm/crops"
                 }
             }
         },
@@ -8126,6 +8155,7 @@ const docTemplate = `{
             }
         },
         "responses.UserInfo": {
+            "description": "Comprehensive user information returned in authentication responses",
             "type": "object",
             "properties": {
                 "contacts": {
@@ -8135,22 +8165,28 @@ const docTemplate = `{
                     }
                 },
                 "country_code": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "+91"
                 },
                 "created_at": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "2024-01-15T10:30:00Z"
                 },
                 "has_mpin": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "example": true
                 },
                 "id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "USER00000001"
                 },
                 "is_validated": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "example": true
                 },
                 "phone_number": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "9876543210"
                 },
                 "profile": {
                     "$ref": "#/definitions/responses.UserProfileInfo"
@@ -8162,16 +8198,20 @@ const docTemplate = `{
                     }
                 },
                 "status": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "active"
                 },
                 "tokens": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 2
                 },
                 "updated_at": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "2024-01-20T14:45:00Z"
                 },
                 "username": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "ramesh_kumar"
                 }
             }
         },
@@ -8314,7 +8354,7 @@ const docTemplate = `{
             }
         },
         "role_assignments.AssignPermissionsToRoleRequest": {
-            "description": "Request payload for assigning permissions to a role",
+            "description": "Assign one or more permissions to a role for access control",
             "type": "object",
             "required": [
                 "permission_ids"
@@ -8327,8 +8367,9 @@ const docTemplate = `{
                         "type": "string"
                     },
                     "example": [
-                        "PERM_abc123",
-                        "PERM_xyz789"
+                        "PERM00000001",
+                        "PERM00000002",
+                        "PERM00000003"
                     ]
                 }
             }
@@ -8390,6 +8431,7 @@ const docTemplate = `{
             }
         },
         "roles.CreateRoleRequest": {
+            "description": "Create a new role with name, description, and optional permissions",
             "type": "object",
             "required": [
                 "name"
@@ -8402,7 +8444,8 @@ const docTemplate = `{
                 },
                 "description": {
                     "type": "string",
-                    "maxLength": 500
+                    "maxLength": 500,
+                    "example": "Manager role for farm operations and crop management"
                 },
                 "headers": {
                     "type": "object",
@@ -8416,7 +8459,8 @@ const docTemplate = `{
                 "name": {
                     "type": "string",
                     "maxLength": 100,
-                    "minLength": 2
+                    "minLength": 2,
+                    "example": "farm_manager"
                 },
                 "operation": {
                     "type": "string"
@@ -8425,7 +8469,11 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "type": "string"
-                    }
+                    },
+                    "example": [
+                        "PERM00000001",
+                        "PERM00000002"
+                    ]
                 },
                 "protocol": {
                     "type": "string"
@@ -8472,6 +8520,7 @@ const docTemplate = `{
             }
         },
         "roles.UpdateRoleRequest": {
+            "description": "Update an existing role with new name, description, or permissions",
             "type": "object",
             "required": [
                 "role_id"
@@ -8484,7 +8533,8 @@ const docTemplate = `{
                 },
                 "description": {
                     "type": "string",
-                    "maxLength": 500
+                    "maxLength": 500,
+                    "example": "Senior manager role with full farm operation access"
                 },
                 "headers": {
                     "type": "object",
@@ -8498,7 +8548,8 @@ const docTemplate = `{
                 "name": {
                     "type": "string",
                     "maxLength": 100,
-                    "minLength": 2
+                    "minLength": 2,
+                    "example": "senior_farm_manager"
                 },
                 "operation": {
                     "type": "string"
@@ -8507,7 +8558,12 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "type": "string"
-                    }
+                    },
+                    "example": [
+                        "PERM00000001",
+                        "PERM00000002",
+                        "PERM00000003"
+                    ]
                 },
                 "protocol": {
                     "type": "string"
@@ -8516,7 +8572,8 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "role_id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "ROLE00000001"
                 },
                 "type": {
                     "type": "string"

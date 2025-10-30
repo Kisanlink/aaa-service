@@ -5,17 +5,18 @@ import (
 )
 
 // UserInfo represents comprehensive user information in auth responses
+// @Description Comprehensive user information returned in authentication responses
 type UserInfo struct {
-	ID          string           `json:"id"`
-	PhoneNumber string           `json:"phone_number"`
-	CountryCode string           `json:"country_code"`
-	Username    *string          `json:"username,omitempty"`
-	IsValidated bool             `json:"is_validated"`
-	Status      *string          `json:"status,omitempty"`
-	CreatedAt   time.Time        `json:"created_at"`
-	UpdatedAt   time.Time        `json:"updated_at"`
-	Tokens      int              `json:"tokens"`
-	HasMPin     bool             `json:"has_mpin"`
+	ID          string           `json:"id" example:"USER00000001"`
+	PhoneNumber string           `json:"phone_number" example:"9876543210"`
+	CountryCode string           `json:"country_code" example:"+91"`
+	Username    *string          `json:"username,omitempty" example:"ramesh_kumar"`
+	IsValidated bool             `json:"is_validated" example:"true"`
+	Status      *string          `json:"status,omitempty" example:"active"`
+	CreatedAt   time.Time        `json:"created_at" example:"2024-01-15T10:30:00Z"`
+	UpdatedAt   time.Time        `json:"updated_at" example:"2024-01-20T14:45:00Z"`
+	Tokens      int              `json:"tokens" example:"2"`
+	HasMPin     bool             `json:"has_mpin" example:"true"`
 	Roles       []UserRoleDetail `json:"roles,omitempty"`
 	Profile     *UserProfileInfo `json:"profile,omitempty"`
 	Contacts    []ContactInfo    `json:"contacts,omitempty"`
@@ -129,13 +130,14 @@ type ContactInfo struct {
 }
 
 // LoginResponse represents the response for a successful login
+// @Description Successful login response with JWT tokens and user information
 type LoginResponse struct {
-	AccessToken  string    `json:"access_token"`
-	RefreshToken string    `json:"refresh_token"`
-	TokenType    string    `json:"token_type"`
-	ExpiresIn    int64     `json:"expires_in"`
+	AccessToken  string    `json:"access_token" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiVVNFUjAwMDAwMDAxIiwiZXhwIjoxNzA1NDM1MjAwfQ.abc123def456ghi789"`
+	RefreshToken string    `json:"refresh_token" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiVVNFUjAwMDAwMDAxIiwiZXhwIjoxNzA4MDI3MjAwfQ.xyz789uvw456rst123"`
+	TokenType    string    `json:"token_type" example:"Bearer"`
+	ExpiresIn    int64     `json:"expires_in" example:"3600"`
 	User         *UserInfo `json:"user"`
-	Message      string    `json:"message"`
+	Message      string    `json:"message" example:"Login successful"`
 }
 
 // GetType returns the response type

@@ -6,13 +6,13 @@ import (
 )
 
 // CreateResourceRequest represents the request to create a new resource
-// @Description Request payload for creating a new resource
+// @Description Define a new resource that can be protected with permissions
 type CreateResourceRequest struct {
-	Name        string  `json:"name" validate:"required,min=3,max=100" example:"User Management"`
-	Type        string  `json:"type" validate:"required,min=3,max=100" example:"aaa/user"`
-	Description string  `json:"description" validate:"max=500" example:"Resource for managing users"`
-	ParentID    *string `json:"parent_id,omitempty" validate:"omitempty,uuid" example:"RES_abc123"`
-	OwnerID     *string `json:"owner_id,omitempty" validate:"omitempty,uuid" example:"USR_xyz789"`
+	Name        string  `json:"name" validate:"required,min=3,max=100" example:"Crop Management"`
+	Type        string  `json:"type" validate:"required,min=3,max=100" example:"farm/crops"`
+	Description string  `json:"description" validate:"max=500" example:"Resource for managing farm crop inventory and cultivation records"`
+	ParentID    *string `json:"parent_id,omitempty" validate:"omitempty,uuid" example:"RES1760615540005820899"`
+	OwnerID     *string `json:"owner_id,omitempty" validate:"omitempty,uuid" example:"USER00000001"`
 }
 
 // Validate validates the CreateResourceRequest
