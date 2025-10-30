@@ -9,7 +9,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// UpdateResource handles PUT /api/v2/resources/:id
+// UpdateResource handles PUT /api/v1/resources/:id
 //
 //	@Summary		Update resource
 //	@Description	Update an existing resource
@@ -22,7 +22,7 @@ import (
 //	@Failure		400			{object}	map[string]interface{}
 //	@Failure		404			{object}	map[string]interface{}
 //	@Failure		500			{object}	map[string]interface{}
-//	@Router			/api/v2/resources/{id} [put]
+//	@Router			/api/v1/resources/{id} [put]
 func (h *ResourceHandler) UpdateResource(c *gin.Context) {
 	resourceID := c.Param("id")
 	h.logger.Info("Updating resource", zap.String("resourceID", resourceID))

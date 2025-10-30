@@ -47,7 +47,7 @@ func NewContactHandler(
 //	@Failure		400		{object}	responses.ErrorResponse
 //	@Failure		409		{object}	responses.ErrorResponse
 //	@Failure		500		{object}	responses.ErrorResponse
-//	@Router			/api/v2/contacts [post]
+//	@Router			/api/v1/contacts [post]
 func (h *ContactHandler) CreateContact(c *gin.Context) {
 	h.logger.Info("Creating contact")
 
@@ -103,7 +103,7 @@ func (h *ContactHandler) CreateContact(c *gin.Context) {
 //	@Failure		400	{object}	responses.ErrorResponse
 //	@Failure		404	{object}	responses.ErrorResponse
 //	@Failure		500	{object}	responses.ErrorResponse
-//	@Router			/api/v2/contacts/{id} [get]
+//	@Router			/api/v1/contacts/{id} [get]
 func (h *ContactHandler) GetContact(c *gin.Context) {
 	contactID := c.Param("id")
 	if contactID == "" {
@@ -141,7 +141,7 @@ func (h *ContactHandler) GetContact(c *gin.Context) {
 //	@Failure		400		{object}	responses.ErrorResponse
 //	@Failure		404		{object}	responses.ErrorResponse
 //	@Failure		500		{object}	responses.ErrorResponse
-//	@Router			/api/v2/contacts/{id} [put]
+//	@Router			/api/v1/contacts/{id} [put]
 func (h *ContactHandler) UpdateContact(c *gin.Context) {
 	contactID := c.Param("id")
 	if contactID == "" {
@@ -203,7 +203,7 @@ func (h *ContactHandler) UpdateContact(c *gin.Context) {
 //	@Failure		400	{object}	responses.ErrorResponse
 //	@Failure		404	{object}	responses.ErrorResponse
 //	@Failure		500	{object}	responses.ErrorResponse
-//	@Router			/api/v2/contacts/{id} [delete]
+//	@Router			/api/v1/contacts/{id} [delete]
 func (h *ContactHandler) DeleteContact(c *gin.Context) {
 	contactID := c.Param("id")
 	if contactID == "" {
@@ -247,7 +247,7 @@ func (h *ContactHandler) DeleteContact(c *gin.Context) {
 //	@Success		200		{object}	contacts.ContactListResponse
 //	@Failure		400		{object}	responses.ErrorResponse
 //	@Failure		500		{object}	responses.ErrorResponse
-//	@Router			/api/v2/contacts [get]
+//	@Router			/api/v1/contacts [get]
 func (h *ContactHandler) ListContacts(c *gin.Context) {
 	// Parse pagination parameters
 	limitStr := c.DefaultQuery("limit", "10")
@@ -291,7 +291,7 @@ func (h *ContactHandler) ListContacts(c *gin.Context) {
 //	@Success		200		{object}	contacts.ContactListResponse
 //	@Failure		400		{object}	responses.ErrorResponse
 //	@Failure		500		{object}	responses.ErrorResponse
-//	@Router			/api/v2/contacts/user/{userID} [get]
+//	@Router			/api/v1/contacts/user/{userID} [get]
 func (h *ContactHandler) GetContactsByUser(c *gin.Context) {
 	userID := c.Param("userID")
 	if userID == "" {

@@ -497,14 +497,14 @@ func SecurityHeaders() gin.HandlerFunc {
 // isSensitiveEndpoint checks if an endpoint handles sensitive data
 func isSensitiveEndpoint(path string) bool {
 	sensitiveEndpoints := []string{
-		"/api/v2/auth/login",
-		"/api/v2/auth/register",
-		"/api/v2/auth/refresh",
-		"/api/v2/auth/set-mpin",
-		"/api/v2/auth/update-mpin",
-		"/api/v2/users",
-		"/api/v2/roles",
-		"/api/v2/admin",
+		"/api/v1/auth/login",
+		"/api/v1/auth/register",
+		"/api/v1/auth/refresh",
+		"/api/v1/auth/set-mpin",
+		"/api/v1/auth/update-mpin",
+		"/api/v1/users",
+		"/api/v1/roles",
+		"/api/v1/admin",
 	}
 
 	for _, endpoint := range sensitiveEndpoints {

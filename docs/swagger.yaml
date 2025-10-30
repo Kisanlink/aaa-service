@@ -2022,49 +2022,6 @@ definitions:
     required:
     - role_id
     type: object
-  services.LoginRequest:
-    properties:
-      country_code:
-        type: string
-      mfa_code:
-        type: string
-      password:
-        type: string
-      phone_number:
-        type: string
-    required:
-    - country_code
-    - password
-    - phone_number
-    type: object
-  services.RegisterRequest:
-    properties:
-      country_code:
-        type: string
-      email:
-        type: string
-      full_name:
-        maxLength: 100
-        minLength: 1
-        type: string
-      password:
-        minLength: 8
-        type: string
-      phone_number:
-        type: string
-      role_ids:
-        items:
-          type: string
-        type: array
-      username:
-        maxLength: 50
-        minLength: 3
-        type: string
-    required:
-    - country_code
-    - password
-    - phone_number
-    type: object
   users.AddressResponse:
     properties:
       country:
@@ -2235,6 +2192,1507 @@ info:
   title: AAA Service API
   version: "2.0"
 paths:
+  /api/v1/actions:
+    get:
+      description: Retrieve a paginated list of actions
+      parameters:
+      - description: 'Number of actions to return (default: 10, max: 100)'
+        in: query
+        name: limit
+        type: integer
+      - description: 'Number of actions to skip (default: 0)'
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/actions.ActionListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+      summary: List actions
+      tags:
+      - actions
+    post:
+      consumes:
+      - application/json
+      description: Create a new action with the provided information
+      parameters:
+      - description: Action creation data
+        in: body
+        name: action
+        required: true
+        schema:
+          $ref: '#/definitions/actions.CreateActionRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/actions.ActionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+      summary: Create a new action
+      tags:
+      - actions
+  /api/v1/actions/{id}:
+    delete:
+      description: Soft delete an action by ID
+      parameters:
+      - description: Action ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Action deleted successfully
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+      summary: Delete an action
+      tags:
+      - actions
+    get:
+      description: Retrieve an action by its ID
+      parameters:
+      - description: Action ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/actions.ActionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+      summary: Get an action by ID
+      tags:
+      - actions
+    put:
+      consumes:
+      - application/json
+      description: Update an existing action with the provided information
+      parameters:
+      - description: Action ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Action update data
+        in: body
+        name: action
+        required: true
+        schema:
+          $ref: '#/definitions/actions.UpdateActionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/actions.ActionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+      summary: Update an action
+      tags:
+      - actions
+  /api/v1/actions/service/{serviceName}:
+    get:
+      description: Retrieve actions for a specific service
+      parameters:
+      - description: Service name
+        in: path
+        name: serviceName
+        required: true
+        type: string
+      - description: 'Number of actions to return (default: 10, max: 100)'
+        in: query
+        name: limit
+        type: integer
+      - description: 'Number of actions to skip (default: 0)'
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/actions.ActionListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+      summary: Get actions by service
+      tags:
+      - actions
+  /api/v1/addresses:
+    post:
+      consumes:
+      - application/json
+      description: Create a new address for a user
+      parameters:
+      - description: Address creation data
+        in: body
+        name: address
+        required: true
+        schema:
+          $ref: '#/definitions/addresses.CreateAddressRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Create a new address
+      tags:
+      - addresses
+  /api/v1/addresses/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete an address by its unique identifier
+      parameters:
+      - description: Address ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Delete address
+      tags:
+      - addresses
+    get:
+      consumes:
+      - application/json
+      description: Retrieve an address by its unique identifier
+      parameters:
+      - description: Address ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get address by ID
+      tags:
+      - addresses
+    put:
+      consumes:
+      - application/json
+      description: Update an existing address
+      parameters:
+      - description: Address ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Address update data
+        in: body
+        name: address
+        required: true
+        schema:
+          $ref: '#/definitions/addresses.UpdateAddressRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Update address
+      tags:
+      - addresses
+  /api/v1/addresses/search:
+    get:
+      consumes:
+      - application/json
+      description: Search for addresses based on query parameters
+      parameters:
+      - description: Search query
+        in: query
+        name: q
+        required: true
+        type: string
+      - default: 10
+        description: Number of addresses to return
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Number of addresses to skip
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Search addresses
+      tags:
+      - addresses
+  /api/v1/admin/audit:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve audit logs with optional filtering
+      parameters:
+      - description: Filter by user ID
+        in: query
+        name: user_id
+        type: string
+      - description: Filter by action type
+        in: query
+        name: action
+        type: string
+      - description: Filter by resource type
+        in: query
+        name: resource
+        type: string
+      - description: Filter by start date (RFC3339)
+        in: query
+        name: start_date
+        type: string
+      - description: Filter by end date (RFC3339)
+        in: query
+        name: end_date
+        type: string
+      - default: 100
+        description: Number of logs to return
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Number of logs to skip
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Audit logs
+      tags:
+      - admin
+  /api/v1/admin/health/detailed:
+    get:
+      consumes:
+      - application/json
+      description: Get detailed health status of all system components
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Detailed health check
+      tags:
+      - admin
+  /api/v1/admin/maintenance:
+    get:
+      consumes:
+      - application/json
+      description: Get current maintenance mode status and configuration
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get maintenance status
+      tags:
+      - admin
+    post:
+      consumes:
+      - application/json
+      description: Enable or disable system maintenance mode
+      parameters:
+      - description: Maintenance mode configuration
+        in: body
+        name: maintenance
+        required: true
+        schema:
+          properties:
+            allow_admin:
+              type: boolean
+            allow_read:
+              type: boolean
+            enabled:
+              type: boolean
+            end_time:
+              type: string
+            message:
+              type: string
+            reason:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Toggle maintenance mode
+      tags:
+      - admin
+  /api/v1/admin/maintenance/message:
+    patch:
+      consumes:
+      - application/json
+      description: Update the maintenance mode message
+      parameters:
+      - description: New maintenance message
+        in: body
+        name: message
+        required: true
+        schema:
+          properties:
+            message:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Update maintenance message
+      tags:
+      - admin
+  /api/v1/admin/metrics:
+    get:
+      consumes:
+      - application/json
+      description: Get comprehensive system and application metrics
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: System metrics
+      tags:
+      - admin
+  /api/v1/admin/system:
+    get:
+      consumes:
+      - application/json
+      description: Get comprehensive system information including service details,
+        runtime info, and configuration
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: System information
+      tags:
+      - admin
+  /api/v1/auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user with phone number and either password or MPIN.
+        Returns comprehensive user information including roles, profile, and contacts
+        based on request flags.
+      parameters:
+      - description: Login credentials with optional flags for additional data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/requests.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successful login with tokens and user info
+          schema:
+            $ref: '#/definitions/responses.LoginSuccessResponse'
+        "400":
+          description: Invalid request data or validation error
+          schema:
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
+        "401":
+          description: Invalid credentials or authentication failed
+          schema:
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
+      summary: User login with MPIN support
+      tags:
+      - auth
+  /api/v1/auth/logout:
+    post:
+      consumes:
+      - application/json
+      description: Logout user and invalidate tokens (placeholder implementation)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Logged out successfully
+          schema:
+            $ref: '#/definitions/responses.LogoutSuccessResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
+      security:
+      - Bearer: []
+      summary: User logout
+      tags:
+      - auth
+  /api/v1/auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Generate new access and refresh tokens using existing refresh token
+        and MPIN verification
+      parameters:
+      - description: Refresh token and MPIN
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/requests.RefreshTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Token refreshed successfully
+          schema:
+            $ref: '#/definitions/responses.RefreshTokenSuccessResponse'
+        "400":
+          description: Invalid request data
+          schema:
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
+        "401":
+          description: Invalid refresh token or MPIN
+          schema:
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
+      summary: Refresh access token using MPIN
+      tags:
+      - auth
+  /api/v1/auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Create a new user account with phone number, password, and optional
+        profile information
+      parameters:
+      - description: User registration data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/requests.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: User registered successfully
+          schema:
+            $ref: '#/definitions/responses.RegisterSuccessResponse'
+        "400":
+          description: Invalid request data or validation error
+          schema:
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
+        "409":
+          description: User already exists or conflict error
+          schema:
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
+      summary: Register new user account
+      tags:
+      - auth
+  /api/v1/auth/set-mpin:
+    post:
+      consumes:
+      - application/json
+      description: Set or update mPin for secure refresh token validation
+      parameters:
+      - description: Set mPin request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/requests.SetMPinRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Set or update user's mPin
+      tags:
+      - auth
+  /api/v1/auth/update-mpin:
+    post:
+      consumes:
+      - application/json
+      description: Update existing mPin with current mPin verification
+      parameters:
+      - description: Update mPin request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/requests.UpdateMPinRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Update user's existing mPin
+      tags:
+      - auth
+  /api/v1/contacts:
+    get:
+      description: Retrieve a paginated list of contacts
+      parameters:
+      - description: 'Number of contacts to return (default: 10, max: 100)'
+        in: query
+        name: limit
+        type: integer
+      - description: 'Number of contacts to skip (default: 0)'
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/contacts.ContactListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+      summary: List contacts
+      tags:
+      - contacts
+    post:
+      consumes:
+      - application/json
+      description: Create a new contact with the provided information
+      parameters:
+      - description: Contact creation data
+        in: body
+        name: contact
+        required: true
+        schema:
+          $ref: '#/definitions/contacts.CreateContactRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/contacts.ContactResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+      summary: Create a new contact
+      tags:
+      - contacts
+  /api/v1/contacts/{id}:
+    delete:
+      description: Soft delete a contact by ID
+      parameters:
+      - description: Contact ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Contact deleted successfully
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+      summary: Delete a contact
+      tags:
+      - contacts
+    get:
+      description: Retrieve a contact by its ID
+      parameters:
+      - description: Contact ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/contacts.ContactResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+      summary: Get a contact by ID
+      tags:
+      - contacts
+    put:
+      consumes:
+      - application/json
+      description: Update an existing contact with the provided information
+      parameters:
+      - description: Contact ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Contact update data
+        in: body
+        name: contact
+        required: true
+        schema:
+          $ref: '#/definitions/contacts.UpdateContactRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/contacts.ContactResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+      summary: Update a contact
+      tags:
+      - contacts
+  /api/v1/contacts/user/{userID}:
+    get:
+      description: Retrieve contacts for a specific user
+      parameters:
+      - description: User ID
+        in: path
+        name: userID
+        required: true
+        type: string
+      - description: 'Number of contacts to return (default: 10, max: 100)'
+        in: query
+        name: limit
+        type: integer
+      - description: 'Number of contacts to skip (default: 0)'
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/contacts.ContactListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+      summary: Get contacts by user
+      tags:
+      - contacts
+  /api/v1/health:
+    get:
+      consumes:
+      - application/json
+      description: Basic health check for the AAA service
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/responses.HealthCheckResponse'
+      summary: Health check (V2)
+      tags:
+      - health
+  /api/v1/modules:
+    get:
+      description: Get a list of all registered modules
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/responses.ModuleListResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      - ApiKeyAuth: []
+      summary: List all registered modules
+      tags:
+      - modules
+  /api/v1/modules/{service_name}:
+    get:
+      description: Get detailed information about a registered module
+      parameters:
+      - description: Service name
+        in: path
+        name: service_name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/responses.ModuleDetailResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      - ApiKeyAuth: []
+      summary: Get module information
+      tags:
+      - modules
+  /api/v1/modules/{service_name}/health:
+    get:
+      description: Check if a module is healthy and operational
+      parameters:
+      - description: Service name
+        in: path
+        name: service_name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      - ApiKeyAuth: []
+      summary: Check module health
+      tags:
+      - modules
+  /api/v1/modules/register:
+    post:
+      consumes:
+      - application/json
+      description: Register a complete module with actions, roles, resources, and
+        permissions. Requires API key authentication.
+      parameters:
+      - description: Module registration request
+        in: body
+        name: module
+        required: true
+        schema:
+          $ref: '#/definitions/requests.ModuleRegistrationRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/responses.ModuleDetailResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Register a new module
+      tags:
+      - modules
+  /api/v1/organizations:
+    get:
+      description: Retrieve a list of organizations with pagination and optional type
+        filter
+      parameters:
+      - description: 'Number of organizations to return (default: 10, max: 100)'
+        in: query
+        name: limit
+        type: integer
+      - description: 'Number of organizations to skip (default: 0)'
+        in: query
+        name: offset
+        type: integer
+      - description: 'Include inactive organizations (default: false)'
+        in: query
+        name: include_inactive
+        type: boolean
+      - description: Filter by organization type (enterprise, small_business, individual,
+          fpo, cooperative, agribusiness, farmers_group, shg, ngo, government, input_supplier,
+          trader, processing_unit, research_institute)
+        in: query
+        name: type
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/organizations.OrganizationResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+      summary: List organizations
+      tags:
+      - organizations
+    post:
+      consumes:
+      - application/json
+      description: Create a new organization with the provided information
+      parameters:
+      - description: Organization creation data
+        in: body
+        name: organization
+        required: true
+        schema:
+          $ref: '#/definitions/organizations.CreateOrganizationRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/organizations.OrganizationResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+      summary: Create a new organization
+      tags:
+      - organizations
+  /api/v1/organizations/{id}:
+    delete:
+      description: Delete an organization by its ID
+      parameters:
+      - description: Organization ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/responses.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+      summary: Delete organization
+      tags:
+      - organizations
+    get:
+      description: Retrieve an organization by its ID
+      parameters:
+      - description: Organization ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/organizations.OrganizationResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+      summary: Get organization by ID
+      tags:
+      - organizations
+    put:
+      consumes:
+      - application/json
+      description: Update an existing organization with the provided information
+      parameters:
+      - description: Organization ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Organization update data
+        in: body
+        name: organization
+        required: true
+        schema:
+          $ref: '#/definitions/organizations.UpdateOrganizationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/organizations.OrganizationResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+      summary: Update organization
+      tags:
+      - organizations
+  /api/v1/organizations/{id}/activate:
+    post:
+      description: Activate an inactive organization
+      parameters:
+      - description: Organization ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/responses.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+      summary: Activate organization
+      tags:
+      - organizations
+  /api/v1/organizations/{id}/deactivate:
+    post:
+      description: Deactivate an active organization
+      parameters:
+      - description: Organization ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/responses.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+      summary: Deactivate organization
+      tags:
+      - organizations
+  /api/v1/organizations/{id}/hierarchy:
+    get:
+      description: Retrieve the hierarchical structure of an organization
+      parameters:
+      - description: Organization ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/organizations.OrganizationHierarchyResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+      summary: Get organization hierarchy
+      tags:
+      - organizations
+  /api/v1/organizations/{id}/stats:
+    get:
+      description: Retrieve statistics and metrics for an organization
+      parameters:
+      - description: Organization ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/organizations.OrganizationStatsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.ErrorResponse'
+      summary: Get organization statistics
+      tags:
+      - organizations
   /api/v1/organizations/{orgId}/groups:
     get:
       description: Retrieve all groups within an organization with pagination
@@ -2799,6 +4257,948 @@ paths:
       summary: Get user groups in organization
       tags:
       - organizations
+  /api/v1/permissions:
+    get:
+      consumes:
+      - application/json
+      description: Get a paginated list of permissions with optional filters
+      parameters:
+      - description: Role ID filter
+        in: query
+        name: role_id
+        type: string
+      - description: Resource ID filter
+        in: query
+        name: resource_id
+        type: string
+      - description: Action ID filter
+        in: query
+        name: action_id
+        type: string
+      - description: Active status filter
+        in: query
+        name: is_active
+        type: boolean
+      - description: Search term
+        in: query
+        name: search
+        type: string
+      - default: 10
+        description: Number of permissions to return
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Number of permissions to skip
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/permissions.PermissionListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List permissions
+      tags:
+      - permissions
+    post:
+      consumes:
+      - application/json
+      description: Create a new permission with name, resource, and action
+      parameters:
+      - description: Permission creation data
+        in: body
+        name: permission
+        required: true
+        schema:
+          $ref: '#/definitions/permissions.CreatePermissionRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/permissions.PermissionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Permission with the same name already exists
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Create a new permission
+      tags:
+      - permissions
+  /api/v1/permissions/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a permission by its unique identifier
+      parameters:
+      - description: Permission ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Delete permission
+      tags:
+      - permissions
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a permission by its unique identifier
+      parameters:
+      - description: Permission ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/permissions.PermissionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get permission by ID
+      tags:
+      - permissions
+    put:
+      consumes:
+      - application/json
+      description: Update an existing permission
+      parameters:
+      - description: Permission ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Permission update data
+        in: body
+        name: permission
+        required: true
+        schema:
+          $ref: '#/definitions/permissions.UpdatePermissionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/permissions.PermissionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Update permission
+      tags:
+      - permissions
+  /api/v1/permissions/evaluate:
+    post:
+      consumes:
+      - application/json
+      description: Check if a user has permission to perform an action on a resource
+      parameters:
+      - description: Evaluation request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/permissions.EvaluatePermissionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/permissions.EvaluationResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Evaluate user permission
+      tags:
+      - permissions
+  /api/v1/resources:
+    get:
+      consumes:
+      - application/json
+      description: Get a paginated list of resources with optional filters
+      parameters:
+      - description: Resource type filter
+        in: query
+        name: type
+        type: string
+      - description: Parent ID filter
+        in: query
+        name: parent_id
+        type: string
+      - description: Owner ID filter
+        in: query
+        name: owner_id
+        type: string
+      - description: Active status filter
+        in: query
+        name: is_active
+        type: boolean
+      - description: Search term
+        in: query
+        name: search
+        type: string
+      - default: 10
+        description: Number of resources to return
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Number of resources to skip
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/resources.ResourceListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List resources
+      tags:
+      - resources
+    post:
+      consumes:
+      - application/json
+      description: Create a new resource with name, type, and description
+      parameters:
+      - description: Resource creation data
+        in: body
+        name: resource
+        required: true
+        schema:
+          $ref: '#/definitions/resources.CreateResourceRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/resources.ResourceResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Create a new resource
+      tags:
+      - resources
+  /api/v1/resources/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a resource by its unique identifier
+      parameters:
+      - description: Resource ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - default: false
+        description: Delete children recursively
+        in: query
+        name: cascade
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Delete resource
+      tags:
+      - resources
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a resource by its unique identifier
+      parameters:
+      - description: Resource ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/resources.ResourceResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get resource by ID
+      tags:
+      - resources
+    put:
+      consumes:
+      - application/json
+      description: Update an existing resource
+      parameters:
+      - description: Resource ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Resource update data
+        in: body
+        name: resource
+        required: true
+        schema:
+          $ref: '#/definitions/resources.UpdateResourceRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/resources.ResourceResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Update resource
+      tags:
+      - resources
+  /api/v1/resources/{id}/children:
+    get:
+      consumes:
+      - application/json
+      description: Get all direct children of a resource
+      parameters:
+      - description: Resource ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/resources.ResourceWithChildrenResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get child resources
+      tags:
+      - resources
+  /api/v1/resources/{id}/hierarchy:
+    get:
+      consumes:
+      - application/json
+      description: Get the full hierarchical tree starting from a resource
+      parameters:
+      - description: Resource ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/resources.ResourceHierarchyResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get resource hierarchy
+      tags:
+      - resources
+  /api/v1/roles:
+    get:
+      consumes:
+      - application/json
+      description: Get a paginated list of roles
+      parameters:
+      - default: 10
+        description: Number of roles to return
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Number of roles to skip
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List roles
+      tags:
+      - roles
+    post:
+      consumes:
+      - application/json
+      description: Create a new role with the provided information
+      parameters:
+      - description: Role creation data
+        in: body
+        name: role
+        required: true
+        schema:
+          $ref: '#/definitions/roles.CreateRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
+      summary: Create a new role
+      tags:
+      - roles
+  /api/v1/roles/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a role by its unique identifier
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
+      summary: Delete role
+      tags:
+      - roles
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a role by its unique identifier
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
+      summary: Get role by ID
+      tags:
+      - roles
+    put:
+      consumes:
+      - application/json
+      description: Update an existing role's information
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Role update data
+        in: body
+        name: role
+        required: true
+        schema:
+          $ref: '#/definitions/roles.UpdateRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/responses.ErrorResponseSwagger'
+      summary: Update role
+      tags:
+      - roles
+  /api/v1/roles/{id}/permissions:
+    get:
+      consumes:
+      - application/json
+      description: Get all permissions assigned to a specific role
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/permissions.PermissionListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get role permissions
+      tags:
+      - permissions
+    post:
+      consumes:
+      - application/json
+      description: Assign one or more permissions to a role
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Assignment request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/role_assignments.AssignPermissionsToRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Assign permissions to role
+      tags:
+      - permissions
+  /api/v1/roles/{id}/permissions/{permId}:
+    delete:
+      consumes:
+      - application/json
+      description: Revoke a specific permission from a role
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Permission ID
+        in: path
+        name: permId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Revoke permission from role
+      tags:
+      - permissions
+  /api/v1/roles/{id}/resources:
+    get:
+      consumes:
+      - application/json
+      description: Get all resource-action combinations assigned to a role
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get role resources
+      tags:
+      - permissions
+    post:
+      consumes:
+      - application/json
+      description: Assign resource-action combinations to a role
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Assignment request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/role_assignments.AssignResourcesToRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Assign resources to role
+      tags:
+      - permissions
+  /api/v1/roles/{id}/resources/{resId}:
+    delete:
+      consumes:
+      - application/json
+      description: Revoke a specific resource from a role
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Resource ID
+        in: path
+        name: resId
+        required: true
+        type: string
+      - description: Specific action to revoke
+        in: query
+        name: action
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Revoke resource from role
+      tags:
+      - permissions
   /api/v1/services:
     get:
       description: Get a paginated list of registered services
@@ -2981,2450 +5381,7 @@ paths:
       summary: Generate a new API key
       tags:
       - services
-  /api/v2/actions:
-    get:
-      description: Retrieve a paginated list of actions
-      parameters:
-      - description: 'Number of actions to return (default: 10, max: 100)'
-        in: query
-        name: limit
-        type: integer
-      - description: 'Number of actions to skip (default: 0)'
-        in: query
-        name: offset
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/actions.ActionListResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-      summary: List actions
-      tags:
-      - actions
-    post:
-      consumes:
-      - application/json
-      description: Create a new action with the provided information
-      parameters:
-      - description: Action creation data
-        in: body
-        name: action
-        required: true
-        schema:
-          $ref: '#/definitions/actions.CreateActionRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/actions.ActionResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "409":
-          description: Conflict
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-      summary: Create a new action
-      tags:
-      - actions
-  /api/v2/actions/{id}:
-    delete:
-      description: Soft delete an action by ID
-      parameters:
-      - description: Action ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "204":
-          description: Action deleted successfully
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-      summary: Delete an action
-      tags:
-      - actions
-    get:
-      description: Retrieve an action by its ID
-      parameters:
-      - description: Action ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/actions.ActionResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-      summary: Get an action by ID
-      tags:
-      - actions
-    put:
-      consumes:
-      - application/json
-      description: Update an existing action with the provided information
-      parameters:
-      - description: Action ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Action update data
-        in: body
-        name: action
-        required: true
-        schema:
-          $ref: '#/definitions/actions.UpdateActionRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/actions.ActionResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-      summary: Update an action
-      tags:
-      - actions
-  /api/v2/actions/service/{serviceName}:
-    get:
-      description: Retrieve actions for a specific service
-      parameters:
-      - description: Service name
-        in: path
-        name: serviceName
-        required: true
-        type: string
-      - description: 'Number of actions to return (default: 10, max: 100)'
-        in: query
-        name: limit
-        type: integer
-      - description: 'Number of actions to skip (default: 0)'
-        in: query
-        name: offset
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/actions.ActionListResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-      summary: Get actions by service
-      tags:
-      - actions
-  /api/v2/addresses:
-    post:
-      consumes:
-      - application/json
-      description: Create a new address for a user
-      parameters:
-      - description: Address creation data
-        in: body
-        name: address
-        required: true
-        schema:
-          $ref: '#/definitions/addresses.CreateAddressRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Create a new address
-      tags:
-      - addresses
-  /api/v2/addresses/{id}:
-    delete:
-      consumes:
-      - application/json
-      description: Delete an address by its unique identifier
-      parameters:
-      - description: Address ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Delete address
-      tags:
-      - addresses
-    get:
-      consumes:
-      - application/json
-      description: Retrieve an address by its unique identifier
-      parameters:
-      - description: Address ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Get address by ID
-      tags:
-      - addresses
-    put:
-      consumes:
-      - application/json
-      description: Update an existing address
-      parameters:
-      - description: Address ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Address update data
-        in: body
-        name: address
-        required: true
-        schema:
-          $ref: '#/definitions/addresses.UpdateAddressRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Update address
-      tags:
-      - addresses
-  /api/v2/addresses/search:
-    get:
-      consumes:
-      - application/json
-      description: Search for addresses based on query parameters
-      parameters:
-      - description: Search query
-        in: query
-        name: q
-        required: true
-        type: string
-      - default: 10
-        description: Number of addresses to return
-        in: query
-        name: limit
-        type: integer
-      - default: 0
-        description: Number of addresses to skip
-        in: query
-        name: offset
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Search addresses
-      tags:
-      - addresses
-  /api/v2/admin/audit:
-    get:
-      consumes:
-      - application/json
-      description: Retrieve audit logs with optional filtering
-      parameters:
-      - description: Filter by user ID
-        in: query
-        name: user_id
-        type: string
-      - description: Filter by action type
-        in: query
-        name: action
-        type: string
-      - description: Filter by resource type
-        in: query
-        name: resource
-        type: string
-      - description: Filter by start date (RFC3339)
-        in: query
-        name: start_date
-        type: string
-      - description: Filter by end date (RFC3339)
-        in: query
-        name: end_date
-        type: string
-      - default: 100
-        description: Number of logs to return
-        in: query
-        name: limit
-        type: integer
-      - default: 0
-        description: Number of logs to skip
-        in: query
-        name: offset
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Audit logs
-      tags:
-      - admin
-  /api/v2/admin/health/detailed:
-    get:
-      consumes:
-      - application/json
-      description: Get detailed health status of all system components
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Detailed health check
-      tags:
-      - admin
-  /api/v2/admin/maintenance:
-    get:
-      consumes:
-      - application/json
-      description: Get current maintenance mode status and configuration
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Get maintenance status
-      tags:
-      - admin
-    post:
-      consumes:
-      - application/json
-      description: Enable or disable system maintenance mode
-      parameters:
-      - description: Maintenance mode configuration
-        in: body
-        name: maintenance
-        required: true
-        schema:
-          properties:
-            allow_admin:
-              type: boolean
-            allow_read:
-              type: boolean
-            enabled:
-              type: boolean
-            end_time:
-              type: string
-            message:
-              type: string
-            reason:
-              type: string
-          type: object
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Toggle maintenance mode
-      tags:
-      - admin
-  /api/v2/admin/maintenance/message:
-    patch:
-      consumes:
-      - application/json
-      description: Update the maintenance mode message
-      parameters:
-      - description: New maintenance message
-        in: body
-        name: message
-        required: true
-        schema:
-          properties:
-            message:
-              type: string
-          type: object
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Update maintenance message
-      tags:
-      - admin
-  /api/v2/admin/metrics:
-    get:
-      consumes:
-      - application/json
-      description: Get comprehensive system and application metrics
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: System metrics
-      tags:
-      - admin
-  /api/v2/admin/system:
-    get:
-      consumes:
-      - application/json
-      description: Get comprehensive system information including service details,
-        runtime info, and configuration
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: System information
-      tags:
-      - admin
-  /api/v2/auth/login:
-    post:
-      consumes:
-      - application/json
-      description: Authenticate user with username and password and MFA
-      parameters:
-      - description: Login credentials
-        in: body
-        name: credentials
-        required: true
-        schema:
-          $ref: '#/definitions/services.LoginRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/responses.LoginSuccessResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/responses.ErrorResponseSwagger'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/responses.ErrorResponseSwagger'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/responses.ErrorResponseSwagger'
-      summary: User login (V2)
-      tags:
-      - authentication
-  /api/v2/auth/logout:
-    post:
-      consumes:
-      - application/json
-      description: Logout user and invalidate tokens
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/responses.LogoutSuccessResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/responses.ErrorResponseSwagger'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/responses.ErrorResponseSwagger'
-      security:
-      - BearerAuth: []
-      summary: User logout (V2)
-      tags:
-      - authentication
-  /api/v2/auth/refresh:
-    post:
-      consumes:
-      - application/json
-      description: Refresh access token using refresh token
-      parameters:
-      - description: Refresh token
-        in: body
-        name: token
-        required: true
-        schema:
-          $ref: '#/definitions/requests.RefreshTokenRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/responses.RefreshTokenSuccessResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/responses.ErrorResponseSwagger'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/responses.ErrorResponseSwagger'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/responses.ErrorResponseSwagger'
-      summary: Refresh access token (V2)
-      tags:
-      - authentication
-  /api/v2/auth/register:
-    post:
-      consumes:
-      - application/json
-      description: Register a new user account with enhanced validation
-      parameters:
-      - description: Registration data
-        in: body
-        name: user
-        required: true
-        schema:
-          $ref: '#/definitions/services.RegisterRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/responses.RegisterSuccessResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/responses.ErrorResponseSwagger'
-        "409":
-          description: Conflict
-          schema:
-            $ref: '#/definitions/responses.ErrorResponseSwagger'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/responses.ErrorResponseSwagger'
-      summary: User registration (V2)
-      tags:
-      - authentication
-  /api/v2/auth/set-mpin:
-    post:
-      consumes:
-      - application/json
-      description: Set or update mPin for secure refresh token validation
-      parameters:
-      - description: Set mPin request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/requests.SetMPinRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-      security:
-      - Bearer: []
-      summary: Set or update user's mPin
-      tags:
-      - auth
-  /api/v2/auth/update-mpin:
-    post:
-      consumes:
-      - application/json
-      description: Update existing mPin with current mPin verification
-      parameters:
-      - description: Update mPin request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/requests.UpdateMPinRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-      security:
-      - Bearer: []
-      summary: Update user's existing mPin
-      tags:
-      - auth
-  /api/v2/contacts:
-    get:
-      description: Retrieve a paginated list of contacts
-      parameters:
-      - description: 'Number of contacts to return (default: 10, max: 100)'
-        in: query
-        name: limit
-        type: integer
-      - description: 'Number of contacts to skip (default: 0)'
-        in: query
-        name: offset
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/contacts.ContactListResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-      summary: List contacts
-      tags:
-      - contacts
-    post:
-      consumes:
-      - application/json
-      description: Create a new contact with the provided information
-      parameters:
-      - description: Contact creation data
-        in: body
-        name: contact
-        required: true
-        schema:
-          $ref: '#/definitions/contacts.CreateContactRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/contacts.ContactResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "409":
-          description: Conflict
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-      summary: Create a new contact
-      tags:
-      - contacts
-  /api/v2/contacts/{id}:
-    delete:
-      description: Soft delete a contact by ID
-      parameters:
-      - description: Contact ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "204":
-          description: Contact deleted successfully
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-      summary: Delete a contact
-      tags:
-      - contacts
-    get:
-      description: Retrieve a contact by its ID
-      parameters:
-      - description: Contact ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/contacts.ContactResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-      summary: Get a contact by ID
-      tags:
-      - contacts
-    put:
-      consumes:
-      - application/json
-      description: Update an existing contact with the provided information
-      parameters:
-      - description: Contact ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Contact update data
-        in: body
-        name: contact
-        required: true
-        schema:
-          $ref: '#/definitions/contacts.UpdateContactRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/contacts.ContactResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-      summary: Update a contact
-      tags:
-      - contacts
-  /api/v2/contacts/user/{userID}:
-    get:
-      description: Retrieve contacts for a specific user
-      parameters:
-      - description: User ID
-        in: path
-        name: userID
-        required: true
-        type: string
-      - description: 'Number of contacts to return (default: 10, max: 100)'
-        in: query
-        name: limit
-        type: integer
-      - description: 'Number of contacts to skip (default: 0)'
-        in: query
-        name: offset
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/contacts.ContactListResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-      summary: Get contacts by user
-      tags:
-      - contacts
-  /api/v2/health:
-    get:
-      consumes:
-      - application/json
-      description: Basic health check for the AAA service
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/responses.HealthCheckResponse'
-      summary: Health check (V2)
-      tags:
-      - health
-  /api/v2/modules:
-    get:
-      description: Get a list of all registered modules
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/responses.ModuleListResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      security:
-      - BearerAuth: []
-      - ApiKeyAuth: []
-      summary: List all registered modules
-      tags:
-      - modules
-  /api/v2/modules/{service_name}:
-    get:
-      description: Get detailed information about a registered module
-      parameters:
-      - description: Service name
-        in: path
-        name: service_name
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/responses.ModuleDetailResponse'
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties: true
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      security:
-      - BearerAuth: []
-      - ApiKeyAuth: []
-      summary: Get module information
-      tags:
-      - modules
-  /api/v2/modules/{service_name}/health:
-    get:
-      description: Check if a module is healthy and operational
-      parameters:
-      - description: Service name
-        in: path
-        name: service_name
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties: true
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      security:
-      - BearerAuth: []
-      - ApiKeyAuth: []
-      summary: Check module health
-      tags:
-      - modules
-  /api/v2/modules/register:
-    post:
-      consumes:
-      - application/json
-      description: Register a complete module with actions, roles, resources, and
-        permissions. Requires API key authentication.
-      parameters:
-      - description: Module registration request
-        in: body
-        name: module
-        required: true
-        schema:
-          $ref: '#/definitions/requests.ModuleRegistrationRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/responses.ModuleDetailResponse'
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties: true
-            type: object
-        "403":
-          description: Forbidden
-          schema:
-            additionalProperties: true
-            type: object
-        "409":
-          description: Conflict
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      security:
-      - ApiKeyAuth: []
-      summary: Register a new module
-      tags:
-      - modules
-  /api/v2/organizations:
-    get:
-      description: Retrieve a list of organizations with pagination and optional type
-        filter
-      parameters:
-      - description: 'Number of organizations to return (default: 10, max: 100)'
-        in: query
-        name: limit
-        type: integer
-      - description: 'Number of organizations to skip (default: 0)'
-        in: query
-        name: offset
-        type: integer
-      - description: 'Include inactive organizations (default: false)'
-        in: query
-        name: include_inactive
-        type: boolean
-      - description: Filter by organization type (enterprise, small_business, individual,
-          fpo, cooperative, agribusiness, farmers_group, shg, ngo, government, input_supplier,
-          trader, processing_unit, research_institute)
-        in: query
-        name: type
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/organizations.OrganizationResponse'
-            type: array
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-      summary: List organizations
-      tags:
-      - organizations
-    post:
-      consumes:
-      - application/json
-      description: Create a new organization with the provided information
-      parameters:
-      - description: Organization creation data
-        in: body
-        name: organization
-        required: true
-        schema:
-          $ref: '#/definitions/organizations.CreateOrganizationRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/organizations.OrganizationResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "409":
-          description: Conflict
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-      summary: Create a new organization
-      tags:
-      - organizations
-  /api/v2/organizations/{id}:
-    delete:
-      description: Delete an organization by its ID
-      parameters:
-      - description: Organization ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/responses.SuccessResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-      summary: Delete organization
-      tags:
-      - organizations
-    get:
-      description: Retrieve an organization by its ID
-      parameters:
-      - description: Organization ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/organizations.OrganizationResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-      summary: Get organization by ID
-      tags:
-      - organizations
-    put:
-      consumes:
-      - application/json
-      description: Update an existing organization with the provided information
-      parameters:
-      - description: Organization ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Organization update data
-        in: body
-        name: organization
-        required: true
-        schema:
-          $ref: '#/definitions/organizations.UpdateOrganizationRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/organizations.OrganizationResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "409":
-          description: Conflict
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-      summary: Update organization
-      tags:
-      - organizations
-  /api/v2/organizations/{id}/activate:
-    post:
-      description: Activate an inactive organization
-      parameters:
-      - description: Organization ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/responses.SuccessResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-      summary: Activate organization
-      tags:
-      - organizations
-  /api/v2/organizations/{id}/deactivate:
-    post:
-      description: Deactivate an active organization
-      parameters:
-      - description: Organization ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/responses.SuccessResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-      summary: Deactivate organization
-      tags:
-      - organizations
-  /api/v2/organizations/{id}/hierarchy:
-    get:
-      description: Retrieve the hierarchical structure of an organization
-      parameters:
-      - description: Organization ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/organizations.OrganizationHierarchyResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-      summary: Get organization hierarchy
-      tags:
-      - organizations
-  /api/v2/organizations/{id}/stats:
-    get:
-      description: Retrieve statistics and metrics for an organization
-      parameters:
-      - description: Organization ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/organizations.OrganizationStatsResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/responses.ErrorResponse'
-      summary: Get organization statistics
-      tags:
-      - organizations
-  /api/v2/permissions:
-    get:
-      consumes:
-      - application/json
-      description: Get a paginated list of permissions with optional filters
-      parameters:
-      - description: Role ID filter
-        in: query
-        name: role_id
-        type: string
-      - description: Resource ID filter
-        in: query
-        name: resource_id
-        type: string
-      - description: Action ID filter
-        in: query
-        name: action_id
-        type: string
-      - description: Active status filter
-        in: query
-        name: is_active
-        type: boolean
-      - description: Search term
-        in: query
-        name: search
-        type: string
-      - default: 10
-        description: Number of permissions to return
-        in: query
-        name: limit
-        type: integer
-      - default: 0
-        description: Number of permissions to skip
-        in: query
-        name: offset
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/permissions.PermissionListResponse'
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: List permissions
-      tags:
-      - permissions
-    post:
-      consumes:
-      - application/json
-      description: Create a new permission with name, resource, and action
-      parameters:
-      - description: Permission creation data
-        in: body
-        name: permission
-        required: true
-        schema:
-          $ref: '#/definitions/permissions.CreatePermissionRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/permissions.PermissionResponse'
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "409":
-          description: Permission with the same name already exists
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Create a new permission
-      tags:
-      - permissions
-  /api/v2/permissions/{id}:
-    delete:
-      consumes:
-      - application/json
-      description: Delete a permission by its unique identifier
-      parameters:
-      - description: Permission ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "204":
-          description: No Content
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            additionalProperties: true
-            type: object
-        "409":
-          description: Conflict
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Delete permission
-      tags:
-      - permissions
-    get:
-      consumes:
-      - application/json
-      description: Retrieve a permission by its unique identifier
-      parameters:
-      - description: Permission ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/permissions.PermissionResponse'
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Get permission by ID
-      tags:
-      - permissions
-    put:
-      consumes:
-      - application/json
-      description: Update an existing permission
-      parameters:
-      - description: Permission ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Permission update data
-        in: body
-        name: permission
-        required: true
-        schema:
-          $ref: '#/definitions/permissions.UpdatePermissionRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/permissions.PermissionResponse'
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Update permission
-      tags:
-      - permissions
-  /api/v2/permissions/evaluate:
-    post:
-      consumes:
-      - application/json
-      description: Check if a user has permission to perform an action on a resource
-      parameters:
-      - description: Evaluation request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/permissions.EvaluatePermissionRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/permissions.EvaluationResponse'
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Evaluate user permission
-      tags:
-      - permissions
-  /api/v2/resources:
-    get:
-      consumes:
-      - application/json
-      description: Get a paginated list of resources with optional filters
-      parameters:
-      - description: Resource type filter
-        in: query
-        name: type
-        type: string
-      - description: Parent ID filter
-        in: query
-        name: parent_id
-        type: string
-      - description: Owner ID filter
-        in: query
-        name: owner_id
-        type: string
-      - description: Active status filter
-        in: query
-        name: is_active
-        type: boolean
-      - description: Search term
-        in: query
-        name: search
-        type: string
-      - default: 10
-        description: Number of resources to return
-        in: query
-        name: limit
-        type: integer
-      - default: 0
-        description: Number of resources to skip
-        in: query
-        name: offset
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/resources.ResourceListResponse'
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: List resources
-      tags:
-      - resources
-    post:
-      consumes:
-      - application/json
-      description: Create a new resource with name, type, and description
-      parameters:
-      - description: Resource creation data
-        in: body
-        name: resource
-        required: true
-        schema:
-          $ref: '#/definitions/resources.CreateResourceRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/resources.ResourceResponse'
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Create a new resource
-      tags:
-      - resources
-  /api/v2/resources/{id}:
-    delete:
-      consumes:
-      - application/json
-      description: Delete a resource by its unique identifier
-      parameters:
-      - description: Resource ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - default: false
-        description: Delete children recursively
-        in: query
-        name: cascade
-        type: boolean
-      produces:
-      - application/json
-      responses:
-        "204":
-          description: No Content
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            additionalProperties: true
-            type: object
-        "409":
-          description: Conflict
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Delete resource
-      tags:
-      - resources
-    get:
-      consumes:
-      - application/json
-      description: Retrieve a resource by its unique identifier
-      parameters:
-      - description: Resource ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/resources.ResourceResponse'
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Get resource by ID
-      tags:
-      - resources
-    put:
-      consumes:
-      - application/json
-      description: Update an existing resource
-      parameters:
-      - description: Resource ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Resource update data
-        in: body
-        name: resource
-        required: true
-        schema:
-          $ref: '#/definitions/resources.UpdateResourceRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/resources.ResourceResponse'
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Update resource
-      tags:
-      - resources
-  /api/v2/resources/{id}/children:
-    get:
-      consumes:
-      - application/json
-      description: Get all direct children of a resource
-      parameters:
-      - description: Resource ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/resources.ResourceWithChildrenResponse'
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Get child resources
-      tags:
-      - resources
-  /api/v2/resources/{id}/hierarchy:
-    get:
-      consumes:
-      - application/json
-      description: Get the full hierarchical tree starting from a resource
-      parameters:
-      - description: Resource ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/resources.ResourceHierarchyResponse'
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Get resource hierarchy
-      tags:
-      - resources
-  /api/v2/roles:
-    get:
-      consumes:
-      - application/json
-      description: Get a paginated list of roles
-      parameters:
-      - default: 10
-        description: Number of roles to return
-        in: query
-        name: limit
-        type: integer
-      - default: 0
-        description: Number of roles to skip
-        in: query
-        name: offset
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: List roles
-      tags:
-      - roles
-    post:
-      consumes:
-      - application/json
-      description: Create a new role with the provided information
-      parameters:
-      - description: Role creation data
-        in: body
-        name: role
-        required: true
-        schema:
-          $ref: '#/definitions/roles.CreateRoleRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/responses.ErrorResponseSwagger'
-        "409":
-          description: Conflict
-          schema:
-            $ref: '#/definitions/responses.ErrorResponseSwagger'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/responses.ErrorResponseSwagger'
-      summary: Create a new role
-      tags:
-      - roles
-  /api/v2/roles/{id}:
-    delete:
-      consumes:
-      - application/json
-      description: Delete a role by its unique identifier
-      parameters:
-      - description: Role ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/responses.ErrorResponseSwagger'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/responses.ErrorResponseSwagger'
-        "409":
-          description: Conflict
-          schema:
-            $ref: '#/definitions/responses.ErrorResponseSwagger'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/responses.ErrorResponseSwagger'
-      summary: Delete role
-      tags:
-      - roles
-    get:
-      consumes:
-      - application/json
-      description: Retrieve a role by its unique identifier
-      parameters:
-      - description: Role ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/responses.ErrorResponseSwagger'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/responses.ErrorResponseSwagger'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/responses.ErrorResponseSwagger'
-      summary: Get role by ID
-      tags:
-      - roles
-    put:
-      consumes:
-      - application/json
-      description: Update an existing role's information
-      parameters:
-      - description: Role ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Role update data
-        in: body
-        name: role
-        required: true
-        schema:
-          $ref: '#/definitions/roles.UpdateRoleRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/responses.ErrorResponseSwagger'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/responses.ErrorResponseSwagger'
-        "409":
-          description: Conflict
-          schema:
-            $ref: '#/definitions/responses.ErrorResponseSwagger'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/responses.ErrorResponseSwagger'
-      summary: Update role
-      tags:
-      - roles
-  /api/v2/roles/{id}/permissions:
-    get:
-      consumes:
-      - application/json
-      description: Get all permissions assigned to a specific role
-      parameters:
-      - description: Role ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/permissions.PermissionListResponse'
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Get role permissions
-      tags:
-      - permissions
-    post:
-      consumes:
-      - application/json
-      description: Assign one or more permissions to a role
-      parameters:
-      - description: Role ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Assignment request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/role_assignments.AssignPermissionsToRoleRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Assign permissions to role
-      tags:
-      - permissions
-  /api/v2/roles/{id}/permissions/{permId}:
-    delete:
-      consumes:
-      - application/json
-      description: Revoke a specific permission from a role
-      parameters:
-      - description: Role ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Permission ID
-        in: path
-        name: permId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "204":
-          description: No Content
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Revoke permission from role
-      tags:
-      - permissions
-  /api/v2/roles/{id}/resources:
-    get:
-      consumes:
-      - application/json
-      description: Get all resource-action combinations assigned to a role
-      parameters:
-      - description: Role ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Get role resources
-      tags:
-      - permissions
-    post:
-      consumes:
-      - application/json
-      description: Assign resource-action combinations to a role
-      parameters:
-      - description: Role ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Assignment request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/role_assignments.AssignResourcesToRoleRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Assign resources to role
-      tags:
-      - permissions
-  /api/v2/roles/{id}/resources/{resId}:
-    delete:
-      consumes:
-      - application/json
-      description: Revoke a specific resource from a role
-      parameters:
-      - description: Role ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Resource ID
-        in: path
-        name: resId
-        required: true
-        type: string
-      - description: Specific action to revoke
-        in: query
-        name: action
-        type: string
-      produces:
-      - application/json
-      responses:
-        "204":
-          description: No Content
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Revoke resource from role
-      tags:
-      - permissions
-  /api/v2/users:
+  /api/v1/users:
     get:
       consumes:
       - application/json
@@ -5494,7 +5451,7 @@ paths:
       summary: Create a new user
       tags:
       - users
-  /api/v2/users/{id}:
+  /api/v1/users/{id}:
     delete:
       consumes:
       - application/json
@@ -5604,7 +5561,7 @@ paths:
       summary: Update user
       tags:
       - users
-  /api/v2/users/{id}/evaluate:
+  /api/v1/users/{id}/evaluate:
     post:
       consumes:
       - application/json
@@ -5642,7 +5599,7 @@ paths:
       summary: Evaluate user-specific permission
       tags:
       - permissions
-  /api/v2/users/{id}/roles:
+  /api/v1/users/{id}/roles:
     get:
       consumes:
       - application/json
@@ -5721,7 +5678,7 @@ paths:
       summary: Assign role to user
       tags:
       - users
-  /api/v2/users/{id}/roles/{role_id}:
+  /api/v1/users/{id}/roles/{role_id}:
     delete:
       consumes:
       - application/json
@@ -5759,7 +5716,7 @@ paths:
       summary: Remove role from user
       tags:
       - roles
-  /api/v2/users/{id}/roles/{roleId}:
+  /api/v1/users/{id}/roles/{roleId}:
     delete:
       consumes:
       - application/json
@@ -5844,7 +5801,7 @@ paths:
       summary: Assign role to user
       tags:
       - users
-  /api/v2/users/{id}/roles/{roleId}/legacy:
+  /api/v1/users/{id}/roles/{roleId}/legacy:
     delete:
       consumes:
       - application/json
@@ -5883,7 +5840,7 @@ paths:
       summary: Remove role from user (legacy)
       tags:
       - users
-  /api/v2/users/{id}/validate:
+  /api/v1/users/{id}/validate:
     post:
       consumes:
       - application/json
@@ -5925,7 +5882,7 @@ paths:
       summary: Validate user
       tags:
       - users
-  /api/v2/users/search:
+  /api/v1/users/search:
     get:
       consumes:
       - application/json

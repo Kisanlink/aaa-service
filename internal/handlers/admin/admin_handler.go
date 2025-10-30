@@ -32,7 +32,7 @@ func NewAdminHandler(
 	}
 }
 
-// DetailedHealthCheckV2 handles GET /v2/admin/health/detailed
+// DetailedHealthCheck handles GET /api/v1/admin/health/detailed
 //
 //	@Summary		Detailed health check
 //	@Description	Get detailed health status of all system components
@@ -41,8 +41,8 @@ func NewAdminHandler(
 //	@Produce		json
 //	@Success		200	{object}	map[string]interface{}
 //	@Failure		500	{object}	map[string]interface{}
-//	@Router			/api/v2/admin/health/detailed [get]
-func (h *AdminHandler) DetailedHealthCheckV2(c *gin.Context) {
+//	@Router			/api/v1/admin/health/detailed [get]
+func (h *AdminHandler) DetailedHealthCheck(c *gin.Context) {
 	h.logger.Info("Performing detailed health check")
 
 	healthStatus := map[string]interface{}{
@@ -88,7 +88,7 @@ func (h *AdminHandler) DetailedHealthCheckV2(c *gin.Context) {
 	h.responder.SendSuccess(c, http.StatusOK, healthStatus)
 }
 
-// MetricsV2 handles GET /v2/admin/metrics
+// Metrics handles GET /api/v1/admin/metrics
 //
 //	@Summary		System metrics
 //	@Description	Get comprehensive system and application metrics
@@ -97,8 +97,8 @@ func (h *AdminHandler) DetailedHealthCheckV2(c *gin.Context) {
 //	@Produce		json
 //	@Success		200	{object}	map[string]interface{}
 //	@Failure		500	{object}	map[string]interface{}
-//	@Router			/api/v2/admin/metrics [get]
-func (h *AdminHandler) MetricsV2(c *gin.Context) {
+//	@Router			/api/v1/admin/metrics [get]
+func (h *AdminHandler) Metrics(c *gin.Context) {
 	h.logger.Info("Retrieving system metrics")
 
 	metrics := map[string]interface{}{
@@ -152,7 +152,7 @@ func (h *AdminHandler) MetricsV2(c *gin.Context) {
 	h.responder.SendSuccess(c, http.StatusOK, metrics)
 }
 
-// AuditLogsV2 handles GET /v2/admin/audit
+// AuditLogs handles GET /api/v1/admin/audit
 //
 //	@Summary		Audit logs
 //	@Description	Retrieve audit logs with optional filtering
@@ -169,8 +169,8 @@ func (h *AdminHandler) MetricsV2(c *gin.Context) {
 //	@Success		200			{object}	map[string]interface{}
 //	@Failure		400			{object}	map[string]interface{}
 //	@Failure		500			{object}	map[string]interface{}
-//	@Router			/api/v2/admin/audit [get]
-func (h *AdminHandler) AuditLogsV2(c *gin.Context) {
+//	@Router			/api/v1/admin/audit [get]
+func (h *AdminHandler) AuditLogs(c *gin.Context) {
 	h.logger.Info("Retrieving audit logs")
 
 	// Parse query parameters
@@ -245,7 +245,7 @@ func (h *AdminHandler) AuditLogsV2(c *gin.Context) {
 	h.responder.SendSuccess(c, http.StatusOK, auditLogs)
 }
 
-// MaintenanceModeV2 handles POST /v2/admin/maintenance
+// MaintenanceMode handles POST /api/v1/admin/maintenance
 //
 //	@Summary		Toggle maintenance mode
 //	@Description	Enable or disable system maintenance mode
@@ -257,8 +257,8 @@ func (h *AdminHandler) AuditLogsV2(c *gin.Context) {
 //	@Failure		400			{object}	map[string]interface{}
 //	@Failure		401			{object}	map[string]interface{}
 //	@Failure		500			{object}	map[string]interface{}
-//	@Router			/api/v2/admin/maintenance [post]
-func (h *AdminHandler) MaintenanceModeV2(c *gin.Context) {
+//	@Router			/api/v1/admin/maintenance [post]
+func (h *AdminHandler) MaintenanceMode(c *gin.Context) {
 	h.logger.Info("Processing maintenance mode request")
 
 	var req struct {
@@ -344,7 +344,7 @@ func (h *AdminHandler) MaintenanceModeV2(c *gin.Context) {
 	}
 }
 
-// GetMaintenanceStatus handles GET /v2/admin/maintenance
+// GetMaintenanceStatus handles GET /api/v1/admin/maintenance
 //
 //	@Summary		Get maintenance status
 //	@Description	Get current maintenance mode status and configuration
@@ -353,7 +353,7 @@ func (h *AdminHandler) MaintenanceModeV2(c *gin.Context) {
 //	@Produce		json
 //	@Success		200	{object}	map[string]interface{}
 //	@Failure		500	{object}	map[string]interface{}
-//	@Router			/api/v2/admin/maintenance [get]
+//	@Router			/api/v1/admin/maintenance [get]
 func (h *AdminHandler) GetMaintenanceStatus(c *gin.Context) {
 	h.logger.Info("Getting maintenance status")
 
@@ -373,7 +373,7 @@ func (h *AdminHandler) GetMaintenanceStatus(c *gin.Context) {
 	h.responder.SendSuccess(c, http.StatusOK, response)
 }
 
-// UpdateMaintenanceMessage handles PATCH /v2/admin/maintenance/message
+// UpdateMaintenanceMessage handles PATCH /api/v1/admin/maintenance/message
 //
 //	@Summary		Update maintenance message
 //	@Description	Update the maintenance mode message
@@ -385,7 +385,7 @@ func (h *AdminHandler) GetMaintenanceStatus(c *gin.Context) {
 //	@Failure		400		{object}	map[string]interface{}
 //	@Failure		401		{object}	map[string]interface{}
 //	@Failure		500		{object}	map[string]interface{}
-//	@Router			/api/v2/admin/maintenance/message [patch]
+//	@Router			/api/v1/admin/maintenance/message [patch]
 func (h *AdminHandler) UpdateMaintenanceMessage(c *gin.Context) {
 	h.logger.Info("Updating maintenance message")
 
@@ -425,7 +425,7 @@ func (h *AdminHandler) UpdateMaintenanceMessage(c *gin.Context) {
 	h.responder.SendSuccess(c, http.StatusOK, response)
 }
 
-// GetSystemInfo handles GET /v2/admin/system
+// GetSystemInfo handles GET /api/v1/admin/system
 //
 //	@Summary		System information
 //	@Description	Get comprehensive system information including service details, runtime info, and configuration
@@ -434,7 +434,7 @@ func (h *AdminHandler) UpdateMaintenanceMessage(c *gin.Context) {
 //	@Produce		json
 //	@Success		200	{object}	map[string]interface{}
 //	@Failure		500	{object}	map[string]interface{}
-//	@Router			/api/v2/admin/system [get]
+//	@Router			/api/v1/admin/system [get]
 func (h *AdminHandler) GetSystemInfo(c *gin.Context) {
 	h.logger.Info("Retrieving system information")
 

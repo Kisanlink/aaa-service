@@ -291,39 +291,39 @@ internal/entities/responses/resources/
 
 #### Resource Endpoints
 ```
-POST   /api/v2/resources              # Create resource
-GET    /api/v2/resources              # List resources
-GET    /api/v2/resources/:id          # Get resource
-PUT    /api/v2/resources/:id          # Update resource
-DELETE /api/v2/resources/:id          # Delete resource
-GET    /api/v2/resources/:id/children # Get child resources
+POST   /api/v1/resources              # Create resource
+GET    /api/v1/resources              # List resources
+GET    /api/v1/resources/:id          # Get resource
+PUT    /api/v1/resources/:id          # Update resource
+DELETE /api/v1/resources/:id          # Delete resource
+GET    /api/v1/resources/:id/children # Get child resources
 ```
 
 #### Permission Endpoints
 ```
-POST   /api/v2/permissions            # Create permission
-GET    /api/v2/permissions            # List permissions
-GET    /api/v2/permissions/:id        # Get permission
-PUT    /api/v2/permissions/:id        # Update permission
-DELETE /api/v2/permissions/:id        # Delete permission
-POST   /api/v2/permissions/evaluate   # Evaluate permission
+POST   /api/v1/permissions            # Create permission
+GET    /api/v1/permissions            # List permissions
+GET    /api/v1/permissions/:id        # Get permission
+PUT    /api/v1/permissions/:id        # Update permission
+DELETE /api/v1/permissions/:id        # Delete permission
+POST   /api/v1/permissions/evaluate   # Evaluate permission
 ```
 
 #### Role-Permission Assignment Endpoints
 ```
-POST   /api/v2/roles/:id/permissions         # Assign permissions to role
-DELETE /api/v2/roles/:id/permissions/:permId # Revoke permission from role
-GET    /api/v2/roles/:id/permissions         # List role permissions
-POST   /api/v2/roles/:id/resources           # Assign resource+action to role
-DELETE /api/v2/roles/:id/resources/:resId    # Revoke resource from role
-GET    /api/v2/roles/:id/resources           # List role resources
+POST   /api/v1/roles/:id/permissions         # Assign permissions to role
+DELETE /api/v1/roles/:id/permissions/:permId # Revoke permission from role
+GET    /api/v1/roles/:id/permissions         # List role permissions
+POST   /api/v1/roles/:id/resources           # Assign resource+action to role
+DELETE /api/v1/roles/:id/resources/:resId    # Revoke resource from role
+GET    /api/v1/roles/:id/resources           # List role resources
 ```
 
 #### User Permission Endpoints
 ```
-GET    /api/v2/users/:id/permissions         # Get user's effective permissions
-POST   /api/v2/users/:id/evaluate            # Check specific permission
-GET    /api/v2/users/:id/roles/effective     # Get effective roles (with inheritance)
+GET    /api/v1/users/:id/permissions         # Get user's effective permissions
+POST   /api/v1/users/:id/evaluate            # Check specific permission
+GET    /api/v1/users/:id/roles/effective     # Get effective roles (with inheritance)
 ```
 
 ### 4.2 Request/Response Structures

@@ -67,6 +67,7 @@ func (r *RoleRepository) List(ctx context.Context, limit, offset int) ([]*models
 	// Only return active roles (not deleted)
 	filter := base.NewFilterBuilder().
 		Where("is_active", base.OpEqual, true).
+		WhereNull("deleted_at").
 		Limit(limit, offset).
 		Build()
 

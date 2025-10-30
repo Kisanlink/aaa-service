@@ -15,14 +15,14 @@ func TestAuthV2Routes_ExpectedEndpoints(t *testing.T) {
 		path   string
 		public bool
 	}{
-		{"POST", "/api/v2/auth/login", true},
-		{"POST", "/api/v2/auth/register", true},
-		{"POST", "/api/v2/auth/refresh", true},
-		{"POST", "/api/v2/auth/forgot-password", true},
-		{"POST", "/api/v2/auth/reset-password", true},
-		{"POST", "/api/v2/auth/logout", false},
-		{"POST", "/api/v2/auth/set-mpin", false},
-		{"POST", "/api/v2/auth/update-mpin", false},
+		{"POST", "/api/v1/auth/login", true},
+		{"POST", "/api/v1/auth/register", true},
+		{"POST", "/api/v1/auth/refresh", true},
+		{"POST", "/api/v1/auth/forgot-password", true},
+		{"POST", "/api/v1/auth/reset-password", true},
+		{"POST", "/api/v1/auth/logout", false},
+		{"POST", "/api/v1/auth/set-mpin", false},
+		{"POST", "/api/v1/auth/update-mpin", false},
 	}
 
 	// This test documents the expected endpoints
@@ -31,7 +31,7 @@ func TestAuthV2Routes_ExpectedEndpoints(t *testing.T) {
 			// Verify endpoint configuration
 			assert.NotEmpty(t, endpoint.method, "Method should not be empty")
 			assert.NotEmpty(t, endpoint.path, "Path should not be empty")
-			assert.Contains(t, endpoint.path, "/api/v2/auth/", "Should be a V2 auth endpoint")
+			assert.Contains(t, endpoint.path, "/api/v1/auth/", "Should be a V2 auth endpoint")
 
 			if endpoint.public {
 				// Public endpoints should not include protected operations
@@ -43,7 +43,7 @@ func TestAuthV2Routes_ExpectedEndpoints(t *testing.T) {
 				protectedOps := []string{"set-mpin", "update-mpin", "logout"}
 				hasProtectedOp := false
 				for _, op := range protectedOps {
-					if assert.ObjectsAreEqual(endpoint.path, "/api/v2/auth/"+op) {
+					if assert.ObjectsAreEqual(endpoint.path, "/api/v1/auth/"+op) {
 						hasProtectedOp = true
 						break
 					}
@@ -57,14 +57,14 @@ func TestAuthV2Routes_ExpectedEndpoints(t *testing.T) {
 func TestAuthV2Routes_MPinEndpointsDocumented(t *testing.T) {
 	// Test specifically for MPIN endpoints
 	mpinEndpoints := []string{
-		"/api/v2/auth/set-mpin",
-		"/api/v2/auth/update-mpin",
+		"/api/v1/auth/set-mpin",
+		"/api/v1/auth/update-mpin",
 	}
 
 	for _, endpoint := range mpinEndpoints {
 		t.Run(endpoint, func(t *testing.T) {
 			assert.Contains(t, endpoint, "mpin", "MPIN endpoint should contain 'mpin' in path")
-			assert.Contains(t, endpoint, "/api/v2/auth/", "Should be a V2 auth endpoint")
+			assert.Contains(t, endpoint, "/api/v1/auth/", "Should be a V2 auth endpoint")
 		})
 	}
 }

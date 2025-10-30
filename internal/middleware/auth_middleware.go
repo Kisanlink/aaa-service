@@ -140,7 +140,7 @@ func (m *AuthMiddleware) HTTPAuthzMiddleware() gin.HandlerFunc {
 		}
 
 		// Allow authenticated users to call logout without additional authorization
-		if c.Request.URL.Path == "/api/v2/auth/logout" {
+		if c.Request.URL.Path == "/api/v1/auth/logout" {
 			c.Next()
 			return
 		}
@@ -450,7 +450,7 @@ func (m *AuthMiddleware) isPublicEndpoint(path string) bool {
 	switch path {
 	case "/":
 		return true
-	case "/api/v2/auth/login", "/api/v2/auth/register", "/api/v2/auth/refresh", "/api/v2/health":
+	case "/api/v1/auth/login", "/api/v1/auth/register", "/api/v1/auth/refresh", "/api/v1/health":
 		return true
 	}
 

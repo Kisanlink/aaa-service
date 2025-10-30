@@ -94,7 +94,7 @@ Service temporarily unavailable.
 
 ### Invalid Login Credentials
 
-**Endpoint:** `POST /api/v2/auth/login`
+**Endpoint:** `POST /api/v1/auth/login`
 
 **Error Response:**
 
@@ -115,7 +115,7 @@ Service temporarily unavailable.
 
 ### Invalid MPIN
 
-**Endpoint:** `POST /api/v2/auth/login`
+**Endpoint:** `POST /api/v1/auth/login`
 
 **Error Response:**
 
@@ -137,7 +137,7 @@ Service temporarily unavailable.
 
 ### User Not Found
 
-**Endpoint:** `POST /api/v2/auth/login`
+**Endpoint:** `POST /api/v1/auth/login`
 
 **Error Response:**
 
@@ -157,7 +157,7 @@ Service temporarily unavailable.
 
 ### Account Locked
 
-**Endpoint:** `POST /api/v2/auth/login`
+**Endpoint:** `POST /api/v1/auth/login`
 
 **Error Response:**
 
@@ -179,7 +179,7 @@ Service temporarily unavailable.
 
 ### Invalid Refresh Token
 
-**Endpoint:** `POST /api/v2/auth/refresh`
+**Endpoint:** `POST /api/v1/auth/refresh`
 
 **Error Response:**
 
@@ -223,7 +223,7 @@ Service temporarily unavailable.
 
 ### Role Not Found
 
-**Endpoint:** `POST /api/v2/users/{user_id}/roles`
+**Endpoint:** `POST /api/v1/users/{user_id}/roles`
 
 **Error Response:**
 
@@ -244,7 +244,7 @@ Service temporarily unavailable.
 
 ### User Not Found for Role Assignment
 
-**Endpoint:** `POST /api/v2/users/{user_id}/roles`
+**Endpoint:** `POST /api/v1/users/{user_id}/roles`
 
 **Error Response:**
 
@@ -265,7 +265,7 @@ Service temporarily unavailable.
 
 ### Role Already Assigned
 
-**Endpoint:** `POST /api/v2/users/{user_id}/roles`
+**Endpoint:** `POST /api/v1/users/{user_id}/roles`
 
 **Error Response:**
 
@@ -288,7 +288,7 @@ Service temporarily unavailable.
 
 ### Role Assignment Not Found
 
-**Endpoint:** `DELETE /api/v2/users/{user_id}/roles/{role_id}`
+**Endpoint:** `DELETE /api/v1/users/{user_id}/roles/{role_id}`
 
 **Error Response:**
 
@@ -310,7 +310,7 @@ Service temporarily unavailable.
 
 ### Insufficient Permissions for Role Management
 
-**Endpoint:** `POST /api/v2/users/{user_id}/roles`
+**Endpoint:** `POST /api/v1/users/{user_id}/roles`
 
 **Error Response:**
 
@@ -332,7 +332,7 @@ Service temporarily unavailable.
 
 ### Role Name Conflict
 
-**Endpoint:** `POST /api/v2/roles`
+**Endpoint:** `POST /api/v1/roles`
 
 **Error Response:**
 
@@ -356,7 +356,7 @@ Service temporarily unavailable.
 
 ### MPIN Not Set
 
-**Endpoint:** `POST /api/v2/auth/update-mpin`
+**Endpoint:** `POST /api/v1/auth/update-mpin`
 
 **Error Response:**
 
@@ -378,7 +378,7 @@ Service temporarily unavailable.
 
 ### Invalid Current MPIN
 
-**Endpoint:** `POST /api/v2/auth/update-mpin`
+**Endpoint:** `POST /api/v1/auth/update-mpin`
 
 **Error Response:**
 
@@ -400,7 +400,7 @@ Service temporarily unavailable.
 
 ### Invalid Password for MPIN Set
 
-**Endpoint:** `POST /api/v2/auth/set-mpin`
+**Endpoint:** `POST /api/v1/auth/set-mpin`
 
 **Error Response:**
 
@@ -421,7 +421,7 @@ Service temporarily unavailable.
 
 ### MPIN Format Validation Error
 
-**Endpoint:** `POST /api/v2/auth/set-mpin`
+**Endpoint:** `POST /api/v1/auth/set-mpin`
 
 **Error Response:**
 
@@ -447,7 +447,7 @@ Service temporarily unavailable.
 
 ### Same MPIN Error
 
-**Endpoint:** `POST /api/v2/auth/update-mpin`
+**Endpoint:** `POST /api/v1/auth/update-mpin`
 
 **Error Response:**
 
@@ -470,7 +470,7 @@ Service temporarily unavailable.
 
 ### User Not Found for Deletion
 
-**Endpoint:** `DELETE /api/v2/users/{user_id}`
+**Endpoint:** `DELETE /api/v1/users/{user_id}`
 
 **Error Response:**
 
@@ -491,7 +491,7 @@ Service temporarily unavailable.
 
 ### User Already Deleted
 
-**Endpoint:** `DELETE /api/v2/users/{user_id}`
+**Endpoint:** `DELETE /api/v1/users/{user_id}`
 
 **Error Response:**
 
@@ -513,7 +513,7 @@ Service temporarily unavailable.
 
 ### Cannot Delete Admin User
 
-**Endpoint:** `DELETE /api/v2/users/{user_id}`
+**Endpoint:** `DELETE /api/v1/users/{user_id}`
 
 **Error Response:**
 
@@ -535,7 +535,7 @@ Service temporarily unavailable.
 
 ### User Registration Conflict
 
-**Endpoint:** `POST /api/v2/auth/register`
+**Endpoint:** `POST /api/v1/auth/register`
 
 **Error Response:**
 
@@ -559,7 +559,7 @@ Service temporarily unavailable.
 
 ### Missing Required Fields
 
-**Endpoint:** `POST /api/v2/auth/login`
+**Endpoint:** `POST /api/v1/auth/login`
 
 **Error Response:**
 
@@ -580,7 +580,7 @@ Service temporarily unavailable.
 
 ### Invalid Field Format
 
-**Endpoint:** `POST /api/v2/auth/register`
+**Endpoint:** `POST /api/v1/auth/register`
 
 **Error Response:**
 
@@ -625,7 +625,7 @@ Service temporarily unavailable.
 
 ### Authentication Method Missing
 
-**Endpoint:** `POST /api/v2/auth/login`
+**Endpoint:** `POST /api/v1/auth/login`
 
 **Error Response:**
 

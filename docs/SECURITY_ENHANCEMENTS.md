@@ -246,7 +246,7 @@ AAA_CORS_MAX_AGE=86400
 
 ### 7.1 Enhanced Route Setup
 
-**Location**: `internal/routes/setup.go` and `internal/routes/auth_v2_routes.go`
+**Location**: `internal/routes/setup.go` and `internal/routes/auth_routes.go`
 
 **Features**:
 

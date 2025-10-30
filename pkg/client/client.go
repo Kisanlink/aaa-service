@@ -43,7 +43,7 @@ func NewClient(config *Config) *Client {
 // Login authenticates a user
 func (c *Client) Login(ctx context.Context, req *models.LoginRequest) (*models.LoginResponse, error) {
 	var response models.LoginResponse
-	err := c.makeRequest(ctx, "POST", "/api/v2/auth/login", req, &response)
+	err := c.makeRequest(ctx, "POST", "/api/v1/auth/login", req, &response)
 	if err != nil {
 		return nil, fmt.Errorf("login failed: %w", err)
 	}
@@ -53,7 +53,7 @@ func (c *Client) Login(ctx context.Context, req *models.LoginRequest) (*models.L
 // Register creates a new user account
 func (c *Client) Register(ctx context.Context, req *models.RegisterRequest) (*models.RegisterResponse, error) {
 	var response models.RegisterResponse
-	err := c.makeRequest(ctx, "POST", "/api/v2/auth/register", req, &response)
+	err := c.makeRequest(ctx, "POST", "/api/v1/auth/register", req, &response)
 	if err != nil {
 		return nil, fmt.Errorf("registration failed: %w", err)
 	}
@@ -63,7 +63,7 @@ func (c *Client) Register(ctx context.Context, req *models.RegisterRequest) (*mo
 // RefreshToken refreshes an access token
 func (c *Client) RefreshToken(ctx context.Context, req *models.RefreshTokenRequest) (*models.RefreshTokenResponse, error) {
 	var response models.RefreshTokenResponse
-	err := c.makeRequest(ctx, "POST", "/api/v2/auth/refresh", req, &response)
+	err := c.makeRequest(ctx, "POST", "/api/v1/auth/refresh", req, &response)
 	if err != nil {
 		return nil, fmt.Errorf("token refresh failed: %w", err)
 	}
@@ -73,7 +73,7 @@ func (c *Client) RefreshToken(ctx context.Context, req *models.RefreshTokenReque
 // GetUser retrieves user information by ID
 func (c *Client) GetUser(ctx context.Context, userID string, token string) (*models.User, error) {
 	var response models.User
-	err := c.makeAuthenticatedRequest(ctx, "GET", fmt.Sprintf("/api/v2/users/%s", userID), nil, &response, token)
+	err := c.makeAuthenticatedRequest(ctx, "GET", fmt.Sprintf("/api/v1/users/%s", userID), nil, &response, token)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user: %w", err)
 	}
@@ -83,7 +83,7 @@ func (c *Client) GetUser(ctx context.Context, userID string, token string) (*mod
 // CreateUser creates a new user (admin only)
 func (c *Client) CreateUser(ctx context.Context, req *models.CreateUserRequest, token string) (*models.User, error) {
 	var response models.User
-	err := c.makeAuthenticatedRequest(ctx, "POST", "/api/v2/users", req, &response, token)
+	err := c.makeAuthenticatedRequest(ctx, "POST", "/api/v1/users", req, &response, token)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
@@ -93,7 +93,7 @@ func (c *Client) CreateUser(ctx context.Context, req *models.CreateUserRequest, 
 // UpdateUser updates user information
 func (c *Client) UpdateUser(ctx context.Context, userID string, req *models.UpdateUserRequest, token string) (*models.User, error) {
 	var response models.User
-	err := c.makeAuthenticatedRequest(ctx, "PUT", fmt.Sprintf("/api/v2/users/%s", userID), req, &response, token)
+	err := c.makeAuthenticatedRequest(ctx, "PUT", fmt.Sprintf("/api/v1/users/%s", userID), req, &response, token)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update user: %w", err)
 	}
@@ -103,7 +103,7 @@ func (c *Client) UpdateUser(ctx context.Context, userID string, req *models.Upda
 // HealthCheck performs a health check
 func (c *Client) HealthCheck(ctx context.Context) (map[string]interface{}, error) {
 	var response map[string]interface{}
-	err := c.makeRequest(ctx, "GET", "/api/v2/health", nil, &response)
+	err := c.makeRequest(ctx, "GET", "/api/v1/health", nil, &response)
 	if err != nil {
 		return nil, fmt.Errorf("health check failed: %w", err)
 	}

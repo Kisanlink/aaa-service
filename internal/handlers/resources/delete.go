@@ -7,7 +7,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// DeleteResource handles DELETE /api/v2/resources/:id
+// DeleteResource handles DELETE /api/v1/resources/:id
 //
 //	@Summary		Delete resource
 //	@Description	Delete a resource by its unique identifier
@@ -21,7 +21,7 @@ import (
 //	@Failure		404		{object}	map[string]interface{}
 //	@Failure		409		{object}	map[string]interface{}
 //	@Failure		500		{object}	map[string]interface{}
-//	@Router			/api/v2/resources/{id} [delete]
+//	@Router			/api/v1/resources/{id} [delete]
 func (h *ResourceHandler) DeleteResource(c *gin.Context) {
 	resourceID := c.Param("id")
 	h.logger.Info("Deleting resource", zap.String("resourceID", resourceID))

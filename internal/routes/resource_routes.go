@@ -12,8 +12,8 @@ func RegisterResourceRoutes(
 	resourceHandler *resourceHandlers.ResourceHandler,
 	authMiddleware *middleware.AuthMiddleware,
 ) {
-	// Create a protected route group under /api/v2/resources
-	v2 := router.Group("/api/v2")
+	// Create a protected route group under /api/v1/resources
+	v2 := router.Group("/api/v1")
 	v2.Use(authMiddleware.HTTPAuthMiddleware())
 
 	resources := v2.Group("/resources")

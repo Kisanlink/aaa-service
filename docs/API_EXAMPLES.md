@@ -14,12 +14,12 @@ This document provides comprehensive examples for using the AAA Service API endp
 
 ### Enhanced Login with Password
 
-**Endpoint:** `POST /api/v2/auth/login`
+**Endpoint:** `POST /api/v1/auth/login`
 
 **Description:** Login with phone number and password, optionally including additional user data.
 
 ```bash
-curl -X POST "http://localhost:8080/api/v2/auth/login" \
+curl -X POST "http://localhost:8080/api/v1/auth/login" \
   -H "Content-Type: application/json" \
   -d '{
     "phone_number": "+1234567890",
@@ -92,12 +92,12 @@ curl -X POST "http://localhost:8080/api/v2/auth/login" \
 
 ### Enhanced Login with MPIN
 
-**Endpoint:** `POST /api/v2/auth/login`
+**Endpoint:** `POST /api/v1/auth/login`
 
 **Description:** Login with phone number and MPIN instead of password.
 
 ```bash
-curl -X POST "http://localhost:8080/api/v2/auth/login" \
+curl -X POST "http://localhost:8080/api/v1/auth/login" \
   -H "Content-Type: application/json" \
   -d '{
     "phone_number": "+1234567890",
@@ -150,12 +150,12 @@ curl -X POST "http://localhost:8080/api/v2/auth/login" \
 
 ### User Registration
 
-**Endpoint:** `POST /api/v2/auth/register`
+**Endpoint:** `POST /api/v1/auth/register`
 
 **Description:** Register a new user account with optional profile information.
 
 ```bash
-curl -X POST "http://localhost:8080/api/v2/auth/register" \
+curl -X POST "http://localhost:8080/api/v1/auth/register" \
   -H "Content-Type: application/json" \
   -d '{
     "phone_number": "+1234567890",
@@ -194,12 +194,12 @@ curl -X POST "http://localhost:8080/api/v2/auth/register" \
 
 ### Token Refresh
 
-**Endpoint:** `POST /api/v2/auth/refresh`
+**Endpoint:** `POST /api/v1/auth/refresh`
 
 **Description:** Refresh access token using refresh token and MPIN verification.
 
 ```bash
-curl -X POST "http://localhost:8080/api/v2/auth/refresh" \
+curl -X POST "http://localhost:8080/api/v1/auth/refresh" \
   -H "Content-Type: application/json" \
   -d '{
     "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
@@ -226,12 +226,12 @@ curl -X POST "http://localhost:8080/api/v2/auth/refresh" \
 
 ### User Logout
 
-**Endpoint:** `POST /api/v2/auth/logout`
+**Endpoint:** `POST /api/v1/auth/logout`
 
 **Description:** Logout user and invalidate tokens.
 
 ```bash
-curl -X POST "http://localhost:8080/api/v2/auth/logout" \
+curl -X POST "http://localhost:8080/api/v1/auth/logout" \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
   -H "Content-Type: application/json"
 ```
@@ -251,12 +251,12 @@ curl -X POST "http://localhost:8080/api/v2/auth/logout" \
 
 ### Assign Role to User
 
-**Endpoint:** `POST /api/v2/users/{user_id}/roles`
+**Endpoint:** `POST /api/v1/users/{user_id}/roles`
 
 **Description:** Assign a role to an existing user.
 
 ```bash
-curl -X POST "http://localhost:8080/api/v2/users/USER123456789/roles" \
+curl -X POST "http://localhost:8080/api/v1/users/USER123456789/roles" \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
   -H "Content-Type: application/json" \
   -d '{
@@ -286,12 +286,12 @@ curl -X POST "http://localhost:8080/api/v2/users/USER123456789/roles" \
 
 ### Remove Role from User
 
-**Endpoint:** `DELETE /api/v2/users/{user_id}/roles/{role_id}`
+**Endpoint:** `DELETE /api/v1/users/{user_id}/roles/{role_id}`
 
 **Description:** Remove a role assignment from a user.
 
 ```bash
-curl -X DELETE "http://localhost:8080/api/v2/users/USER123456789/roles/ROLE123456789" \
+curl -X DELETE "http://localhost:8080/api/v1/users/USER123456789/roles/ROLE123456789" \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
   -H "Content-Type: application/json"
 ```
@@ -311,12 +311,12 @@ curl -X DELETE "http://localhost:8080/api/v2/users/USER123456789/roles/ROLE12345
 
 ### Create Role
 
-**Endpoint:** `POST /api/v2/roles`
+**Endpoint:** `POST /api/v1/roles`
 
 **Description:** Create a new role.
 
 ```bash
-curl -X POST "http://localhost:8080/api/v2/roles" \
+curl -X POST "http://localhost:8080/api/v1/roles" \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
   -H "Content-Type: application/json" \
   -d '{
@@ -348,12 +348,12 @@ curl -X POST "http://localhost:8080/api/v2/roles" \
 
 ### Get Role Details
 
-**Endpoint:** `GET /api/v2/roles/{role_id}`
+**Endpoint:** `GET /api/v1/roles/{role_id}`
 
 **Description:** Retrieve detailed information about a specific role.
 
 ```bash
-curl -X GET "http://localhost:8080/api/v2/roles/ROLE123456789" \
+curl -X GET "http://localhost:8080/api/v1/roles/ROLE123456789" \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
   -H "Content-Type: application/json"
 ```
@@ -383,12 +383,12 @@ curl -X GET "http://localhost:8080/api/v2/roles/ROLE123456789" \
 
 ### List Roles
 
-**Endpoint:** `GET /api/v2/roles`
+**Endpoint:** `GET /api/v1/roles`
 
 **Description:** Get a paginated list of roles.
 
 ```bash
-curl -X GET "http://localhost:8080/api/v2/roles?limit=10&offset=0" \
+curl -X GET "http://localhost:8080/api/v1/roles?limit=10&offset=0" \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
   -H "Content-Type: application/json"
 ```
@@ -432,12 +432,12 @@ curl -X GET "http://localhost:8080/api/v2/roles?limit=10&offset=0" \
 
 ### Set MPIN
 
-**Endpoint:** `POST /api/v2/auth/set-mpin`
+**Endpoint:** `POST /api/v1/auth/set-mpin`
 
 **Description:** Set MPIN for the authenticated user with password verification.
 
 ```bash
-curl -X POST "http://localhost:8080/api/v2/auth/set-mpin" \
+curl -X POST "http://localhost:8080/api/v1/auth/set-mpin" \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
   -H "Content-Type: application/json" \
   -d '{
@@ -459,12 +459,12 @@ curl -X POST "http://localhost:8080/api/v2/auth/set-mpin" \
 
 ### Update MPIN
 
-**Endpoint:** `POST /api/v2/auth/update-mpin`
+**Endpoint:** `POST /api/v1/auth/update-mpin`
 
 **Description:** Update existing MPIN with current MPIN verification.
 
 ```bash
-curl -X POST "http://localhost:8080/api/v2/auth/update-mpin" \
+curl -X POST "http://localhost:8080/api/v1/auth/update-mpin" \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
   -H "Content-Type: application/json" \
   -d '{
@@ -488,12 +488,12 @@ curl -X POST "http://localhost:8080/api/v2/auth/update-mpin" \
 
 ### Delete User
 
-**Endpoint:** `DELETE /api/v2/users/{user_id}`
+**Endpoint:** `DELETE /api/v1/users/{user_id}`
 
 **Description:** Soft delete a user account with proper cascade handling.
 
 ```bash
-curl -X DELETE "http://localhost:8080/api/v2/users/USER123456789" \
+curl -X DELETE "http://localhost:8080/api/v1/users/USER123456789" \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
   -H "Content-Type: application/json"
 ```
@@ -516,12 +516,12 @@ curl -X DELETE "http://localhost:8080/api/v2/users/USER123456789" \
 
 ### Get User Details
 
-**Endpoint:** `GET /api/v2/users/{user_id}`
+**Endpoint:** `GET /api/v1/users/{user_id}`
 
 **Description:** Retrieve detailed user information including roles and profile.
 
 ```bash
-curl -X GET "http://localhost:8080/api/v2/users/USER123456789?include_roles=true&include_profile=true" \
+curl -X GET "http://localhost:8080/api/v1/users/USER123456789?include_roles=true&include_profile=true" \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
   -H "Content-Type: application/json"
 ```
@@ -580,7 +580,7 @@ curl -X GET "http://localhost:8080/api/v2/users/USER123456789?include_roles=true
 **Request:** Invalid login credentials format
 
 ```bash
-curl -X POST "http://localhost:8080/api/v2/auth/login" \
+curl -X POST "http://localhost:8080/api/v1/auth/login" \
   -H "Content-Type: application/json" \
   -d '{
     "phone_number": "invalid",
@@ -614,7 +614,7 @@ curl -X POST "http://localhost:8080/api/v2/auth/login" \
 **Request:** Invalid credentials
 
 ```bash
-curl -X POST "http://localhost:8080/api/v2/auth/login" \
+curl -X POST "http://localhost:8080/api/v1/auth/login" \
   -H "Content-Type: application/json" \
   -d '{
     "phone_number": "+1234567890",
@@ -641,7 +641,7 @@ curl -X POST "http://localhost:8080/api/v2/auth/login" \
 **Request:** Insufficient permissions for role assignment
 
 ```bash
-curl -X POST "http://localhost:8080/api/v2/users/USER123456789/roles" \
+curl -X POST "http://localhost:8080/api/v1/users/USER123456789/roles" \
   -H "Authorization: Bearer invalid_or_insufficient_token" \
   -H "Content-Type: application/json" \
   -d '{
@@ -671,7 +671,7 @@ curl -X POST "http://localhost:8080/api/v2/users/USER123456789/roles" \
 **Request:** Role assignment to non-existent user
 
 ```bash
-curl -X POST "http://localhost:8080/api/v2/users/NONEXISTENT/roles" \
+curl -X POST "http://localhost:8080/api/v1/users/NONEXISTENT/roles" \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
   -H "Content-Type: application/json" \
   -d '{
@@ -701,7 +701,7 @@ curl -X POST "http://localhost:8080/api/v2/users/NONEXISTENT/roles" \
 **Request:** Assigning already assigned role
 
 ```bash
-curl -X POST "http://localhost:8080/api/v2/users/USER123456789/roles" \
+curl -X POST "http://localhost:8080/api/v1/users/USER123456789/roles" \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
   -H "Content-Type: application/json" \
   -d '{

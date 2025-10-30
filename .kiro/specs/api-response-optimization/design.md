@@ -248,13 +248,13 @@ func TestAuthenticationValidation(t *testing.T) {
     token := loginAndGetToken()
     logoutWithToken(token)
 
-    response := makeAuthenticatedRequest("/api/v2/users", token)
+    response := makeAuthenticatedRequest("/api/v1/users", token)
     assert.Equal(t, 401, response.StatusCode)
     assert.Contains(t, response.Body, "AUTHENTICATION_ERROR")
 
     // Test that valid tokens still work
     newToken := loginAndGetToken()
-    validResponse := makeAuthenticatedRequest("/api/v2/users", newToken)
+    validResponse := makeAuthenticatedRequest("/api/v1/users", newToken)
     assert.Equal(t, 200, validResponse.StatusCode)
 }
 ```
@@ -296,7 +296,7 @@ func TestPasswordSecurity(t *testing.T) {
     changePassword(token, "oldPassword", "newPassword123!")
 
     // Old token should no longer work
-    response := makeAuthenticatedRequest("/api/v2/users", token)
+    response := makeAuthenticatedRequest("/api/v1/users", token)
     assert.Equal(t, 401, response.StatusCode)
 }
 ```
@@ -402,17 +402,17 @@ type VerificationStatusResponse struct {
 
 New endpoints will be added to support Aadhaar verification:
 
-1. **POST /api/v2/users/{id}/aadhaar/otp** - Generate OTP for Aadhaar verification
-2. **POST /api/v2/users/{id}/aadhaar/verify** - Verify OTP and complete Aadhaar verification
-3. **GET /api/v2/users/{id}/verification-status** - Get user's verification status
+1. **POST /api/v1/users/{id}/aadhaar/otp** - Generate OTP for Aadhaar verification
+2. **POST /api/v1/users/{id}/aadhaar/verify** - Verify OTP and complete Aadhaar verification
+3. **GET /api/v1/users/{id}/verification-status** - Get user's verification status
 
 ### Password Management Endpoints
 
 New endpoints will be added to support secure password management:
 
-1. **POST /api/v2/users/{id}/password/change** - Change password with current password validation
-2. **POST /api/v2/auth/password/reset/request** - Request password reset OTP
-3. **POST /api/v2/auth/password/reset/verify** - Reset password using OTP
+1. **POST /api/v1/users/{id}/password/change** - Change password with current password validation
+2. **POST /api/v1/auth/password/reset/request** - Request password reset OTP
+3. **POST /api/v1/auth/password/reset/verify** - Reset password using OTP
 
 ### Integration with Existing Contact Verification
 

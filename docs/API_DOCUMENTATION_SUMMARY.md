@@ -14,36 +14,36 @@ This document summarizes the comprehensive API documentation updates completed f
 
 #### Updated Handler Annotations
 
-- **Enhanced Login Endpoint** (`POST /api/v2/auth/login`)
+- **Enhanced Login Endpoint** (`POST /api/v1/auth/login`)
 
   - Added comprehensive Swagger annotations
   - Documented MPIN and password authentication options
   - Included optional data inclusion flags (profile, roles, contacts)
   - Added detailed response examples
 
-- **User Registration** (`POST /api/v2/auth/register`)
+- **User Registration** (`POST /api/v1/auth/register`)
 
   - Updated with complete request/response documentation
   - Added validation error examples
 
-- **Token Refresh** (`POST /api/v2/auth/refresh`)
+- **Token Refresh** (`POST /api/v1/auth/refresh`)
 
   - Documented MPIN-based token refresh
   - Added error scenarios
 
 - **MPIN Management Endpoints**
-  - `POST /api/v2/auth/set-mpin` - Set initial MPIN
-  - `POST /api/v2/auth/update-mpin` - Update existing MPIN
+  - `POST /api/v1/auth/set-mpin` - Set initial MPIN
+  - `POST /api/v1/auth/update-mpin` - Update existing MPIN
   - Complete documentation with authentication requirements
 
 #### Role Management Endpoints
 
-- **Role Assignment** (`POST /api/v2/users/{id}/roles`)
+- **Role Assignment** (`POST /api/v1/users/{id}/roles`)
 
   - Comprehensive documentation with audit logging details
   - Error scenarios and authorization requirements
 
-- **Role Removal** (`DELETE /api/v2/users/{id}/roles/{role_id}`)
+- **Role Removal** (`DELETE /api/v1/users/{id}/roles/{role_id}`)
 
   - Complete endpoint documentation
   - Detailed error handling examples

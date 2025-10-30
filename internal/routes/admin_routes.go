@@ -8,8 +8,8 @@ import (
 	"go.uber.org/zap"
 )
 
-// SetupAdminRoutes configures admin routes
-func SetupAdminRoutes(protectedAPI *gin.RouterGroup, authMiddleware *middleware.AuthMiddleware, authzService *services.AuthorizationService, auditService *services.AuditService, logger *zap.Logger) {
+// SetupLegacyAdminRoutes configures legacy admin routes (deprecated, use SetupAdminRoutes instead)
+func SetupLegacyAdminRoutes(protectedAPI *gin.RouterGroup, authMiddleware *middleware.AuthMiddleware, authzService *services.AuthorizationService, auditService *services.AuditService, logger *zap.Logger) {
 	admin := protectedAPI.Group("/admin")
 	admin.Use(authMiddleware.RequireRole("admin"))
 	{
@@ -21,24 +21,24 @@ func SetupAdminRoutes(protectedAPI *gin.RouterGroup, authMiddleware *middleware.
 	}
 }
 
-// SetupAdminV2Routes configures v2 admin routes with AdminHandler
-func SetupAdminV2Routes(protectedAPI *gin.RouterGroup, adminHandler *admin.AdminHandler, authMiddleware *middleware.AuthMiddleware) {
+// SetupAdminRoutes configures admin routes with AdminHandler
+func SetupAdminRoutes(protectedAPI *gin.RouterGroup, adminHandler *admin.AdminHandler, authMiddleware *middleware.AuthMiddleware) {
 	adminGroup := protectedAPI.Group("/admin")
 	adminGroup.Use(authMiddleware.RequireRole("super_admin", "admin"))
 	{
 		// Audit endpoint
-		adminGroup.GET("/audit", adminHandler.AuditLogsV2)
+		adminGroup.GET("/audit", adminHandler.AuditLogs)
 
 		// Health and metrics endpoints
-		adminGroup.GET("/health/detailed", adminHandler.DetailedHealthCheckV2)
-		adminGroup.GET("/metrics", adminHandler.MetricsV2)
+		adminGroup.GET("/health/detailed", adminHandler.DetailedHealthCheck)
+		adminGroup.GET("/metrics", adminHandler.Metrics)
 
 		// System info endpoint
 		adminGroup.GET("/system", adminHandler.GetSystemInfo)
 
 		// Maintenance endpoints
 		adminGroup.GET("/maintenance", adminHandler.GetMaintenanceStatus)
-		adminGroup.POST("/maintenance", adminHandler.MaintenanceModeV2)
+		adminGroup.POST("/maintenance", adminHandler.MaintenanceMode)
 		adminGroup.PATCH("/maintenance/message", adminHandler.UpdateMaintenanceMessage)
 	}
 }

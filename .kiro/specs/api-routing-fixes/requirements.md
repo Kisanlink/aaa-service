@@ -12,11 +12,11 @@ The AAA service has organization and permissions APIs that are returning 404 err
 
 #### Acceptance Criteria
 
-1. WHEN I make a GET request to `/api/v2/organizations` THEN the system SHALL return a list of organizations
-2. WHEN I make a POST request to `/api/v2/organizations` with valid data THEN the system SHALL create a new organization
-3. WHEN I make a GET request to `/api/v2/organizations/{id}` THEN the system SHALL return the specific organization
-4. WHEN I make a PUT request to `/api/v2/organizations/{id}` with valid data THEN the system SHALL update the organization
-5. WHEN I make a DELETE request to `/api/v2/organizations/{id}` THEN the system SHALL delete the organization
+1. WHEN I make a GET request to `/api/v1/organizations` THEN the system SHALL return a list of organizations
+2. WHEN I make a POST request to `/api/v1/organizations` with valid data THEN the system SHALL create a new organization
+3. WHEN I make a GET request to `/api/v1/organizations/{id}` THEN the system SHALL return the specific organization
+4. WHEN I make a PUT request to `/api/v1/organizations/{id}` with valid data THEN the system SHALL update the organization
+5. WHEN I make a DELETE request to `/api/v1/organizations/{id}` THEN the system SHALL delete the organization
 6. WHEN I make requests to organization hierarchy endpoints THEN the system SHALL return appropriate responses
 
 ### Requirement 2
@@ -25,8 +25,8 @@ The AAA service has organization and permissions APIs that are returning 404 err
 
 #### Acceptance Criteria
 
-1. WHEN I make a GET request to `/api/v2/permissions` THEN the system SHALL return a list of permissions
-2. WHEN I make a POST request to `/api/v2/permissions` with valid data THEN the system SHALL create a new permission
+1. WHEN I make a GET request to `/api/v1/permissions` THEN the system SHALL return a list of permissions
+2. WHEN I make a POST request to `/api/v1/permissions` with valid data THEN the system SHALL create a new permission
 3. WHEN I access permission endpoints THEN the system SHALL enforce proper authentication and authorization
 
 ### Requirement 3

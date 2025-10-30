@@ -95,7 +95,7 @@ func (m *AuditMiddleware) HTTPAuditMiddleware() gin.HandlerFunc {
 		success := statusCode >= 200 && statusCode < 400
 
 		// Avoid double logging for unauthenticated login attempts
-		if statusCode == http.StatusUnauthorized && len(c.Request.URL.Path) >= len("/api/v2/auth/login") && c.Request.URL.Path[:len("/api/v2/auth/login")] == "/api/v2/auth/login" {
+		if statusCode == http.StatusUnauthorized && len(c.Request.URL.Path) >= len("/api/v1/auth/login") && c.Request.URL.Path[:len("/api/v1/auth/login")] == "/api/v1/auth/login" {
 			if !success {
 				err := fmt.Errorf("HTTP %d", statusCode)
 				m.auditService.LogUserActionWithError(c.Request.Context(), userID, "http_request", "api", c.Request.URL.Path, err, details)
@@ -199,11 +199,11 @@ func (m *AuditMiddleware) isSkippedEndpoint(path string) bool {
 func (m *AuditMiddleware) shouldCaptureRequestBody(method, path string) bool {
 	// Capture body for sensitive operations
 	sensitiveEndpoints := []string{
-		"/api/v2/auth/login",
-		"/api/v2/auth/register",
-		"/api/v2/users",
-		"/api/v2/roles",
-		"/api/v2/permissions",
+		"/api/v1/auth/login",
+		"/api/v1/auth/register",
+		"/api/v1/users",
+		"/api/v1/roles",
+		"/api/v1/permissions",
 	}
 
 	if method == "POST" || method == "PUT" || method == "PATCH" {
@@ -220,16 +220,16 @@ func (m *AuditMiddleware) shouldCaptureRequestBody(method, path string) bool {
 // isSensitiveOperation checks if an operation is sensitive and requires detailed auditing
 func (m *AuditMiddleware) isSensitiveOperation(method, path string) bool {
 	sensitiveOperations := []string{
-		"/api/v2/auth/login",
-		"/api/v2/auth/register",
-		"/api/v2/auth/set-mpin",
-		"/api/v2/auth/update-mpin",
-		"/api/v2/auth/forgot-password",
-		"/api/v2/auth/reset-password",
-		"/api/v2/users",
-		"/api/v2/roles",
-		"/api/v2/permissions",
-		"/api/v2/admin",
+		"/api/v1/auth/login",
+		"/api/v1/auth/register",
+		"/api/v1/auth/set-mpin",
+		"/api/v1/auth/update-mpin",
+		"/api/v1/auth/forgot-password",
+		"/api/v1/auth/reset-password",
+		"/api/v1/users",
+		"/api/v1/roles",
+		"/api/v1/permissions",
+		"/api/v1/admin",
 	}
 
 	for _, operation := range sensitiveOperations {
@@ -461,7 +461,7 @@ func (m *AuditMiddleware) isDataModificationOperation(method string) bool {
 // extractResourceInfo extracts resource type and ID from URL path
 func (m *AuditMiddleware) extractResourceInfo(path string) (string, string) {
 	// Simple extraction logic - can be enhanced based on your URL structure
-	// Example: /api/v2/users/123 -> resource: "users", resourceID: "123"
+	// Example: /api/v1/users/123 -> resource: "users", resourceID: "123"
 
 	parts := make([]string, 0)
 	for _, part := range []string{"api", "v2", "v1"} {

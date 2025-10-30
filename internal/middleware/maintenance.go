@@ -31,7 +31,7 @@ func NewMaintenanceMiddleware(
 			"/health",
 			"/ready",
 			"/live",
-			"/api/v2/admin/maintenance", // Allow maintenance control endpoints
+			"/api/v1/admin/maintenance", // Allow maintenance control endpoints
 		},
 	}
 }

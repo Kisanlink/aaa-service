@@ -30,7 +30,17 @@ func (s *Service) UpdatePermission(ctx context.Context, permission *models.Permi
 		s.logger.Error("Failed to get existing permission",
 			zap.String("id", permission.ID),
 			zap.Error(err))
-		return fmt.Errorf("permission not found: %w", err)
+		// Return more specific error message
+		if isNotFoundError(err) {
+			return fmt.Errorf("permission not found with ID '%s'", permission.ID)
+		}
+		return fmt.Errorf("database error while fetching permission: %w", err)
+	}
+
+	if existing == nil {
+		s.logger.Error("Permission does not exist",
+			zap.String("id", permission.ID))
+		return fmt.Errorf("permission not found with ID '%s'", permission.ID)
 	}
 
 	// Check if permission is in use before allowing critical changes
@@ -52,7 +62,18 @@ func (s *Service) UpdatePermission(ctx context.Context, permission *models.Permi
 	if existing.Name != permission.Name {
 		duplicate, err := s.permissionRepo.GetByName(ctx, permission.Name)
 		if err == nil && duplicate != nil && duplicate.ID != permission.ID {
+			s.logger.Warn("Cannot update permission: name already exists",
+				zap.String("id", permission.ID),
+				zap.String("name", permission.Name),
+				zap.String("duplicate_id", duplicate.ID))
 			return fmt.Errorf("permission with name '%s' already exists", permission.Name)
+		}
+		// If error is not "not found", it's a database error that should be returned
+		if err != nil && !isNotFoundError(err) {
+			s.logger.Error("Failed to check for duplicate permission name during update",
+				zap.String("name", permission.Name),
+				zap.Error(err))
+			return fmt.Errorf("failed to check for duplicate permission name: %w", err)
 		}
 	}
 

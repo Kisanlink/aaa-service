@@ -51,7 +51,7 @@ func NewOrganizationHandler(
 //	@Failure		400				{object}	responses.ErrorResponse
 //	@Failure		409				{object}	responses.ErrorResponse
 //	@Failure		500				{object}	responses.ErrorResponse
-//	@Router			/api/v2/organizations [post]
+//	@Router			/api/v1/organizations [post]
 func (h *Handler) CreateOrganization(c *gin.Context) {
 	var req orgRequests.CreateOrganizationRequest
 
@@ -102,7 +102,7 @@ func (h *Handler) CreateOrganization(c *gin.Context) {
 //	@Failure		400	{object}	responses.ErrorResponse
 //	@Failure		404	{object}	responses.ErrorResponse
 //	@Failure		500	{object}	responses.ErrorResponse
-//	@Router			/api/v2/organizations/{id} [get]
+//	@Router			/api/v1/organizations/{id} [get]
 func (h *Handler) GetOrganization(c *gin.Context) {
 	orgID := c.Param("id")
 	if orgID == "" {
@@ -139,7 +139,7 @@ func (h *Handler) GetOrganization(c *gin.Context) {
 //	@Failure		404				{object}	responses.ErrorResponse
 //	@Failure		409				{object}	responses.ErrorResponse
 //	@Failure		500				{object}	responses.ErrorResponse
-//	@Router			/api/v2/organizations/{id} [put]
+//	@Router			/api/v1/organizations/{id} [put]
 func (h *Handler) UpdateOrganization(c *gin.Context) {
 	orgID := c.Param("id")
 	if orgID == "" {
@@ -200,7 +200,7 @@ func (h *Handler) UpdateOrganization(c *gin.Context) {
 //	@Failure		401	{object}	responses.ErrorResponse
 //	@Failure		404	{object}	responses.ErrorResponse
 //	@Failure		500	{object}	responses.ErrorResponse
-//	@Router			/api/v2/organizations/{id} [delete]
+//	@Router			/api/v1/organizations/{id} [delete]
 func (h *Handler) DeleteOrganization(c *gin.Context) {
 	orgID := c.Param("id")
 	if orgID == "" {
@@ -251,7 +251,7 @@ func (h *Handler) DeleteOrganization(c *gin.Context) {
 //	@Param			type				query		string	false	"Filter by organization type (enterprise, small_business, individual, fpo, cooperative, agribusiness, farmers_group, shg, ngo, government, input_supplier, trader, processing_unit, research_institute)"
 //	@Success		200					{array}		organizations.OrganizationResponse
 //	@Failure		500					{object}	responses.ErrorResponse
-//	@Router			/api/v2/organizations [get]
+//	@Router			/api/v1/organizations [get]
 func (h *Handler) ListOrganizations(c *gin.Context) {
 	// Parse query parameters
 	limitStr := c.DefaultQuery("limit", "10")
@@ -301,7 +301,7 @@ func (h *Handler) ListOrganizations(c *gin.Context) {
 //	@Failure		400	{object}	responses.ErrorResponse
 //	@Failure		404	{object}	responses.ErrorResponse
 //	@Failure		500	{object}	responses.ErrorResponse
-//	@Router			/api/v2/organizations/{id}/hierarchy [get]
+//	@Router			/api/v1/organizations/{id}/hierarchy [get]
 func (h *Handler) GetOrganizationHierarchy(c *gin.Context) {
 	orgID := c.Param("id")
 	if orgID == "" {
@@ -336,7 +336,7 @@ func (h *Handler) GetOrganizationHierarchy(c *gin.Context) {
 //	@Failure		401	{object}	responses.ErrorResponse
 //	@Failure		404	{object}	responses.ErrorResponse
 //	@Failure		500	{object}	responses.ErrorResponse
-//	@Router			/api/v2/organizations/{id}/activate [post]
+//	@Router			/api/v1/organizations/{id}/activate [post]
 //
 //nolint:dupl // Activate and Deactivate have similar structure but different logic
 func (h *Handler) ActivateOrganization(c *gin.Context) {
@@ -389,7 +389,7 @@ func (h *Handler) ActivateOrganization(c *gin.Context) {
 //	@Failure		401	{object}	responses.ErrorResponse
 //	@Failure		404	{object}	responses.ErrorResponse
 //	@Failure		500	{object}	responses.ErrorResponse
-//	@Router			/api/v2/organizations/{id}/deactivate [post]
+//	@Router			/api/v1/organizations/{id}/deactivate [post]
 func (h *Handler) DeactivateOrganization(c *gin.Context) {
 	orgID := c.Param("id")
 	if orgID == "" {
@@ -439,7 +439,7 @@ func (h *Handler) DeactivateOrganization(c *gin.Context) {
 //	@Failure		400	{object}	responses.ErrorResponse
 //	@Failure		404	{object}	responses.ErrorResponse
 //	@Failure		500	{object}	responses.ErrorResponse
-//	@Router			/api/v2/organizations/{id}/stats [get]
+//	@Router			/api/v1/organizations/{id}/stats [get]
 func (h *Handler) GetOrganizationStats(c *gin.Context) {
 	orgID := c.Param("id")
 	if orgID == "" {

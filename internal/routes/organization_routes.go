@@ -10,7 +10,7 @@ import (
 // This function accepts a router group (typically the protected API group) and adds organization routes to it
 func SetupOrganizationRoutes(apiGroup *gin.RouterGroup, orgHandler *organizations.Handler, authMiddleware *middleware.AuthMiddleware) {
 	// Organization routes with authentication
-	// Note: The apiGroup is expected to be /api/v2 with auth middleware already applied
+	// Note: The apiGroup is expected to be /api/v1 with auth middleware already applied
 	org := apiGroup.Group("/organizations")
 	{
 		org.POST("", orgHandler.CreateOrganization)

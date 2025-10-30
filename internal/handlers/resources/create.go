@@ -10,7 +10,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// CreateResource handles POST /api/v2/resources
+// CreateResource handles POST /api/v1/resources
 //
 //	@Summary		Create a new resource
 //	@Description	Create a new resource with name, type, and description
@@ -21,7 +21,7 @@ import (
 //	@Success		201			{object}	respResources.ResourceResponse
 //	@Failure		400			{object}	map[string]interface{}
 //	@Failure		500			{object}	map[string]interface{}
-//	@Router			/api/v2/resources [post]
+//	@Router			/api/v1/resources [post]
 func (h *ResourceHandler) CreateResource(c *gin.Context) {
 	h.logger.Info("Creating resource")
 

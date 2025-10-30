@@ -10,7 +10,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// EvaluatePermission handles POST /api/v2/permissions/evaluate
+// EvaluatePermission handles POST /api/v1/permissions/evaluate
 //
 //	@Summary		Evaluate user permission
 //	@Description	Check if a user has permission to perform an action on a resource
@@ -21,7 +21,7 @@ import (
 //	@Success		200		{object}	respPermissions.EvaluationResponse
 //	@Failure		400		{object}	map[string]interface{}
 //	@Failure		500		{object}	map[string]interface{}
-//	@Router			/api/v2/permissions/evaluate [post]
+//	@Router			/api/v1/permissions/evaluate [post]
 func (h *PermissionHandler) EvaluatePermission(c *gin.Context) {
 	h.logger.Info("Evaluating permission")
 
@@ -74,7 +74,7 @@ func (h *PermissionHandler) EvaluatePermission(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// EvaluateUserPermission handles POST /api/v2/users/:id/evaluate
+// EvaluateUserPermission handles POST /api/v1/users/:id/evaluate
 //
 //	@Summary		Evaluate user-specific permission
 //	@Description	Check if a specific user has permission to perform an action on a resource
@@ -86,7 +86,7 @@ func (h *PermissionHandler) EvaluatePermission(c *gin.Context) {
 //	@Success		200		{object}	respPermissions.EvaluationResponse
 //	@Failure		400		{object}	map[string]interface{}
 //	@Failure		500		{object}	map[string]interface{}
-//	@Router			/api/v2/users/{id}/evaluate [post]
+//	@Router			/api/v1/users/{id}/evaluate [post]
 func (h *PermissionHandler) EvaluateUserPermission(c *gin.Context) {
 	userID := c.Param("id")
 	h.logger.Info("Evaluating user-specific permission", zap.String("userID", userID))

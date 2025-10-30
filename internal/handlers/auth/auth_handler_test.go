@@ -194,7 +194,7 @@ func setupTestHandler() (*AuthHandler, *MockUserService, *MockValidator, *MockRe
 	return handler, mockUserService, mockValidator, mockResponder
 }
 
-func TestLoginV2_PasswordAuthentication_Success(t *testing.T) {
+func TestLogin_PasswordAuthentication_Success(t *testing.T) {
 	handler, mockUserService, mockValidator, mockResponder := setupTestHandler()
 
 	// Setup test data
@@ -250,7 +250,7 @@ func TestLoginV2_PasswordAuthentication_Success(t *testing.T) {
 	c.Request = req
 
 	// Execute
-	handler.LoginV2(c)
+	handler.Login(c)
 
 	// Verify
 	mockUserService.AssertExpectations(t)
@@ -258,7 +258,7 @@ func TestLoginV2_PasswordAuthentication_Success(t *testing.T) {
 	mockResponder.AssertExpectations(t)
 }
 
-func TestLoginV2_MPinAuthentication_Success(t *testing.T) {
+func TestLogin_MPinAuthentication_Success(t *testing.T) {
 	handler, mockUserService, mockValidator, mockResponder := setupTestHandler()
 
 	// Setup test data
@@ -301,7 +301,7 @@ func TestLoginV2_MPinAuthentication_Success(t *testing.T) {
 	c.Request = req
 
 	// Execute
-	handler.LoginV2(c)
+	handler.Login(c)
 
 	// Verify
 	mockUserService.AssertExpectations(t)
@@ -309,7 +309,7 @@ func TestLoginV2_MPinAuthentication_Success(t *testing.T) {
 	mockResponder.AssertExpectations(t)
 }
 
-func TestLoginV2_BothPasswordAndMPin_PrioritizesPassword(t *testing.T) {
+func TestLogin_BothPasswordAndMPin_PrioritizesPassword(t *testing.T) {
 	handler, mockUserService, mockValidator, mockResponder := setupTestHandler()
 
 	// Setup test data - both password and MPIN provided
@@ -354,7 +354,7 @@ func TestLoginV2_BothPasswordAndMPin_PrioritizesPassword(t *testing.T) {
 	c.Request = req
 
 	// Execute
-	handler.LoginV2(c)
+	handler.Login(c)
 
 	// Verify
 	mockUserService.AssertExpectations(t)
@@ -362,7 +362,7 @@ func TestLoginV2_BothPasswordAndMPin_PrioritizesPassword(t *testing.T) {
 	mockResponder.AssertExpectations(t)
 }
 
-func TestLoginV2_InvalidCredentials_ReturnsUnauthorized(t *testing.T) {
+func TestLogin_InvalidCredentials_ReturnsUnauthorized(t *testing.T) {
 	handler, mockUserService, mockValidator, mockResponder := setupTestHandler()
 
 	// Setup test data
@@ -390,7 +390,7 @@ func TestLoginV2_InvalidCredentials_ReturnsUnauthorized(t *testing.T) {
 	c.Request = req
 
 	// Execute
-	handler.LoginV2(c)
+	handler.Login(c)
 
 	// Verify
 	mockUserService.AssertExpectations(t)
@@ -398,7 +398,7 @@ func TestLoginV2_InvalidCredentials_ReturnsUnauthorized(t *testing.T) {
 	mockResponder.AssertExpectations(t)
 }
 
-func TestLoginV2_UserNotFound_ReturnsUnauthorized(t *testing.T) {
+func TestLogin_UserNotFound_ReturnsUnauthorized(t *testing.T) {
 	handler, mockUserService, mockValidator, mockResponder := setupTestHandler()
 
 	// Setup test data
@@ -426,7 +426,7 @@ func TestLoginV2_UserNotFound_ReturnsUnauthorized(t *testing.T) {
 	c.Request = req
 
 	// Execute
-	handler.LoginV2(c)
+	handler.Login(c)
 
 	// Verify
 	mockUserService.AssertExpectations(t)
@@ -434,7 +434,7 @@ func TestLoginV2_UserNotFound_ReturnsUnauthorized(t *testing.T) {
 	mockResponder.AssertExpectations(t)
 }
 
-func TestLoginV2_MPinNotSet_ReturnsBadRequest(t *testing.T) {
+func TestLogin_MPinNotSet_ReturnsBadRequest(t *testing.T) {
 	handler, mockUserService, mockValidator, mockResponder := setupTestHandler()
 
 	// Setup test data
@@ -462,7 +462,7 @@ func TestLoginV2_MPinNotSet_ReturnsBadRequest(t *testing.T) {
 	c.Request = req
 
 	// Execute
-	handler.LoginV2(c)
+	handler.Login(c)
 
 	// Verify
 	mockUserService.AssertExpectations(t)
@@ -470,7 +470,7 @@ func TestLoginV2_MPinNotSet_ReturnsBadRequest(t *testing.T) {
 	mockResponder.AssertExpectations(t)
 }
 
-func TestLoginV2_ValidationError_ReturnsBadRequest(t *testing.T) {
+func TestLogin_ValidationError_ReturnsBadRequest(t *testing.T) {
 	handler, _, _, mockResponder := setupTestHandler()
 
 	// Setup test data - missing both password and MPIN
@@ -494,7 +494,7 @@ func TestLoginV2_ValidationError_ReturnsBadRequest(t *testing.T) {
 	c.Request = req
 
 	// Execute
-	handler.LoginV2(c)
+	handler.Login(c)
 
 	// Verify
 	mockResponder.AssertExpectations(t)
@@ -547,7 +547,7 @@ func TestConvertToAuthUserInfo(t *testing.T) {
 	assert.Equal(t, "admin", result.Roles[0].Role.Name)
 }
 
-func TestSetMPinV2_Success(t *testing.T) {
+func TestSetMPin_Success(t *testing.T) {
 	handler, mockUserService, mockValidator, mockResponder := setupTestHandler()
 
 	// Setup test data
@@ -576,7 +576,7 @@ func TestSetMPinV2_Success(t *testing.T) {
 	c.Set("user_id", "user-123")
 
 	// Execute
-	handler.SetMPinV2(c)
+	handler.SetMPin(c)
 
 	// Verify
 	mockUserService.AssertExpectations(t)
@@ -584,7 +584,7 @@ func TestSetMPinV2_Success(t *testing.T) {
 	mockResponder.AssertExpectations(t)
 }
 
-func TestSetMPinV2_UserNotAuthenticated(t *testing.T) {
+func TestSetMPin_UserNotAuthenticated(t *testing.T) {
 	handler, _, _, mockResponder := setupTestHandler()
 
 	// Setup test data
@@ -608,13 +608,13 @@ func TestSetMPinV2_UserNotAuthenticated(t *testing.T) {
 	c.Request = req
 
 	// Execute
-	handler.SetMPinV2(c)
+	handler.SetMPin(c)
 
 	// Verify
 	mockResponder.AssertExpectations(t)
 }
 
-func TestSetMPinV2_ValidationError(t *testing.T) {
+func TestSetMPin_ValidationError(t *testing.T) {
 	handler, _, _, mockResponder := setupTestHandler()
 
 	// Setup test data - invalid MPIN (too short)
@@ -639,13 +639,13 @@ func TestSetMPinV2_ValidationError(t *testing.T) {
 	c.Set("user_id", "user-123")
 
 	// Execute
-	handler.SetMPinV2(c)
+	handler.SetMPin(c)
 
 	// Verify
 	mockResponder.AssertExpectations(t)
 }
 
-func TestSetMPinV2_InvalidPassword(t *testing.T) {
+func TestSetMPin_InvalidPassword(t *testing.T) {
 	handler, mockUserService, mockValidator, mockResponder := setupTestHandler()
 
 	// Setup test data
@@ -672,7 +672,7 @@ func TestSetMPinV2_InvalidPassword(t *testing.T) {
 	c.Set("user_id", "user-123")
 
 	// Execute
-	handler.SetMPinV2(c)
+	handler.SetMPin(c)
 
 	// Verify
 	mockUserService.AssertExpectations(t)
@@ -680,7 +680,7 @@ func TestSetMPinV2_InvalidPassword(t *testing.T) {
 	mockResponder.AssertExpectations(t)
 }
 
-func TestSetMPinV2_ServiceValidationError(t *testing.T) {
+func TestSetMPin_ServiceValidationError(t *testing.T) {
 	handler, mockUserService, mockValidator, mockResponder := setupTestHandler()
 
 	// Setup test data
@@ -707,7 +707,7 @@ func TestSetMPinV2_ServiceValidationError(t *testing.T) {
 	c.Set("user_id", "user-123")
 
 	// Execute
-	handler.SetMPinV2(c)
+	handler.SetMPin(c)
 
 	// Verify
 	mockUserService.AssertExpectations(t)
@@ -715,7 +715,7 @@ func TestSetMPinV2_ServiceValidationError(t *testing.T) {
 	mockResponder.AssertExpectations(t)
 }
 
-func TestUpdateMPinV2_Success(t *testing.T) {
+func TestUpdateMPin_Success(t *testing.T) {
 	handler, mockUserService, mockValidator, mockResponder := setupTestHandler()
 
 	// Setup test data
@@ -744,7 +744,7 @@ func TestUpdateMPinV2_Success(t *testing.T) {
 	c.Set("user_id", "user-123")
 
 	// Execute
-	handler.UpdateMPinV2(c)
+	handler.UpdateMPin(c)
 
 	// Verify
 	mockUserService.AssertExpectations(t)
@@ -752,7 +752,7 @@ func TestUpdateMPinV2_Success(t *testing.T) {
 	mockResponder.AssertExpectations(t)
 }
 
-func TestUpdateMPinV2_UserNotAuthenticated(t *testing.T) {
+func TestUpdateMPin_UserNotAuthenticated(t *testing.T) {
 	handler, _, _, mockResponder := setupTestHandler()
 
 	// Setup test data
@@ -776,13 +776,13 @@ func TestUpdateMPinV2_UserNotAuthenticated(t *testing.T) {
 	c.Request = req
 
 	// Execute
-	handler.UpdateMPinV2(c)
+	handler.UpdateMPin(c)
 
 	// Verify
 	mockResponder.AssertExpectations(t)
 }
 
-func TestUpdateMPinV2_ValidationError_SameMPin(t *testing.T) {
+func TestUpdateMPin_ValidationError_SameMPin(t *testing.T) {
 	handler, _, _, mockResponder := setupTestHandler()
 
 	// Setup test data - same current and new MPIN
@@ -807,13 +807,13 @@ func TestUpdateMPinV2_ValidationError_SameMPin(t *testing.T) {
 	c.Set("user_id", "user-123")
 
 	// Execute
-	handler.UpdateMPinV2(c)
+	handler.UpdateMPin(c)
 
 	// Verify
 	mockResponder.AssertExpectations(t)
 }
 
-func TestUpdateMPinV2_InvalidCurrentMPin(t *testing.T) {
+func TestUpdateMPin_InvalidCurrentMPin(t *testing.T) {
 	handler, mockUserService, mockValidator, mockResponder := setupTestHandler()
 
 	// Setup test data
@@ -840,7 +840,7 @@ func TestUpdateMPinV2_InvalidCurrentMPin(t *testing.T) {
 	c.Set("user_id", "user-123")
 
 	// Execute
-	handler.UpdateMPinV2(c)
+	handler.UpdateMPin(c)
 
 	// Verify
 	mockUserService.AssertExpectations(t)
@@ -848,7 +848,7 @@ func TestUpdateMPinV2_InvalidCurrentMPin(t *testing.T) {
 	mockResponder.AssertExpectations(t)
 }
 
-func TestUpdateMPinV2_MPinNotSet(t *testing.T) {
+func TestUpdateMPin_MPinNotSet(t *testing.T) {
 	handler, mockUserService, mockValidator, mockResponder := setupTestHandler()
 
 	// Setup test data
@@ -875,7 +875,7 @@ func TestUpdateMPinV2_MPinNotSet(t *testing.T) {
 	c.Set("user_id", "user-123")
 
 	// Execute
-	handler.UpdateMPinV2(c)
+	handler.UpdateMPin(c)
 
 	// Verify
 	mockUserService.AssertExpectations(t)
@@ -883,7 +883,7 @@ func TestUpdateMPinV2_MPinNotSet(t *testing.T) {
 	mockResponder.AssertExpectations(t)
 }
 
-func TestUpdateMPinV2_ValidationError_InvalidFormat(t *testing.T) {
+func TestUpdateMPin_ValidationError_InvalidFormat(t *testing.T) {
 	handler, _, _, mockResponder := setupTestHandler()
 
 	// Setup test data - invalid MPIN format
@@ -908,13 +908,13 @@ func TestUpdateMPinV2_ValidationError_InvalidFormat(t *testing.T) {
 	c.Set("user_id", "user-123")
 
 	// Execute
-	handler.UpdateMPinV2(c)
+	handler.UpdateMPin(c)
 
 	// Verify
 	mockResponder.AssertExpectations(t)
 }
 
-func TestUpdateMPinV2_InternalError(t *testing.T) {
+func TestUpdateMPin_InternalError(t *testing.T) {
 	handler, mockUserService, mockValidator, mockResponder := setupTestHandler()
 
 	// Setup test data
@@ -941,7 +941,7 @@ func TestUpdateMPinV2_InternalError(t *testing.T) {
 	c.Set("user_id", "user-123")
 
 	// Execute
-	handler.UpdateMPinV2(c)
+	handler.UpdateMPin(c)
 
 	// Verify
 	mockUserService.AssertExpectations(t)

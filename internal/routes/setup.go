@@ -51,28 +51,22 @@ func SetupAAA(router *gin.Engine, handlers RouteHandlers) {
 	}
 
 	// Public routes (no authentication required)
-	publicAPI := router.Group("/api/v2")
+	publicAPI := router.Group("/api/v1")
 	publicAPI.Use(middleware.RateLimit()) // General rate limiting for public endpoints
 
 	// Protected routes (authentication and authorization required)
-	protectedAPI := router.Group("/api/v2")
+	protectedAPI := router.Group("/api/v1")
 	protectedAPI.Use(handlers.AuthMiddleware.HTTPAuthMiddleware())
 	protectedAPI.Use(middleware.SensitiveOperationRateLimit()) // More restrictive rate limiting
-
-	// V1 API compatibility routes (for backward compatibility)
-	protectedAPIV1 := router.Group("/api/v1")
-	protectedAPIV1.Use(handlers.AuthMiddleware.HTTPAuthMiddleware())
-	protectedAPIV1.Use(middleware.SensitiveOperationRateLimit())
 
 	// Setup route groups
 	SetupHealthRoutes(publicAPI, handlers.Logger)
 
-	// Setup V2 auth routes with AuthHandler for MPIN management (replaces old auth routes)
+	// Setup auth routes with AuthHandler
 	if handlers.UserService != nil && handlers.Validator != nil && handlers.Responder != nil {
-		SetupAuthV2Routes(publicAPI, protectedAPI, handlers.AuthMiddleware, handlers.UserService, handlers.Validator, handlers.Responder, handlers.Logger)
+		SetupAuthRoutes(publicAPI, protectedAPI, handlers.AuthMiddleware, handlers.UserService, handlers.Validator, handlers.Responder, handlers.Logger)
 	} else {
-		// Fallback to old auth routes if V2 dependencies are not available
-		SetupAuthRoutes(publicAPI, protectedAPI, handlers.AuthService, handlers.Logger)
+		handlers.Logger.Warn("Auth dependencies not available - auth routes will not be registered")
 	}
 
 	SetupUserRoutes(protectedAPI, handlers.AuthMiddleware, handlers.UserService, handlers.RoleService, handlers.Validator, handlers.Responder, handlers.Logger)
@@ -80,13 +74,14 @@ func SetupAAA(router *gin.Engine, handlers RouteHandlers) {
 	SetupPermissionRoutes(protectedAPI, handlers.AuthMiddleware, handlers.PermissionHandler, handlers.Logger)
 	SetupAuthorizationRoutes(protectedAPI, handlers.AuthorizationService, handlers.Logger)
 	SetupAuditRoutes(protectedAPI, handlers.AuthMiddleware, handlers.AuditService, handlers.Logger)
-	SetupAdminRoutes(protectedAPI, handlers.AuthMiddleware, handlers.AuthorizationService, handlers.AuditService, handlers.Logger)
-
-	// Setup v2 admin routes if AdminHandler is provided
+	// Setup admin routes if AdminHandler is provided
 	if handlers.AdminHandler != nil {
 		if adminHandler, ok := handlers.AdminHandler.(*admin.AdminHandler); ok {
-			SetupAdminV2Routes(protectedAPI, adminHandler, handlers.AuthMiddleware)
+			SetupAdminRoutes(protectedAPI, adminHandler, handlers.AuthMiddleware)
 		}
+	} else {
+		// Fallback to legacy admin routes setup if AdminHandler not available
+		SetupLegacyAdminRoutes(protectedAPI, handlers.AuthMiddleware, handlers.AuthorizationService, handlers.AuditService, handlers.Logger)
 	}
 
 	SetupModuleRoutes(protectedAPI, handlers.Logger)
@@ -104,9 +99,8 @@ func SetupAAA(router *gin.Engine, handlers RouteHandlers) {
 			handlers.Logger,
 			handlers.Responder,
 		)
-		// Setup organization routes for both V2 (new) and V1 (backward compatibility)
+		// Setup organization routes
 		SetupOrganizationRoutes(protectedAPI, orgHandler, handlers.AuthMiddleware)
-		SetupOrganizationRoutes(protectedAPIV1, orgHandler, handlers.AuthMiddleware)
 
 		// Also setup standalone group routes for direct group management
 		groupHandler := groups.NewGroupHandler(

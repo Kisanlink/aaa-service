@@ -30,6 +30,14 @@ func (s *Service) CreatePermission(ctx context.Context, permission *models.Permi
 			zap.String("existing_id", existing.ID))
 		return errors.NewConflictError(fmt.Sprintf("permission with name '%s' already exists", permission.Name))
 	}
+	// If err is not nil but it's just "not found", that's fine - we want to create a new permission
+	// Any other database error should be logged and returned
+	if err != nil && !isNotFoundError(err) {
+		s.logger.Error("Failed to check for duplicate permission name",
+			zap.String("name", permission.Name),
+			zap.Error(err))
+		return fmt.Errorf("failed to check for duplicate permission: %w", err)
+	}
 
 	// Verify resource exists if provided
 	if permission.ResourceID != nil && *permission.ResourceID != "" {
@@ -166,4 +174,15 @@ func (s *Service) invalidatePermissionRelatedCaches(ctx context.Context, permiss
 			zap.String("cache_key", nameCacheKey),
 			zap.Error(err))
 	}
+}
+
+// isNotFoundError checks if an error is a "not found" error
+func isNotFoundError(err error) bool {
+	if err == nil {
+		return false
+	}
+	errMsg := err.Error()
+	return strings.Contains(errMsg, "not found") ||
+		strings.Contains(errMsg, "record not found") ||
+		strings.Contains(errMsg, "no rows")
 }

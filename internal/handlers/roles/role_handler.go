@@ -65,7 +65,7 @@ func NewRoleHandler(
 //	@Failure		400		{object}	responses.ErrorResponseSwagger
 //	@Failure		409		{object}	responses.ErrorResponseSwagger
 //	@Failure		500		{object}	responses.ErrorResponseSwagger
-//	@Router			/api/v2/roles [post]
+//	@Router			/api/v1/roles [post]
 func (h *RoleHandler) CreateRole(c *gin.Context) {
 	h.logger.Info("Creating role")
 
@@ -118,7 +118,7 @@ func (h *RoleHandler) CreateRole(c *gin.Context) {
 //	@Failure		400	{object}	responses.ErrorResponseSwagger
 //	@Failure		404	{object}	responses.ErrorResponseSwagger
 //	@Failure		500	{object}	responses.ErrorResponseSwagger
-//	@Router			/api/v2/roles/{id} [get]
+//	@Router			/api/v1/roles/{id} [get]
 func (h *RoleHandler) GetRole(c *gin.Context) {
 	roleID := c.Param("id")
 	h.logger.Info("Getting role by ID", zap.String("roleID", roleID))
@@ -154,7 +154,7 @@ func (h *RoleHandler) GetRole(c *gin.Context) {
 //	@Failure		404		{object}	responses.ErrorResponseSwagger
 //	@Failure		409		{object}	responses.ErrorResponseSwagger
 //	@Failure		500		{object}	responses.ErrorResponseSwagger
-//	@Router			/api/v2/roles/{id} [put]
+//	@Router			/api/v1/roles/{id} [put]
 func (h *RoleHandler) UpdateRole(c *gin.Context) {
 	roleID := c.Param("id")
 	h.logger.Info("Updating role", zap.String("roleID", roleID))
@@ -234,7 +234,7 @@ func (h *RoleHandler) UpdateRole(c *gin.Context) {
 //	@Failure		404	{object}	responses.ErrorResponseSwagger
 //	@Failure		409	{object}	responses.ErrorResponseSwagger
 //	@Failure		500	{object}	responses.ErrorResponseSwagger
-//	@Router			/api/v2/roles/{id} [delete]
+//	@Router			/api/v1/roles/{id} [delete]
 func (h *RoleHandler) DeleteRole(c *gin.Context) {
 	roleID := c.Param("id")
 	h.logger.Info("Deleting role", zap.String("roleID", roleID))
@@ -276,7 +276,7 @@ func (h *RoleHandler) DeleteRole(c *gin.Context) {
 //	@Success		200		{object}	map[string]interface{}
 //	@Failure		400		{object}	map[string]interface{}
 //	@Failure		500		{object}	map[string]interface{}
-//	@Router			/api/v2/roles [get]
+//	@Router			/api/v1/roles [get]
 func (h *RoleHandler) ListRoles(c *gin.Context) {
 	h.logger.Info("Listing roles")
 
@@ -461,7 +461,7 @@ func (h *RoleHandler) AddChildRoleV2(c *gin.Context) {
 //	@Failure		404		{object}	responses.ErrorResponseSwagger
 //	@Failure		409		{object}	responses.ErrorResponseSwagger
 //	@Failure		500		{object}	responses.ErrorResponseSwagger
-//	@Router			/api/v2/users/{id}/roles [post]
+//	@Router			/api/v1/users/{id}/roles [post]
 func (h *RoleHandler) AssignRole(c *gin.Context) {
 	userID := c.Param("id")
 
@@ -635,7 +635,7 @@ func (h *RoleHandler) AssignRole(c *gin.Context) {
 //	@Failure		400		{object}	responses.ErrorResponseSwagger
 //	@Failure		404		{object}	responses.ErrorResponseSwagger
 //	@Failure		500		{object}	responses.ErrorResponseSwagger
-//	@Router			/api/v2/users/{id}/roles/{role_id} [delete]
+//	@Router			/api/v1/users/{id}/roles/{role_id} [delete]
 func (h *RoleHandler) RemoveRole(c *gin.Context) {
 	userID := c.Param("id")
 	roleID := c.Param("role_id")

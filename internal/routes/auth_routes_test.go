@@ -15,8 +15,8 @@ func TestPermissionsRoute_RequiresAuthFirst(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
 
-	// Create a group mimicking /api/v2 with auth middleware
-	api := r.Group("/api/v2")
+	// Create a group mimicking /api/v1 with auth middleware
+	api := r.Group("/api/v1")
 	// Inject a lightweight auth that only sets user_id when Authorization header present
 	api.Use(func(c *gin.Context) {
 		if c.GetHeader("Authorization") != "" {
@@ -39,7 +39,7 @@ func TestPermissionsRoute_RequiresAuthFirst(t *testing.T) {
 
 	// No Authorization -> expect 401
 	w := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodGet, "/api/v2/permissions", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/permissions", nil)
 	r.ServeHTTP(w, req)
 	if w.Code != http.StatusUnauthorized {
 		t.Fatalf("expected 401, got %d: %s", w.Code, w.Body.String())

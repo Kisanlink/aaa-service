@@ -385,7 +385,7 @@ func syncRolePermissionsToSpiceDB(ctx context.Context, db *gorm.DB, addr, token 
 		}
 	}
 	// FIX: Also seed aaa/users relationships to connect roles to the users resource
-	// This allows permission checks on /api/v2/users endpoints to work
+	// This allows permission checks on /api/v1/users endpoints to work
 	if err := seedUsersResourceRelationships(ctx, client, db, logger); err != nil {
 		if logger != nil {
 			logger.Warn("Failed to seed users resource relationships", zap.Error(err))

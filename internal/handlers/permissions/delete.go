@@ -7,7 +7,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// DeletePermission handles DELETE /api/v2/permissions/:id
+// DeletePermission handles DELETE /api/v1/permissions/:id
 //
 //	@Summary		Delete permission
 //	@Description	Delete a permission by its unique identifier
@@ -20,7 +20,7 @@ import (
 //	@Failure		404	{object}	map[string]interface{}
 //	@Failure		409	{object}	map[string]interface{}
 //	@Failure		500	{object}	map[string]interface{}
-//	@Router			/api/v2/permissions/{id} [delete]
+//	@Router			/api/v1/permissions/{id} [delete]
 func (h *PermissionHandler) DeletePermission(c *gin.Context) {
 	permissionID := c.Param("id")
 	h.logger.Info("Deleting permission", zap.String("permissionID", permissionID))

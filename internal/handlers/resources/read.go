@@ -10,7 +10,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// GetResource handles GET /api/v2/resources/:id
+// GetResource handles GET /api/v1/resources/:id
 //
 //	@Summary		Get resource by ID
 //	@Description	Retrieve a resource by its unique identifier
@@ -22,7 +22,7 @@ import (
 //	@Failure		400	{object}	map[string]interface{}
 //	@Failure		404	{object}	map[string]interface{}
 //	@Failure		500	{object}	map[string]interface{}
-//	@Router			/api/v2/resources/{id} [get]
+//	@Router			/api/v1/resources/{id} [get]
 func (h *ResourceHandler) GetResource(c *gin.Context) {
 	resourceID := c.Param("id")
 	h.logger.Info("Getting resource by ID", zap.String("resourceID", resourceID))
@@ -47,7 +47,7 @@ func (h *ResourceHandler) GetResource(c *gin.Context) {
 	h.responder.SendSuccess(c, http.StatusOK, response)
 }
 
-// ListResources handles GET /api/v2/resources
+// ListResources handles GET /api/v1/resources
 //
 //	@Summary		List resources
 //	@Description	Get a paginated list of resources with optional filters
@@ -64,7 +64,7 @@ func (h *ResourceHandler) GetResource(c *gin.Context) {
 //	@Success		200			{object}	respResources.ResourceListResponse
 //	@Failure		400			{object}	map[string]interface{}
 //	@Failure		500			{object}	map[string]interface{}
-//	@Router			/api/v2/resources [get]
+//	@Router			/api/v1/resources [get]
 func (h *ResourceHandler) ListResources(c *gin.Context) {
 	h.logger.Info("Listing resources")
 
@@ -118,7 +118,7 @@ func (h *ResourceHandler) ListResources(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// GetChildren handles GET /api/v2/resources/:id/children
+// GetChildren handles GET /api/v1/resources/:id/children
 //
 //	@Summary		Get child resources
 //	@Description	Get all direct children of a resource
@@ -130,7 +130,7 @@ func (h *ResourceHandler) ListResources(c *gin.Context) {
 //	@Failure		400	{object}	map[string]interface{}
 //	@Failure		404	{object}	map[string]interface{}
 //	@Failure		500	{object}	map[string]interface{}
-//	@Router			/api/v2/resources/{id}/children [get]
+//	@Router			/api/v1/resources/{id}/children [get]
 func (h *ResourceHandler) GetChildren(c *gin.Context) {
 	resourceID := c.Param("id")
 	h.logger.Info("Getting child resources", zap.String("parentID", resourceID))
@@ -166,7 +166,7 @@ func (h *ResourceHandler) GetChildren(c *gin.Context) {
 	h.responder.SendSuccess(c, http.StatusOK, response)
 }
 
-// GetHierarchy handles GET /api/v2/resources/:id/hierarchy
+// GetHierarchy handles GET /api/v1/resources/:id/hierarchy
 //
 //	@Summary		Get resource hierarchy
 //	@Description	Get the full hierarchical tree starting from a resource
@@ -178,7 +178,7 @@ func (h *ResourceHandler) GetChildren(c *gin.Context) {
 //	@Failure		400	{object}	map[string]interface{}
 //	@Failure		404	{object}	map[string]interface{}
 //	@Failure		500	{object}	map[string]interface{}
-//	@Router			/api/v2/resources/{id}/hierarchy [get]
+//	@Router			/api/v1/resources/{id}/hierarchy [get]
 func (h *ResourceHandler) GetHierarchy(c *gin.Context) {
 	resourceID := c.Param("id")
 	h.logger.Info("Getting resource hierarchy", zap.String("resourceID", resourceID))

@@ -45,7 +45,7 @@ Extended `internal/routes/organization_routes.go` with organization-scoped group
 
 ### Route Registration
 
-- Routes are registered in both `/api/v1` and `/api/v2` groups
+- Routes are registered in both `/api/v1` and `/api/v1` groups
 - Maintains consistency with existing organization routes
 - Proper route grouping and organization
 

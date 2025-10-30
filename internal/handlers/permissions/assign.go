@@ -8,7 +8,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// AssignPermissionsToRole handles POST /api/v2/roles/:id/permissions
+// AssignPermissionsToRole handles POST /api/v1/roles/:id/permissions
 //
 //	@Summary		Assign permissions to role
 //	@Description	Assign one or more permissions to a role
@@ -21,7 +21,7 @@ import (
 //	@Failure		400		{object}	map[string]interface{}
 //	@Failure		404		{object}	map[string]interface{}
 //	@Failure		500		{object}	map[string]interface{}
-//	@Router			/api/v2/roles/{id}/permissions [post]
+//	@Router			/api/v1/roles/{id}/permissions [post]
 func (h *PermissionHandler) AssignPermissionsToRole(c *gin.Context) {
 	roleID := c.Param("id")
 	h.logger.Info("Assigning permissions to role", zap.String("roleID", roleID))
@@ -72,7 +72,7 @@ func (h *PermissionHandler) AssignPermissionsToRole(c *gin.Context) {
 	h.responder.SendSuccess(c, http.StatusOK, response)
 }
 
-// RevokePermissionFromRole handles DELETE /api/v2/roles/:id/permissions/:permId
+// RevokePermissionFromRole handles DELETE /api/v1/roles/:id/permissions/:permId
 //
 //	@Summary		Revoke permission from role
 //	@Description	Revoke a specific permission from a role
@@ -85,7 +85,7 @@ func (h *PermissionHandler) AssignPermissionsToRole(c *gin.Context) {
 //	@Failure		400		{object}	map[string]interface{}
 //	@Failure		404		{object}	map[string]interface{}
 //	@Failure		500		{object}	map[string]interface{}
-//	@Router			/api/v2/roles/{id}/permissions/{permId} [delete]
+//	@Router			/api/v1/roles/{id}/permissions/{permId} [delete]
 func (h *PermissionHandler) RevokePermissionFromRole(c *gin.Context) {
 	roleID := c.Param("id")
 	permissionID := c.Param("permId")
@@ -124,7 +124,7 @@ func (h *PermissionHandler) RevokePermissionFromRole(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-// AssignResourcesToRole handles POST /api/v2/roles/:id/resources
+// AssignResourcesToRole handles POST /api/v1/roles/:id/resources
 //
 //	@Summary		Assign resources to role
 //	@Description	Assign resource-action combinations to a role
@@ -137,7 +137,7 @@ func (h *PermissionHandler) RevokePermissionFromRole(c *gin.Context) {
 //	@Failure		400		{object}	map[string]interface{}
 //	@Failure		404		{object}	map[string]interface{}
 //	@Failure		500		{object}	map[string]interface{}
-//	@Router			/api/v2/roles/{id}/resources [post]
+//	@Router			/api/v1/roles/{id}/resources [post]
 func (h *PermissionHandler) AssignResourcesToRole(c *gin.Context) {
 	roleID := c.Param("id")
 	h.logger.Info("Assigning resources to role", zap.String("roleID", roleID))
@@ -219,7 +219,7 @@ func (h *PermissionHandler) AssignResourcesToRole(c *gin.Context) {
 	h.responder.SendSuccess(c, http.StatusOK, response)
 }
 
-// RevokeResourceFromRole handles DELETE /api/v2/roles/:id/resources/:resId
+// RevokeResourceFromRole handles DELETE /api/v1/roles/:id/resources/:resId
 //
 //	@Summary		Revoke resource from role
 //	@Description	Revoke a specific resource from a role
@@ -233,7 +233,7 @@ func (h *PermissionHandler) AssignResourcesToRole(c *gin.Context) {
 //	@Failure		400		{object}	map[string]interface{}
 //	@Failure		404		{object}	map[string]interface{}
 //	@Failure		500		{object}	map[string]interface{}
-//	@Router			/api/v2/roles/{id}/resources/{resId} [delete]
+//	@Router			/api/v1/roles/{id}/resources/{resId} [delete]
 func (h *PermissionHandler) RevokeResourceFromRole(c *gin.Context) {
 	roleID := c.Param("id")
 	resourceID := c.Param("resId")
@@ -264,7 +264,7 @@ func (h *PermissionHandler) RevokeResourceFromRole(c *gin.Context) {
 	h.responder.SendError(c, http.StatusNotImplemented, "Resource revocation not yet implemented", nil)
 }
 
-// GetRoleResources handles GET /api/v2/roles/:id/resources
+// GetRoleResources handles GET /api/v1/roles/:id/resources
 //
 //	@Summary		Get role resources
 //	@Description	Get all resource-action combinations assigned to a role
@@ -276,7 +276,7 @@ func (h *PermissionHandler) RevokeResourceFromRole(c *gin.Context) {
 //	@Failure		400	{object}	map[string]interface{}
 //	@Failure		404	{object}	map[string]interface{}
 //	@Failure		500	{object}	map[string]interface{}
-//	@Router			/api/v2/roles/{id}/resources [get]
+//	@Router			/api/v1/roles/{id}/resources [get]
 func (h *PermissionHandler) GetRoleResources(c *gin.Context) {
 	roleID := c.Param("id")
 	h.logger.Info("Getting resources for role", zap.String("roleID", roleID))

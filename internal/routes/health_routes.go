@@ -20,7 +20,7 @@ func SetupHealthRoutes(publicAPI *gin.RouterGroup, logger *zap.Logger) {
 //	@Accept			json
 //	@Produce		json
 //	@Success		200	{object}	responses.HealthCheckResponse
-//	@Router			/api/v2/health [get]
+//	@Router			/api/v1/health [get]
 func createHealthHandler(logger *zap.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{

@@ -215,8 +215,10 @@ func (s *Service) GetUserGroups(ctx context.Context, userID string) ([]map[strin
 	return groups, nil
 }
 
-// invalidateUserOrganizationalCache clears organizational context cache for a user
-func (s *Service) invalidateUserOrganizationalCache(userID string) {
+// InvalidateUserOrganizationalCache clears organizational context cache for a user
+// This method is exported so it can be called by other services (e.g., GroupService)
+// when user's organizational context changes
+func (s *Service) InvalidateUserOrganizationalCache(userID string) {
 	cacheKeys := []string{
 		fmt.Sprintf("user_organizations:%s", userID),
 		fmt.Sprintf("user_groups:%s", userID),

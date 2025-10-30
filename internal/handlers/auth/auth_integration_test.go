@@ -10,10 +10,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// TestLoginV2_Integration_PasswordAndMPinSupport tests the complete login flow
-// This test demonstrates that the enhanced LoginV2 method properly handles
+// TestLogin_Integration_PasswordAndMPinSupport tests the complete login flow
+// This test demonstrates that the enhanced Login method properly handles
 // both password and MPIN authentication as specified in the requirements
-func TestLoginV2_Integration_PasswordAndMPinSupport(t *testing.T) {
+func TestLogin_Integration_PasswordAndMPinSupport(t *testing.T) {
 	// This is a demonstration test showing the expected behavior
 	// In a real integration test, you would set up a test database and real services
 
@@ -165,8 +165,8 @@ func TestLoginV2_Integration_PasswordAndMPinSupport(t *testing.T) {
 	})
 }
 
-// TestLoginV2_RequestResponseFormat tests the JSON request/response format
-func TestLoginV2_RequestResponseFormat(t *testing.T) {
+// TestLogin_RequestResponseFormat tests the JSON request/response format
+func TestLogin_RequestResponseFormat(t *testing.T) {
 	t.Run("Password Login Request JSON", func(t *testing.T) {
 		// Test JSON marshaling/unmarshaling for password login
 		password := "testpassword123"
@@ -232,8 +232,8 @@ func TestLoginV2_RequestResponseFormat(t *testing.T) {
 	})
 }
 
-// TestLoginV2_ErrorHandling tests various error scenarios
-func TestLoginV2_ErrorHandling(t *testing.T) {
+// TestLogin_ErrorHandling tests various error scenarios
+func TestLogin_ErrorHandling(t *testing.T) {
 	t.Run("Invalid MPIN Format", func(t *testing.T) {
 		// Test invalid MPIN formats
 		testCases := []struct {

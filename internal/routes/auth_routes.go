@@ -1,204 +1,58 @@
 package routes
 
 import (
-	"net/http"
-	"time"
-
-	"github.com/Kisanlink/aaa-service/v2/internal/services"
-	"github.com/Kisanlink/aaa-service/v2/pkg/errors"
+	"github.com/Kisanlink/aaa-service/v2/internal/handlers/auth"
+	"github.com/Kisanlink/aaa-service/v2/internal/interfaces"
+	"github.com/Kisanlink/aaa-service/v2/internal/middleware"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
 
-// SetupAuthRoutes configures authentication routes
-func SetupAuthRoutes(publicAPI, protectedAPI *gin.RouterGroup, authService *services.AuthService, logger *zap.Logger) {
-	// Public auth routes
-	auth := publicAPI.Group("/auth")
+// SetupAuthRoutes configures authentication routes using AuthHandler
+func SetupAuthRoutes(
+	publicAPI, protectedAPI *gin.RouterGroup,
+	authMiddleware *middleware.AuthMiddleware,
+	userService interfaces.UserService,
+	validator interfaces.Validator,
+	responder interfaces.Responder,
+	logger *zap.Logger,
+) {
+	// Create AuthHandler instance
+	authHandler := auth.NewAuthHandler(userService, validator, responder, logger)
+
+	// Create input sanitization middleware
+	sanitizationMiddleware := middleware.NewInputSanitizationMiddleware(logger)
+
+	// Public auth routes with comprehensive security
+	authGroup := publicAPI.Group("/auth")
+	authGroup.Use(middleware.AuthenticationRateLimit())               // Rate limiting for auth endpoints
+	authGroup.Use(sanitizationMiddleware.SanitizeInput())             // Input sanitization
+	authGroup.Use(middleware.ValidateContentType("application/json")) // Content type validation
+	authGroup.Use(middleware.ValidateJSONStructure(5, 20))            // JSON structure validation
 	{
-		auth.POST("/login", createLoginHandler(authService, logger))
-		auth.POST("/login-username", createUsernameLoginHandler(authService, logger))
-		auth.POST("/register", createRegisterHandler(authService, logger))
-		auth.POST("/refresh", createRefreshHandler(authService, logger))
+		authGroup.POST("/login", authHandler.Login)
+		authGroup.POST("/register", authHandler.Register)
+		authGroup.POST("/refresh", authHandler.RefreshToken)
+		authGroup.POST("/forgot-password", authHandler.ForgotPassword)
+		authGroup.POST("/reset-password", authHandler.ResetPassword)
 	}
 
-	// Protected auth routes
-	protectedAuth := protectedAPI.Group("/auth")
+	// Protected auth routes (require authentication) with enhanced security
+	protectedAuthGroup := protectedAPI.Group("/auth")
+	protectedAuthGroup.Use(authMiddleware.HTTPAuthMiddleware())
+	protectedAuthGroup.Use(middleware.SensitiveOperationRateLimit())           // Sensitive operation rate limiting
+	protectedAuthGroup.Use(sanitizationMiddleware.SanitizeInput())             // Input sanitization
+	protectedAuthGroup.Use(middleware.ValidateContentType("application/json")) // Content type validation
+	protectedAuthGroup.Use(middleware.ValidateJSONStructure(3, 10))            // Stricter JSON validation for sensitive ops
 	{
-		protectedAuth.POST("/logout", createLogoutHandler(authService, logger))
-	}
-}
+		protectedAuthGroup.POST("/logout", authHandler.Logout)
 
-// LoginV2 handles POST /v2/auth/login
-//
-//	@Summary		User login (V2)
-//	@Description	Authenticate user with username and password and MFA
-//	@Tags			authentication
-//	@Accept			json
-//	@Produce		json
-//	@Param			credentials	body		services.LoginRequest	true	"Login credentials"
-//	@Success		200			{object}	responses.LoginSuccessResponse
-//	@Failure		400			{object}	responses.ErrorResponseSwagger
-//	@Failure		401			{object}	responses.ErrorResponseSwagger
-//	@Failure		500			{object}	responses.ErrorResponseSwagger
-//	@Router			/api/v2/auth/login [post]
-func createLoginHandler(authService *services.AuthService, logger *zap.Logger) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		var req services.LoginRequest
-		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request", "message": err.Error()})
-			return
+		// MPIN operations with additional rate limiting
+		mpinGroup := protectedAuthGroup.Group("/")
+		mpinGroup.Use(middleware.MPinRateLimit()) // Additional MPIN-specific rate limiting
+		{
+			mpinGroup.POST("/set-mpin", authHandler.SetMPin)
+			mpinGroup.POST("/update-mpin", authHandler.UpdateMPin)
 		}
-
-		response, err := authService.Login(c.Request.Context(), &req)
-		if err != nil {
-			logger.Error("Login failed", zap.Error(err))
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication failed", "message": err.Error()})
-			return
-		}
-
-		c.JSON(http.StatusOK, response)
-	}
-}
-
-// createUsernameLoginHandler creates a handler for username-based login
-func createUsernameLoginHandler(authService *services.AuthService, logger *zap.Logger) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		var req services.UsernameLoginRequest
-		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request", "message": err.Error()})
-			return
-		}
-
-		response, err := authService.LoginWithUsername(c.Request.Context(), &req)
-		if err != nil {
-			logger.Error("Username login failed", zap.Error(err))
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication failed", "message": err.Error()})
-			return
-		}
-
-		c.JSON(http.StatusOK, response)
-	}
-}
-
-// RegisterV2 handles POST /v2/auth/register
-//
-//	@Summary		User registration (V2)
-//	@Description	Register a new user account with enhanced validation
-//	@Tags			authentication
-//	@Accept			json
-//	@Produce		json
-//	@Param			user	body		services.RegisterRequest	true	"Registration data"
-//	@Success		201		{object}	responses.RegisterSuccessResponse
-//	@Failure		400		{object}	responses.ErrorResponseSwagger
-//	@Failure		409		{object}	responses.ErrorResponseSwagger
-//	@Failure		500		{object}	responses.ErrorResponseSwagger
-//	@Router			/api/v2/auth/register [post]
-func createRegisterHandler(authService *services.AuthService, logger *zap.Logger) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		var req services.RegisterRequest
-		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request", "message": err.Error()})
-			return
-		}
-
-		response, err := authService.Register(c.Request.Context(), &req)
-		if err != nil {
-			logger.Error("Registration failed", zap.Error(err))
-
-			// Handle different error types properly
-			if conflictErr, ok := err.(*errors.ConflictError); ok {
-				c.JSON(http.StatusConflict, gin.H{
-					"success":   false,
-					"timestamp": time.Now().UTC().Format(time.RFC3339),
-					"code":      "CONFLICT",
-					"message":   "Registration failed",
-					"details":   conflictErr.Error(),
-				})
-				return
-			}
-
-			if validationErr, ok := err.(*errors.ValidationError); ok {
-				c.JSON(http.StatusBadRequest, gin.H{
-					"success":   false,
-					"timestamp": time.Now().UTC().Format(time.RFC3339),
-					"code":      "VALIDATION_ERROR",
-					"message":   "Validation failed",
-					"errors":    []string{validationErr.Error()},
-				})
-				return
-			}
-
-			// Default error response
-			c.JSON(http.StatusBadRequest, gin.H{"error": "registration failed", "message": err.Error()})
-			return
-		}
-
-		c.JSON(http.StatusCreated, response)
-	}
-}
-
-// RefreshTokenV2 handles POST /v2/auth/refresh
-//
-//	@Summary		Refresh access token (V2)
-//	@Description	Refresh access token using refresh token
-//	@Tags			authentication
-//	@Accept			json
-//	@Produce		json
-//	@Param			token	body		requests.RefreshTokenRequest	true	"Refresh token"
-//	@Success		200		{object}	responses.RefreshTokenSuccessResponse
-//	@Failure		400		{object}	responses.ErrorResponseSwagger
-//	@Failure		401		{object}	responses.ErrorResponseSwagger
-//	@Failure		500		{object}	responses.ErrorResponseSwagger
-//	@Router			/api/v2/auth/refresh [post]
-func createRefreshHandler(authService *services.AuthService, logger *zap.Logger) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		var req struct {
-			RefreshToken string `json:"refresh_token" binding:"required"`
-			MPin         string `json:"mpin" binding:"required"`
-		}
-		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request", "message": err.Error()})
-			return
-		}
-
-		response, err := authService.RefreshToken(c.Request.Context(), req.RefreshToken, req.MPin)
-		if err != nil {
-			logger.Error("Token refresh failed", zap.Error(err))
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "token refresh failed", "message": err.Error()})
-			return
-		}
-
-		c.JSON(http.StatusOK, response)
-	}
-}
-
-// LogoutV2 handles POST /v2/auth/logout
-//
-//	@Summary		User logout (V2)
-//	@Description	Logout user and invalidate tokens
-//	@Tags			authentication
-//	@Accept			json
-//	@Produce		json
-//	@Security		BearerAuth
-//	@Success		200	{object}	responses.LogoutSuccessResponse
-//	@Failure		401	{object}	responses.ErrorResponseSwagger
-//	@Failure		500	{object}	responses.ErrorResponseSwagger
-//	@Router			/api/v2/auth/logout [post]
-func createLogoutHandler(authService *services.AuthService, logger *zap.Logger) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		userID, exists := c.Get("user_id")
-		if !exists {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error", "message": "user context not found"})
-			return
-		}
-
-		err := authService.Logout(c.Request.Context(), userID.(string))
-		if err != nil {
-			logger.Error("Logout failed", zap.Error(err))
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "logout failed", "message": err.Error()})
-			return
-		}
-
-		c.JSON(http.StatusOK, gin.H{"message": "logout successful"})
 	}
 }

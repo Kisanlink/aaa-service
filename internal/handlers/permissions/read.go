@@ -10,7 +10,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// GetPermission handles GET /api/v2/permissions/:id
+// GetPermission handles GET /api/v1/permissions/:id
 //
 //	@Summary		Get permission by ID
 //	@Description	Retrieve a permission by its unique identifier
@@ -22,7 +22,7 @@ import (
 //	@Failure		400	{object}	map[string]interface{}
 //	@Failure		404	{object}	map[string]interface{}
 //	@Failure		500	{object}	map[string]interface{}
-//	@Router			/api/v2/permissions/{id} [get]
+//	@Router			/api/v1/permissions/{id} [get]
 func (h *PermissionHandler) GetPermission(c *gin.Context) {
 	permissionID := c.Param("id")
 	h.logger.Info("Getting permission by ID", zap.String("permissionID", permissionID))
@@ -47,7 +47,7 @@ func (h *PermissionHandler) GetPermission(c *gin.Context) {
 	h.responder.SendSuccess(c, http.StatusOK, response)
 }
 
-// ListPermissions handles GET /api/v2/permissions
+// ListPermissions handles GET /api/v1/permissions
 //
 //	@Summary		List permissions
 //	@Description	Get a paginated list of permissions with optional filters
@@ -64,7 +64,7 @@ func (h *PermissionHandler) GetPermission(c *gin.Context) {
 //	@Success		200			{object}	respPermissions.PermissionListResponse
 //	@Failure		400			{object}	map[string]interface{}
 //	@Failure		500			{object}	map[string]interface{}
-//	@Router			/api/v2/permissions [get]
+//	@Router			/api/v1/permissions [get]
 func (h *PermissionHandler) ListPermissions(c *gin.Context) {
 	h.logger.Info("Listing permissions")
 
@@ -122,7 +122,7 @@ func (h *PermissionHandler) ListPermissions(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// GetRolePermissions handles GET /api/v2/roles/:id/permissions
+// GetRolePermissions handles GET /api/v1/roles/:id/permissions
 //
 //	@Summary		Get role permissions
 //	@Description	Get all permissions assigned to a specific role
@@ -134,7 +134,7 @@ func (h *PermissionHandler) ListPermissions(c *gin.Context) {
 //	@Failure		400	{object}	map[string]interface{}
 //	@Failure		404	{object}	map[string]interface{}
 //	@Failure		500	{object}	map[string]interface{}
-//	@Router			/api/v2/roles/{id}/permissions [get]
+//	@Router			/api/v1/roles/{id}/permissions [get]
 func (h *PermissionHandler) GetRolePermissions(c *gin.Context) {
 	roleID := c.Param("id")
 	h.logger.Info("Getting permissions for role", zap.String("roleID", roleID))

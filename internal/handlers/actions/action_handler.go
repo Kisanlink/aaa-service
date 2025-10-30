@@ -47,7 +47,7 @@ func NewActionHandler(
 //	@Failure		400		{object}	responses.ErrorResponse
 //	@Failure		409		{object}	responses.ErrorResponse
 //	@Failure		500		{object}	responses.ErrorResponse
-//	@Router			/api/v2/actions [post]
+//	@Router			/api/v1/actions [post]
 func (h *ActionHandler) CreateAction(c *gin.Context) {
 	h.logger.Info("Creating action")
 
@@ -103,7 +103,7 @@ func (h *ActionHandler) CreateAction(c *gin.Context) {
 //	@Failure		400	{object}	responses.ErrorResponse
 //	@Failure		404	{object}	responses.ErrorResponse
 //	@Failure		500	{object}	responses.ErrorResponse
-//	@Router			/api/v2/actions/{id} [get]
+//	@Router			/api/v1/actions/{id} [get]
 func (h *ActionHandler) GetAction(c *gin.Context) {
 	actionID := c.Param("id")
 	if actionID == "" {
@@ -141,7 +141,7 @@ func (h *ActionHandler) GetAction(c *gin.Context) {
 //	@Failure		400		{object}	responses.ErrorResponse
 //	@Failure		404		{object}	responses.ErrorResponse
 //	@Failure		500		{object}	responses.ErrorResponse
-//	@Router			/api/v2/actions/{id} [put]
+//	@Router			/api/v1/actions/{id} [put]
 func (h *ActionHandler) UpdateAction(c *gin.Context) {
 	actionID := c.Param("id")
 	if actionID == "" {
@@ -203,7 +203,7 @@ func (h *ActionHandler) UpdateAction(c *gin.Context) {
 //	@Failure		400	{object}	responses.ErrorResponse
 //	@Failure		404	{object}	responses.ErrorResponse
 //	@Failure		500	{object}	responses.ErrorResponse
-//	@Router			/api/v2/actions/{id} [delete]
+//	@Router			/api/v1/actions/{id} [delete]
 func (h *ActionHandler) DeleteAction(c *gin.Context) {
 	actionID := c.Param("id")
 	if actionID == "" {
@@ -247,7 +247,7 @@ func (h *ActionHandler) DeleteAction(c *gin.Context) {
 //	@Success		200		{object}	actions.ActionListResponse
 //	@Failure		400		{object}	responses.ErrorResponse
 //	@Failure		500		{object}	responses.ErrorResponse
-//	@Router			/api/v2/actions [get]
+//	@Router			/api/v1/actions [get]
 func (h *ActionHandler) ListActions(c *gin.Context) {
 	// Parse pagination parameters
 	limitStr := c.DefaultQuery("limit", "10")
@@ -291,7 +291,7 @@ func (h *ActionHandler) ListActions(c *gin.Context) {
 //	@Success		200			{object}	actions.ActionListResponse
 //	@Failure		400			{object}	responses.ErrorResponse
 //	@Failure		500			{object}	responses.ErrorResponse
-//	@Router			/api/v2/actions/service/{serviceName} [get]
+//	@Router			/api/v1/actions/service/{serviceName} [get]
 func (h *ActionHandler) GetActionsByService(c *gin.Context) {
 	serviceName := c.Param("serviceName")
 	if serviceName == "" {

@@ -335,6 +335,22 @@ func initializeServer(
 	if svc, ok := userServiceInstance.(*user.Service); ok {
 		svc.SetOrganizationalRepositories(groupMembershipRepository, groupRepository, organizationRepository)
 	}
+
+	// Initialize role inheritance engine for group-based role inheritance
+	roleInheritanceEngine := groupService.NewRoleInheritanceEngineWithRepos(
+		groupRepository,
+		groupRoleRepository,
+		roleRepository,
+		groupMembershipRepository,
+		cacheService,
+		logger,
+	)
+
+	// Inject role inheritance engine into user service
+	if svc, ok := userServiceInstance.(*user.Service); ok {
+		svc.SetRoleInheritanceEngine(roleInheritanceEngine)
+	}
+
 	userService := userServiceInstance
 
 	// Initialize contact service
@@ -512,6 +528,8 @@ func initializeHTTPServer(
 		auditServiceAdapter,
 		logger,
 	)
+	// Inject user service for cache invalidation
+	groupServiceConcrete.SetUserService(userService)
 	groupServiceInstance := groupService.NewServiceAdapter(groupServiceConcrete, logger)
 
 	// Create gin router
@@ -679,7 +697,7 @@ func setupRoutesAndDocs(
 	routes.RegisterResourceRoutes(router, resourceHandler, authMiddleware)
 
 	// Register RBAC action routes
-	routes.RegisterActionRoutes(router.Group("/api/v2"), actionHandler)
+	routes.RegisterActionRoutes(router.Group("/api/v1"), actionHandler)
 
 	// Serve OpenAPI and Scalar-powered docs UI (gated by env)
 	if getEnv("AAA_ENABLE_DOCS", "true") == "true" {

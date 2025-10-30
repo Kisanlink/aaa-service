@@ -21,6 +21,14 @@ func (s *Service) AssignPermissionToRole(ctx context.Context, roleID, permission
 		return fmt.Errorf("role not found: %w", err)
 	}
 
+	// Check if role is soft-deleted
+	if role.DeletedAt != nil {
+		s.logger.Error("Cannot assign permission to deleted role",
+			zap.String("role_id", roleID),
+			zap.String("role_name", role.Name))
+		return fmt.Errorf("cannot assign permission to deleted role '%s'", role.Name)
+	}
+
 	// Verify permission exists
 	permission, err := s.permissionRepo.GetByID(ctx, permissionID)
 	if err != nil {
@@ -81,6 +89,15 @@ func (s *Service) AssignPermissionsToRole(ctx context.Context, roleID string, pe
 	if err != nil {
 		s.logger.Error("Role not found", zap.String("role_id", roleID), zap.Error(err))
 		return fmt.Errorf("role not found: %w", err)
+	}
+
+	// Check if role is soft-deleted
+	if role.DeletedAt != nil {
+		s.logger.Error("Cannot assign permissions to deleted role",
+			zap.String("role_id", roleID),
+			zap.String("role_name", role.Name),
+			zap.Int("permission_count", len(permissionIDs)))
+		return fmt.Errorf("cannot assign permissions to deleted role '%s'", role.Name)
 	}
 
 	// Verify all permissions exist
@@ -191,6 +208,15 @@ func (s *Service) AssignResourceActionToRole(ctx context.Context, roleID, resour
 		return fmt.Errorf("role not found: %w", err)
 	}
 
+	// Check if role is soft-deleted
+	if role.DeletedAt != nil {
+		s.logger.Error("Cannot assign resource-action to deleted role",
+			zap.String("role_id", roleID),
+			zap.String("role_name", role.Name),
+			zap.String("resource_type", resourceType))
+		return fmt.Errorf("cannot assign resource-action to deleted role '%s'", role.Name)
+	}
+
 	// Assign resource-action
 	if err := s.resourcePermissionRepo.Assign(ctx, roleID, resourceType, resourceID, action); err != nil {
 		s.logger.Error("Failed to assign resource-action",
@@ -235,6 +261,15 @@ func (s *Service) AssignResourceActionsToRole(ctx context.Context, roleID string
 	if err != nil {
 		s.logger.Error("Role not found", zap.String("role_id", roleID), zap.Error(err))
 		return fmt.Errorf("role not found: %w", err)
+	}
+
+	// Check if role is soft-deleted
+	if role.DeletedAt != nil {
+		s.logger.Error("Cannot assign resource-actions to deleted role",
+			zap.String("role_id", roleID),
+			zap.String("role_name", role.Name),
+			zap.Int("assignment_count", len(assignments)))
+		return fmt.Errorf("cannot assign resource-actions to deleted role '%s'", role.Name)
 	}
 
 	// Build batch assignments

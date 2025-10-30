@@ -40,12 +40,12 @@ func NewStructuredLoggingConfig(logger *zap.Logger) *StructuredLoggingConfig {
 			"/favicon.ico",
 		},
 		SensitivePaths: []string{
-			"/api/v2/auth/login",
-			"/api/v2/auth/register",
-			"/api/v2/auth/set-mpin",
-			"/api/v2/auth/update-mpin",
-			"/api/v2/auth/forgot-password",
-			"/api/v2/auth/reset-password",
+			"/api/v1/auth/login",
+			"/api/v1/auth/register",
+			"/api/v1/auth/set-mpin",
+			"/api/v1/auth/update-mpin",
+			"/api/v1/auth/forgot-password",
+			"/api/v1/auth/reset-password",
 		},
 	}
 }

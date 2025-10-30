@@ -44,7 +44,7 @@ func NewAddressHandler(
 //	@Success		201		{object}	map[string]interface{}
 //	@Failure		400		{object}	map[string]interface{}
 //	@Failure		500		{object}	map[string]interface{}
-//	@Router			/api/v2/addresses [post]
+//	@Router			/api/v1/addresses [post]
 func (h *AddressHandler) CreateAddress(c *gin.Context) {
 	h.logger.Info("Creating address")
 
@@ -89,7 +89,7 @@ func (h *AddressHandler) CreateAddress(c *gin.Context) {
 //	@Failure		400	{object}	map[string]interface{}
 //	@Failure		404	{object}	map[string]interface{}
 //	@Failure		500	{object}	map[string]interface{}
-//	@Router			/api/v2/addresses/{id} [get]
+//	@Router			/api/v1/addresses/{id} [get]
 func (h *AddressHandler) GetAddress(c *gin.Context) {
 	addressID := c.Param("id")
 	h.logger.Info("Getting address by ID", zap.String("addressID", addressID))
@@ -124,7 +124,7 @@ func (h *AddressHandler) GetAddress(c *gin.Context) {
 //	@Failure		400		{object}	map[string]interface{}
 //	@Failure		404		{object}	map[string]interface{}
 //	@Failure		500		{object}	map[string]interface{}
-//	@Router			/api/v2/addresses/{id} [put]
+//	@Router			/api/v1/addresses/{id} [put]
 func (h *AddressHandler) UpdateAddress(c *gin.Context) {
 	addressID := c.Param("id")
 	h.logger.Info("Updating address", zap.String("addressID", addressID))
@@ -178,7 +178,7 @@ func (h *AddressHandler) UpdateAddress(c *gin.Context) {
 //	@Failure		400	{object}	map[string]interface{}
 //	@Failure		404	{object}	map[string]interface{}
 //	@Failure		500	{object}	map[string]interface{}
-//	@Router			/api/v2/addresses/{id} [delete]
+//	@Router			/api/v1/addresses/{id} [delete]
 func (h *AddressHandler) DeleteAddress(c *gin.Context) {
 	addressID := c.Param("id")
 	h.logger.Info("Deleting address", zap.String("addressID", addressID))
@@ -216,7 +216,7 @@ func (h *AddressHandler) DeleteAddress(c *gin.Context) {
 //	@Success		200		{object}	map[string]interface{}
 //	@Failure		400		{object}	map[string]interface{}
 //	@Failure		500		{object}	map[string]interface{}
-//	@Router			/api/v2/addresses/search [get]
+//	@Router			/api/v1/addresses/search [get]
 func (h *AddressHandler) SearchAddresses(c *gin.Context) {
 	query := c.Query("q")
 	h.logger.Info("Searching addresses", zap.String("query", query))

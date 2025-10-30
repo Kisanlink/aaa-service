@@ -9,7 +9,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// UpdatePermission handles PUT /api/v2/permissions/:id
+// UpdatePermission handles PUT /api/v1/permissions/:id
 //
 //	@Summary		Update permission
 //	@Description	Update an existing permission
@@ -22,7 +22,7 @@ import (
 //	@Failure		400			{object}	map[string]interface{}
 //	@Failure		404			{object}	map[string]interface{}
 //	@Failure		500			{object}	map[string]interface{}
-//	@Router			/api/v2/permissions/{id} [put]
+//	@Router			/api/v1/permissions/{id} [put]
 func (h *PermissionHandler) UpdatePermission(c *gin.Context) {
 	permissionID := c.Param("id")
 	h.logger.Info("Updating permission", zap.String("permissionID", permissionID))

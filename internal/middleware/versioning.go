@@ -80,7 +80,7 @@ func extractAPIVersion(c *gin.Context, defaultVersion string) string {
 		return normalizeVersion(version)
 	}
 
-	// 4. Check URL path for version (e.g., /api/v2/users)
+	// 4. Check URL path for version (e.g., /api/v1/users)
 	if version := extractVersionFromPath(c.Request.URL.Path); version != "" {
 		return normalizeVersion(version)
 	}

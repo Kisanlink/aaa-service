@@ -10,7 +10,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// CreatePermission handles POST /api/v2/permissions
+// CreatePermission handles POST /api/v1/permissions
 //
 //	@Summary		Create a new permission
 //	@Description	Create a new permission with name, resource, and action
@@ -22,7 +22,7 @@ import (
 //	@Failure		400			{object}	map[string]interface{}
 //	@Failure		409			{object}	map[string]interface{}	"Permission with the same name already exists"
 //	@Failure		500			{object}	map[string]interface{}
-//	@Router			/api/v2/permissions [post]
+//	@Router			/api/v1/permissions [post]
 func (h *PermissionHandler) CreatePermission(c *gin.Context) {
 	h.logger.Info("Creating permission")
 

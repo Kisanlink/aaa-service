@@ -12,6 +12,7 @@ import (
 	"github.com/Kisanlink/aaa-service/v2/internal/repositories/groups"
 	"github.com/Kisanlink/aaa-service/v2/internal/repositories/organizations"
 	"github.com/Kisanlink/aaa-service/v2/internal/repositories/roles"
+	"github.com/Kisanlink/aaa-service/v2/internal/services/user"
 	"github.com/Kisanlink/aaa-service/v2/pkg/errors"
 	"go.uber.org/zap"
 )
@@ -27,6 +28,7 @@ type Service struct {
 	cache               interfaces.CacheService
 	groupCache          *GroupCacheService
 	auditService        interfaces.AuditService
+	userService         interfaces.UserService // For invalidating user organizational cache
 	logger              *zap.Logger
 }
 
@@ -55,6 +57,13 @@ func NewGroupService(
 		auditService:        auditService,
 		logger:              logger,
 	}
+}
+
+// SetUserService sets the user service for cache invalidation
+// This is called after service construction to avoid circular dependencies
+func (s *Service) SetUserService(userService interfaces.UserService) {
+	s.userService = userService
+	s.logger.Debug("User service injected into group service for cache invalidation")
 }
 
 // CreateGroup creates a new group with proper validation and business logic
@@ -520,6 +529,16 @@ func (s *Service) AddMemberToGroup(ctx context.Context, req interface{}) (interf
 		return nil, errors.NewInternalError(err)
 	}
 
+	// Invalidate user's organizational cache so they see the organization immediately
+	if s.userService != nil {
+		if userSvc, ok := s.userService.(*user.Service); ok {
+			userSvc.InvalidateUserOrganizationalCache(addMemberReq.PrincipalID)
+			s.logger.Debug("Invalidated user organizational cache after adding to group",
+				zap.String("user_id", addMemberReq.PrincipalID),
+				zap.String("group_id", addMemberReq.GroupID))
+		}
+	}
+
 	// Log successful membership addition
 	auditDetails := map[string]interface{}{
 		"principal_type": membership.PrincipalType,
@@ -587,6 +606,16 @@ func (s *Service) RemoveMemberFromGroup(ctx context.Context, groupID, principalI
 		s.auditService.LogGroupMembershipChange(ctx, removedBy, models.AuditActionRemoveGroupMember, group.OrganizationID, groupID, principalID, "Failed to remove member from group", false, auditDetails)
 
 		return errors.NewInternalError(err)
+	}
+
+	// Invalidate user's organizational cache after removing from group
+	if s.userService != nil {
+		if userSvc, ok := s.userService.(*user.Service); ok {
+			userSvc.InvalidateUserOrganizationalCache(principalID)
+			s.logger.Debug("Invalidated user organizational cache after removing from group",
+				zap.String("user_id", principalID),
+				zap.String("group_id", groupID))
+		}
 	}
 
 	// Log successful membership removal

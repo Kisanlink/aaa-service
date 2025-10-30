@@ -10,19 +10,19 @@ This document summarizes the route configurations implemented for Task 12: "Add 
 
 #### New Bulk-Style Endpoints (Primary)
 
-- `GET /api/v2/users/{id}/roles` - Get all roles assigned to a user
-- `POST /api/v2/users/{id}/roles` - Assign a role to a user (role_id in request body)
-- `DELETE /api/v2/users/{id}/roles/{roleId}` - Remove a role from a user
+- `GET /api/v1/users/{id}/roles` - Get all roles assigned to a user
+- `POST /api/v1/users/{id}/roles` - Assign a role to a user (role_id in request body)
+- `DELETE /api/v1/users/{id}/roles/{roleId}` - Remove a role from a user
 
 #### Legacy Endpoints (Backward Compatibility)
 
-- `POST /api/v2/users/{id}/roles/{roleId}` - Assign specific role (legacy)
-- `DELETE /api/v2/users/{id}/roles/{roleId}/legacy` - Remove specific role (legacy)
+- `POST /api/v1/users/{id}/roles/{roleId}` - Assign specific role (legacy)
+- `DELETE /api/v1/users/{id}/roles/{roleId}/legacy` - Remove specific role (legacy)
 
 ### 2. MPIN Management Endpoints (Already Existed)
 
-- `POST /api/v2/auth/set-mpin` - Set initial MPIN (protected)
-- `POST /api/v2/auth/update-mpin` - Update existing MPIN (protected)
+- `POST /api/v1/auth/set-mpin` - Set initial MPIN (protected)
+- `POST /api/v1/auth/update-mpin` - Update existing MPIN (protected)
 
 ## Middleware Configuration
 
@@ -52,15 +52,15 @@ This document summarizes the route configurations implemented for Task 12: "Add 
 
 ### Conflicts Resolved
 
-✅ **GET /api/v2/users/{id}/roles** - New endpoint, no conflicts
-✅ **POST /api/v2/users/{id}/roles** - New endpoint, no conflicts
-✅ **DELETE /api/v2/users/{id}/roles/{roleId}** - New endpoint, no conflicts
-✅ **POST /api/v2/auth/set-mpin** - Existing endpoint, properly configured
-✅ **POST /api/v2/auth/update-mpin** - Existing endpoint, properly configured
+✅ **GET /api/v1/users/{id}/roles** - New endpoint, no conflicts
+✅ **POST /api/v1/users/{id}/roles** - New endpoint, no conflicts
+✅ **DELETE /api/v1/users/{id}/roles/{roleId}** - New endpoint, no conflicts
+✅ **POST /api/v1/auth/set-mpin** - Existing endpoint, properly configured
+✅ **POST /api/v1/auth/update-mpin** - Existing endpoint, properly configured
 
 ### Route Conflict Resolution
 
-🔧 **Fixed duplicate route registration**: Resolved conflict between old `SetupAuthRoutes` and new `SetupAuthV2Routes`
+🔧 **Simplified route registration**: Unified authentication routes under `SetupAuthRoutes`
 
 - Both were registering `/auth/login`, `/auth/register`, `/auth/refresh`
 - Solution: Use V2 routes as primary, fallback to old routes only if V2 dependencies unavailable
@@ -147,8 +147,8 @@ This document summarizes the route configurations implemented for Task 12: "Add 
 ### Route Configuration
 
 - `internal/routes/user_routes.go` - Added role management routes
-- `internal/routes/setup.go` - Fixed route conflicts between old and V2 auth routes
-- `internal/routes/auth_v2_routes.go` - Added rate limiting to MPIN routes
+- `internal/routes/setup.go` - Unified route setup with simplified naming
+- `internal/routes/auth_routes.go` - Added rate limiting to MPIN routes
 
 ### Middleware Enhancement
 
