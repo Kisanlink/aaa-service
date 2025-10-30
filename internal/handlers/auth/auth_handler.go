@@ -12,7 +12,6 @@ import (
 	userResponses "github.com/Kisanlink/aaa-service/v2/internal/entities/responses/users"
 	"github.com/Kisanlink/aaa-service/v2/internal/interfaces"
 	"github.com/Kisanlink/aaa-service/v2/pkg/errors"
-	"github.com/Kisanlink/kisanlink-db/pkg/base"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
@@ -147,12 +146,20 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		}
 	}
 
-	// Convert user roles for token generation
+	// Convert user roles for token generation with complete Role data
 	var userRoles []models.UserRole
-	for _, role := range userResponse.Roles {
-		userRole := models.NewUserRole(role.UserID, role.RoleID)
-		userRole.SetID(role.ID)
-		userRole.IsActive = role.IsActive
+	for _, roleDetail := range userResponse.Roles {
+		userRole := models.NewUserRole(roleDetail.UserID, roleDetail.RoleID)
+		userRole.SetID(roleDetail.ID)
+		userRole.IsActive = roleDetail.IsActive
+
+		// Populate the Role relationship from the response data
+		// Note: Scope is not available in users.RoleDetail, will default to empty RoleScope
+		role := models.NewRole(roleDetail.Role.Name, roleDetail.Role.Description, "")
+		role.SetID(roleDetail.Role.ID)
+		role.IsActive = roleDetail.Role.IsActive
+		userRole.Role = *role
+
 		userRoles = append(userRoles, *userRole)
 	}
 
@@ -368,19 +375,20 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 		return
 	}
 
-	// Convert user roles for token generation
+	// Convert user roles for token generation with complete Role data
 	var userRoles []models.UserRole
-	for _, role := range userResponse.Roles {
-		userRole := models.NewUserRole(role.UserID, role.RoleID)
-		userRole.SetID(role.ID)
-		userRole.IsActive = role.IsActive
-		userRole.Role = models.Role{
-			BaseModel:   &base.BaseModel{},
-			Name:        role.Role.Name,
-			Description: role.Role.Description,
-			IsActive:    role.Role.IsActive,
-		}
-		userRole.Role.SetID(role.Role.ID)
+	for _, roleDetail := range userResponse.Roles {
+		userRole := models.NewUserRole(roleDetail.UserID, roleDetail.RoleID)
+		userRole.SetID(roleDetail.ID)
+		userRole.IsActive = roleDetail.IsActive
+
+		// Populate the Role relationship from the response data
+		// Note: Scope is not available in users.RoleDetail, will default to empty RoleScope
+		role := models.NewRole(roleDetail.Role.Name, roleDetail.Role.Description, "")
+		role.SetID(roleDetail.Role.ID)
+		role.IsActive = roleDetail.Role.IsActive
+		userRole.Role = *role
+
 		userRoles = append(userRoles, *userRole)
 	}
 

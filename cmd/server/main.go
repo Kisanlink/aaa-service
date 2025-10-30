@@ -523,6 +523,7 @@ func initializeHTTPServer(
 		groupMembershipRepository,
 		organizationRepository,
 		roleRepository,
+		userRoleRepository,
 		validator,
 		cacheService,
 		auditServiceAdapter,

@@ -274,14 +274,9 @@ func (s *Service) GetUserWithRoles(ctx context.Context, userID string) (*userRes
 		return nil, errors.NewInternalError(err)
 	}
 
-	// Get inherited roles from groups if role inheritance engine is available
-	var inheritedRoles []*models.Role
-	if s.roleInheritanceEngine != nil {
-		inheritedRoles = s.getInheritedRolesFromGroups(ctx, userID)
-	}
-
-	// Merge direct roles and inherited roles (deduplicate by role ID)
-	allUserRoles := s.mergeDirectAndInheritedRoles(directUserRoles, inheritedRoles)
+	// Note: directUserRoles now includes both directly assigned roles AND roles inherited from groups
+	// Inherited roles are materialized in the user_roles table with source_group_id set
+	allUserRoles := directUserRoles
 
 	// Convert to response format with roles
 	response := &userResponses.UserResponse{
@@ -299,6 +294,12 @@ func (s *Service) GetUserWithRoles(ctx context.Context, userID string) (*userRes
 	// Add roles to response
 	roles := make([]userResponses.UserRoleDetail, len(allUserRoles))
 	for i, userRole := range allUserRoles {
+		// Handle AssignedAt - for inherited roles, BaseModel will be nil
+		assignedAt := ""
+		if userRole.BaseModel != nil {
+			assignedAt = userRole.CreatedAt.Format("2006-01-02T15:04:05Z07:00")
+		}
+
 		roles[i] = userResponses.UserRoleDetail{
 			ID:       userRole.ID,
 			UserID:   userRole.UserID,
@@ -309,7 +310,7 @@ func (s *Service) GetUserWithRoles(ctx context.Context, userID string) (*userRes
 				Name:        userRole.Role.Name,
 				Description: userRole.Role.Description,
 				IsActive:    userRole.Role.IsActive,
-				AssignedAt:  userRole.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+				AssignedAt:  assignedAt,
 			},
 		}
 	}
@@ -320,11 +321,22 @@ func (s *Service) GetUserWithRoles(ctx context.Context, userID string) (*userRes
 		s.logger.Warn("Failed to cache user with roles response", zap.Error(err))
 	}
 
+	// Count inherited vs direct roles
+	directCount := 0
+	inheritedCount := 0
+	for _, userRole := range allUserRoles {
+		if userRole.IsInherited() {
+			inheritedCount++
+		} else {
+			directCount++
+		}
+	}
+
 	s.logger.Info("User with roles retrieved successfully",
 		zap.String("user_id", userID),
 		zap.Int("role_count", len(roles)),
-		zap.Int("direct_roles", len(directUserRoles)),
-		zap.Int("inherited_roles", len(inheritedRoles)))
+		zap.Int("direct_roles", directCount),
+		zap.Int("inherited_roles", inheritedCount))
 	return response, nil
 }
 
@@ -348,32 +360,76 @@ func (s *Service) getInheritedRolesFromGroups(ctx context.Context, userID string
 	for _, org := range userOrganizations {
 		orgID, ok := org["id"].(string)
 		if !ok {
+			s.logger.Warn("Organization ID is not a string",
+				zap.String("user_id", userID),
+				zap.Any("org", org))
 			continue
 		}
 
-		// Call CalculateEffectiveRoles using duck typing
-		// The engine returns []*EffectiveRole which we'll process carefully
-		if engine, ok := s.roleInheritanceEngine.(interface {
-			CalculateEffectiveRoles(ctx context.Context, orgID, userID string) (interface{}, error)
-		}); ok {
-			effectiveRolesRaw, err := engine.CalculateEffectiveRoles(ctx, orgID, userID)
-			if err != nil {
-				s.logger.Warn("Failed to calculate inherited roles for organization",
-					zap.String("user_id", userID),
-					zap.String("org_id", orgID),
-					zap.Error(err))
-				continue
-			}
+		s.logger.Info("Processing organization for role inheritance",
+			zap.String("user_id", userID),
+			zap.String("org_id", orgID),
+			zap.String("engine_type", fmt.Sprintf("%T", s.roleInheritanceEngine)))
 
-			// The engine returns a slice with Role field - we need to extract it carefully
-			// Since we can't import groups.EffectiveRole (circular dependency), use reflection
-			s.extractRolesFromEffectiveRoles(effectiveRolesRaw, seenRoles)
+		// Call CalculateEffectiveRoles using reflection to avoid circular dependency
+		// We know the engine has this method: CalculateEffectiveRoles(ctx, orgID, userID string) ([]*EffectiveRole, error)
+		engineValue := reflect.ValueOf(s.roleInheritanceEngine)
+		calculateMethod := engineValue.MethodByName("CalculateEffectiveRoles")
 
-			s.logger.Debug("Processed effective roles from inheritance engine",
+		if !calculateMethod.IsValid() {
+			s.logger.Error("CalculateEffectiveRoles method not found on engine",
 				zap.String("user_id", userID),
 				zap.String("org_id", orgID),
-				zap.Int("inherited_count", len(seenRoles)))
+				zap.String("engine_type", fmt.Sprintf("%T", s.roleInheritanceEngine)))
+			continue
 		}
+
+		s.logger.Info("Calling CalculateEffectiveRoles via reflection",
+			zap.String("user_id", userID),
+			zap.String("org_id", orgID))
+
+		// Call the method: CalculateEffectiveRoles(ctx, orgID, userID)
+		results := calculateMethod.Call([]reflect.Value{
+			reflect.ValueOf(ctx),
+			reflect.ValueOf(orgID),
+			reflect.ValueOf(userID),
+		})
+
+		// Check for error (second return value)
+		if len(results) != 2 {
+			s.logger.Error("CalculateEffectiveRoles returned unexpected number of values",
+				zap.String("user_id", userID),
+				zap.String("org_id", orgID),
+				zap.Int("num_results", len(results)))
+			continue
+		}
+
+		// Check if error is non-nil
+		if !results[1].IsNil() {
+			err := results[1].Interface().(error)
+			s.logger.Warn("Failed to calculate inherited roles for organization",
+				zap.String("user_id", userID),
+				zap.String("org_id", orgID),
+				zap.Error(err))
+			continue
+		}
+
+		// First return value is the effective roles slice
+		effectiveRolesRaw := results[0].Interface()
+
+		s.logger.Info("CalculateEffectiveRoles returned",
+			zap.String("user_id", userID),
+			zap.String("org_id", orgID),
+			zap.String("type", fmt.Sprintf("%T", effectiveRolesRaw)))
+
+		// The engine returns a slice with Role field - we need to extract it carefully
+		// Since we can't import groups.EffectiveRole (circular dependency), use reflection
+		s.extractRolesFromEffectiveRoles(effectiveRolesRaw, seenRoles)
+
+		s.logger.Info("Processed effective roles from inheritance engine",
+			zap.String("user_id", userID),
+			zap.String("org_id", orgID),
+			zap.Int("inherited_count", len(seenRoles)))
 	}
 
 	// Convert map to slice
@@ -452,11 +508,13 @@ func (s *Service) mergeDirectAndInheritedRoles(directRoles []*models.UserRole, i
 		if !seen[role.ID] {
 			seen[role.ID] = true
 			// Convert Role to UserRole for consistency
+			// For inherited roles, we create a synthetic UserRole object
+			// BaseModel will be nil, which is fine - we check for it when formatting
 			userRole := &models.UserRole{
 				RoleID:   role.ID,
 				Role:     *role, // Dereference pointer as Role field is a value type
 				IsActive: true,
-				// Note: ID and UserID will be empty for inherited roles
+				// Note: ID, UserID, and BaseModel will be empty/nil for inherited roles
 			}
 			result = append(result, userRole)
 		}

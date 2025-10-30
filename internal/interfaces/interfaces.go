@@ -215,6 +215,7 @@ type UserRoleRepository interface {
 	GetByRoleID(ctx context.Context, roleID string) ([]*models.UserRole, error)
 	GetByUserAndRole(ctx context.Context, userID, roleID string) (*models.UserRole, error)
 	DeleteByUserAndRole(ctx context.Context, userID, roleID string) error
+	DeleteBySourceGroup(ctx context.Context, userID, groupID string) (int, error) // For cleaning up inherited roles
 	ExistsByUserAndRole(ctx context.Context, userID, roleID string) (bool, error)
 	// Enhanced methods for role management operations
 	GetActiveRolesByUserID(ctx context.Context, userID string) ([]*models.UserRole, error)

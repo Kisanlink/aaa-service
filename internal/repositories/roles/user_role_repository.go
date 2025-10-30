@@ -275,3 +275,19 @@ func (r *UserRoleRepository) getDB(ctx context.Context, readOnly bool) (*gorm.DB
 
 	return nil, fmt.Errorf("database manager does not support GetDB method")
 }
+
+// DeleteBySourceGroup deletes all user_roles inherited from a specific group
+// Returns the number of records deleted
+func (r *UserRoleRepository) DeleteBySourceGroup(ctx context.Context, userID, groupID string) (int, error) {
+	db, err := r.getDB(ctx, false)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get database: %w", err)
+	}
+
+	result := db.Where("user_id = ? AND source_group_id = ?", userID, groupID).Delete(&models.UserRole{})
+	if result.Error != nil {
+		return 0, fmt.Errorf("failed to delete inherited roles: %w", result.Error)
+	}
+
+	return int(result.RowsAffected), nil
+}

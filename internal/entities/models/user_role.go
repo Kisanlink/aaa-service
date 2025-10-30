@@ -9,9 +9,10 @@ import (
 // UserRole represents the relationship between users and roles
 type UserRole struct {
 	*base.BaseModel
-	UserID   string `gorm:"type:varchar(255);not null;index:idx_user_roles_user_id;index:idx_user_roles_user_id_is_active,priority:1;index:idx_user_roles_user_role_assignment,priority:1"`
-	RoleID   string `gorm:"type:varchar(255);not null;index:idx_user_roles_role_id;index:idx_user_roles_user_role_assignment,priority:2"`
-	IsActive bool   `json:"is_active" gorm:"default:true;index:idx_user_roles_is_active;index:idx_user_roles_user_id_is_active,priority:2"`
+	UserID        string  `gorm:"type:varchar(255);not null;index:idx_user_roles_user_id;index:idx_user_roles_user_id_is_active,priority:1;index:idx_user_roles_user_role_assignment,priority:1"`
+	RoleID        string  `gorm:"type:varchar(255);not null;index:idx_user_roles_role_id;index:idx_user_roles_user_role_assignment,priority:2"`
+	IsActive      bool    `json:"is_active" gorm:"default:true;index:idx_user_roles_is_active;index:idx_user_roles_user_id_is_active,priority:2"`
+	SourceGroupID *string `gorm:"type:varchar(255);index:idx_user_roles_source_group" json:"source_group_id,omitempty"` // NULL for directly assigned, group ID for inherited
 
 	// Relationships
 	User User `json:"user" gorm:"foreignKey:UserID;references:ID"`
@@ -92,4 +93,20 @@ func (ur *UserRole) SetID(id string) { ur.BaseModel.SetID(id) }
 // IsActiveAssignment checks if both the user role and the role itself are active
 func (ur *UserRole) IsActiveAssignment() bool {
 	return ur.IsActive && ur.Role.IsActive
+}
+
+// IsInherited returns true if this role is inherited from a group
+func (ur *UserRole) IsInherited() bool {
+	return ur.SourceGroupID != nil
+}
+
+// NewInheritedUserRole creates a UserRole for a role inherited from a group
+func NewInheritedUserRole(userID, roleID, groupID string) *UserRole {
+	return &UserRole{
+		BaseModel:     base.NewBaseModel("USR_ROL", hash.Small),
+		UserID:        userID,
+		RoleID:        roleID,
+		IsActive:      true,
+		SourceGroupID: &groupID,
+	}
 }

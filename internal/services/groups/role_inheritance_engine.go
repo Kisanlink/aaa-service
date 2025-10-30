@@ -381,10 +381,17 @@ func (r *RoleInheritanceEngine) getUserDirectGroups(ctx context.Context, orgID, 
 		return nil, fmt.Errorf("failed to get user's direct groups: %w", err)
 	}
 
-	r.logger.Debug("Retrieved user's direct groups",
+	// Log detailed group information
+	groupIDs := make([]string, len(groups))
+	for i, g := range groups {
+		groupIDs[i] = g.ID
+	}
+
+	r.logger.Info("Retrieved user's direct groups from repository",
 		zap.String("org_id", orgID),
 		zap.String("user_id", userID),
-		zap.Int("group_count", len(groups)))
+		zap.Int("group_count", len(groups)),
+		zap.Strings("group_ids", groupIDs))
 
 	// Cache the result for 5 minutes
 	err = r.cache.Set(cacheKey, groups, 300)
@@ -397,19 +404,52 @@ func (r *RoleInheritanceEngine) getUserDirectGroups(ctx context.Context, orgID, 
 
 // getDirectGroupRoles gets roles directly assigned to a group (not inherited)
 func (r *RoleInheritanceEngine) getDirectGroupRoles(ctx context.Context, groupID string) ([]*models.GroupRole, error) {
+	r.logger.Info("Getting direct roles for group",
+		zap.String("group_id", groupID))
+
 	groupRoles, err := r.groupRoleRepo.GetByGroupID(ctx, groupID)
 	if err != nil {
+		r.logger.Error("Failed to get group roles from repository",
+			zap.String("group_id", groupID),
+			zap.Error(err))
 		return nil, err
 	}
+
+	r.logger.Info("Retrieved group roles from repository",
+		zap.String("group_id", groupID),
+		zap.Int("total_roles", len(groupRoles)))
 
 	// Filter for currently effective roles
 	now := time.Now()
 	effectiveRoles := make([]*models.GroupRole, 0, len(groupRoles))
+	roleIDs := make([]string, 0, len(groupRoles))
 	for _, groupRole := range groupRoles {
 		if groupRole.IsEffective(now) {
 			effectiveRoles = append(effectiveRoles, groupRole)
+			roleIDs = append(roleIDs, groupRole.RoleID)
+		} else {
+			// Log why this role is not effective
+			startsAtStr := "nil"
+			endsAtStr := "nil"
+			if groupRole.StartsAt != nil {
+				startsAtStr = groupRole.StartsAt.Format(time.RFC3339)
+			}
+			if groupRole.EndsAt != nil {
+				endsAtStr = groupRole.EndsAt.Format(time.RFC3339)
+			}
+			r.logger.Debug("Skipping non-effective group role",
+				zap.String("group_id", groupID),
+				zap.String("role_id", groupRole.RoleID),
+				zap.Bool("is_active", groupRole.IsActive),
+				zap.String("starts_at", startsAtStr),
+				zap.String("ends_at", endsAtStr))
 		}
 	}
+
+	r.logger.Info("Filtered effective roles for group",
+		zap.String("group_id", groupID),
+		zap.Int("effective_count", len(effectiveRoles)),
+		zap.Strings("role_ids", roleIDs))
 
 	return effectiveRoles, nil
 }

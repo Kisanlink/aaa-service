@@ -24,6 +24,7 @@ type Service struct {
 	groupMembershipRepo *groups.GroupMembershipRepository
 	orgRepo             *organizations.OrganizationRepository
 	roleRepo            *roles.RoleRepository
+	userRoleRepo        interfaces.UserRoleRepository // For materializing inherited roles
 	validator           interfaces.Validator
 	cache               interfaces.CacheService
 	groupCache          *GroupCacheService
@@ -39,6 +40,7 @@ func NewGroupService(
 	groupMembershipRepo *groups.GroupMembershipRepository,
 	orgRepo *organizations.OrganizationRepository,
 	roleRepo *roles.RoleRepository,
+	userRoleRepo interfaces.UserRoleRepository,
 	validator interfaces.Validator,
 	cache interfaces.CacheService,
 	auditService interfaces.AuditService,
@@ -51,6 +53,7 @@ func NewGroupService(
 		groupMembershipRepo: groupMembershipRepo,
 		orgRepo:             orgRepo,
 		roleRepo:            roleRepo,
+		userRoleRepo:        userRoleRepo,
 		validator:           validator,
 		cache:               cache,
 		groupCache:          groupCache,
@@ -539,6 +542,17 @@ func (s *Service) AddMemberToGroup(ctx context.Context, req interface{}) (interf
 		}
 	}
 
+	// Materialize group roles for user principals (not for group-to-group memberships)
+	if addMemberReq.PrincipalType == "user" {
+		if err := s.materializeGroupRolesForUser(ctx, addMemberReq.GroupID, addMemberReq.PrincipalID); err != nil {
+			s.logger.Warn("Failed to materialize group roles for user",
+				zap.String("group_id", addMemberReq.GroupID),
+				zap.String("user_id", addMemberReq.PrincipalID),
+				zap.Error(err))
+			// Don't fail the whole operation - roles can be synced later
+		}
+	}
+
 	// Log successful membership addition
 	auditDetails := map[string]interface{}{
 		"principal_type": membership.PrincipalType,
@@ -615,6 +629,17 @@ func (s *Service) RemoveMemberFromGroup(ctx context.Context, groupID, principalI
 			s.logger.Debug("Invalidated user organizational cache after removing from group",
 				zap.String("user_id", principalID),
 				zap.String("group_id", groupID))
+		}
+	}
+
+	// Cleanup inherited roles for user principals
+	if membership.PrincipalType == "user" {
+		if err := s.cleanupInheritedRolesForUser(ctx, groupID, principalID); err != nil {
+			s.logger.Warn("Failed to cleanup inherited roles for user",
+				zap.String("group_id", groupID),
+				zap.String("user_id", principalID),
+				zap.Error(err))
+			// Don't fail the whole operation - roles can be cleaned up later
 		}
 	}
 
@@ -744,6 +769,16 @@ func (s *Service) AssignRoleToGroup(ctx context.Context, groupID, roleID, assign
 		zap.String("role_id", roleID),
 		zap.String("org_id", group.OrganizationID))
 
+	// Materialize this role for all existing group members
+	if err := s.materializeRoleForAllGroupMembers(ctx, groupID, roleID); err != nil {
+		s.logger.Warn("Failed to materialize role for group members",
+			zap.String("group_id", groupID),
+			zap.String("role_id", roleID),
+			zap.Error(err))
+		// Don't fail the whole operation - role is assigned to group successfully
+		// Individual users can sync later
+	}
+
 	// Create response with role details
 	response := groupResponses.NewGroupRoleResponse(groupRole, "Role assigned to group successfully")
 	response.Role = groupResponses.RoleDetail{
@@ -828,6 +863,16 @@ func (s *Service) RemoveRoleFromGroup(ctx context.Context, groupID, roleID strin
 
 	// Invalidate relevant caches after successful role removal
 	s.groupCache.InvalidateRoleAssignmentCache(ctx, group.OrganizationID, groupID, roleID)
+
+	// Cleanup this role from all group members who inherited it
+	if err := s.cleanupRoleForAllGroupMembers(ctx, groupID, roleID); err != nil {
+		s.logger.Warn("Failed to cleanup role from group members",
+			zap.String("group_id", groupID),
+			zap.String("role_id", roleID),
+			zap.Error(err))
+		// Don't fail the whole operation - role is removed from group successfully
+		// Individual users can sync later
+	}
 
 	s.logger.Info("Role removed from group successfully",
 		zap.String("group_id", groupID),
@@ -1029,6 +1074,238 @@ func (s *Service) checkCircularReference(ctx context.Context, groupID, newParent
 			currentID = *group.ParentID
 		}
 	}
+
+	return nil
+}
+
+// materializeGroupRolesForUser creates user_role entries for all roles assigned to a group
+// This is called when a user is added to a group to "materialize" their inherited roles
+func (s *Service) materializeGroupRolesForUser(ctx context.Context, groupID, userID string) error {
+	s.logger.Info("Materializing group roles for user",
+		zap.String("group_id", groupID),
+		zap.String("user_id", userID))
+
+	// Get all active roles assigned to this group
+	groupRoles, err := s.groupRoleRepo.GetByGroupID(ctx, groupID)
+	if err != nil {
+		s.logger.Error("Failed to get group roles",
+			zap.String("group_id", groupID),
+			zap.Error(err))
+		return fmt.Errorf("failed to get group roles: %w", err)
+	}
+
+	if len(groupRoles) == 0 {
+		s.logger.Debug("No roles assigned to group, skipping materialization",
+			zap.String("group_id", groupID))
+		return nil
+	}
+
+	// Create user_role entries for each group role
+	createdCount := 0
+	for _, groupRole := range groupRoles {
+		// Skip inactive roles
+		if !groupRole.IsActive {
+			continue
+		}
+
+		// Create inherited user role
+		userRole := models.NewInheritedUserRole(userID, groupRole.RoleID, groupID)
+
+		// Check if it already exists (shouldn't happen but be defensive)
+		existing, _ := s.userRoleRepo.GetByUserAndRole(ctx, userID, groupRole.RoleID)
+		if existing != nil && existing.SourceGroupID != nil && *existing.SourceGroupID == groupID {
+			s.logger.Debug("User role already exists, skipping",
+				zap.String("user_id", userID),
+				zap.String("role_id", groupRole.RoleID))
+			continue
+		}
+
+		// Save the inherited role
+		if err := s.userRoleRepo.Create(ctx, userRole); err != nil {
+			s.logger.Warn("Failed to create inherited user role",
+				zap.String("user_id", userID),
+				zap.String("role_id", groupRole.RoleID),
+				zap.String("group_id", groupID),
+				zap.Error(err))
+			continue
+		}
+
+		createdCount++
+		s.logger.Debug("Created inherited user role",
+			zap.String("user_id", userID),
+			zap.String("role_id", groupRole.RoleID),
+			zap.String("group_id", groupID))
+	}
+
+	s.logger.Info("Materialized group roles for user",
+		zap.String("group_id", groupID),
+		zap.String("user_id", userID),
+		zap.Int("roles_created", createdCount))
+
+	return nil
+}
+
+// cleanupInheritedRolesForUser removes all user_role entries inherited from a specific group
+// This is called when a user is removed from a group
+func (s *Service) cleanupInheritedRolesForUser(ctx context.Context, groupID, userID string) error {
+	s.logger.Info("Cleaning up inherited roles for user",
+		zap.String("group_id", groupID),
+		zap.String("user_id", userID))
+
+	// Delete all user_roles with this source_group_id
+	deletedCount, err := s.userRoleRepo.DeleteBySourceGroup(ctx, userID, groupID)
+	if err != nil {
+		s.logger.Error("Failed to cleanup inherited roles",
+			zap.String("user_id", userID),
+			zap.String("group_id", groupID),
+			zap.Error(err))
+		return fmt.Errorf("failed to cleanup inherited roles: %w", err)
+	}
+
+	s.logger.Info("Cleaned up inherited roles for user",
+		zap.String("group_id", groupID),
+		zap.String("user_id", userID),
+		zap.Int("roles_deleted", deletedCount))
+
+	return nil
+}
+
+// materializeRoleForAllGroupMembers creates user_role entries for a specific role for all active group members
+// This is called when a role is assigned to a group
+func (s *Service) materializeRoleForAllGroupMembers(ctx context.Context, groupID, roleID string) error {
+	s.logger.Info("Materializing role for all group members",
+		zap.String("group_id", groupID),
+		zap.String("role_id", roleID))
+
+	// Get all active memberships for this group (only user principals, not group-to-group)
+	// Using large limit to get all members (pagination not needed for background operations)
+	memberships, err := s.groupMembershipRepo.GetByGroupID(ctx, groupID, 10000, 0)
+	if err != nil {
+		s.logger.Error("Failed to get group memberships",
+			zap.String("group_id", groupID),
+			zap.Error(err))
+		return fmt.Errorf("failed to get group memberships: %w", err)
+	}
+
+	if len(memberships) == 0 {
+		s.logger.Debug("No members in group, skipping role materialization",
+			zap.String("group_id", groupID))
+		return nil
+	}
+
+	// Materialize the role for each user member
+	createdCount := 0
+	for _, membership := range memberships {
+		// Skip inactive memberships and non-user principals
+		if !membership.IsActive || membership.PrincipalType != "user" {
+			continue
+		}
+
+		// Create inherited user role
+		userRole := models.NewInheritedUserRole(membership.PrincipalID, roleID, groupID)
+
+		// Check if it already exists
+		existing, _ := s.userRoleRepo.GetByUserAndRole(ctx, membership.PrincipalID, roleID)
+		if existing != nil && existing.SourceGroupID != nil && *existing.SourceGroupID == groupID {
+			s.logger.Debug("User role already exists for this group, skipping",
+				zap.String("user_id", membership.PrincipalID),
+				zap.String("role_id", roleID),
+				zap.String("group_id", groupID))
+			continue
+		}
+
+		// Save the inherited role
+		if err := s.userRoleRepo.Create(ctx, userRole); err != nil {
+			s.logger.Warn("Failed to create inherited user role",
+				zap.String("user_id", membership.PrincipalID),
+				zap.String("role_id", roleID),
+				zap.String("group_id", groupID),
+				zap.Error(err))
+			continue
+		}
+
+		createdCount++
+		s.logger.Debug("Created inherited user role",
+			zap.String("user_id", membership.PrincipalID),
+			zap.String("role_id", roleID),
+			zap.String("group_id", groupID))
+	}
+
+	s.logger.Info("Materialized role for all group members",
+		zap.String("group_id", groupID),
+		zap.String("role_id", roleID),
+		zap.Int("members_updated", createdCount))
+
+	return nil
+}
+
+// cleanupRoleForAllGroupMembers removes user_role entries for a specific role from all group members
+// This is called when a role is removed from a group
+func (s *Service) cleanupRoleForAllGroupMembers(ctx context.Context, groupID, roleID string) error {
+	s.logger.Info("Cleaning up role for all group members",
+		zap.String("group_id", groupID),
+		zap.String("role_id", roleID))
+
+	// Get all active memberships for this group
+	// Using large limit to get all members (pagination not needed for background operations)
+	memberships, err := s.groupMembershipRepo.GetByGroupID(ctx, groupID, 10000, 0)
+	if err != nil {
+		s.logger.Error("Failed to get group memberships",
+			zap.String("group_id", groupID),
+			zap.Error(err))
+		return fmt.Errorf("failed to get group memberships: %w", err)
+	}
+
+	if len(memberships) == 0 {
+		s.logger.Debug("No members in group, skipping role cleanup",
+			zap.String("group_id", groupID))
+		return nil
+	}
+
+	// Cleanup the role for each member
+	deletedCount := 0
+	for _, membership := range memberships {
+		// Process all memberships (even inactive ones might have inherited roles)
+		if membership.PrincipalType != "user" {
+			continue
+		}
+
+		// Find and delete the inherited user_role for this specific role and group
+		userRole, err := s.userRoleRepo.GetByUserAndRole(ctx, membership.PrincipalID, roleID)
+		if err != nil || userRole == nil {
+			continue
+		}
+
+		// Only delete if it was inherited from this specific group
+		if userRole.SourceGroupID == nil || *userRole.SourceGroupID != groupID {
+			s.logger.Debug("User role not inherited from this group, skipping",
+				zap.String("user_id", membership.PrincipalID),
+				zap.String("role_id", roleID),
+				zap.String("expected_group_id", groupID))
+			continue
+		}
+
+		// Delete the inherited role
+		if err := s.userRoleRepo.Delete(ctx, userRole.ID, userRole); err != nil {
+			s.logger.Warn("Failed to delete inherited user role",
+				zap.String("user_id", membership.PrincipalID),
+				zap.String("role_id", roleID),
+				zap.String("group_id", groupID),
+				zap.Error(err))
+			continue
+		}
+
+		deletedCount++
+		s.logger.Debug("Deleted inherited user role",
+			zap.String("user_id", membership.PrincipalID),
+			zap.String("role_id", roleID),
+			zap.String("group_id", groupID))
+	}
+
+	s.logger.Info("Cleaned up role for all group members",
+		zap.String("group_id", groupID),
+		zap.String("role_id", roleID),
+		zap.Int("members_updated", deletedCount))
 
 	return nil
 }
