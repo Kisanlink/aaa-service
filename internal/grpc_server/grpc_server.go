@@ -32,6 +32,7 @@ type GRPCServer struct {
 	cacheService        interfaces.CacheService
 	userRepository      interfaces.UserRepository
 	organizationService interfaces.OrganizationService
+	addressService      interfaces.AddressService
 	serviceRepository   interfaces.ServiceRepository
 	dbManager           db.DBManager
 	port                string
@@ -60,6 +61,7 @@ func NewGRPCServer(
 	userRepository interfaces.UserRepository,
 	cacheService interfaces.CacheService,
 	organizationService interfaces.OrganizationService,
+	addressService interfaces.AddressService,
 	serviceRepository interfaces.ServiceRepository,
 	logger *zap.Logger,
 	validator interfaces.Validator,
@@ -134,6 +136,7 @@ func NewGRPCServer(
 		cacheService:        cacheService,
 		userRepository:      userRepository,
 		organizationService: organizationService,
+		addressService:      addressService,
 		serviceRepository:   serviceRepository,
 		dbManager:           dbManager,
 		port:                config.Port,
@@ -238,9 +241,13 @@ func (s *GRPCServer) registerServices() {
 	catalogHandler := NewCatalogHandler(catalogService, s.logger)
 	pb.RegisterCatalogServiceServer(s.server, catalogHandler)
 
+	// Register AddressService for address management
+	addressHandler := NewAddressHandler(s.addressService, s.logger)
+	pb.RegisterAddressServiceServer(s.server, addressHandler)
+
 	s.logger.Info("gRPC services registered successfully",
 		zap.String("primary_service", "AAAService"),
-		zap.Strings("services", []string{"UserServiceV2", "AuthorizationService", "TokenService", "OrganizationService", "CatalogService"}))
+		zap.Strings("services", []string{"UserServiceV2", "AuthorizationService", "TokenService", "OrganizationService", "CatalogService", "AddressService"}))
 }
 
 // loggingInterceptor logs gRPC requests

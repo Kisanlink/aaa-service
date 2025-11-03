@@ -28,6 +28,7 @@ type RouteHandlers struct {
 	UserService          interfaces.UserService
 	RoleService          interfaces.RoleService
 	ContactService       interface{} // Using interface{} to avoid circular dependency
+	AddressService       interfaces.AddressService
 	OrganizationService  interfaces.OrganizationService
 	GroupService         interfaces.GroupService
 	Validator            interfaces.Validator
@@ -87,6 +88,11 @@ func SetupAAA(router *gin.Engine, handlers RouteHandlers) {
 	SetupModuleRoutes(protectedAPI, handlers.Logger)
 	if contactService, ok := handlers.ContactService.(*contactService.ContactService); ok {
 		SetupContactRoutes(protectedAPI, handlers.AuthMiddleware, contactService, handlers.Validator, handlers.Responder, handlers.Logger)
+	}
+
+	// Setup address routes if service is available
+	if handlers.AddressService != nil {
+		SetupAddressRoutes(protectedAPI, handlers.AuthMiddleware, handlers.AddressService, handlers.Validator, handlers.Responder, handlers.Logger)
 	}
 
 	// Setup organization routes if services are available
@@ -157,7 +163,7 @@ func SetupAAAWrapper(router *gin.Engine, authService *services.AuthService, auth
 }
 
 // SetupAAAWithAdmin is an extended wrapper that includes AdminHandler
-func SetupAAAWithAdmin(router *gin.Engine, authService *services.AuthService, authzService *services.AuthorizationService, auditService *services.AuditService, authMiddleware *middleware.AuthMiddleware, adminHandler *admin.AdminHandler, roleHandler *roles.RoleHandler, permissionHandler *permissions.PermissionHandler, userService interfaces.UserService, roleService interfaces.RoleService, contactService interface{}, validator interfaces.Validator, responder interfaces.Responder, logger *zap.Logger) {
+func SetupAAAWithAdmin(router *gin.Engine, authService *services.AuthService, authzService *services.AuthorizationService, auditService *services.AuditService, authMiddleware *middleware.AuthMiddleware, adminHandler *admin.AdminHandler, roleHandler *roles.RoleHandler, permissionHandler *permissions.PermissionHandler, userService interfaces.UserService, roleService interfaces.RoleService, contactService interface{}, addressService interfaces.AddressService, validator interfaces.Validator, responder interfaces.Responder, logger *zap.Logger) {
 	handlers := RouteHandlers{
 		AuthService:          authService,
 		AuthorizationService: authzService,
@@ -169,6 +175,7 @@ func SetupAAAWithAdmin(router *gin.Engine, authService *services.AuthService, au
 		UserService:          userService,
 		RoleService:          roleService,
 		ContactService:       contactService,
+		AddressService:       addressService,
 		OrganizationService:  nil, // Will be set when services are available
 		GroupService:         nil, // Will be set when services are available
 		Validator:            validator,
@@ -179,7 +186,7 @@ func SetupAAAWithAdmin(router *gin.Engine, authService *services.AuthService, au
 }
 
 // SetupAAAWithOrganizations is an extended wrapper that includes organization and group services
-func SetupAAAWithOrganizations(router *gin.Engine, authService *services.AuthService, authzService *services.AuthorizationService, auditService *services.AuditService, authMiddleware *middleware.AuthMiddleware, adminHandler *admin.AdminHandler, roleHandler *roles.RoleHandler, permissionHandler *permissions.PermissionHandler, userService interfaces.UserService, roleService interfaces.RoleService, contactService interface{}, organizationService interfaces.OrganizationService, groupService interfaces.GroupService, validator interfaces.Validator, responder interfaces.Responder, logger *zap.Logger) {
+func SetupAAAWithOrganizations(router *gin.Engine, authService *services.AuthService, authzService *services.AuthorizationService, auditService *services.AuditService, authMiddleware *middleware.AuthMiddleware, adminHandler *admin.AdminHandler, roleHandler *roles.RoleHandler, permissionHandler *permissions.PermissionHandler, userService interfaces.UserService, roleService interfaces.RoleService, contactService interface{}, addressService interfaces.AddressService, organizationService interfaces.OrganizationService, groupService interfaces.GroupService, validator interfaces.Validator, responder interfaces.Responder, logger *zap.Logger) {
 	handlers := RouteHandlers{
 		AuthService:          authService,
 		AuthorizationService: authzService,
@@ -191,6 +198,7 @@ func SetupAAAWithOrganizations(router *gin.Engine, authService *services.AuthSer
 		UserService:          userService,
 		RoleService:          roleService,
 		ContactService:       contactService,
+		AddressService:       addressService,
 		OrganizationService:  organizationService,
 		GroupService:         groupService,
 		Validator:            validator,

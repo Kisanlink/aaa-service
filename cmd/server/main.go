@@ -327,7 +327,7 @@ func initializeServer(
 	maintenanceService := services.NewMaintenanceService(cacheService, loggerAdapter)
 
 	// Initialize business services
-	_ = services.NewAddressService(addressRepository, cacheService, loggerAdapter, validator) // Available for future use
+	addressService := services.NewAddressService(addressRepository, cacheService, loggerAdapter, validator)
 	roleService := services.NewRoleService(roleRepository, userRoleRepository, cacheService, loggerAdapter, validator)
 	userServiceInstance := user.NewService(userRepository, roleRepository, userRoleRepository, cacheService, logger, validator)
 
@@ -416,7 +416,7 @@ func initializeServer(
 	httpServer, err := initializeHTTPServer(
 		httpPort, jwtSecret,
 		primaryDBManager, userService, roleService, userRepository, userRoleRepository,
-		cacheService, validator, responder, maintenanceService, logger, permissionHandler, resourceHandler, actionHandler, principalHandler, contactServiceInstance,
+		cacheService, validator, responder, maintenanceService, logger, permissionHandler, resourceHandler, actionHandler, principalHandler, contactServiceInstance, addressService,
 		organizationRepository, groupRepository, groupRoleRepository, groupMembershipRepository, roleRepository,
 		serviceRepository,
 	)
@@ -436,7 +436,7 @@ func initializeServer(
 	grpcServer, err := grpc_server.NewGRPCServer(
 		grpcConfig, primaryDBManager, userService, roleService,
 		userRoleRepository, userRepository, cacheService, httpServer.organizationServiceInstance,
-		serviceRepository, logger, validator,
+		addressService, serviceRepository, logger, validator,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize gRPC server: %w", err)
@@ -467,6 +467,7 @@ func initializeHTTPServer(
 	actionHandler *actionHandlers.ActionHandler,
 	principalHandler *principalHandlers.Handler,
 	contactServiceInstance *contactService.ContactService,
+	addressService interfaces.AddressService,
 	organizationRepository *organizationRepo.OrganizationRepository,
 	groupRepository *groupRepo.GroupRepository,
 	groupRoleRepository *groupRepo.GroupRoleRepository,
@@ -540,7 +541,7 @@ func initializeHTTPServer(
 	setupHTTPMiddleware(router, authMiddleware, auditMiddleware, maintenanceService, responder, logger)
 
 	// Setup routes and docs
-	setupRoutesAndDocs(router, authService, authzService, auditService, authMiddleware, maintenanceService, validator, responder, logger, roleHandler, permissionHandler, resourceHandler, actionHandler, principalHandler, userService, roleService, contactServiceInstance, organizationServiceInstance, groupServiceInstance)
+	setupRoutesAndDocs(router, authService, authzService, auditService, authMiddleware, maintenanceService, validator, responder, logger, roleHandler, permissionHandler, resourceHandler, actionHandler, principalHandler, userService, roleService, contactServiceInstance, addressService, organizationServiceInstance, groupServiceInstance)
 
 	return &HTTPServer{
 		router:                      router,
@@ -665,6 +666,7 @@ func setupRoutesAndDocs(
 	userService interfaces.UserService,
 	roleService interfaces.RoleService,
 	contactServiceInstance *contactService.ContactService,
+	addressService interfaces.AddressService,
 	organizationServiceInstance interfaces.OrganizationService,
 	groupServiceInstance interfaces.GroupService,
 ) {
@@ -684,6 +686,7 @@ func setupRoutesAndDocs(
 		userService,
 		roleService,
 		contactServiceInstance,
+		addressService,
 		organizationServiceInstance,
 		groupServiceInstance,
 		validator,
