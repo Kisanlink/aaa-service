@@ -175,6 +175,10 @@ func (s *PostgresAuthorizationService) includeParentRoles(ctx context.Context, r
 }
 
 // roleHasPermission checks if a role has a specific permission for a resource
+// SECURITY FIX: Validates that resource_type matches the permission name pattern to prevent
+// authorization bypass where users with address_read could access other resource types.
+// Permissions follow the naming convention: {resource_type}_{action}
+// Examples: address_read, attachment_create, collaborator_update
 func (s *PostgresAuthorizationService) roleHasPermission(ctx context.Context, roleID, resourceType, resourceID, action string) (bool, error) {
 	var count int64
 
@@ -199,13 +203,18 @@ func (s *PostgresAuthorizationService) roleHasPermission(ctx context.Context, ro
 		return true, nil
 	}
 
-	// Check RolePermission table for general permissions
+	// SECURITY FIX: Check RolePermission table for general permissions
+	// BUT validate that the permission name matches {resource_type}_{action} pattern.
+	// Previously this checked (actions.name = ? OR permissions.name = ?) with only the action,
+	// which allowed ANY permission with that action name regardless of resource_type.
+	// This caused users with "address_read" to be able to access "attachment" resources.
+	expectedPermissionName := resourceType + "_" + action
+
 	err := s.db.WithContext(ctx).
 		Table("role_permissions").
 		Joins("JOIN permissions ON role_permissions.permission_id = permissions.id").
-		Joins("LEFT JOIN actions ON permissions.action_id = actions.id").
 		Where("role_permissions.role_id = ? AND role_permissions.is_active = ?", roleID, true).
-		Where("permissions.is_active = ? AND (actions.name = ? OR permissions.name = ?)", true, action, action).
+		Where("permissions.is_active = ? AND permissions.name = ?", true, expectedPermissionName).
 		Count(&count).Error
 
 	if err != nil {
