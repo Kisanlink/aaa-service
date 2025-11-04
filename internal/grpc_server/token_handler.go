@@ -131,6 +131,28 @@ func (h *TokenHandler) ValidateToken(ctx context.Context, req *pb.ValidateTokenR
 			response.Warnings = append(response.Warnings, "User details could not be loaded")
 		} else {
 			response.UserContext = h.buildUserContext(user, claims, tokenContext)
+
+			// Fetch fresh roles from database (including inherited roles from groups)
+			// This ensures we return current roles even if token is old
+			freshRoles, err := h.userService.GetUserWithRoles(ctx, claims.UserID)
+			if err != nil {
+				h.logger.Warn("Failed to fetch fresh roles for user", zap.String("user_id", claims.UserID), zap.Error(err))
+			} else if freshRoles != nil && len(freshRoles.Roles) > 0 {
+				// Extract role names from fresh data
+				freshRoleNames := make([]string, 0, len(freshRoles.Roles))
+				for _, roleDetail := range freshRoles.Roles {
+					freshRoleNames = append(freshRoleNames, roleDetail.Role.Name)
+				}
+
+				// Update both Claims and UserContext with fresh roles
+				response.Claims.Roles = freshRoleNames
+				response.UserContext.Roles = freshRoleNames
+
+				h.logger.Debug("Updated response with fresh roles including inherited roles",
+					zap.String("user_id", claims.UserID),
+					zap.Int("role_count", len(freshRoleNames)),
+					zap.Strings("roles", freshRoleNames))
+			}
 		}
 	}
 

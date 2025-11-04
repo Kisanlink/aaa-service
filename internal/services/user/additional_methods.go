@@ -274,9 +274,16 @@ func (s *Service) GetUserWithRoles(ctx context.Context, userID string) (*userRes
 		return nil, errors.NewInternalError(err)
 	}
 
-	// Note: directUserRoles now includes both directly assigned roles AND roles inherited from groups
-	// Inherited roles are materialized in the user_roles table with source_group_id set
-	allUserRoles := directUserRoles
+	// Get inherited roles from group hierarchies using RoleInheritanceEngine
+	inheritedRoles := s.getInheritedRolesFromGroups(ctx, userID)
+
+	s.logger.Debug("Retrieved roles for user",
+		zap.String("user_id", userID),
+		zap.Int("direct_roles", len(directUserRoles)),
+		zap.Int("inherited_roles", len(inheritedRoles)))
+
+	// Merge direct and inherited roles (direct roles take precedence)
+	allUserRoles := s.mergeDirectAndInheritedRoles(directUserRoles, inheritedRoles)
 
 	// Convert to response format with roles
 	response := &userResponses.UserResponse{
