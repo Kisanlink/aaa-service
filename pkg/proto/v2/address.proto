@@ -1,0 +1,158 @@
+syntax = "proto3";
+
+package pb.v2;
+
+option go_package = "github.com/Kisanlink/aaa-service/v2/pkg/proto/v2;pbv2";
+
+import "google/protobuf/timestamp.proto";
+
+// Address model with Indian address format
+message Address {
+    string id = 1;
+    string user_id = 2;
+    string type = 3; // HOME, WORK, OTHER
+
+    // Core Indian address fields aligned with domain model
+    string house = 4;
+    string street = 5;
+    string landmark = 6;
+    string post_office = 7;
+    string subdistrict = 8;
+    string district = 9;
+    string vtc = 10; // Village/Town/City
+    string state = 11;
+    string country = 12;
+    string pincode = 13;
+    string full_address = 14;
+
+    // System fields
+    bool is_primary = 15;
+    bool is_active = 16;
+    map<string, string> metadata = 17;
+    google.protobuf.Timestamp created_at = 18;
+    google.protobuf.Timestamp updated_at = 19;
+}
+
+// Create Address Request with Indian format
+message CreateAddressRequest {
+    string user_id = 1;
+    string type = 2;
+
+    // Indian address fields
+    string house = 3;
+    string street = 4;
+    string landmark = 5;
+    string post_office = 6;
+    string subdistrict = 7;
+    string district = 8;
+    string vtc = 9;
+    string state = 10;
+    string country = 11;
+    string pincode = 12;
+
+    bool is_primary = 13;
+    map<string, string> metadata = 14;
+}
+
+// Create Address Response
+message CreateAddressResponse {
+    int32 status_code = 1;
+    string message = 2;
+    Address address = 3;
+}
+
+// Get Address Request
+message GetAddressRequest {
+    string id = 1;
+}
+
+// Get Address Response
+message GetAddressResponse {
+    int32 status_code = 1;
+    string message = 2;
+    Address address = 3;
+}
+
+// Get Addresses By User Request
+message GetAddressesByUserRequest {
+    string user_id = 1;
+    bool active_only = 2;
+}
+
+// Get Addresses By User Response
+message GetAddressesByUserResponse {
+    int32 status_code = 1;
+    string message = 2;
+    repeated Address addresses = 3;
+}
+
+// Update Address Request
+message UpdateAddressRequest {
+    string id = 1;
+    string type = 2;
+
+    // Indian address fields
+    string house = 3;
+    string street = 4;
+    string landmark = 5;
+    string post_office = 6;
+    string subdistrict = 7;
+    string district = 8;
+    string vtc = 9;
+    string state = 10;
+    string country = 11;
+    string pincode = 12;
+
+    bool is_primary = 13;
+    bool is_active = 14;
+    map<string, string> metadata = 15;
+}
+
+// Update Address Response
+message UpdateAddressResponse {
+    int32 status_code = 1;
+    string message = 2;
+    Address address = 3;
+}
+
+// Delete Address Request
+message DeleteAddressRequest {
+    string id = 1;
+    bool soft_delete = 2; // If true, mark as inactive instead of deleting
+}
+
+// Delete Address Response
+message DeleteAddressResponse {
+    int32 status_code = 1;
+    string message = 2;
+}
+
+// List Addresses Request
+message ListAddressesRequest {
+    int32 page = 1;
+    int32 page_size = 2;
+    string search = 3;
+    string user_id = 4; // Filter by user
+    string type = 5;    // Filter by type
+    bool active_only = 6;
+}
+
+// List Addresses Response
+message ListAddressesResponse {
+    int32 status_code = 1;
+    string message = 2;
+    repeated Address addresses = 3;
+    int32 total_count = 4;
+    int32 page = 5;
+    int32 page_size = 6;
+}
+
+// Address Service with Indian format
+service AddressService {
+    rpc CreateAddress(CreateAddressRequest) returns (CreateAddressResponse);
+    rpc GetAddress(GetAddressRequest) returns (GetAddressResponse);
+    rpc GetAddressesByUser(GetAddressesByUserRequest) returns (GetAddressesByUserResponse);
+    rpc UpdateAddress(UpdateAddressRequest) returns (UpdateAddressResponse);
+    rpc DeleteAddress(DeleteAddressRequest) returns (DeleteAddressResponse);
+    rpc ListAddresses(ListAddressesRequest) returns (ListAddressesResponse);
+}

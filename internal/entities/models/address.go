@@ -9,6 +9,7 @@ import (
 // Address represents a user's address
 type Address struct {
 	*base.BaseModel
+	UserID      string  `json:"user_id" gorm:"type:varchar(255);not null;index"`
 	House       *string `json:"house" gorm:"type:varchar(255)"`
 	Street      *string `json:"street" gorm:"type:varchar(255)"`
 	Landmark    *string `json:"landmark" gorm:"type:varchar(255)"`

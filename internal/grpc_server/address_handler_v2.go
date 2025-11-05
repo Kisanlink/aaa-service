@@ -3,104 +3,89 @@ package grpc_server
 import (
 	"context"
 
-	"github.com/Kisanlink/aaa-service/v2/internal/entities/models"
 	"github.com/Kisanlink/aaa-service/v2/internal/grpc_server/converters"
+	"github.com/Kisanlink/aaa-service/v2/internal/grpc_server/version"
 	"github.com/Kisanlink/aaa-service/v2/internal/interfaces"
-	pb "github.com/Kisanlink/aaa-service/v2/pkg/proto"
+	pbv2 "github.com/Kisanlink/aaa-service/v2/pkg/proto/v2"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
-// AddressHandler implements address-related gRPC services (v1 backward compatibility)
-type AddressHandler struct {
-	pb.UnimplementedAddressServiceServer
-	addressService interfaces.AddressService
-	logger         *zap.Logger
-	converter      *converters.AddressConverter
+// AddressHandlerV2 implements address-related gRPC services with v2 Indian format
+type AddressHandlerV2 struct {
+	pbv2.UnimplementedAddressServiceServer
+	addressService  interfaces.AddressService
+	logger          *zap.Logger
+	converter       *converters.AddressConverter
+	versionDetector *version.Detector
 }
 
-// NewAddressHandler creates a new address handler with v1 backward compatibility
-func NewAddressHandler(
+// NewAddressHandlerV2 creates a new v2 address handler with Indian format support
+func NewAddressHandlerV2(
 	addressService interfaces.AddressService,
 	logger *zap.Logger,
-) *AddressHandler {
-	return &AddressHandler{
-		addressService: addressService,
-		logger:         logger,
-		converter:      converters.NewAddressConverter(),
+) *AddressHandlerV2 {
+	return &AddressHandlerV2{
+		addressService:  addressService,
+		logger:          logger,
+		converter:       converters.NewAddressConverter(),
+		versionDetector: version.NewDetector(),
 	}
 }
 
-// modelToProto converts an Address model to proto using the converter
-func (h *AddressHandler) modelToProto(addr *models.Address) *pb.Address {
-	return h.converter.ModelToV1Proto(addr)
-}
-
-// protoToModel converts proto Address fields to model using the converter
-func (h *AddressHandler) protoToModel(req interface{}) *models.Address {
-	// Handle different request types
-	switch r := req.(type) {
-	case *pb.CreateAddressRequest:
-		return h.converter.V1ProtoToModel(r)
-	case *pb.UpdateAddressRequest:
-		return h.converter.V1UpdateProtoToModel(r)
-	default:
-		return models.NewAddress()
-	}
-}
-
-// CreateAddress creates a new address
-func (h *AddressHandler) CreateAddress(ctx context.Context, req *pb.CreateAddressRequest) (*pb.CreateAddressResponse, error) {
-	h.logger.Info("gRPC CreateAddress request", zap.String("user_id", req.UserId))
+// CreateAddress creates a new address with Indian format
+func (h *AddressHandlerV2) CreateAddress(ctx context.Context, req *pbv2.CreateAddressRequest) (*pbv2.CreateAddressResponse, error) {
+	h.logger.Info("gRPC v2 CreateAddress request", zap.String("user_id", req.UserId))
 
 	// Validate request
 	if req.UserId == "" {
 		h.logger.Warn("CreateAddress called with empty user_id")
-		return &pb.CreateAddressResponse{
+		return &pbv2.CreateAddressResponse{
 			StatusCode: 400,
 			Message:    "user_id is required",
 		}, status.Error(codes.InvalidArgument, "user_id is required")
 	}
 
-	if req.AddressLine_1 == "" {
-		h.logger.Warn("CreateAddress called with empty address_line_1")
-		return &pb.CreateAddressResponse{
+	// Validate at least one address field is provided
+	if req.House == "" && req.Street == "" && req.Vtc == "" {
+		h.logger.Warn("CreateAddress called without any address fields")
+		return &pbv2.CreateAddressResponse{
 			StatusCode: 400,
-			Message:    "address_line_1 is required",
-		}, status.Error(codes.InvalidArgument, "address_line_1 is required")
+			Message:    "at least one address field (house, street, or vtc) is required",
+		}, status.Error(codes.InvalidArgument, "address information is required")
 	}
 
 	// Convert proto to model
-	address := h.protoToModel(req)
+	address := h.converter.V2ProtoToModel(req)
 
 	// Create address
 	err := h.addressService.CreateAddress(ctx, address)
 	if err != nil {
 		h.logger.Error("Failed to create address", zap.String("user_id", req.UserId), zap.Error(err))
-		return &pb.CreateAddressResponse{
+		return &pbv2.CreateAddressResponse{
 			StatusCode: 500,
 			Message:    "failed to create address: " + err.Error(),
 		}, status.Error(codes.Internal, "failed to create address")
 	}
 
-	h.logger.Info("Address created successfully", zap.String("id", address.GetID()))
+	h.logger.Info("Address created successfully with v2 format", zap.String("id", address.GetID()))
 
-	return &pb.CreateAddressResponse{
+	return &pbv2.CreateAddressResponse{
 		StatusCode: 201,
 		Message:    "Address created successfully",
-		Address:    h.modelToProto(address),
+		Address:    h.converter.ModelToV2Proto(address),
 	}, nil
 }
 
 // GetAddress retrieves an address by ID
-func (h *AddressHandler) GetAddress(ctx context.Context, req *pb.GetAddressRequest) (*pb.GetAddressResponse, error) {
-	h.logger.Info("gRPC GetAddress request", zap.String("id", req.Id))
+func (h *AddressHandlerV2) GetAddress(ctx context.Context, req *pbv2.GetAddressRequest) (*pbv2.GetAddressResponse, error) {
+	h.logger.Info("gRPC v2 GetAddress request", zap.String("id", req.Id))
 
 	// Validate request
 	if req.Id == "" {
 		h.logger.Warn("GetAddress called with empty ID")
-		return &pb.GetAddressResponse{
+		return &pbv2.GetAddressResponse{
 			StatusCode: 400,
 			Message:    "address ID is required",
 		}, status.Error(codes.InvalidArgument, "address ID is required")
@@ -110,29 +95,29 @@ func (h *AddressHandler) GetAddress(ctx context.Context, req *pb.GetAddressReque
 	address, err := h.addressService.GetAddressByID(ctx, req.Id)
 	if err != nil {
 		h.logger.Error("Failed to get address", zap.String("id", req.Id), zap.Error(err))
-		return &pb.GetAddressResponse{
+		return &pbv2.GetAddressResponse{
 			StatusCode: 404,
 			Message:    "address not found",
 		}, status.Error(codes.NotFound, "address not found")
 	}
 
-	h.logger.Info("Address retrieved successfully", zap.String("id", req.Id))
+	h.logger.Info("Address retrieved successfully with v2 format", zap.String("id", req.Id))
 
-	return &pb.GetAddressResponse{
+	return &pbv2.GetAddressResponse{
 		StatusCode: 200,
 		Message:    "Address retrieved successfully",
-		Address:    h.modelToProto(address),
+		Address:    h.converter.ModelToV2Proto(address),
 	}, nil
 }
 
 // GetAddressesByUser retrieves all addresses for a user
-func (h *AddressHandler) GetAddressesByUser(ctx context.Context, req *pb.GetAddressesByUserRequest) (*pb.GetAddressesByUserResponse, error) {
-	h.logger.Info("gRPC GetAddressesByUser request", zap.String("user_id", req.UserId))
+func (h *AddressHandlerV2) GetAddressesByUser(ctx context.Context, req *pbv2.GetAddressesByUserRequest) (*pbv2.GetAddressesByUserResponse, error) {
+	h.logger.Info("gRPC v2 GetAddressesByUser request", zap.String("user_id", req.UserId))
 
 	// Validate request
 	if req.UserId == "" {
 		h.logger.Warn("GetAddressesByUser called with empty user_id")
-		return &pb.GetAddressesByUserResponse{
+		return &pbv2.GetAddressesByUserResponse{
 			StatusCode: 400,
 			Message:    "user_id is required",
 		}, status.Error(codes.InvalidArgument, "user_id is required")
@@ -142,23 +127,23 @@ func (h *AddressHandler) GetAddressesByUser(ctx context.Context, req *pb.GetAddr
 	addresses, err := h.addressService.GetAddressesByUserID(ctx, req.UserId)
 	if err != nil {
 		h.logger.Error("Failed to get addresses", zap.String("user_id", req.UserId), zap.Error(err))
-		return &pb.GetAddressesByUserResponse{
+		return &pbv2.GetAddressesByUserResponse{
 			StatusCode: 500,
 			Message:    "failed to retrieve addresses",
 		}, status.Error(codes.Internal, "failed to retrieve addresses")
 	}
 
 	// Convert to proto
-	protoAddresses := make([]*pb.Address, 0, len(addresses))
+	protoAddresses := make([]*pbv2.Address, 0, len(addresses))
 	for _, addr := range addresses {
-		protoAddresses = append(protoAddresses, h.modelToProto(addr))
+		protoAddresses = append(protoAddresses, h.converter.ModelToV2Proto(addr))
 	}
 
-	h.logger.Info("Addresses retrieved successfully",
+	h.logger.Info("Addresses retrieved successfully with v2 format",
 		zap.String("user_id", req.UserId),
 		zap.Int("count", len(protoAddresses)))
 
-	return &pb.GetAddressesByUserResponse{
+	return &pbv2.GetAddressesByUserResponse{
 		StatusCode: 200,
 		Message:    "Addresses retrieved successfully",
 		Addresses:  protoAddresses,
@@ -166,13 +151,13 @@ func (h *AddressHandler) GetAddressesByUser(ctx context.Context, req *pb.GetAddr
 }
 
 // UpdateAddress updates an existing address
-func (h *AddressHandler) UpdateAddress(ctx context.Context, req *pb.UpdateAddressRequest) (*pb.UpdateAddressResponse, error) {
-	h.logger.Info("gRPC UpdateAddress request", zap.String("id", req.Id))
+func (h *AddressHandlerV2) UpdateAddress(ctx context.Context, req *pbv2.UpdateAddressRequest) (*pbv2.UpdateAddressResponse, error) {
+	h.logger.Info("gRPC v2 UpdateAddress request", zap.String("id", req.Id))
 
 	// Validate request
 	if req.Id == "" {
 		h.logger.Warn("UpdateAddress called with empty ID")
-		return &pb.UpdateAddressResponse{
+		return &pbv2.UpdateAddressResponse{
 			StatusCode: 400,
 			Message:    "address ID is required",
 		}, status.Error(codes.InvalidArgument, "address ID is required")
@@ -182,14 +167,14 @@ func (h *AddressHandler) UpdateAddress(ctx context.Context, req *pb.UpdateAddres
 	existingAddr, err := h.addressService.GetAddressByID(ctx, req.Id)
 	if err != nil {
 		h.logger.Error("Failed to get address for update", zap.String("id", req.Id), zap.Error(err))
-		return &pb.UpdateAddressResponse{
+		return &pbv2.UpdateAddressResponse{
 			StatusCode: 404,
 			Message:    "address not found",
 		}, status.Error(codes.NotFound, "address not found")
 	}
 
 	// Update fields from request
-	updatedAddr := h.protoToModel(req)
+	updatedAddr := h.converter.V2UpdateProtoToModel(req)
 
 	// Merge non-empty fields
 	if updatedAddr.House != nil {
@@ -201,55 +186,58 @@ func (h *AddressHandler) UpdateAddress(ctx context.Context, req *pb.UpdateAddres
 	if updatedAddr.Landmark != nil {
 		existingAddr.Landmark = updatedAddr.Landmark
 	}
-	if updatedAddr.VTC != nil {
-		existingAddr.VTC = updatedAddr.VTC
-	}
-	if updatedAddr.State != nil {
-		existingAddr.State = updatedAddr.State
-	}
-	if updatedAddr.Pincode != nil {
-		existingAddr.Pincode = updatedAddr.Pincode
-	}
-	if updatedAddr.Country != nil {
-		existingAddr.Country = updatedAddr.Country
-	}
-	if updatedAddr.District != nil {
-		existingAddr.District = updatedAddr.District
-	}
 	if updatedAddr.PostOffice != nil {
 		existingAddr.PostOffice = updatedAddr.PostOffice
 	}
 	if updatedAddr.Subdistrict != nil {
 		existingAddr.Subdistrict = updatedAddr.Subdistrict
 	}
+	if updatedAddr.District != nil {
+		existingAddr.District = updatedAddr.District
+	}
+	if updatedAddr.VTC != nil {
+		existingAddr.VTC = updatedAddr.VTC
+	}
+	if updatedAddr.State != nil {
+		existingAddr.State = updatedAddr.State
+	}
+	if updatedAddr.Country != nil {
+		existingAddr.Country = updatedAddr.Country
+	}
+	if updatedAddr.Pincode != nil {
+		existingAddr.Pincode = updatedAddr.Pincode
+	}
+
+	// Rebuild full address
+	existingAddr.BuildFullAddress()
 
 	// Update address
 	err = h.addressService.UpdateAddress(ctx, existingAddr)
 	if err != nil {
 		h.logger.Error("Failed to update address", zap.String("id", req.Id), zap.Error(err))
-		return &pb.UpdateAddressResponse{
+		return &pbv2.UpdateAddressResponse{
 			StatusCode: 500,
 			Message:    "failed to update address",
 		}, status.Error(codes.Internal, "failed to update address")
 	}
 
-	h.logger.Info("Address updated successfully", zap.String("id", req.Id))
+	h.logger.Info("Address updated successfully with v2 format", zap.String("id", req.Id))
 
-	return &pb.UpdateAddressResponse{
+	return &pbv2.UpdateAddressResponse{
 		StatusCode: 200,
 		Message:    "Address updated successfully",
-		Address:    h.modelToProto(existingAddr),
+		Address:    h.converter.ModelToV2Proto(existingAddr),
 	}, nil
 }
 
 // DeleteAddress deletes an address
-func (h *AddressHandler) DeleteAddress(ctx context.Context, req *pb.DeleteAddressRequest) (*pb.DeleteAddressResponse, error) {
-	h.logger.Info("gRPC DeleteAddress request", zap.String("id", req.Id), zap.Bool("soft_delete", req.SoftDelete))
+func (h *AddressHandlerV2) DeleteAddress(ctx context.Context, req *pbv2.DeleteAddressRequest) (*pbv2.DeleteAddressResponse, error) {
+	h.logger.Info("gRPC v2 DeleteAddress request", zap.String("id", req.Id), zap.Bool("soft_delete", req.SoftDelete))
 
 	// Validate request
 	if req.Id == "" {
 		h.logger.Warn("DeleteAddress called with empty ID")
-		return &pb.DeleteAddressResponse{
+		return &pbv2.DeleteAddressResponse{
 			StatusCode: 400,
 			Message:    "address ID is required",
 		}, status.Error(codes.InvalidArgument, "address ID is required")
@@ -259,23 +247,23 @@ func (h *AddressHandler) DeleteAddress(ctx context.Context, req *pb.DeleteAddres
 	err := h.addressService.DeleteAddress(ctx, req.Id)
 	if err != nil {
 		h.logger.Error("Failed to delete address", zap.String("id", req.Id), zap.Error(err))
-		return &pb.DeleteAddressResponse{
+		return &pbv2.DeleteAddressResponse{
 			StatusCode: 500,
 			Message:    "failed to delete address",
 		}, status.Error(codes.Internal, "failed to delete address")
 	}
 
-	h.logger.Info("Address deleted successfully", zap.String("id", req.Id))
+	h.logger.Info("Address deleted successfully with v2 format", zap.String("id", req.Id))
 
-	return &pb.DeleteAddressResponse{
+	return &pbv2.DeleteAddressResponse{
 		StatusCode: 200,
 		Message:    "Address deleted successfully",
 	}, nil
 }
 
 // ListAddresses lists addresses with pagination and filters
-func (h *AddressHandler) ListAddresses(ctx context.Context, req *pb.ListAddressesRequest) (*pb.ListAddressesResponse, error) {
-	h.logger.Info("gRPC ListAddresses request",
+func (h *AddressHandlerV2) ListAddresses(ctx context.Context, req *pbv2.ListAddressesRequest) (*pbv2.ListAddressesResponse, error) {
+	h.logger.Info("gRPC v2 ListAddresses request",
 		zap.Int32("page", req.Page),
 		zap.Int32("page_size", req.PageSize),
 		zap.String("user_id", req.UserId))
@@ -283,7 +271,7 @@ func (h *AddressHandler) ListAddresses(ctx context.Context, req *pb.ListAddresse
 	// User ID is required for this implementation
 	if req.UserId == "" {
 		h.logger.Warn("ListAddresses called without user_id")
-		return &pb.ListAddressesResponse{
+		return &pbv2.ListAddressesResponse{
 			StatusCode: 400,
 			Message:    "user_id is required",
 		}, status.Error(codes.InvalidArgument, "user_id is required for listing addresses")
@@ -293,21 +281,21 @@ func (h *AddressHandler) ListAddresses(ctx context.Context, req *pb.ListAddresse
 	addresses, err := h.addressService.GetAddressesByUserID(ctx, req.UserId)
 	if err != nil {
 		h.logger.Error("Failed to list addresses", zap.String("user_id", req.UserId), zap.Error(err))
-		return &pb.ListAddressesResponse{
+		return &pbv2.ListAddressesResponse{
 			StatusCode: 500,
 			Message:    "failed to list addresses",
 		}, status.Error(codes.Internal, "failed to list addresses")
 	}
 
 	// Convert to proto
-	protoAddresses := make([]*pb.Address, 0, len(addresses))
+	protoAddresses := make([]*pbv2.Address, 0, len(addresses))
 	for _, addr := range addresses {
-		protoAddresses = append(protoAddresses, h.modelToProto(addr))
+		protoAddresses = append(protoAddresses, h.converter.ModelToV2Proto(addr))
 	}
 
-	h.logger.Info("Addresses listed successfully", zap.Int("count", len(protoAddresses)))
+	h.logger.Info("Addresses listed successfully with v2 format", zap.Int("count", len(protoAddresses)))
 
-	return &pb.ListAddressesResponse{
+	return &pbv2.ListAddressesResponse{
 		StatusCode: 200,
 		Message:    "Addresses retrieved successfully",
 		Addresses:  protoAddresses,

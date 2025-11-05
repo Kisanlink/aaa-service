@@ -17,7 +17,7 @@ type CreateAddressRequest struct {
 	VTC         *string `json:"vtc,omitempty" validate:"omitempty,max=255"`
 	State       *string `json:"state,omitempty" validate:"omitempty,max=255"`
 	Country     *string `json:"country,omitempty" validate:"omitempty,max=255"`
-	Pincode     *string `json:"pincode,omitempty" validate:"omitempty,len=6"`
+	Pincode     *string `json:"pincode,omitempty" validate:"omitempty,len=6,numeric"`
 	FullAddress *string `json:"full_address,omitempty" validate:"omitempty,max=1000"`
 	UserID      string  `json:"user_id" validate:"required,min=1"`
 }
@@ -71,9 +71,21 @@ func (r *CreateAddressRequest) Validate() error {
 		return requests.NewValidationError("address", "At least one address field is required")
 	}
 
-	// Validate pincode format if provided
-	if r.Pincode != nil && len(*r.Pincode) != 6 {
-		return requests.NewValidationError("pincode", "Pincode must be 6 digits")
+	// Validate pincode format if provided (Indian format: 6 digits, cannot start with 0)
+	if r.Pincode != nil && *r.Pincode != "" {
+		if len(*r.Pincode) != 6 {
+			return requests.NewValidationError("pincode", "Pincode must be exactly 6 digits")
+		}
+		// Check if first digit is not 0
+		if (*r.Pincode)[0] == '0' {
+			return requests.NewValidationError("pincode", "Indian pincode cannot start with 0")
+		}
+		// Check if all characters are digits
+		for _, char := range *r.Pincode {
+			if char < '0' || char > '9' {
+				return requests.NewValidationError("pincode", "Pincode must contain only digits")
+			}
+		}
 	}
 
 	return nil
@@ -82,6 +94,7 @@ func (r *CreateAddressRequest) Validate() error {
 // ToModel converts the request to an Address model
 func (r *CreateAddressRequest) ToModel() *models.Address {
 	address := models.NewAddress()
+	address.UserID = r.UserID
 	address.House = r.House
 	address.Street = r.Street
 	address.Landmark = r.Landmark
@@ -93,6 +106,11 @@ func (r *CreateAddressRequest) ToModel() *models.Address {
 	address.Country = r.Country
 	address.Pincode = r.Pincode
 	address.FullAddress = r.FullAddress
+
+	// Build full address from components if not provided
+	if r.FullAddress == nil {
+		address.BuildFullAddress()
+	}
 
 	return address
 }
