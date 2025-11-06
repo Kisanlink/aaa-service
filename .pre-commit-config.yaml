@@ -48,7 +48,7 @@ repos:
         name: Check for merge conflicts
       - id: check-yaml
         name: Check YAML
-        exclude: cloudformation.yaml  # CloudFormation uses custom YAML tags
+        exclude: ^cloudformation.*\.yaml$  # CloudFormation uses custom YAML tags
       - id: end-of-file-fixer
         name: Fix end of files
       - id: trailing-whitespace

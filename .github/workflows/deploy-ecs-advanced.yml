@@ -1,0 +1,197 @@
+name: Deploy to ECS (Advanced)
+
+on:
+  push:
+    branches:
+      - main
+      - staging
+      - develop
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: aaa-service
+
+jobs:
+  deploy:
+    name: Deploy to ECS
+    runs-on: ubuntu-latest
+
+    environment: ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'prod') || (github.ref == 'refs/heads/staging' && 'staging') || 'dev' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set environment variables
+        id: set-env
+        run: |
+          if [ "${{ github.event.inputs.environment }}" != "" ]; then
+            ENVIRONMENT="${{ github.event.inputs.environment }}"
+          elif [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            ENVIRONMENT="prod"
+          elif [ "${{ github.ref }}" == "refs/heads/staging" ]; then
+            ENVIRONMENT="staging"
+          else
+            ENVIRONMENT="dev"
+          fi
+
+          echo "environment=${ENVIRONMENT}" >> $GITHUB_OUTPUT
+          echo "ENVIRONMENT=${ENVIRONMENT}" >> $GITHUB_ENV
+
+      - name: Build and push Docker image
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+          # Also tag as environment-latest
+          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:${{ steps.set-env.outputs.environment }}-latest
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:${{ steps.set-env.outputs.environment }}-latest
+
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Get AWS account ID
+        id: aws-account
+        run: |
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          echo "account_id=${ACCOUNT_ID}" >> $GITHUB_OUTPUT
+
+      - name: Get infrastructure endpoints
+        id: get-infra
+        run: |
+          STACK_NAME="aaa-service-${{ steps.set-env.outputs.environment }}"
+
+          # Get RDS endpoint
+          DB_HOST=$(aws cloudformation describe-stacks \
+            --stack-name ${STACK_NAME} \
+            --query 'Stacks[0].Outputs[?OutputKey==`RDSEndpoint`].OutputValue' \
+            --output text 2>/dev/null || echo "")
+
+          # Get Redis endpoint
+          REDIS_HOST=$(aws cloudformation describe-stacks \
+            --stack-name ${STACK_NAME} \
+            --query 'Stacks[0].Outputs[?OutputKey==`RedisEndpoint`].OutputValue' \
+            --output text 2>/dev/null || echo "")
+
+          # Fallback to environment secrets if CloudFormation outputs not available
+          if [ -z "$DB_HOST" ]; then
+            DB_HOST="${{ secrets[format('{0}_DB_HOST', steps.set-env.outputs.environment)] }}"
+          fi
+
+          if [ -z "$REDIS_HOST" ]; then
+            REDIS_HOST="${{ secrets[format('{0}_REDIS_HOST', steps.set-env.outputs.environment)] }}"
+          fi
+
+          echo "db_host=${DB_HOST}" >> $GITHUB_OUTPUT
+          echo "redis_host=${REDIS_HOST}" >> $GITHUB_OUTPUT
+
+      - name: Prepare task definition with substitutions
+        id: prepare-task-def
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+
+            // Read task definition template
+            let taskDef = JSON.parse(fs.readFileSync('task-definition.json', 'utf8'));
+
+            // Replace placeholders
+            const replacements = {
+              'ENVIRONMENT': '${{ steps.set-env.outputs.environment }}',
+              'REGION': '${{ env.AWS_REGION }}',
+              'ACCOUNT_ID': '${{ steps.aws-account.outputs.account_id }}',
+              'DB_HOST': '${{ steps.get-infra.outputs.db_host }}',
+              'REDIS_HOST': '${{ steps.get-infra.outputs.redis_host }}'
+            };
+
+            let taskDefStr = JSON.stringify(taskDef);
+
+            // Replace all placeholders
+            for (const [key, value] of Object.entries(replacements)) {
+              const regex = new RegExp(key, 'g');
+              taskDefStr = taskDefStr.replace(regex, value);
+            }
+
+            // Replace image tag
+            taskDefStr = taskDefStr.replace(/:latest/g, ':${{ github.sha }}');
+
+            // Write updated task definition
+            fs.writeFileSync('task-definition-updated.json', taskDefStr);
+
+            return 'task-definition-updated.json';
+
+      - name: Register task definition
+        id: register-task-def
+        run: |
+          TASK_DEF_ARN=$(aws ecs register-task-definition \
+            --cli-input-json file://task-definition-updated.json \
+            --region ${{ env.AWS_REGION }} \
+            --query 'taskDefinition.taskDefinitionArn' \
+            --output text)
+
+          echo "task_definition_arn=${TASK_DEF_ARN}" >> $GITHUB_OUTPUT
+
+      - name: Update ECS service
+        run: |
+          aws ecs update-service \
+            --cluster aaa-service-${{ steps.set-env.outputs.environment }}-cluster \
+            --service aaa-service-${{ steps.set-env.outputs.environment }} \
+            --task-definition ${{ steps.register-task-def.outputs.task_definition_arn }} \
+            --force-new-deployment \
+            --region ${{ env.AWS_REGION }}
+
+      - name: Wait for service stability
+        run: |
+          aws ecs wait services-stable \
+            --cluster aaa-service-${{ steps.set-env.outputs.environment }}-cluster \
+            --services aaa-service-${{ steps.set-env.outputs.environment }} \
+            --region ${{ env.AWS_REGION }}
+
+      - name: Deployment summary
+        run: |
+          echo "✅ Deployment completed successfully!"
+          echo ""
+          echo "📦 Details:"
+          echo "  Environment: ${{ steps.set-env.outputs.environment }}"
+          echo "  Region: ${{ env.AWS_REGION }}"
+          echo "  Image: ${{ steps.build-image.outputs.image }}"
+          echo "  Cluster: aaa-service-${{ steps.set-env.outputs.environment }}-cluster"
+          echo "  Service: aaa-service-${{ steps.set-env.outputs.environment }}"
+          echo "  Task Definition: ${{ steps.register-task-def.outputs.task_definition_arn }}"
+          echo ""
+          echo "🔗 Service URL:"
+          ALB_DNS=$(aws cloudformation describe-stacks \
+            --stack-name aaa-service-${{ steps.set-env.outputs.environment }} \
+            --query 'Stacks[0].Outputs[?OutputKey==`ALBDNS`].OutputValue' \
+            --output text 2>/dev/null || echo "N/A")
+          echo "  http://${ALB_DNS}"
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "❌ Deployment failed!"
+          echo "Check the logs above for details."

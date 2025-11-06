@@ -1,0 +1,119 @@
+name: Deploy to ECS
+
+on:
+  push:
+    branches:
+      - main
+      - staging
+      - develop
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: aaa-service
+
+jobs:
+  deploy:
+    name: Deploy to ECS
+    runs-on: ubuntu-latest
+
+    # Set environment based on branch or manual input
+    environment: ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'prod') || (github.ref == 'refs/heads/staging' && 'staging') || 'dev' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push Docker image
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Get infrastructure outputs
+        id: get-infra
+        env:
+          ENVIRONMENT: ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'prod') || (github.ref == 'refs/heads/staging' && 'staging') || 'dev' }}
+        run: |
+          # Get outputs from CloudFormation stack
+          DB_HOST=$(aws cloudformation describe-stacks \
+            --stack-name aaa-service-${ENVIRONMENT} \
+            --query 'Stacks[0].Outputs[?OutputKey==`RDSEndpoint`].OutputValue' \
+            --output text)
+
+          REDIS_HOST=$(aws cloudformation describe-stacks \
+            --stack-name aaa-service-${ENVIRONMENT} \
+            --query 'Stacks[0].Outputs[?OutputKey==`RedisEndpoint`].OutputValue' \
+            --output text)
+
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+
+          echo "db_host=${DB_HOST}" >> $GITHUB_OUTPUT
+          echo "redis_host=${REDIS_HOST}" >> $GITHUB_OUTPUT
+          echo "account_id=${ACCOUNT_ID}" >> $GITHUB_OUTPUT
+
+      - name: Fill in task definition template
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        env:
+          ENVIRONMENT: ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'prod') || (github.ref == 'refs/heads/staging' && 'staging') || 'dev' }}
+          IMAGE_URI: ${{ steps.build-image.outputs.image }}
+          DB_HOST: ${{ steps.get-infra.outputs.db_host }}
+          REDIS_HOST: ${{ steps.get-infra.outputs.redis_host }}
+          ACCOUNT_ID: ${{ steps.get-infra.outputs.account_id }}
+        with:
+          task-definition: task-definition.json
+          container-name: aaa-service
+          image: ${{ steps.build-image.outputs.image }}
+          environment-variables: |
+            DB_POSTGRES_HOST=${{ env.DB_HOST }}
+            REDIS_HOST=${{ env.REDIS_HOST }}
+            ENVIRONMENT=${{ env.ENVIRONMENT }}
+
+      - name: Deploy to Amazon ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        env:
+          ENVIRONMENT: ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'prod') || (github.ref == 'refs/heads/staging' && 'staging') || 'dev' }}
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: aaa-service-${{ env.ENVIRONMENT }}
+          cluster: aaa-service-${{ env.ENVIRONMENT }}-cluster
+          wait-for-service-stability: true
+
+      - name: Deployment summary
+        env:
+          ENVIRONMENT: ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'prod') || (github.ref == 'refs/heads/staging' && 'staging') || 'dev' }}
+          IMAGE: ${{ steps.build-image.outputs.image }}
+        run: |
+          echo "🚀 Deployment completed successfully!"
+          echo "Environment: ${ENVIRONMENT}"
+          echo "Image: ${IMAGE}"
+          echo "Service: aaa-service-${ENVIRONMENT}"
+          echo "Cluster: aaa-service-${ENVIRONMENT}-cluster"

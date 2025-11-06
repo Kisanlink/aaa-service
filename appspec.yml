@@ -1,0 +1,17 @@
+version: 0.0
+Resources:
+  - TargetService:
+      Type: AWS::ECS::Service
+      Properties:
+        TaskDefinition: <TASK_DEFINITION>
+        LoadBalancerInfo:
+          ContainerName: "aaa-service"
+          ContainerPort: 8080
+        PlatformVersion: "LATEST"
+
+# Optional: Lifecycle event hooks for validation
+# Uncomment and configure Lambda functions for automated testing
+# Hooks:
+#   - BeforeInstall: "PreDeploymentValidation"
+#   - AfterAllowTestTraffic: "HealthCheckValidation"
+#   - AfterAllowTraffic: "PostDeploymentValidation"

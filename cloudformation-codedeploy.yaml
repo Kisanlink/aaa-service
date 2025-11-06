@@ -1,0 +1,186 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'CodeDeploy Blue-Green Deployment Setup for AAA Service'
+
+Parameters:
+  Environment:
+    Type: String
+    Description: Environment name
+    Default: dev
+    AllowedValues:
+      - dev
+      - staging
+      - prod
+
+  ServiceName:
+    Type: String
+    Description: Name of the service
+    Default: aaa-service
+
+  ECSClusterName:
+    Type: String
+    Description: Name of the ECS cluster
+    Default: ''
+
+  ECSServiceName:
+    Type: String
+    Description: Name of the ECS service
+    Default: ''
+
+  ALBListenerArn:
+    Type: String
+    Description: ARN of the ALB listener (port 80 or 443)
+
+  ProductionTargetGroupArn:
+    Type: String
+    Description: ARN of the production (blue) target group
+
+  TestTargetGroupArn:
+    Type: String
+    Description: ARN of the test (green) target group
+
+  TerminationWaitTime:
+    Type: Number
+    Description: Wait time in minutes before terminating original task set
+    Default: 5
+    MinValue: 0
+    MaxValue: 60
+
+  TrafficShiftingType:
+    Type: String
+    Description: Traffic shifting strategy
+    Default: AllAtOnce
+    AllowedValues:
+      - AllAtOnce
+      - Canary10Percent5Minutes
+      - Canary10Percent15Minutes
+      - Linear10PercentEvery1Minutes
+      - Linear10PercentEvery3Minutes
+
+Conditions:
+  UseClusterParam: !Not [!Equals [!Ref ECSClusterName, '']]
+  UseServiceParam: !Not [!Equals [!Ref ECSServiceName, '']]
+
+Resources:
+  # CodeDeploy Application
+  CodeDeployApplication:
+    Type: AWS::CodeDeploy::Application
+    Properties:
+      ApplicationName: !Sub '${ServiceName}-${Environment}'
+      ComputePlatform: ECS
+
+  # CodeDeploy Service Role
+  CodeDeployServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${ServiceName}-${Environment}-codedeploy-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codedeploy.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSCodeDeployRoleForECS
+      Policies:
+        - PolicyName: PassRolePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - iam:PassRole
+                Resource: '*'
+                Condition:
+                  StringEquals:
+                    'iam:PassedToService': ecs-tasks.amazonaws.com
+      Tags:
+        - Key: Name
+          Value: !Sub '${ServiceName}-${Environment}-codedeploy-role'
+        - Key: Environment
+          Value: !Ref Environment
+
+  # CodeDeploy Deployment Group
+  CodeDeployDeploymentGroup:
+    Type: AWS::CodeDeploy::DeploymentGroup
+    Properties:
+      ApplicationName: !Ref CodeDeployApplication
+      DeploymentGroupName: !Sub '${ServiceName}-${Environment}-dg'
+      ServiceRoleArn: !GetAtt CodeDeployServiceRole.Arn
+      DeploymentConfigName: !Sub 'CodeDeployDefault.ECS${TrafficShiftingType}'
+      DeploymentStyle:
+        DeploymentType: BLUE_GREEN
+        DeploymentOption: WITH_TRAFFIC_CONTROL
+      BlueGreenDeploymentConfiguration:
+        TerminateBlueInstancesOnDeploymentSuccess:
+          Action: TERMINATE
+          TerminationWaitTimeInMinutes: !Ref TerminationWaitTime
+        DeploymentReadyOption:
+          ActionOnTimeout: CONTINUE_DEPLOYMENT
+        GreenFleetProvisioningOption:
+          Action: DISCOVER_EXISTING
+      LoadBalancerInfo:
+        TargetGroupPairInfoList:
+          - TargetGroups:
+              - Name: !Select [5, !Split [':', !Ref ProductionTargetGroupArn]]
+              - Name: !Select [5, !Split [':', !Ref TestTargetGroupArn]]
+            ProdTrafficRoute:
+              ListenerArns:
+                - !Ref ALBListenerArn
+      ECSServices:
+        - ClusterName: !If
+            - UseClusterParam
+            - !Ref ECSClusterName
+            - !Sub '${ServiceName}-${Environment}-cluster'
+          ServiceName: !If
+            - UseServiceParam
+            - !Ref ECSServiceName
+            - !Sub '${ServiceName}-${Environment}'
+      AutoRollbackConfiguration:
+        Enabled: true
+        Events:
+          - DEPLOYMENT_FAILURE
+          - DEPLOYMENT_STOP_ON_ALARM
+      Tags:
+        - Key: Name
+          Value: !Sub '${ServiceName}-${Environment}-deployment-group'
+        - Key: Environment
+          Value: !Ref Environment
+
+  # CloudWatch Alarm for Auto-Rollback
+  DeploymentFailureAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${ServiceName}-${Environment}-deployment-failure'
+      AlarmDescription: Triggers rollback on deployment failures
+      MetricName: UnHealthyHostCount
+      Namespace: AWS/ApplicationELB
+      Statistic: Average
+      Period: 60
+      EvaluationPeriods: 2
+      Threshold: 1
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: TargetGroup
+          Value: !Select [5, !Split [':', !Ref TestTargetGroupArn]]
+        - Name: LoadBalancer
+          Value: !Select [1, !Split ['loadbalancer/', !Ref ALBListenerArn]]
+
+Outputs:
+  CodeDeployApplicationName:
+    Description: CodeDeploy Application Name
+    Value: !Ref CodeDeployApplication
+    Export:
+      Name: !Sub '${ServiceName}-${Environment}-codedeploy-app'
+
+  CodeDeployDeploymentGroupName:
+    Description: CodeDeploy Deployment Group Name
+    Value: !Ref CodeDeployDeploymentGroup
+    Export:
+      Name: !Sub '${ServiceName}-${Environment}-codedeploy-dg'
+
+  CodeDeployServiceRoleArn:
+    Description: CodeDeploy Service Role ARN
+    Value: !GetAtt CodeDeployServiceRole.Arn
+    Export:
+      Name: !Sub '${ServiceName}-${Environment}-codedeploy-role-arn'
