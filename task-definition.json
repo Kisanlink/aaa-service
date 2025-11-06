@@ -1,0 +1,144 @@
+{
+  "family": "aaa-service-ENVIRONMENT",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::ACCOUNT_ID:role/aaa-service-ENVIRONMENT-task-execution-role",
+  "taskRoleArn": "arn:aws:iam::ACCOUNT_ID:role/aaa-service-ENVIRONMENT-task-role",
+  "containerDefinitions": [
+    {
+      "name": "aaa-service",
+      "image": "ACCOUNT_ID.dkr.ecr.REGION.amazonaws.com/aaa-service:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 8080,
+          "protocol": "tcp",
+          "name": "http"
+        },
+        {
+          "containerPort": 50051,
+          "protocol": "tcp",
+          "name": "grpc"
+        }
+      ],
+      "environment": [
+        {
+          "name": "PORT",
+          "value": "8080"
+        },
+        {
+          "name": "GRPC_PORT",
+          "value": "50051"
+        },
+        {
+          "name": "GIN_MODE",
+          "value": "release"
+        },
+        {
+          "name": "LOG_LEVEL",
+          "value": "info"
+        },
+        {
+          "name": "ENVIRONMENT",
+          "value": "ENVIRONMENT"
+        },
+        {
+          "name": "AAA_AUTO_MIGRATE",
+          "value": "true"
+        },
+        {
+          "name": "AAA_RUN_SEED",
+          "value": "false"
+        },
+        {
+          "name": "AAA_ENABLE_DOCS",
+          "value": "false"
+        },
+        {
+          "name": "DB_PRIMARY_BACKEND",
+          "value": "gorm"
+        },
+        {
+          "name": "DB_POSTGRES_HOST",
+          "value": "DB_HOST"
+        },
+        {
+          "name": "DB_POSTGRES_PORT",
+          "value": "5432"
+        },
+        {
+          "name": "DB_POSTGRES_DBNAME",
+          "value": "aaa_service"
+        },
+        {
+          "name": "REDIS_HOST",
+          "value": "REDIS_HOST"
+        },
+        {
+          "name": "REDIS_PORT",
+          "value": "6379"
+        },
+        {
+          "name": "REDIS_TLS_ENABLED",
+          "value": "true"
+        },
+        {
+          "name": "AWS_REGION",
+          "value": "REGION"
+        }
+      ],
+      "secrets": [
+        {
+          "name": "DB_POSTGRES_USER",
+          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:aaa-service-ENVIRONMENT-db-credentials:username::"
+        },
+        {
+          "name": "DB_POSTGRES_PASSWORD",
+          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:aaa-service-ENVIRONMENT-db-credentials:password::"
+        },
+        {
+          "name": "AAA_JWT_SECRET",
+          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:aaa-service-ENVIRONMENT-jwt-secret"
+        },
+        {
+          "name": "REDIS_PASSWORD",
+          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:aaa-service-ENVIRONMENT-jwt-secret"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/aaa-service-ENVIRONMENT",
+          "awslogs-region": "REGION",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "healthCheck": {
+        "command": [
+          "CMD-SHELL",
+          "curl -f http://localhost:8080/health || exit 1"
+        ],
+        "interval": 30,
+        "timeout": 10,
+        "retries": 3,
+        "startPeriod": 60
+      }
+    }
+  ],
+  "tags": [
+    {
+      "key": "Service",
+      "value": "aaa-service"
+    },
+    {
+      "key": "Environment",
+      "value": "ENVIRONMENT"
+    },
+    {
+      "key": "ManagedBy",
+      "value": "ECS"
+    }
+  ]
+}

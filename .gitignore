@@ -160,3 +160,6 @@ temp/
 # Binary files
 server
 bin/
+
+# Environment-specific task definitions
+task-definition-*.json
