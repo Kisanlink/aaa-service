@@ -698,6 +698,7 @@ Resources:
 
   GRPCTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Condition: HasCertificate
     Properties:
       Name: !Sub '${ServiceName}-${Environment}-grpc-tg'
       Port: !Ref GRPCPort
@@ -985,13 +986,17 @@ Resources:
           SecurityGroups:
             - !Ref ECSSecurityGroup
           AssignPublicIp: DISABLED
-      LoadBalancers:
-        - ContainerName: !Ref ServiceName
-          ContainerPort: !Ref ContainerPort
-          TargetGroupArn: !Ref HTTPTargetGroup
-        - ContainerName: !Ref ServiceName
-          ContainerPort: !Ref GRPCPort
-          TargetGroupArn: !Ref GRPCTargetGroup
+      LoadBalancers: !If
+        - HasCertificate
+        - - ContainerName: !Ref ServiceName
+            ContainerPort: !Ref ContainerPort
+            TargetGroupArn: !Ref HTTPTargetGroup
+          - ContainerName: !Ref ServiceName
+            ContainerPort: !Ref GRPCPort
+            TargetGroupArn: !Ref GRPCTargetGroup
+        - - ContainerName: !Ref ServiceName
+            ContainerPort: !Ref ContainerPort
+            TargetGroupArn: !Ref HTTPTargetGroup
       HealthCheckGracePeriodSeconds: 60
       DeploymentController:
         Type: ECS
