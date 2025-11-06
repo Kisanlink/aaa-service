@@ -73,6 +73,10 @@
           "value": "aaa_service"
         },
         {
+          "name": "DB_POSTGRES_SSLMODE",
+          "value": "require"
+        },
+        {
           "name": "REDIS_HOST",
           "value": "REDIS_HOST"
         },

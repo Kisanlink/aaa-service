@@ -940,6 +940,8 @@ Resources:
               Value: !GetAtt Database.Endpoint.Port
             - Name: DB_POSTGRES_DBNAME
               Value: !Ref DBName
+            - Name: DB_POSTGRES_SSLMODE
+              Value: 'require'
             - Name: REDIS_HOST
               Value: !GetAtt RedisReplicationGroup.PrimaryEndPoint.Address
             - Name: REDIS_PORT
