@@ -1,57 +1,71 @@
-# Multi-stage build for AAA Service v2
+# Multi-stage build for AAA Service
+# Stage 1: Builder
 FROM golang:1.24-alpine AS builder
+
+# Install build dependencies
+RUN apk add --no-cache git ca-certificates tzdata make gcc musl-dev
 
 # Set working directory
 WORKDIR /app
 
-# Install git and ca-certificates (needed for go mod download)
-RUN apk add --no-cache git ca-certificates tzdata
-
-# Copy go mod files
+# Copy go mod files first for better caching
 COPY go.mod go.sum ./
 
-# Download dependencies
-RUN go mod download
+# Download dependencies (cached if go.mod/go.sum unchanged)
+RUN go mod download && go mod verify
 
 # Copy source code
 COPY . .
 
-# Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o aaa-service .
+# Build the application with optimizations
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+    -ldflags='-w -s -extldflags "-static"' \
+    -a -installsuffix cgo \
+    -o aaa-service \
+    ./cmd/server/main.go
 
-# Final stage
+# Verify binary was created
+RUN test -f /app/aaa-service
+
+# Stage 2: Runtime
 FROM alpine:latest
 
-# Install ca-certificates for HTTPS requests
-RUN apk --no-cache add ca-certificates tzdata
+# Install runtime dependencies and security updates
+RUN apk --no-cache add ca-certificates tzdata curl && \
+    apk upgrade --no-cache
 
-# Create non-root user
+# Create non-root user and group
 RUN addgroup -g 1001 -S aaa && \
     adduser -u 1001 -S aaa -G aaa
 
 # Set working directory
 WORKDIR /app
 
-# Copy binary from builder stage
-COPY --from=builder /app/aaa-service .
+# Copy binary from builder
+COPY --from=builder --chown=aaa:aaa /app/aaa-service .
 
-# Copy any additional files needed (configs, migrations, etc.)
-COPY --from=builder /app/migrations ./migrations
-COPY --from=builder /app/configs ./configs
-COPY --from=builder /app/docs ./docs
+# Copy additional required files
+COPY --from=builder --chown=aaa:aaa /app/migrations ./migrations
+COPY --from=builder --chown=aaa:aaa /app/docs ./docs
 
-# Change ownership to non-root user
-RUN chown -R aaa:aaa /app
+# Ensure binary is executable
+RUN chmod +x ./aaa-service
 
 # Switch to non-root user
 USER aaa
 
-# Expose port
-EXPOSE 8080
+# Expose HTTP and gRPC ports
+EXPOSE 8080 50051
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1
+# Health check for HTTP endpoint
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost:8080/health || exit 1
+
+# Set environment variables with defaults
+ENV GIN_MODE=release \
+    LOG_LEVEL=info \
+    PORT=8080 \
+    GRPC_PORT=50051
 
 # Run the application
-CMD ["./aaa-service"]
+ENTRYPOINT ["./aaa-service"]
