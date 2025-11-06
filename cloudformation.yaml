@@ -23,6 +23,7 @@ Parameters:
     Default: dev
     AllowedValues:
       - dev
+      - beta
       - staging
       - prod
     Description: Environment name for the deployment
