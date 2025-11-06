@@ -104,7 +104,7 @@
         },
         {
           "name": "REDIS_PASSWORD",
-          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:aaa-service-ENVIRONMENT-jwt-secret"
+          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:aaa-service-ENVIRONMENT-redis-auth-token"
         }
       ],
       "logConfiguration": {

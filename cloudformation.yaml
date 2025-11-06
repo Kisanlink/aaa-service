@@ -512,6 +512,20 @@ Resources:
         - Key: Service
           Value: !Ref ServiceName
 
+  RedisSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub '${ServiceName}-${Environment}-redis-auth-token'
+      Description: Redis authentication token for AAA service
+      GenerateSecretString:
+        PasswordLength: 32
+        ExcludeCharacters: '"@/\'
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: !Ref ServiceName
+
   # ==========================================
   # RDS POSTGRESQL DATABASE
   # ==========================================
@@ -628,7 +642,7 @@ Resources:
       AtRestEncryptionEnabled: true
       TransitEncryptionEnabled: true
       TransitEncryptionMode: required
-      AuthToken: !Sub '{{resolve:secretsmanager:${JWTSecret}:SecretString}}'
+      AuthToken: !Sub '{{resolve:secretsmanager:${RedisSecret}}}'
       SnapshotRetentionLimit: !If [IsProduction, 7, 1]
       SnapshotWindow: '03:00-05:00'
       PreferredMaintenanceWindow: 'sun:05:00-sun:07:00'
@@ -1176,6 +1190,12 @@ Outputs:
     Value: !Ref JWTSecret
     Export:
       Name: !Sub '${ServiceName}-${Environment}-jwt-secret-arn'
+
+  RedisSecretArn:
+    Description: ARN of the Redis auth token secret
+    Value: !Ref RedisSecret
+    Export:
+      Name: !Sub '${ServiceName}-${Environment}-redis-secret-arn'
 
   LogGroupName:
     Description: CloudWatch log group name for ECS tasks
