@@ -183,6 +183,28 @@ aaa-service/
 └── docs/              # Documentation and schemas
 ```
 
+## Documentation
+
+### Deployment & Operations
+
+- **[Architecture](docs/deployment/ARCHITECTURE.md)** - System architecture and design principles
+- **[Deployment Guide](docs/deployment/DEPLOYMENT.md)** - AWS infrastructure deployment with CloudFormation
+- **[CI/CD Setup](docs/deployment/CODEDEPLOY_SETUP.md)** - Blue-green deployment configuration
+- **[CI/CD Overview](docs/deployment/CICD_README.md)** - Pipeline architecture and workflow
+- **[Task Definition Guide](docs/deployment/TASK_DEFINITION_README.md)** - Manual ECS deployment reference
+- **[RBAC Matrix](docs/deployment/AAA_RBAC_HIERARCHY_MATRIX.md)** - Role hierarchy documentation
+
+### API Documentation
+
+- **[API Examples](docs/API_EXAMPLES.md)** - Complete API usage examples
+- **[Error Responses](docs/ERROR_RESPONSES.md)** - Error handling documentation
+- **[JWT Context](docs/JWT_ENHANCED_CONTEXT.md)** - JWT token structure and claims
+- **[Service Authentication](docs/SERVICE_AUTHENTICATION.md)** - Service-to-service auth
+
+### Implementation History
+
+- [Implementation Summaries](docs/implementation/) - Historical implementation notes and migration guides
+
 ## Contributing
 
 1. Fork the repository
