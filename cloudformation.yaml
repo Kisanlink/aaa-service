@@ -635,7 +635,9 @@ Resources:
       LogDeliveryConfigurations:
         - DestinationType: cloudwatch-logs
           LogFormat: json
-          LogGroup: !Ref RedisLogGroup
+          DestinationDetails:
+            CloudWatchLogsDetails:
+              LogGroup: !Ref RedisLogGroup
           LogType: slow-log
       Tags:
         - Key: Name
@@ -741,18 +743,25 @@ Resources:
         - CertificateArn: !Ref CertificateArn
       SslPolicy: ELBSecurityPolicy-TLS-1-2-2017-01
 
-  GRPCListener:
-    Type: AWS::ElasticLoadBalancingV2::Listener
+  # gRPC routing on HTTPS listener
+  # Note: gRPC requires HTTP/2, which requires HTTPS. We route gRPC traffic
+  # based on content-type header to the gRPC target group.
+  # External gRPC clients connect to: <ALB-DNS>:443
+  GRPCListenerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Condition: HasCertificate
     Properties:
-      DefaultActions:
+      ListenerArn: !Ref HTTPSListener
+      Priority: 10
+      Conditions:
+        - Field: http-header
+          HttpHeaderConfig:
+            HttpHeaderName: content-type
+            Values:
+              - application/grpc*
+      Actions:
         - Type: forward
           TargetGroupArn: !Ref GRPCTargetGroup
-      LoadBalancerArn: !Ref ApplicationLoadBalancer
-      Port: !Ref GRPCPort
-      Protocol: !If [HasCertificate, HTTPS, HTTP]
-      Certificates:
-        - !If [HasCertificate, {CertificateArn: !Ref CertificateArn}, !Ref 'AWS::NoValue']
-      SslPolicy: !If [HasCertificate, ELBSecurityPolicy-TLS-1-2-2017-01, !Ref 'AWS::NoValue']
 
   # ==========================================
   # ECS CLUSTER AND SERVICE
@@ -962,7 +971,6 @@ Resources:
     Type: AWS::ECS::Service
     DependsOn:
       - HTTPListener
-      - GRPCListener
     Properties:
       ServiceName: !Sub '${ServiceName}-${Environment}'
       Cluster: !Ref ECSCluster
@@ -1214,7 +1222,8 @@ Outputs:
       Name: !Sub '${ServiceName}-${Environment}-https-endpoint'
 
   GRPCEndpoint:
-    Description: gRPC endpoint
-    Value: !Sub '${ApplicationLoadBalancer.DNSName}:${GRPCPort}'
+    Description: gRPC endpoint (uses HTTPS port 443, requires certificate)
+    Condition: HasCertificate
+    Value: !Sub '${ApplicationLoadBalancer.DNSName}:443'
     Export:
       Name: !Sub '${ServiceName}-${Environment}-grpc-endpoint'
