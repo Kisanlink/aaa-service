@@ -835,6 +835,7 @@ Resources:
                 Resource:
                   - !Ref DBSecret
                   - !Ref JWTSecret
+                  - !Ref RedisSecret
               - Effect: Allow
                 Action:
                   - logs:CreateLogStream
