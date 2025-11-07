@@ -476,6 +476,12 @@ Resources:
           FromPort: 6379
           ToPort: 6379
           SourceSecurityGroupId: !Ref ECSSecurityGroup
+          Description: Redis primary port
+        - IpProtocol: tcp
+          FromPort: 6380
+          ToPort: 6380
+          SourceSecurityGroupId: !Ref ECSSecurityGroup
+          Description: Redis replica port
       Tags:
         - Key: Name
           Value: !Sub '${ServiceName}-${Environment}-redis-sg'
@@ -986,11 +992,11 @@ Resources:
           HealthCheck:
             Command:
               - CMD-SHELL
-              - curl -f http://localhost:${ContainerPort}/health || exit 1
+              - curl -s http://localhost:${ContainerPort}/health > /dev/null || exit 1
             Interval: 30
             Timeout: 10
             Retries: 3
-            StartPeriod: 60
+            StartPeriod: 120
       Tags:
         - Key: Name
           Value: !Sub '${ServiceName}-${Environment}-task-definition'
