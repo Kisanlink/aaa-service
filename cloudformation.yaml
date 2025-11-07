@@ -952,6 +952,16 @@ Resources:
               Value: !GetAtt RedisReplicationGroup.PrimaryEndPoint.Port
             - Name: REDIS_TLS_ENABLED
               Value: 'true'
+            - Name: REDIS_DIAL_TIMEOUT
+              Value: '5'
+            - Name: REDIS_READ_TIMEOUT
+              Value: '3'
+            - Name: REDIS_WRITE_TIMEOUT
+              Value: '3'
+            - Name: REDIS_POOL_SIZE
+              Value: '10'
+            - Name: REDIS_MIN_IDLE_CONNS
+              Value: '2'
             - Name: AWS_REGION
               Value: !Ref AWS::Region
             - Name: ENABLE_DYNAMODB
