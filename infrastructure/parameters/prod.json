@@ -1,0 +1,90 @@
+[
+  {
+    "ParameterKey": "Environment",
+    "ParameterValue": "prod"
+  },
+  {
+    "ParameterKey": "ServiceName",
+    "ParameterValue": "aaa-service"
+  },
+  {
+    "ParameterKey": "EnableMultiAZ",
+    "ParameterValue": "true"
+  },
+  {
+    "ParameterKey": "TaskCPU",
+    "ParameterValue": "1024"
+  },
+  {
+    "ParameterKey": "TaskMemory",
+    "ParameterValue": "2048"
+  },
+  {
+    "ParameterKey": "DesiredTaskCount",
+    "ParameterValue": "2"
+  },
+  {
+    "ParameterKey": "MinTaskCount",
+    "ParameterValue": "2"
+  },
+  {
+    "ParameterKey": "MaxTaskCount",
+    "ParameterValue": "10"
+  },
+  {
+    "ParameterKey": "DBInstanceClass",
+    "ParameterValue": "db.t3.small"
+  },
+  {
+    "ParameterKey": "DBAllocatedStorage",
+    "ParameterValue": "50"
+  },
+  {
+    "ParameterKey": "DBBackupRetentionPeriod",
+    "ParameterValue": "14"
+  },
+  {
+    "ParameterKey": "CacheNodeType",
+    "ParameterValue": "cache.t3.small"
+  },
+  {
+    "ParameterKey": "ContainerPort",
+    "ParameterValue": "8080"
+  },
+  {
+    "ParameterKey": "GRPCPort",
+    "ParameterValue": "50051"
+  },
+  {
+    "ParameterKey": "EnableAutoMigrate",
+    "ParameterValue": "true"
+  },
+  {
+    "ParameterKey": "EnableSeed",
+    "ParameterValue": "false"
+  },
+  {
+    "ParameterKey": "EnableDocs",
+    "ParameterValue": "false"
+  },
+  {
+    "ParameterKey": "LogLevel",
+    "ParameterValue": "info"
+  },
+  {
+    "ParameterKey": "EnableDynamoDB",
+    "ParameterValue": "false"
+  },
+  {
+    "ParameterKey": "EnableS3",
+    "ParameterValue": "false"
+  },
+  {
+    "ParameterKey": "CertificateArn",
+    "ParameterValue": ""
+  },
+  {
+    "ParameterKey": "ContainerImage",
+    "ParameterValue": ""
+  }
+]
