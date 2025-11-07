@@ -97,6 +97,23 @@ func runSeedScripts(ctx context.Context, dbManager *db.DatabaseManager, logger *
 		if err := migrations.SeedComprehensiveRBACWithDBManager(ctx, dbManager, logger); err != nil {
 			return fmt.Errorf("failed to seed comprehensive RBAC: %w", err)
 		}
+
+		// Add performance indexes after all migrations complete
+		logger.Info("🔧 Creating performance indexes for optimal query performance...")
+		pm := dbManager.GetPostgresManager()
+		if pm != nil {
+			gormDB, err := pm.GetDB(ctx, false)
+			if err != nil {
+				logger.Warn("Failed to get GORM DB for index creation", zap.Error(err))
+			} else {
+				if err := migrations.AddPerformanceIndexes(ctx, gormDB, logger); err != nil {
+					logger.Warn("Failed to create some performance indexes", zap.Error(err))
+					// Don't fail startup - indexes can be added manually
+				} else {
+					logger.Info("✅ Performance indexes created successfully")
+				}
+			}
+		}
 	}
 
 	// 2. Seed default roles
