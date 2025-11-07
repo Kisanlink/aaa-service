@@ -699,7 +699,7 @@ Resources:
       HealthyThresholdCount: 2
       UnhealthyThresholdCount: 3
       Matcher:
-        HttpCode: '200'
+        HttpCode: '200,401'
       TargetGroupAttributes:
         - Key: deregistration_delay.timeout_seconds
           Value: '30'
