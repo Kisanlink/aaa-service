@@ -517,11 +517,12 @@ Resources:
     Type: AWS::SecretsManager::Secret
     Properties:
       Name: !Sub '${ServiceName}-${Environment}-redis-auth-token'
-      Description: Redis authentication token for AAA service
+      Description: Redis authentication token for AAA service (ElastiCache compatible - only alphanumeric and -!&#$^<>)
       GenerateSecretString:
         PasswordLength: 32
-        ExcludeCharacters: '"@/\\ '
-        RequireEachIncludedType: true
+        ExcludePunctuation: false
+        ExcludeCharacters: '"@/\\ ~`*()_+={}[]|:;,.?%'
+        RequireEachIncludedType: false
       Tags:
         - Key: Environment
           Value: !Ref Environment
