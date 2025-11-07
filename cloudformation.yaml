@@ -520,7 +520,8 @@ Resources:
       Description: Redis authentication token for AAA service
       GenerateSecretString:
         PasswordLength: 32
-        ExcludeCharacters: '"@/\'
+        ExcludeCharacters: '"@/\\ '
+        RequireEachIncludedType: true
       Tags:
         - Key: Environment
           Value: !Ref Environment
@@ -643,7 +644,7 @@ Resources:
       AtRestEncryptionEnabled: true
       TransitEncryptionEnabled: true
       TransitEncryptionMode: required
-      AuthToken: !Sub '{{resolve:secretsmanager:${RedisSecret}:SecretString}}'
+      AuthToken: !Sub '{{resolve:secretsmanager:${RedisSecret}}}'
       SnapshotRetentionLimit: !If [IsProduction, 7, 1]
       SnapshotWindow: '03:00-05:00'
       PreferredMaintenanceWindow: 'sun:05:00-sun:07:00'
