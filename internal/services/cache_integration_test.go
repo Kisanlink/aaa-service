@@ -499,7 +499,18 @@ func TestCacheWarmingService_Integration(t *testing.T) {
 	// Setup real cache service (requires Redis)
 	// Create a mock logger that implements interfaces.Logger
 	mockLogger := &MockLogger{}
-	realCache := NewCacheService("localhost:6379", "", 0, mockLogger)
+	config := RedisConfig{
+		Addr:         "localhost:6379",
+		Password:     "",
+		DB:           0,
+		TLSEnabled:   false,
+		DialTimeout:  5 * time.Second,
+		ReadTimeout:  3 * time.Second,
+		WriteTimeout: 3 * time.Second,
+		PoolSize:     10,
+		MinIdleConns: 2,
+	}
+	realCache := NewCacheService(config, mockLogger)
 
 	// Create mock services
 	mockOrgService := &MockOrganizationService{}

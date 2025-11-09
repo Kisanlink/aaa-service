@@ -1,6 +1,7 @@
 package services
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -17,15 +18,49 @@ type CacheService struct {
 	logger interfaces.Logger
 }
 
-// NewCacheService creates a new CacheService instance
-func NewCacheService(redisAddr, redisPassword string, redisDB int, logger interfaces.Logger) interfaces.CacheService {
-	rdb := redis.NewClient(&redis.Options{
-		Addr:     redisAddr,
-		Password: redisPassword,
-		DB:       redisDB,
-	})
+// RedisConfig holds Redis connection configuration
+type RedisConfig struct {
+	Addr         string
+	Password     string
+	DB           int
+	TLSEnabled   bool
+	DialTimeout  time.Duration
+	ReadTimeout  time.Duration
+	WriteTimeout time.Duration
+	PoolSize     int
+	MinIdleConns int
+}
 
-	logger.Info("Redis cache service initialized", zap.String("redis_addr", redisAddr))
+// NewCacheService creates a new CacheService instance
+func NewCacheService(config RedisConfig, logger interfaces.Logger) interfaces.CacheService {
+	opts := &redis.Options{
+		Addr:         config.Addr,
+		Password:     config.Password,
+		DB:           config.DB,
+		DialTimeout:  config.DialTimeout,
+		ReadTimeout:  config.ReadTimeout,
+		WriteTimeout: config.WriteTimeout,
+		PoolSize:     config.PoolSize,
+		MinIdleConns: config.MinIdleConns,
+	}
+
+	// Configure TLS if enabled (required for AWS ElastiCache with encryption in transit)
+	if config.TLSEnabled {
+		opts.TLSConfig = &tls.Config{
+			MinVersion: tls.VersionTLS12,
+		}
+		logger.Info("Redis TLS enabled", zap.String("redis_addr", config.Addr))
+	}
+
+	rdb := redis.NewClient(opts)
+
+	logger.Info("Redis cache service initialized",
+		zap.String("redis_addr", config.Addr),
+		zap.Bool("tls_enabled", config.TLSEnabled),
+		zap.Duration("dial_timeout", config.DialTimeout),
+		zap.Duration("read_timeout", config.ReadTimeout),
+		zap.Duration("write_timeout", config.WriteTimeout),
+		zap.Int("pool_size", config.PoolSize))
 
 	return &CacheService{
 		client: rdb,

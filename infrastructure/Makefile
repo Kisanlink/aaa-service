@@ -53,6 +53,7 @@ deploy-beta: validate
 		--capabilities CAPABILITY_NAMED_IAM \
 		--region $(AWS_REGION) \
 		--no-fail-on-empty-changeset
+		--on-failure DO_NOTHING
 	@echo "✅ Beta deployment complete"
 	@$(MAKE) status-beta
 

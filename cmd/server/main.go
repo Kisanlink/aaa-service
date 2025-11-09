@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-
+	"strconv"
 	"sync"
 	"syscall"
 	"time"
@@ -333,11 +333,36 @@ func initializeServer(
 		redisHost := getEnv("REDIS_HOST", "localhost")
 		redisPort := getEnv("REDIS_PORT", "6379")
 		redisPassword := getEnv("REDIS_PASSWORD", "")
+		redisTLSEnabled := getEnv("REDIS_TLS_ENABLED", "false") == "true"
 		redisDB := 0 // Could be made configurable via REDIS_DB env var
+
+		// Parse timeout values from environment (with sensible defaults)
+		dialTimeout := parseDurationEnv("REDIS_DIAL_TIMEOUT", 5*time.Second)
+		readTimeout := parseDurationEnv("REDIS_READ_TIMEOUT", 3*time.Second)
+		writeTimeout := parseDurationEnv("REDIS_WRITE_TIMEOUT", 3*time.Second)
+		poolSize := parseIntEnv("REDIS_POOL_SIZE", 10)
+		minIdleConns := parseIntEnv("REDIS_MIN_IDLE_CONNS", 2)
+
+		config := services.RedisConfig{
+			Addr:         redisHost + ":" + redisPort,
+			Password:     redisPassword,
+			DB:           redisDB,
+			TLSEnabled:   redisTLSEnabled,
+			DialTimeout:  dialTimeout,
+			ReadTimeout:  readTimeout,
+			WriteTimeout: writeTimeout,
+			PoolSize:     poolSize,
+			MinIdleConns: minIdleConns,
+		}
+
 		logger.Info("Initializing Redis cache service",
 			zap.String("host", redisHost),
-			zap.String("port", redisPort))
-		cacheService = services.NewCacheService(redisHost+":"+redisPort, redisPassword, redisDB, loggerAdapter)
+			zap.String("port", redisPort),
+			zap.Bool("tls_enabled", redisTLSEnabled),
+			zap.Duration("dial_timeout", dialTimeout),
+			zap.Duration("read_timeout", readTimeout),
+			zap.Duration("write_timeout", writeTimeout))
+		cacheService = services.NewCacheService(config, loggerAdapter)
 	}
 
 	// Initialize maintenance service
@@ -845,6 +870,26 @@ func (s *HTTPServer) Stop(ctx context.Context) {
 func getEnv(key, defaultValue string) string {
 	if value := os.Getenv(key); value != "" {
 		return value
+	}
+	return defaultValue
+}
+
+// parseDurationEnv parses a duration from environment variable (in seconds) with fallback
+func parseDurationEnv(key string, defaultValue time.Duration) time.Duration {
+	if value := os.Getenv(key); value != "" {
+		if seconds, err := strconv.Atoi(value); err == nil {
+			return time.Duration(seconds) * time.Second
+		}
+	}
+	return defaultValue
+}
+
+// parseIntEnv parses an integer from environment variable with fallback
+func parseIntEnv(key string, defaultValue int) int {
+	if value := os.Getenv(key); value != "" {
+		if intVal, err := strconv.Atoi(value); err == nil {
+			return intVal
+		}
 	}
 	return defaultValue
 }
