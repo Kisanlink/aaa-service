@@ -989,14 +989,6 @@ Resources:
               awslogs-group: !Ref ECSLogGroup
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: ecs
-          HealthCheck:
-            Command:
-              - CMD-SHELL
-              - curl -s http://localhost:${ContainerPort}/health > /dev/null || exit 1
-            Interval: 30
-            Timeout: 10
-            Retries: 3
-            StartPeriod: 120
       Tags:
         - Key: Name
           Value: !Sub '${ServiceName}-${Environment}-task-definition'
