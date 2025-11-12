@@ -6,6 +6,7 @@ import (
 
 	"github.com/Kisanlink/kisanlink-db/pkg/db"
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 )
 
 // SeedOrchestrator coordinates the seeding process with transaction management
@@ -40,6 +41,18 @@ func NewSeedOrchestrator(
 	}
 }
 
+// getDB is a helper method to get the GORM database connection from the database manager
+func (so *SeedOrchestrator) getDB(ctx context.Context, readOnly bool) (*gorm.DB, error) {
+	// Try to get the database from the database manager
+	if postgresMgr, ok := so.dbManager.(interface {
+		GetDB(context.Context, bool) (*gorm.DB, error)
+	}); ok {
+		return postgresMgr.GetDB(ctx, readOnly)
+	}
+
+	return nil, fmt.Errorf("database manager does not support GetDB method")
+}
+
 // SeedResult contains the results of the seeding operation
 type SeedResult struct {
 	ActionsCreated     int32
@@ -55,6 +68,16 @@ type SeedResult struct {
 // serviceID parameter is optional - if empty, uses default provider (farmers-module)
 func (so *SeedOrchestrator) SeedRolesAndPermissions(ctx context.Context, serviceID string, force bool) (*SeedResult, error) {
 	result := &SeedResult{}
+
+	// Validate service_id (defense in depth - should be validated at handler level too)
+	if err := ValidateServiceID(serviceID); err != nil {
+		result.Success = false
+		result.ErrorMessage = fmt.Sprintf("invalid service_id: %v", err)
+		so.logger.Error("Invalid service_id in seed operation",
+			zap.String("service_id", serviceID),
+			zap.Error(err))
+		return result, fmt.Errorf("invalid service_id: %w", err)
+	}
 
 	// Get the appropriate provider
 	var provider SeedDataProvider
@@ -86,15 +109,61 @@ func (so *SeedOrchestrator) SeedRolesAndPermissions(ctx context.Context, service
 		return result, fmt.Errorf("provider validation failed: %w", err)
 	}
 
+	// Wrap entire seeding operation in a transaction for atomicity
+	// If any step fails, all changes are rolled back
+	so.logger.Info("Starting transactional seed operation", zap.String("service", provider.GetServiceName()))
+
+	// Get GORM DB instance for transaction support
+	gormDB, err := so.getDB(ctx, false)
+	if err != nil {
+		result.Success = false
+		result.ErrorMessage = fmt.Sprintf("failed to get database connection: %v", err)
+		so.logger.Error("Failed to get database connection", zap.Error(err))
+		return result, fmt.Errorf("failed to get database connection: %w", err)
+	}
+
+	// Execute seed in transaction
+	err = gormDB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// Create context with transaction for downstream operations
+		txCtx := context.WithValue(ctx, "tx", tx)
+		return so.executeSeeding(txCtx, provider, result, force)
+	})
+
+	if err != nil {
+		result.Success = false
+		result.ErrorMessage = fmt.Sprintf("seed operation failed (rolled back): %v", err)
+		so.logger.Error("Seed operation failed and rolled back",
+			zap.String("service", provider.GetServiceName()),
+			zap.Error(err))
+		return result, fmt.Errorf("seed operation failed: %w", err)
+	}
+
+	result.Success = true
+	so.logger.Info("Successfully seeded roles and permissions (committed)",
+		zap.String("service", provider.GetServiceName()),
+		zap.Int32("actions", result.ActionsCreated),
+		zap.Int32("resources", result.ResourcesCreated),
+		zap.Int32("permissions", result.PermissionsCreated),
+		zap.Int32("roles", result.RolesCreated))
+
+	return result, nil
+}
+
+// executeSeeding performs the actual seeding work within a transaction
+// This method should only be called from SeedRolesAndPermissions within a transaction context
+func (so *SeedOrchestrator) executeSeeding(
+	ctx context.Context,
+	provider SeedDataProvider,
+	result *SeedResult,
+	force bool,
+) error {
 	// Step 1: Create/update actions
 	so.logger.Info("Seeding actions", zap.String("service", provider.GetServiceName()))
 	actionDefs := provider.GetActions()
 	actionsCount, err := so.actionManager.UpsertActions(ctx, actionDefs, force)
 	if err != nil {
-		result.Success = false
-		result.ErrorMessage = fmt.Sprintf("failed to seed actions: %v", err)
 		so.logger.Error("Failed to seed actions", zap.Error(err))
-		return result, fmt.Errorf("failed to seed actions: %w", err)
+		return fmt.Errorf("failed to seed actions: %w", err)
 	}
 	result.ActionsCreated = actionsCount
 	so.logger.Info("Actions seeded", zap.Int32("count", actionsCount))
@@ -104,10 +173,8 @@ func (so *SeedOrchestrator) SeedRolesAndPermissions(ctx context.Context, service
 	resourceDefs := provider.GetResources()
 	resourcesCount, err := so.resourceManager.UpsertResources(ctx, resourceDefs, force)
 	if err != nil {
-		result.Success = false
-		result.ErrorMessage = fmt.Sprintf("failed to seed resources: %v", err)
 		so.logger.Error("Failed to seed resources", zap.Error(err))
-		return result, fmt.Errorf("failed to seed resources: %w", err)
+		return fmt.Errorf("failed to seed resources: %w", err)
 	}
 	result.ResourcesCreated = resourcesCount
 	so.logger.Info("Resources seeded", zap.Int32("count", resourcesCount))
@@ -129,10 +196,8 @@ func (so *SeedOrchestrator) SeedRolesAndPermissions(ctx context.Context, service
 		force,
 	)
 	if err != nil {
-		result.Success = false
-		result.ErrorMessage = fmt.Sprintf("failed to seed permissions: %v", err)
 		so.logger.Error("Failed to seed permissions", zap.Error(err))
-		return result, fmt.Errorf("failed to seed permissions: %w", err)
+		return fmt.Errorf("failed to seed permissions: %w", err)
 	}
 	result.PermissionsCreated = permsCount
 	so.logger.Info("Permissions seeded with wildcard expansion",
@@ -150,10 +215,8 @@ func (so *SeedOrchestrator) SeedRolesAndPermissions(ctx context.Context, service
 		force,
 	)
 	if err != nil {
-		result.Success = false
-		result.ErrorMessage = fmt.Sprintf("failed to seed roles: %v", err)
 		so.logger.Error("Failed to seed roles", zap.Error(err))
-		return result, fmt.Errorf("failed to seed roles: %w", err)
+		return fmt.Errorf("failed to seed roles: %w", err)
 	}
 	result.RolesCreated = rolesCount
 	result.CreatedRoleNames = roleNames
@@ -161,13 +224,5 @@ func (so *SeedOrchestrator) SeedRolesAndPermissions(ctx context.Context, service
 		zap.Int32("count", rolesCount),
 		zap.Strings("roles", roleNames))
 
-	result.Success = true
-	so.logger.Info("Successfully seeded roles and permissions",
-		zap.String("service", provider.GetServiceName()),
-		zap.Int32("actions", result.ActionsCreated),
-		zap.Int32("resources", result.ResourcesCreated),
-		zap.Int32("permissions", result.PermissionsCreated),
-		zap.Int32("roles", result.RolesCreated))
-
-	return result, nil
+	return nil
 }

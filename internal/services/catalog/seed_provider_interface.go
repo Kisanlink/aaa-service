@@ -2,6 +2,7 @@ package catalog
 
 import (
 	"context"
+	"sync"
 
 	"github.com/Kisanlink/aaa-service/v2/internal/entities/models"
 )
@@ -29,7 +30,9 @@ type SeedDataProvider interface {
 }
 
 // SeedProviderRegistry manages registration of multiple seed data providers
+// Thread-safe for concurrent access
 type SeedProviderRegistry struct {
+	mu        sync.RWMutex
 	providers map[string]SeedDataProvider
 }
 
@@ -41,11 +44,15 @@ func NewSeedProviderRegistry() *SeedProviderRegistry {
 }
 
 // Register registers a new seed data provider
+// Thread-safe: uses write lock
 func (r *SeedProviderRegistry) Register(provider SeedDataProvider) error {
 	serviceID := provider.GetServiceID()
 	if serviceID == "" {
 		return ErrInvalidServiceID
 	}
+
+	r.mu.Lock()
+	defer r.mu.Unlock()
 
 	if _, exists := r.providers[serviceID]; exists {
 		return ErrProviderAlreadyRegistered
@@ -56,7 +63,11 @@ func (r *SeedProviderRegistry) Register(provider SeedDataProvider) error {
 }
 
 // Get retrieves a provider by service ID
+// Thread-safe: uses read lock
 func (r *SeedProviderRegistry) Get(serviceID string) (SeedDataProvider, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
 	provider, exists := r.providers[serviceID]
 	if !exists {
 		return nil, ErrProviderNotFound
@@ -65,7 +76,11 @@ func (r *SeedProviderRegistry) Get(serviceID string) (SeedDataProvider, error) {
 }
 
 // GetAll returns all registered providers
+// Thread-safe: uses read lock
 func (r *SeedProviderRegistry) GetAll() []SeedDataProvider {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
 	providers := make([]SeedDataProvider, 0, len(r.providers))
 	for _, provider := range r.providers {
 		providers = append(providers, provider)
@@ -74,7 +89,11 @@ func (r *SeedProviderRegistry) GetAll() []SeedDataProvider {
 }
 
 // Unregister removes a provider from the registry
+// Thread-safe: uses write lock
 func (r *SeedProviderRegistry) Unregister(serviceID string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
 	if _, exists := r.providers[serviceID]; !exists {
 		return ErrProviderNotFound
 	}
@@ -83,18 +102,30 @@ func (r *SeedProviderRegistry) Unregister(serviceID string) error {
 }
 
 // Has checks if a provider is registered
+// Thread-safe: uses read lock
 func (r *SeedProviderRegistry) Has(serviceID string) bool {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
 	_, exists := r.providers[serviceID]
 	return exists
 }
 
 // Count returns the number of registered providers
+// Thread-safe: uses read lock
 func (r *SeedProviderRegistry) Count() int {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
 	return len(r.providers)
 }
 
 // Clear removes all providers from the registry
+// Thread-safe: uses write lock
 func (r *SeedProviderRegistry) Clear() {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
 	r.providers = make(map[string]SeedDataProvider)
 }
 

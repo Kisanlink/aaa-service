@@ -34,6 +34,23 @@ func (ch *CatalogHandler) SeedRolesAndPermissions(
 		zap.String("organization_id", req.OrganizationId),
 		zap.String("service_id", req.ServiceId))
 
+	// Validate service_id before processing
+	if err := catalog.ValidateServiceID(req.ServiceId); err != nil {
+		ch.logger.Error("Invalid service_id",
+			zap.String("service_id", req.ServiceId),
+			zap.Error(err))
+
+		return &pb.SeedRolesAndPermissionsResponse{
+			StatusCode:         400,
+			Message:            fmt.Sprintf("Invalid service_id: %v", err),
+			RolesCreated:       0,
+			PermissionsCreated: 0,
+			ResourcesCreated:   0,
+			ActionsCreated:     0,
+			CreatedRoles:       []string{},
+		}, fmt.Errorf("invalid service_id: %w", err)
+	}
+
 	// Call the catalog service with service_id parameter
 	// Empty service_id will default to farmers-module for backward compatibility
 	result, err := ch.catalogService.SeedRolesAndPermissions(ctx, req.ServiceId, req.Force)

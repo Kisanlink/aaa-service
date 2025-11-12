@@ -18,7 +18,10 @@ const (
 // This aligns with PostgreSQL RBAC schema supporting hierarchical roles
 type Role struct {
 	*base.BaseModel
-	Name        string    `json:"name" gorm:"size:100;not null;uniqueIndex"`
+	// ServiceID links this role to the service that owns it (e.g., "farmers-module", "erp-service")
+	// Allows different services to have roles with the same name
+	ServiceID   string    `json:"service_id" gorm:"size:255;not null;default:'farmers-module';index:idx_service_role,priority:1"`
+	Name        string    `json:"name" gorm:"size:100;not null;index:idx_service_role,unique,priority:2"`
 	Description string    `json:"description" gorm:"type:text"`
 	Scope       RoleScope `json:"scope" gorm:"size:20;not null;index"` // global, org, group
 	IsActive    bool      `json:"is_active" gorm:"default:true"`
@@ -40,9 +43,27 @@ const (
 )
 
 // NewRole creates a new Role instance with specified name and description
+// serviceID defaults to "farmers-module" if empty for backward compatibility
 func NewRole(name, description string, scope RoleScope) *Role {
 	return &Role{
 		BaseModel:   base.NewBaseModel("ROLE", hash.Medium),
+		ServiceID:   "farmers-module", // Default for backward compatibility
+		Name:        name,
+		Description: description,
+		Scope:       scope,
+		Version:     1,
+		IsActive:    true,
+	}
+}
+
+// NewRoleWithService creates a new Role instance with specified service ID
+func NewRoleWithService(serviceID, name, description string, scope RoleScope) *Role {
+	if serviceID == "" {
+		serviceID = "farmers-module" // Fallback to default
+	}
+	return &Role{
+		BaseModel:   base.NewBaseModel("ROLE", hash.Medium),
+		ServiceID:   serviceID,
 		Name:        name,
 		Description: description,
 		Scope:       scope,

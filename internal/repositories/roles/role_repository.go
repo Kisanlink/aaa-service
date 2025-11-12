@@ -103,6 +103,26 @@ func (r *RoleRepository) GetByName(ctx context.Context, name string) (*models.Ro
 	return roles[0], nil
 }
 
+// GetByServiceAndName retrieves a role by service ID and name using base filterable repository
+// This enforces the composite unique constraint on (service_id, name)
+func (r *RoleRepository) GetByServiceAndName(ctx context.Context, serviceID, name string) (*models.Role, error) {
+	filter := base.NewFilterBuilder().
+		Where("service_id", base.OpEqual, serviceID).
+		Where("name", base.OpEqual, name).
+		Build()
+
+	roles, err := r.BaseFilterableRepository.Find(ctx, filter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get role by service and name: %w", err)
+	}
+
+	if len(roles) == 0 {
+		return nil, fmt.Errorf("role not found for service %s with name %s", serviceID, name)
+	}
+
+	return roles[0], nil
+}
+
 // GetActive retrieves all active roles with pagination using database-level filtering
 func (r *RoleRepository) GetActive(ctx context.Context, limit, offset int) ([]*models.Role, error) {
 	// For now, we'll consider all non-deleted roles as active

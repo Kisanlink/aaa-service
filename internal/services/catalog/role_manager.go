@@ -59,15 +59,16 @@ func (rm *RoleManager) UpsertRolesWithPermissions(
 	}
 
 	for _, roleDef := range roleDefs {
-		// Check if role already exists
-		existing, err := rm.roleRepo.GetByName(ctx, roleDef.Name)
+		// Check if role already exists for this service (enforcing service-scoped uniqueness)
+		existing, err := rm.roleRepo.GetByServiceAndName(ctx, serviceID, roleDef.Name)
 
 		var role *models.Role
 
 		if err == nil && existing != nil {
-			// Role exists
+			// Role exists for this service
 			if !force {
-				rm.logger.Debug("Role already exists, skipping",
+				rm.logger.Debug("Role already exists for service, skipping",
+					zap.String("service_id", serviceID),
 					zap.String("role", roleDef.Name))
 				continue
 			}
@@ -75,23 +76,26 @@ func (rm *RoleManager) UpsertRolesWithPermissions(
 			// Update existing role
 			existing.Description = roleDef.Description
 			existing.Scope = roleDef.Scope
+			existing.ServiceID = serviceID // Ensure service_id is set correctly
 
 			if err := rm.roleRepo.Update(ctx, existing); err != nil {
-				return count, createdRoleNames, fmt.Errorf("failed to update role %s: %w", roleDef.Name, err)
+				return count, createdRoleNames, fmt.Errorf("failed to update role %s for service %s: %w", roleDef.Name, serviceID, err)
 			}
 
 			role = existing
-			rm.logger.Debug("Role updated",
+			rm.logger.Debug("Role updated for service",
+				zap.String("service_id", serviceID),
 				zap.String("role", roleDef.Name))
 		} else {
-			// Create new role
-			role = models.NewRole(roleDef.Name, roleDef.Description, roleDef.Scope)
+			// Create new role with service ID
+			role = models.NewRoleWithService(serviceID, roleDef.Name, roleDef.Description, roleDef.Scope)
 
 			if err := rm.roleRepo.Create(ctx, role); err != nil {
-				return count, createdRoleNames, fmt.Errorf("failed to create role %s: %w", roleDef.Name, err)
+				return count, createdRoleNames, fmt.Errorf("failed to create role %s for service %s: %w", roleDef.Name, serviceID, err)
 			}
 
-			rm.logger.Debug("Role created",
+			rm.logger.Debug("Role created for service",
+				zap.String("service_id", serviceID),
 				zap.String("role", roleDef.Name),
 				zap.String("id", role.ID))
 		}
@@ -102,12 +106,14 @@ func (rm *RoleManager) UpsertRolesWithPermissions(
 		}
 
 		// Create or update service-role mapping for audit trail
+		// This is MANDATORY - failure to create mapping fails the entire operation
 		if err := rm.linkRoleToService(ctx, serviceID, serviceName, role.ID); err != nil {
-			// Log error but don't fail the entire operation
-			rm.logger.Warn("Failed to create service-role mapping",
+			rm.logger.Error("Failed to create service-role mapping (mandatory operation)",
 				zap.String("service_id", serviceID),
 				zap.String("role_id", role.ID),
+				zap.String("role_name", roleDef.Name),
 				zap.Error(err))
+			return count, createdRoleNames, fmt.Errorf("failed to create service-role mapping for role %s: %w", roleDef.Name, err)
 		}
 
 		count++
