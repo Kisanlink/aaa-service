@@ -238,7 +238,11 @@ func (s *GRPCServer) registerServices() {
 
 	// Register CatalogService for catalog management
 	catalogService := catalog.NewCatalogService(s.dbManager, s.logger)
-	catalogHandler := NewCatalogHandler(catalogService, s.logger)
+
+	// Create authorization checker for catalog operations
+	catalogAuthChecker := NewAuthorizationChecker(s.authzService, s.logger)
+
+	catalogHandler := NewCatalogHandler(catalogService, catalogAuthChecker, s.logger)
 	pb.RegisterCatalogServiceServer(s.server, catalogHandler)
 
 	// Register AddressService for address management

@@ -16,6 +16,7 @@ func TestCatalogHandlerImplementsInterface(t *testing.T) {
 	// This will fail to compile if CatalogHandler doesn't implement CatalogServiceServer
 	var _ pb.CatalogServiceServer = &CatalogHandler{
 		catalogService: nil, // nil is fine for interface check
+		authChecker:    nil, // nil is fine for interface check
 		logger:         logger,
 	}
 }
@@ -25,7 +26,7 @@ func TestCatalogHandlerSeedRolesAndPermissionsSignature(t *testing.T) {
 	logger, _ := zap.NewDevelopment()
 	mockService := &catalog.CatalogService{} // nil fields are ok for signature test
 
-	handler := NewCatalogHandler(mockService, logger)
+	handler := NewCatalogHandler(mockService, nil, logger)
 
 	// Verify handler is not nil
 	assert.NotNil(t, handler)

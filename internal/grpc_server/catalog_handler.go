@@ -13,13 +13,19 @@ import (
 type CatalogHandler struct {
 	pb.UnimplementedCatalogServiceServer
 	catalogService *catalog.CatalogService
+	authChecker    *AuthorizationChecker
 	logger         *zap.Logger
 }
 
 // NewCatalogHandler creates a new catalog handler
-func NewCatalogHandler(catalogService *catalog.CatalogService, logger *zap.Logger) *CatalogHandler {
+func NewCatalogHandler(
+	catalogService *catalog.CatalogService,
+	authChecker *AuthorizationChecker,
+	logger *zap.Logger,
+) *CatalogHandler {
 	return &CatalogHandler{
 		catalogService: catalogService,
+		authChecker:    authChecker,
 		logger:         logger,
 	}
 }
@@ -49,6 +55,32 @@ func (ch *CatalogHandler) SeedRolesAndPermissions(
 			ActionsCreated:     0,
 			CreatedRoles:       []string{},
 		}, fmt.Errorf("invalid service_id: %w", err)
+	}
+
+	// Check authorization: verify caller has permission to seed roles
+	// This validates both basic seed permission and service ownership rules
+	if ch.authChecker != nil {
+		if err := ch.authChecker.CheckSeedPermission(ctx, req.ServiceId); err != nil {
+			ch.logger.Warn("Seed operation authorization failed",
+				zap.String("service_id", req.ServiceId),
+				zap.Error(err))
+
+			return &pb.SeedRolesAndPermissionsResponse{
+				StatusCode:         403,
+				Message:            fmt.Sprintf("Authorization failed: %v", err),
+				RolesCreated:       0,
+				PermissionsCreated: 0,
+				ResourcesCreated:   0,
+				ActionsCreated:     0,
+				CreatedRoles:       []string{},
+			}, err
+		}
+
+		ch.logger.Info("Seed operation authorized",
+			zap.String("service_id", req.ServiceId),
+			zap.Bool("force", req.Force))
+	} else {
+		ch.logger.Warn("Authorization checker not configured - skipping authorization check")
 	}
 
 	// Call the catalog service with service_id parameter
