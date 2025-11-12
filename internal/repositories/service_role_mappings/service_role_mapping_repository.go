@@ -3,10 +3,12 @@ package service_role_mappings
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/Kisanlink/aaa-service/v2/internal/entities/models"
 	"github.com/Kisanlink/kisanlink-db/pkg/base"
 	"github.com/Kisanlink/kisanlink-db/pkg/db"
+	"gorm.io/gorm"
 )
 
 // ServiceRoleMappingRepository handles service_role_mapping database operations
@@ -24,6 +26,18 @@ func NewServiceRoleMappingRepository(dbManager db.DBManager) *ServiceRoleMapping
 
 	repo.BaseFilterableRepository.SetDBManager(dbManager)
 	return repo
+}
+
+// getDB is a helper method to get the GORM database connection from the database manager
+func (r *ServiceRoleMappingRepository) getDB(ctx context.Context, readOnly bool) (*gorm.DB, error) {
+	// Try to get the database from the database manager
+	if postgresMgr, ok := r.dbManager.(interface {
+		GetDB(context.Context, bool) (*gorm.DB, error)
+	}); ok {
+		return postgresMgr.GetDB(ctx, readOnly)
+	}
+
+	return nil, fmt.Errorf("database manager does not support GetDB method")
 }
 
 // Create creates a new service role mapping
@@ -115,36 +129,76 @@ func (r *ServiceRoleMappingRepository) GetByServiceName(ctx context.Context, ser
 }
 
 // DeactivateByServiceID deactivates all mappings for a specific service
+// Uses transaction to ensure atomicity - all mappings are deactivated or none are
 func (r *ServiceRoleMappingRepository) DeactivateByServiceID(ctx context.Context, serviceID string) error {
 	mappings, err := r.GetByServiceID(ctx, serviceID)
 	if err != nil {
 		return fmt.Errorf("failed to get mappings for service: %w", err)
 	}
 
-	for _, mapping := range mappings {
-		mapping.Deactivate()
-		if err := r.Update(ctx, mapping); err != nil {
-			return fmt.Errorf("failed to deactivate mapping: %w", err)
-		}
+	if len(mappings) == 0 {
+		return nil // No mappings to deactivate
 	}
 
-	return nil
+	// Get GORM DB instance for transaction support
+	gormDB, err := r.getDB(ctx, false)
+	if err != nil {
+		return fmt.Errorf("failed to get database connection: %w", err)
+	}
+
+	// Execute deactivation in transaction for atomicity
+	return gormDB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var errors []string
+		for i, mapping := range mappings {
+			mapping.Deactivate()
+			if err := r.Update(ctx, mapping); err != nil {
+				errors = append(errors, fmt.Sprintf("mapping %d (id=%s): %v", i+1, mapping.ID, err))
+			}
+		}
+
+		if len(errors) > 0 {
+			return fmt.Errorf("failed to deactivate %d/%d mappings: %s",
+				len(errors), len(mappings), strings.Join(errors, "; "))
+		}
+
+		return nil
+	})
 }
 
 // DeleteByServiceID deletes all mappings for a specific service
+// Uses transaction to ensure atomicity - all mappings are deleted or none are
 func (r *ServiceRoleMappingRepository) DeleteByServiceID(ctx context.Context, serviceID string) error {
 	mappings, err := r.GetByServiceID(ctx, serviceID)
 	if err != nil {
 		return fmt.Errorf("failed to get mappings for service: %w", err)
 	}
 
-	for _, mapping := range mappings {
-		if err := r.Delete(ctx, mapping.ID); err != nil {
-			return fmt.Errorf("failed to delete mapping: %w", err)
-		}
+	if len(mappings) == 0 {
+		return nil // No mappings to delete
 	}
 
-	return nil
+	// Get GORM DB instance for transaction support
+	gormDB, err := r.getDB(ctx, false)
+	if err != nil {
+		return fmt.Errorf("failed to get database connection: %w", err)
+	}
+
+	// Execute deletion in transaction for atomicity
+	return gormDB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var errors []string
+		for i, mapping := range mappings {
+			if err := r.Delete(ctx, mapping.ID); err != nil {
+				errors = append(errors, fmt.Sprintf("mapping %d (id=%s): %v", i+1, mapping.ID, err))
+			}
+		}
+
+		if len(errors) > 0 {
+			return fmt.Errorf("failed to delete %d/%d mappings: %s",
+				len(errors), len(mappings), strings.Join(errors, "; "))
+		}
+
+		return nil
+	})
 }
 
 // List retrieves all active service role mappings with pagination
