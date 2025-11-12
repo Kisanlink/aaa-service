@@ -28,12 +28,22 @@ func NewAuthorizationChecker(
 }
 
 // CheckSeedPermission validates that the caller has permission to seed roles
-// Authorization rules:
-//  1. Caller must be authenticated (user or service)
-//  2. Caller must have "catalog:seed" or "admin:*" permission
-//  3. If serviceID is provided, caller must either:
-//     a) Have super_admin role, OR
-//     b) Be the service that matches serviceID (services can only seed their own roles)
+//
+// FIXED IMPLEMENTATION - Critical Bug Fixes:
+// 1. Services bypass catalog:seed permission check (services don't have permissions)
+// 2. Use service_name (not service_id) for ownership comparison
+// 3. Clear separation between service and user authorization paths
+//
+// Authorization Rules:
+// SERVICE PRINCIPALS (authenticated via API key):
+//   - Skip permission checks (services don't have roles/permissions)
+//   - Can only seed their own roles (service_name must match targetServiceID)
+//   - Cannot seed default/farmers-module roles
+//
+// USER PRINCIPALS (authenticated via JWT):
+//   - Must have catalog:seed permission
+//   - Can seed default/farmers-module with basic permission
+//   - Need admin:* permission for service-specific seeding
 func (ac *AuthorizationChecker) CheckSeedPermission(ctx context.Context, targetServiceID string) error {
 	// Extract principal information from context
 	principalID, principalType, err := ac.extractPrincipal(ctx)
@@ -47,7 +57,48 @@ func (ac *AuthorizationChecker) CheckSeedPermission(ctx context.Context, targetS
 		zap.String("principal_type", principalType),
 		zap.String("target_service_id", targetServiceID))
 
-	// Check basic permission: catalog:seed
+	// CRITICAL FIX: Route based on principal type
+	// Services bypass permission checks and use ownership validation only
+	if principalType == "service" {
+		// Extract service name (FIX: use service_name, not service_id)
+		serviceName := ac.getContextValue(ctx, "service_name")
+		if serviceName == "" {
+			ac.logger.Error("Service name missing in context",
+				zap.String("service_id", principalID))
+			return status.Errorf(codes.Unauthenticated,
+				"service authentication incomplete: service_name missing")
+		}
+
+		// Services cannot seed default/farmers-module
+		if targetServiceID == "" || targetServiceID == "farmers-module" {
+			ac.logger.Warn("Service cannot seed default/farmers-module roles",
+				zap.String("service_id", principalID),
+				zap.String("service_name", serviceName),
+				zap.String("target_service_id", targetServiceID))
+			return status.Errorf(codes.PermissionDenied,
+				"service '%s' cannot seed default farmers-module roles", serviceName)
+		}
+
+		// Check ownership: service can only seed its own roles
+		if serviceName != targetServiceID {
+			ac.logger.Warn("Service attempting to seed another service's roles",
+				zap.String("service_id", principalID),
+				zap.String("caller_service_name", serviceName),
+				zap.String("target_service_id", targetServiceID))
+			return status.Errorf(codes.PermissionDenied,
+				"service '%s' cannot seed roles for service '%s'",
+				serviceName, targetServiceID)
+		}
+
+		// Service is authorized to seed its own roles
+		ac.logger.Info("Service authorized to seed own roles",
+			zap.String("service_id", principalID),
+			zap.String("service_name", serviceName),
+			zap.String("target_service_id", targetServiceID))
+		return nil
+	}
+
+	// For users, check catalog:seed permission
 	permission := &services.Permission{
 		UserID:     principalID,
 		Resource:   "catalog",
@@ -82,7 +133,7 @@ func (ac *AuthorizationChecker) CheckSeedPermission(ctx context.Context, targetS
 		return nil
 	}
 
-	// For service-specific seeding, enforce ownership rules
+	// For service-specific seeding, users need admin permission
 	if err := ac.checkServiceOwnership(ctx, principalID, principalType, targetServiceID); err != nil {
 		return err
 	}
@@ -95,33 +146,29 @@ func (ac *AuthorizationChecker) CheckSeedPermission(ctx context.Context, targetS
 	return nil
 }
 
-// checkServiceOwnership validates service-specific seed authorization
-// Rules:
-// 1. If principal is a service, it can only seed its own roles (service_id must match)
-// 2. If principal is a user, check for super_admin or admin:* permission
+// checkServiceOwnership validates that users have admin permissions for service-specific seeding
+//
+// IMPORTANT: This function is ONLY called for user principals attempting to seed service-specific roles.
+// Service principals are validated earlier in CheckSeedPermission (lines 62-98) and never reach this function.
+//
+// Rule: Users must have admin:* permission to seed service-specific roles (not farmers-module)
 func (ac *AuthorizationChecker) checkServiceOwnership(
 	ctx context.Context,
 	principalID string,
 	principalType string,
 	targetServiceID string,
 ) error {
-	// If the principal is a service, it can only seed its own roles
+	// NOTE: Service principals never reach this function
+	// They are validated earlier in CheckSeedPermission (lines 62-98) and return early on line 98.
+	// This function is ONLY called for user principals attempting service-specific seeding.
+	// If a service somehow reaches here, it's a programming error that should be caught.
 	if principalType == "service" {
-		// Extract service_id from context
-		serviceID := ac.getContextValue(ctx, "service_id")
-		if serviceID != targetServiceID {
-			ac.logger.Warn("Service attempting to seed another service's roles",
-				zap.String("caller_service_id", serviceID),
-				zap.String("target_service_id", targetServiceID))
-			return status.Errorf(codes.PermissionDenied,
-				"services can only seed their own roles (attempted to seed %s, but caller is %s)",
-				targetServiceID, serviceID)
-		}
-
-		ac.logger.Debug("Service ownership validated",
-			zap.String("service_id", serviceID),
-			zap.String("target_service_id", targetServiceID))
-		return nil
+		ac.logger.Error("UNEXPECTED: Service principal reached checkServiceOwnership",
+			zap.String("service_id", principalID),
+			zap.String("target_service_id", targetServiceID),
+			zap.String("note", "Services should return early in CheckSeedPermission"))
+		return status.Errorf(codes.Internal,
+			"internal error: service principal should not reach this code path")
 	}
 
 	// If the principal is a user, check for admin permissions
@@ -157,6 +204,11 @@ func (ac *AuthorizationChecker) checkServiceOwnership(
 }
 
 // extractPrincipal extracts the authenticated principal from context
+//
+// ENHANCED IMPLEMENTATION - Additional Validation:
+// - Validates service_name is present for service principals
+// - service_name is critical for authorization decisions
+//
 // Returns (principalID, principalType, error)
 // principalType is either "service" or "user"
 func (ac *AuthorizationChecker) extractPrincipal(ctx context.Context) (string, string, error) {
@@ -167,6 +219,20 @@ func (ac *AuthorizationChecker) extractPrincipal(ctx context.Context) (string, s
 		if serviceID == "" {
 			return "", "", fmt.Errorf("service principal_type set but service_id missing")
 		}
+
+		// ENHANCED: Also validate service_name is present
+		// This is critical for authorization decisions
+		serviceName := ac.getContextValue(ctx, "service_name")
+		if serviceName == "" {
+			ac.logger.Error("Service authentication incomplete",
+				zap.String("service_id", serviceID),
+				zap.String("principal_type", principalType))
+			return "", "", fmt.Errorf("service principal_type set but service_name missing")
+		}
+
+		ac.logger.Debug("Service principal extracted",
+			zap.String("service_id", serviceID),
+			zap.String("service_name", serviceName))
 		return serviceID, "service", nil
 	}
 
@@ -176,6 +242,8 @@ func (ac *AuthorizationChecker) extractPrincipal(ctx context.Context) (string, s
 		return "", "", fmt.Errorf("no authenticated principal found in context")
 	}
 
+	ac.logger.Debug("User principal extracted",
+		zap.String("user_id", userID))
 	return userID, "user", nil
 }
 
