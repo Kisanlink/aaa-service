@@ -31,6 +31,7 @@ type RouteHandlers struct {
 	AddressService       interfaces.AddressService
 	OrganizationService  interfaces.OrganizationService
 	GroupService         interfaces.GroupService
+	CatalogService       interface{} // Using interface{} to avoid circular dependency
 	Validator            interfaces.Validator
 	Responder            interfaces.Responder
 	Logger               *zap.Logger
@@ -124,6 +125,13 @@ func SetupAAA(router *gin.Engine, handlers RouteHandlers) {
 			if handlers.GroupService == nil {
 				handlers.Logger.Warn("Group service not available - organization and group routes will not be registered")
 			}
+		}
+	}
+
+	// Setup catalog routes if service is available
+	if handlers.CatalogService != nil {
+		if catalogSvc, ok := handlers.CatalogService.(CatalogServiceInterface); ok {
+			SetupCatalogRoutes(protectedAPI, handlers.AuthMiddleware, catalogSvc, handlers.Logger)
 		}
 	}
 }

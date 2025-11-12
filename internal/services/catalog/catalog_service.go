@@ -138,6 +138,11 @@ func (cs *CatalogService) UnregisterSeedProvider(serviceID string) error {
 }
 
 // ListRegisteredProviders returns all registered seed providers
-func (cs *CatalogService) ListRegisteredProviders() []SeedDataProvider {
-	return cs.providerRegistry.GetAll()
+func (cs *CatalogService) ListRegisteredProviders() []string {
+	providers := cs.providerRegistry.GetAll()
+	serviceIDs := make([]string, 0, len(providers))
+	for _, provider := range providers {
+		serviceIDs = append(serviceIDs, provider.GetServiceID())
+	}
+	return serviceIDs
 }
