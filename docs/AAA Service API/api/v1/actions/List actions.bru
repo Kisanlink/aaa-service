@@ -1,0 +1,16 @@
+meta {
+  name: List actions
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/v1/actions
+  body: none
+  auth: inherit
+}
+
+params:query {
+  ~limit:
+  ~offset:
+}

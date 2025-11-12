@@ -1,0 +1,15 @@
+meta {
+  name: Evaluate user-specific permission
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/v1/users/:id/evaluate
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id:
+}

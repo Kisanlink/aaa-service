@@ -1,0 +1,15 @@
+meta {
+  name: Validate user
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/v1/users/:id/validate
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id:
+}

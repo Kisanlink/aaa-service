@@ -1,0 +1,21 @@
+meta {
+  name: Get organization groups
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/v1/organizations/:orgId/groups
+  body: none
+  auth: inherit
+}
+
+params:query {
+  ~limit:
+  ~offset:
+  ~include_inactive:
+}
+
+params:path {
+  orgId:
+}

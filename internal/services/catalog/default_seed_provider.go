@@ -1,42 +1,26 @@
 package catalog
 
 import (
+	"context"
+
 	"github.com/Kisanlink/aaa-service/v2/internal/entities/models"
 )
 
-// SeedDataProvider provides embedded seed data for roles and permissions
-type SeedDataProvider struct{}
-
-// NewSeedDataProvider creates a new seed data provider
-func NewSeedDataProvider() *SeedDataProvider {
-	return &SeedDataProvider{}
+// DefaultSeedProvider provides embedded seed data for farmers-module roles and permissions
+// This is the default provider that seeds the Farmers-module roles when no service_id is specified
+type DefaultSeedProvider struct {
+	*BaseSeedProvider
 }
 
-// ResourceDefinition defines a resource to be seeded
-type ResourceDefinition struct {
-	Name        string
-	Type        string
-	Description string
+// NewDefaultSeedProvider creates a new default seed data provider for Farmers-module
+func NewDefaultSeedProvider() *DefaultSeedProvider {
+	return &DefaultSeedProvider{
+		BaseSeedProvider: NewBaseSeedProvider("farmers-module", "Farmers Module"),
+	}
 }
 
-// ActionDefinition defines an action to be seeded
-type ActionDefinition struct {
-	Name        string
-	Description string
-	Category    string
-	IsStatic    bool
-}
-
-// RoleDefinition defines a role to be seeded
-type RoleDefinition struct {
-	Name        string
-	Description string
-	Scope       models.RoleScope
-	Permissions []string // Format: "resource:action" or wildcard patterns
-}
-
-// GetResources returns all resources to be seeded
-func (s *SeedDataProvider) GetResources() []ResourceDefinition {
+// GetResources returns all resources to be seeded for Farmers-module
+func (s *DefaultSeedProvider) GetResources() []ResourceDefinition {
 	return []ResourceDefinition{
 		{Name: "farmer", Type: "agriculture/farmer", Description: "Farmer resource"},
 		{Name: "farm", Type: "agriculture/farm", Description: "Farm resource"},
@@ -49,8 +33,8 @@ func (s *SeedDataProvider) GetResources() []ResourceDefinition {
 	}
 }
 
-// GetActions returns all actions to be seeded
-func (s *SeedDataProvider) GetActions() []ActionDefinition {
+// GetActions returns all actions to be seeded for Farmers-module
+func (s *DefaultSeedProvider) GetActions() []ActionDefinition {
 	return []ActionDefinition{
 		{Name: "create", Description: "Create a resource", Category: "general", IsStatic: true},
 		{Name: "read", Description: "Read a resource", Category: "general", IsStatic: true},
@@ -64,8 +48,8 @@ func (s *SeedDataProvider) GetActions() []ActionDefinition {
 	}
 }
 
-// GetRoles returns all roles to be seeded with their permissions
-func (s *SeedDataProvider) GetRoles() []RoleDefinition {
+// GetRoles returns all roles to be seeded with their permissions for Farmers-module
+func (s *DefaultSeedProvider) GetRoles() []RoleDefinition {
 	return []RoleDefinition{
 		{
 			Name:        "farmer",
@@ -138,4 +122,35 @@ func (s *SeedDataProvider) GetRoles() []RoleDefinition {
 			},
 		},
 	}
+}
+
+// Validate validates the seed data before execution
+func (s *DefaultSeedProvider) Validate(ctx context.Context) error {
+	// First validate base provider
+	if err := s.BaseSeedProvider.Validate(ctx); err != nil {
+		return err
+	}
+
+	// Validate resources
+	for _, resource := range s.GetResources() {
+		if err := ValidateResource(resource); err != nil {
+			return err
+		}
+	}
+
+	// Validate actions
+	for _, action := range s.GetActions() {
+		if err := ValidateAction(action); err != nil {
+			return err
+		}
+	}
+
+	// Validate roles
+	for _, role := range s.GetRoles() {
+		if err := ValidateRole(role); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

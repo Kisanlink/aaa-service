@@ -1,0 +1,15 @@
+meta {
+  name: Update permission
+  type: http
+  seq: 2
+}
+
+put {
+  url: {{baseUrl}}/api/v1/permissions/:id
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id:
+}

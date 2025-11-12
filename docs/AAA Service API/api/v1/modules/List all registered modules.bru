@@ -1,0 +1,11 @@
+meta {
+  name: List all registered modules
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/v1/modules
+  body: none
+  auth: inherit
+}

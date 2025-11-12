@@ -1,0 +1,15 @@
+meta {
+  name: Get module information
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/v1/modules/:service_name
+  body: none
+  auth: inherit
+}
+
+params:path {
+  service_name:
+}

@@ -1,0 +1,16 @@
+meta {
+  name: Assign role to group in organization
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/v1/organizations/:orgId/groups/:groupId/roles
+  body: none
+  auth: inherit
+}
+
+params:path {
+  orgId:
+  groupId:
+}

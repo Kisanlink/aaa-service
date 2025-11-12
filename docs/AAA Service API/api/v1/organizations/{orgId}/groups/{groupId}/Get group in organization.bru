@@ -1,0 +1,16 @@
+meta {
+  name: Get group in organization
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/v1/organizations/:orgId/groups/:groupId
+  body: none
+  auth: inherit
+}
+
+params:path {
+  orgId:
+  groupId:
+}

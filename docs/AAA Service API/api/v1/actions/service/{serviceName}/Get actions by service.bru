@@ -1,0 +1,20 @@
+meta {
+  name: Get actions by service
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/v1/actions/service/:serviceName
+  body: none
+  auth: inherit
+}
+
+params:query {
+  ~limit:
+  ~offset:
+}
+
+params:path {
+  serviceName:
+}

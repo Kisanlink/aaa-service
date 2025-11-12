@@ -1,0 +1,11 @@
+meta {
+  name: Get maintenance status
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/v1/admin/maintenance
+  body: none
+  auth: inherit
+}

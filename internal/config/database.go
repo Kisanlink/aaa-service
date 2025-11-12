@@ -126,8 +126,9 @@ func runAutomigration(dm *db.DatabaseManager, logger *zap.Logger) error {
 		&models.Permission{},
 		&models.UserRole{},
 		&models.Action{},
-		&models.RolePermission{},     // New: Role-Permission mapping
-		&models.ResourcePermission{}, // New: Resource-Role-Action mapping
+		&models.RolePermission{},     // Role-Permission mapping
+		&models.ResourcePermission{}, // Resource-Role-Action mapping
+		&models.ServiceRoleMapping{}, // Service-Role mapping for audit trail
 
 		// Resources
 		&models.Resource{},

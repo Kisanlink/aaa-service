@@ -1,0 +1,16 @@
+meta {
+  name: Get user's effective roles in organization
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/v1/organizations/:orgId/users/:userId/effective-roles
+  body: none
+  auth: inherit
+}
+
+params:path {
+  orgId:
+  userId:
+}

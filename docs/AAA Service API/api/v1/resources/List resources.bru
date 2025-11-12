@@ -1,0 +1,21 @@
+meta {
+  name: List resources
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/v1/resources
+  body: none
+  auth: inherit
+}
+
+params:query {
+  ~type:
+  ~parent_id:
+  ~owner_id:
+  ~is_active:
+  ~search:
+  ~limit:
+  ~offset:
+}

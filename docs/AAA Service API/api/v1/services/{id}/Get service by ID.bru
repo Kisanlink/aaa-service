@@ -1,0 +1,19 @@
+meta {
+  name: Get service by ID
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/v1/services/:id
+  body: none
+  auth: bearer
+}
+
+params:path {
+  id: SVC1762765380574445561
+}
+
+auth:bearer {
+  token: {{token}}
+}

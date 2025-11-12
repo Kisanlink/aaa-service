@@ -31,12 +31,15 @@ func (ch *CatalogHandler) SeedRolesAndPermissions(
 ) (*pb.SeedRolesAndPermissionsResponse, error) {
 	ch.logger.Info("SeedRolesAndPermissions called",
 		zap.Bool("force", req.Force),
-		zap.String("organization_id", req.OrganizationId))
+		zap.String("organization_id", req.OrganizationId),
+		zap.String("service_id", req.ServiceId))
 
-	// Call the catalog service
-	result, err := ch.catalogService.SeedRolesAndPermissions(ctx, req.Force)
+	// Call the catalog service with service_id parameter
+	// Empty service_id will default to farmers-module for backward compatibility
+	result, err := ch.catalogService.SeedRolesAndPermissions(ctx, req.ServiceId, req.Force)
 	if err != nil {
 		ch.logger.Error("Failed to seed roles and permissions",
+			zap.String("service_id", req.ServiceId),
 			zap.Error(err))
 
 		return &pb.SeedRolesAndPermissionsResponse{

@@ -7,6 +7,7 @@ import (
 	"github.com/Kisanlink/aaa-service/v2/internal/entities/models"
 	"github.com/Kisanlink/aaa-service/v2/internal/repositories/role_permissions"
 	"github.com/Kisanlink/aaa-service/v2/internal/repositories/roles"
+	"github.com/Kisanlink/aaa-service/v2/internal/repositories/service_role_mappings"
 	"github.com/Kisanlink/kisanlink-db/pkg/db"
 	"go.uber.org/zap"
 )
@@ -15,6 +16,7 @@ import (
 type RoleManager struct {
 	roleRepo           *roles.RoleRepository
 	rolePermissionRepo *role_permissions.RolePermissionRepository
+	serviceMappingRepo *service_role_mappings.ServiceRoleMappingRepository
 	dbManager          db.DBManager
 	logger             *zap.Logger
 }
@@ -23,27 +25,38 @@ type RoleManager struct {
 func NewRoleManager(
 	roleRepo *roles.RoleRepository,
 	rolePermissionRepo *role_permissions.RolePermissionRepository,
+	serviceMappingRepo *service_role_mappings.ServiceRoleMappingRepository,
 	dbManager db.DBManager,
 	logger *zap.Logger,
 ) *RoleManager {
 	return &RoleManager{
 		roleRepo:           roleRepo,
 		rolePermissionRepo: rolePermissionRepo,
+		serviceMappingRepo: serviceMappingRepo,
 		dbManager:          dbManager,
 		logger:             logger,
 	}
 }
 
 // UpsertRolesWithPermissions creates or updates roles and attaches permissions
+// Also creates service-role mappings for audit trail
 // Returns (rolesCreated, createdRoleNames, error)
 func (rm *RoleManager) UpsertRolesWithPermissions(
 	ctx context.Context,
 	roleDefs []RoleDefinition,
 	permissionIDs map[string]string,
+	serviceID string,
+	serviceName string,
 	force bool,
 ) (int32, []string, error) {
 	var count int32
 	var createdRoleNames []string
+
+	// Default to farmers-module if no service specified (backward compatibility)
+	if serviceID == "" {
+		serviceID = "farmers-module"
+		serviceName = "Farmers Module"
+	}
 
 	for _, roleDef := range roleDefs {
 		// Check if role already exists
@@ -88,11 +101,36 @@ func (rm *RoleManager) UpsertRolesWithPermissions(
 			return count, createdRoleNames, fmt.Errorf("failed to attach permissions to role %s: %w", roleDef.Name, err)
 		}
 
+		// Create or update service-role mapping for audit trail
+		if err := rm.linkRoleToService(ctx, serviceID, serviceName, role.ID); err != nil {
+			// Log error but don't fail the entire operation
+			rm.logger.Warn("Failed to create service-role mapping",
+				zap.String("service_id", serviceID),
+				zap.String("role_id", role.ID),
+				zap.Error(err))
+		}
+
 		count++
 		createdRoleNames = append(createdRoleNames, roleDef.Name)
 	}
 
 	return count, createdRoleNames, nil
+}
+
+// linkRoleToService creates or updates a service-role mapping
+func (rm *RoleManager) linkRoleToService(ctx context.Context, serviceID, serviceName, roleID string) error {
+	// Use upsert to handle both create and update cases
+	_, err := rm.serviceMappingRepo.UpsertMapping(ctx, serviceID, serviceName, roleID)
+	if err != nil {
+		return fmt.Errorf("failed to upsert service-role mapping: %w", err)
+	}
+
+	rm.logger.Debug("Service-role mapping created/updated",
+		zap.String("service_id", serviceID),
+		zap.String("service_name", serviceName),
+		zap.String("role_id", roleID))
+
+	return nil
 }
 
 // attachPermissionsToRole attaches permissions to a role using the role_permissions join table

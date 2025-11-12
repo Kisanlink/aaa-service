@@ -1,0 +1,17 @@
+meta {
+  name: Remove user from group in organization
+  type: http
+  seq: 1
+}
+
+delete {
+  url: {{baseUrl}}/api/v1/organizations/:orgId/groups/:groupId/users/:userId
+  body: none
+  auth: inherit
+}
+
+params:path {
+  orgId:
+  groupId:
+  userId:
+}

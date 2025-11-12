@@ -14,7 +14,7 @@ type SeedOrchestrator struct {
 	resourceManager   *ResourceManager
 	permissionManager *PermissionManager
 	roleManager       *RoleManager
-	seedDataProvider  *SeedDataProvider
+	providerRegistry  *SeedProviderRegistry
 	dbManager         db.DBManager
 	logger            *zap.Logger
 }
@@ -25,7 +25,7 @@ func NewSeedOrchestrator(
 	resourceManager *ResourceManager,
 	permissionManager *PermissionManager,
 	roleManager *RoleManager,
-	seedDataProvider *SeedDataProvider,
+	providerRegistry *SeedProviderRegistry,
 	dbManager db.DBManager,
 	logger *zap.Logger,
 ) *SeedOrchestrator {
@@ -34,7 +34,7 @@ func NewSeedOrchestrator(
 		resourceManager:   resourceManager,
 		permissionManager: permissionManager,
 		roleManager:       roleManager,
-		seedDataProvider:  seedDataProvider,
+		providerRegistry:  providerRegistry,
 		dbManager:         dbManager,
 		logger:            logger,
 	}
@@ -52,12 +52,43 @@ type SeedResult struct {
 }
 
 // SeedRolesAndPermissions performs the complete seeding operation
-func (so *SeedOrchestrator) SeedRolesAndPermissions(ctx context.Context, force bool) (*SeedResult, error) {
+// serviceID parameter is optional - if empty, uses default provider (farmers-module)
+func (so *SeedOrchestrator) SeedRolesAndPermissions(ctx context.Context, serviceID string, force bool) (*SeedResult, error) {
 	result := &SeedResult{}
 
+	// Get the appropriate provider
+	var provider SeedDataProvider
+	var err error
+
+	if serviceID == "" {
+		// Use default provider (farmers-module) for backward compatibility
+		provider = NewDefaultSeedProvider()
+		so.logger.Info("Using default seed provider (farmers-module)")
+	} else {
+		// Get provider from registry
+		provider, err = so.providerRegistry.Get(serviceID)
+		if err != nil {
+			result.Success = false
+			result.ErrorMessage = fmt.Sprintf("provider not found for service: %s", serviceID)
+			so.logger.Error("Provider not found", zap.String("service_id", serviceID), zap.Error(err))
+			return result, fmt.Errorf("provider not found for service %s: %w", serviceID, err)
+		}
+		so.logger.Info("Using registered seed provider",
+			zap.String("service_id", serviceID),
+			zap.String("service_name", provider.GetServiceName()))
+	}
+
+	// Validate provider data before seeding
+	if err := provider.Validate(ctx); err != nil {
+		result.Success = false
+		result.ErrorMessage = fmt.Sprintf("provider validation failed: %v", err)
+		so.logger.Error("Provider validation failed", zap.Error(err))
+		return result, fmt.Errorf("provider validation failed: %w", err)
+	}
+
 	// Step 1: Create/update actions
-	so.logger.Info("Seeding actions")
-	actionDefs := so.seedDataProvider.GetActions()
+	so.logger.Info("Seeding actions", zap.String("service", provider.GetServiceName()))
+	actionDefs := provider.GetActions()
 	actionsCount, err := so.actionManager.UpsertActions(ctx, actionDefs, force)
 	if err != nil {
 		result.Success = false
@@ -69,8 +100,8 @@ func (so *SeedOrchestrator) SeedRolesAndPermissions(ctx context.Context, force b
 	so.logger.Info("Actions seeded", zap.Int32("count", actionsCount))
 
 	// Step 2: Create/update resources
-	so.logger.Info("Seeding resources")
-	resourceDefs := so.seedDataProvider.GetResources()
+	so.logger.Info("Seeding resources", zap.String("service", provider.GetServiceName()))
+	resourceDefs := provider.GetResources()
 	resourcesCount, err := so.resourceManager.UpsertResources(ctx, resourceDefs, force)
 	if err != nil {
 		result.Success = false
@@ -82,8 +113,8 @@ func (so *SeedOrchestrator) SeedRolesAndPermissions(ctx context.Context, force b
 	so.logger.Info("Resources seeded", zap.Int32("count", resourcesCount))
 
 	// Step 3: Create/update permissions (with wildcard expansion)
-	so.logger.Info("Seeding permissions with wildcard expansion")
-	roleDefs := so.seedDataProvider.GetRoles()
+	so.logger.Info("Seeding permissions with wildcard expansion", zap.String("service", provider.GetServiceName()))
+	roleDefs := provider.GetRoles()
 
 	// Collect all permission patterns
 	allPatterns := make([]string, 0)
@@ -108,12 +139,14 @@ func (so *SeedOrchestrator) SeedRolesAndPermissions(ctx context.Context, force b
 		zap.Int32("count", permsCount),
 		zap.Int("unique_permissions", len(permissionIDs)))
 
-	// Step 4: Create/update roles and attach permissions
-	so.logger.Info("Seeding roles and attaching permissions")
+	// Step 4: Create/update roles and attach permissions with service mapping
+	so.logger.Info("Seeding roles and attaching permissions", zap.String("service", provider.GetServiceName()))
 	rolesCount, roleNames, err := so.roleManager.UpsertRolesWithPermissions(
 		ctx,
 		roleDefs,
 		permissionIDs,
+		provider.GetServiceID(),
+		provider.GetServiceName(),
 		force,
 	)
 	if err != nil {
@@ -130,6 +163,7 @@ func (so *SeedOrchestrator) SeedRolesAndPermissions(ctx context.Context, force b
 
 	result.Success = true
 	so.logger.Info("Successfully seeded roles and permissions",
+		zap.String("service", provider.GetServiceName()),
 		zap.Int32("actions", result.ActionsCreated),
 		zap.Int32("resources", result.ResourcesCreated),
 		zap.Int32("permissions", result.PermissionsCreated),

@@ -176,7 +176,7 @@ func TestMatchesPattern(t *testing.T) {
 
 // TestSeedDataProviderRoles tests that seed data is properly structured
 func TestSeedDataProviderRoles(t *testing.T) {
-	provider := NewSeedDataProvider()
+	provider := NewDefaultSeedProvider()
 
 	// Get roles
 	roles := provider.GetRoles()
@@ -211,7 +211,7 @@ func TestSeedDataProviderRoles(t *testing.T) {
 
 // TestSeedDataProviderActions tests action definitions
 func TestSeedDataProviderActions(t *testing.T) {
-	provider := NewSeedDataProvider()
+	provider := NewDefaultSeedProvider()
 	actions := provider.GetActions()
 
 	// Verify expected actions exist
@@ -234,7 +234,7 @@ func TestSeedDataProviderActions(t *testing.T) {
 
 // TestSeedDataProviderResources tests resource definitions
 func TestSeedDataProviderResources(t *testing.T) {
-	provider := NewSeedDataProvider()
+	provider := NewDefaultSeedProvider()
 	resources := provider.GetResources()
 
 	// Verify expected resources exist

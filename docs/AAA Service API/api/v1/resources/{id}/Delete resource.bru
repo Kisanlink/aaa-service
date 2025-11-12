@@ -1,0 +1,19 @@
+meta {
+  name: Delete resource
+  type: http
+  seq: 3
+}
+
+delete {
+  url: {{baseUrl}}/api/v1/resources/:id
+  body: none
+  auth: inherit
+}
+
+params:query {
+  ~cascade:
+}
+
+params:path {
+  id:
+}

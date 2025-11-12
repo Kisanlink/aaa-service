@@ -1,0 +1,15 @@
+meta {
+  name: Get child resources
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/v1/resources/:id/children
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id:
+}

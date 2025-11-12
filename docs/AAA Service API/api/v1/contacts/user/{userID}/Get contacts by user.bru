@@ -1,0 +1,20 @@
+meta {
+  name: Get contacts by user
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/v1/contacts/user/:userID
+  body: none
+  auth: inherit
+}
+
+params:query {
+  ~limit:
+  ~offset:
+}
+
+params:path {
+  userID:
+}

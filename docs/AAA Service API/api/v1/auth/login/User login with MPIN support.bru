@@ -1,0 +1,19 @@
+meta {
+  name: User login with MPIN support
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/v1/auth/login
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "country_code": "+91",
+    "phone_number": "9542687186",
+    "password": "Kau5hik@1403"
+  }
+}

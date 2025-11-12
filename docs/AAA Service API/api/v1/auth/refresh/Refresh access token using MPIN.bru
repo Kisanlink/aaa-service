@@ -1,0 +1,11 @@
+meta {
+  name: Refresh access token using MPIN
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/v1/auth/refresh
+  body: none
+  auth: inherit
+}

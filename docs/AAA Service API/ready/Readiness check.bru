@@ -1,0 +1,11 @@
+meta {
+  name: Readiness check
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/ready
+  body: none
+  auth: inherit
+}

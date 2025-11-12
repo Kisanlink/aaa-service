@@ -1,0 +1,17 @@
+meta {
+  name: Remove role from group in organization
+  type: http
+  seq: 1
+}
+
+delete {
+  url: {{baseUrl}}/api/v1/organizations/:orgId/groups/:groupId/roles/:roleId
+  body: none
+  auth: inherit
+}
+
+params:path {
+  orgId:
+  groupId:
+  roleId:
+}

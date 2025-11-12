@@ -1,0 +1,11 @@
+meta {
+  name: Health check (V2)
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/v1/health
+  body: none
+  auth: inherit
+}

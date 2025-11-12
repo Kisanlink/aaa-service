@@ -1,0 +1,16 @@
+meta {
+  name: Remove role from user
+  type: http
+  seq: 1
+}
+
+delete {
+  url: {{baseUrl}}/api/v1/users/:id/roles/:role_id
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id:
+  role_id:
+}

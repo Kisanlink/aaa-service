@@ -243,6 +243,7 @@ message ListPermissionsResponse {
 message SeedRolesAndPermissionsRequest {
     bool force = 1;  // Force re-seed even if data exists
     string organization_id = 2;  // Optional - seed for specific org
+    string service_id = 3;  // Optional - service identifier (farmers-module, erp-module, etc.). If empty, defaults to farmers-module
 }
 
 // Seed Roles and Permissions Response

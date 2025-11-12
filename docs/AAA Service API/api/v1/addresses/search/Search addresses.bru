@@ -1,0 +1,17 @@
+meta {
+  name: Search addresses
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/v1/addresses/search
+  body: none
+  auth: inherit
+}
+
+params:query {
+  q:
+  ~limit:
+  ~offset:
+}

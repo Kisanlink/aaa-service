@@ -1,0 +1,11 @@
+meta {
+  name: Update maintenance message
+  type: http
+  seq: 1
+}
+
+patch {
+  url: {{baseUrl}}/api/v1/admin/maintenance/message
+  body: none
+  auth: inherit
+}

@@ -1,0 +1,16 @@
+meta {
+  name: Revoke permission from role
+  type: http
+  seq: 1
+}
+
+delete {
+  url: {{baseUrl}}/api/v1/roles/:id/permissions/:permId
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id:
+  permId:
+}

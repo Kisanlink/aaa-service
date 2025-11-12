@@ -1,0 +1,22 @@
+meta {
+  name: List organizations
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/v1/organizations
+  body: none
+  auth: bearer
+}
+
+params:query {
+  ~limit:
+  ~offset:
+  ~include_inactive:
+  ~type:
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiIiLCJleHAiOjE3NjI5NDI2MDIsImlhdCI6MTc2Mjg1NjE0MiwiaXNzIjoiYWFhLXNlcnZpY2UiLCJpc3ZhbGlkYXRlIjpmYWxzZSwianRpIjoiZmZjMTlhZmJkNmRhZTcxMTNjMDYwZjNiYTRjNTdiZTgiLCJuYmYiOjE3NjI4NTYxNDIsInBlcm1pc3Npb25zIjpudWxsLCJyb2xlSWRzIjpbIlJPTEUwMDAwMDAwMSJdLCJzY29wZXMiOlsicm9sZTpzdXBlcl9hZG1pbiIsInNjb3BlOiJdLCJzZXNzaW9uX2lkIjoiOTgwNWRmOGRhMTcwZTg5N2RkMzEwODkxMDVjZDU3MTQiLCJzdWIiOiJVU0VSMDAwMDAwMDMiLCJ0ZW5hbnRfY29udGV4dCI6e30sInRva2VuX3R5cGUiOiJhY2Nlc3MiLCJ0b2tlbl92ZXJzaW9uIjoiMi4wIiwidXNlcl9jb250ZXh0Ijp7ImlkIjoiVVNFUjAwMDAwMDAzIiwidXNlcm5hbWUiOiJrYXVzaGlrIiwicGhvbmVfbnVtYmVyIjoiOTU0MjY4NzE4NiIsImNvdW50cnlfY29kZSI6Iis5MSIsImlzX3ZhbGlkYXRlZCI6ZmFsc2UsInJvbGVzIjpbeyJpZCI6IlJPTEUwMDAwMDAwMSIsIm5hbWUiOiJzdXBlcl9hZG1pbiIsInNjb3BlIjoiIiwiaXNfYWN0aXZlIjp0cnVlfV0sIm9yZ2FuaXphdGlvbnMiOltdLCJncm91cHMiOltdfSwidXNlcl9pZCI6IlVTRVIwMDAwMDAwMyIsInVzZXJuYW1lIjoia2F1c2hpayJ9.5udZGeIn6ZVL4ToQtG0iYy-QE3-ZThy4OdDuKP25hwI
+}

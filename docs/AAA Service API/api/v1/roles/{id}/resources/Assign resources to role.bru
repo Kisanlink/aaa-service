@@ -1,0 +1,15 @@
+meta {
+  name: Assign resources to role
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/v1/roles/:id/resources
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id:
+}

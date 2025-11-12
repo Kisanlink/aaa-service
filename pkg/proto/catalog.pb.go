@@ -2012,6 +2012,7 @@ type SeedRolesAndPermissionsRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	Force          bool                   `protobuf:"varint,1,opt,name=force,proto3" json:"force,omitempty"`                                        // Force re-seed even if data exists
 	OrganizationId string                 `protobuf:"bytes,2,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"` // Optional - seed for specific org
+	ServiceId      string                 `protobuf:"bytes,3,opt,name=service_id,json=serviceId,proto3" json:"service_id,omitempty"`                // Optional - service identifier (farmers-module, erp-module, etc.). If empty, defaults to farmers-module
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -2056,6 +2057,13 @@ func (x *SeedRolesAndPermissionsRequest) GetForce() bool {
 func (x *SeedRolesAndPermissionsRequest) GetOrganizationId() string {
 	if x != nil {
 		return x.OrganizationId
+	}
+	return ""
+}
+
+func (x *SeedRolesAndPermissionsRequest) GetServiceId() string {
+	if x != nil {
+		return x.ServiceId
 	}
 	return ""
 }
@@ -2373,10 +2381,12 @@ const file_catalog_proto_rawDesc = "" +
 	"\vtotal_count\x18\x04 \x01(\x05R\n" +
 	"totalCount\x12\x12\n" +
 	"\x04page\x18\x05 \x01(\x05R\x04page\x12\x1b\n" +
-	"\tpage_size\x18\x06 \x01(\x05R\bpageSize\"_\n" +
+	"\tpage_size\x18\x06 \x01(\x05R\bpageSize\"~\n" +
 	"\x1eSeedRolesAndPermissionsRequest\x12\x14\n" +
 	"\x05force\x18\x01 \x01(\bR\x05force\x12'\n" +
-	"\x0forganization_id\x18\x02 \x01(\tR\x0eorganizationId\"\xad\x02\n" +
+	"\x0forganization_id\x18\x02 \x01(\tR\x0eorganizationId\x12\x1d\n" +
+	"\n" +
+	"service_id\x18\x03 \x01(\tR\tserviceId\"\xad\x02\n" +
 	"\x1fSeedRolesAndPermissionsResponse\x12\x1f\n" +
 	"\vstatus_code\x18\x01 \x01(\x05R\n" +
 	"statusCode\x12\x18\n" +

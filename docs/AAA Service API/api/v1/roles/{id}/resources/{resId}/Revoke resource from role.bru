@@ -1,0 +1,20 @@
+meta {
+  name: Revoke resource from role
+  type: http
+  seq: 1
+}
+
+delete {
+  url: {{baseUrl}}/api/v1/roles/:id/resources/:resId
+  body: none
+  auth: inherit
+}
+
+params:query {
+  ~action:
+}
+
+params:path {
+  id:
+  resId:
+}

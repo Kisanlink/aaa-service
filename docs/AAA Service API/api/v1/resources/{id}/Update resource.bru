@@ -1,0 +1,15 @@
+meta {
+  name: Update resource
+  type: http
+  seq: 2
+}
+
+put {
+  url: {{baseUrl}}/api/v1/resources/:id
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id:
+}

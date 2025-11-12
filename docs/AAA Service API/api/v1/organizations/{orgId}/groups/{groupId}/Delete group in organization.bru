@@ -1,0 +1,16 @@
+meta {
+  name: Delete group in organization
+  type: http
+  seq: 3
+}
+
+delete {
+  url: {{baseUrl}}/api/v1/organizations/:orgId/groups/:groupId
+  body: none
+  auth: inherit
+}
+
+params:path {
+  orgId:
+  groupId:
+}

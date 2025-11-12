@@ -1,0 +1,21 @@
+meta {
+  name: List permissions
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/v1/permissions
+  body: none
+  auth: inherit
+}
+
+params:query {
+  ~role_id:
+  ~resource_id:
+  ~action_id:
+  ~is_active:
+  ~search:
+  ~limit:
+  ~offset:
+}

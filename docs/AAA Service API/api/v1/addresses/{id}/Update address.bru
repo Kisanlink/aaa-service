@@ -1,0 +1,15 @@
+meta {
+  name: Update address
+  type: http
+  seq: 2
+}
+
+put {
+  url: {{baseUrl}}/api/v1/addresses/:id
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id:
+}

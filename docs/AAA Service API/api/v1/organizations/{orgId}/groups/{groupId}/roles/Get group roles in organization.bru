@@ -1,0 +1,21 @@
+meta {
+  name: Get group roles in organization
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/v1/organizations/:orgId/groups/:groupId/roles
+  body: none
+  auth: inherit
+}
+
+params:query {
+  ~limit:
+  ~offset:
+}
+
+params:path {
+  orgId:
+  groupId:
+}

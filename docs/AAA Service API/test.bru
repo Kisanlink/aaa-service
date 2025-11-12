@@ -1,0 +1,26 @@
+meta {
+  name: test
+  type: grpc
+  seq: 5
+}
+
+grpc {
+  url: https://beta.aaa.kisanlink.in
+  method: /pb.UserService/GetUser
+  body: grpc
+  auth: apikey
+  methodType: unary
+}
+
+auth:apikey {
+  key: x-api-key
+  value: farmers-module-api-key
+  placement: header
+}
+
+body:grpc {
+  name: message 1
+  content: '''
+    {"id": "USER00000001"}
+  '''
+}

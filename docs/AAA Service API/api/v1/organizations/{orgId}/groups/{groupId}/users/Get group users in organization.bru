@@ -1,0 +1,21 @@
+meta {
+  name: Get group users in organization
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/v1/organizations/:orgId/groups/:groupId/users
+  body: none
+  auth: inherit
+}
+
+params:query {
+  ~limit:
+  ~offset:
+}
+
+params:path {
+  orgId:
+  groupId:
+}

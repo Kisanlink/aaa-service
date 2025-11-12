@@ -1,0 +1,16 @@
+meta {
+  name: Assign role to user
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/v1/users/:id/roles/:roleId
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id:
+  roleId:
+}

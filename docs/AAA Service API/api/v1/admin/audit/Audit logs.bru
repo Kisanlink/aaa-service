@@ -1,0 +1,21 @@
+meta {
+  name: Audit logs
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/v1/admin/audit
+  body: none
+  auth: inherit
+}
+
+params:query {
+  ~user_id:
+  ~action:
+  ~resource:
+  ~start_date:
+  ~end_date:
+  ~limit:
+  ~offset:
+}

@@ -1,0 +1,15 @@
+meta {
+  name: Get organization statistics
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/v1/organizations/:id/stats
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id:
+}

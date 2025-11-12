@@ -1,0 +1,11 @@
+meta {
+  name: User logout
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/v1/auth/logout
+  body: none
+  auth: inherit
+}
