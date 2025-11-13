@@ -13,6 +13,7 @@ import (
 	"github.com/Kisanlink/aaa-service/v2/internal/services"
 	"github.com/Kisanlink/aaa-service/v2/internal/services/catalog"
 	pb "github.com/Kisanlink/aaa-service/v2/pkg/proto"
+	pbv2 "github.com/Kisanlink/aaa-service/v2/pkg/proto/v2"
 	"github.com/Kisanlink/kisanlink-db/pkg/db"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -245,13 +246,17 @@ func (s *GRPCServer) registerServices() {
 	catalogHandler := NewCatalogHandler(catalogService, catalogAuthChecker, s.logger)
 	pb.RegisterCatalogServiceServer(s.server, catalogHandler)
 
-	// Register AddressService for address management
+	// Register AddressService for address management (v1 - backward compatibility)
 	addressHandler := NewAddressHandler(s.addressService, s.logger)
 	pb.RegisterAddressServiceServer(s.server, addressHandler)
 
+	// Register AddressService V2 for address management (v2 - Indian format, matches HTTP)
+	addressHandlerV2 := NewAddressHandlerV2(s.addressService, s.logger)
+	pbv2.RegisterAddressServiceServer(s.server, addressHandlerV2)
+
 	s.logger.Info("gRPC services registered successfully",
 		zap.String("primary_service", "AAAService"),
-		zap.Strings("services", []string{"UserServiceV2", "AuthorizationService", "TokenService", "OrganizationService", "CatalogService", "AddressService"}))
+		zap.Strings("services", []string{"UserServiceV2", "AuthorizationService", "TokenService", "OrganizationService", "CatalogService", "AddressService", "AddressServiceV2"}))
 }
 
 // loggingInterceptor logs gRPC requests

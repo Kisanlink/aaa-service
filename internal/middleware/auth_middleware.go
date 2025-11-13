@@ -228,6 +228,54 @@ func (m *AuthMiddleware) GRPCAuthInterceptor() grpc.UnaryServerInterceptor {
 			return nil, status.Errorf(codes.Unauthenticated, "metadata is not provided")
 		}
 
+		// Debug: Log all metadata keys to help troubleshoot
+		mdKeys := make([]string, 0, len(md))
+		for k := range md {
+			mdKeys = append(mdKeys, k)
+		}
+		m.logger.Info("gRPC request metadata keys",
+			zap.Strings("keys", mdKeys),
+			zap.String("method", info.FullMethod))
+
+		// Log specific metadata values we're looking for
+		if pt, ok := md["principal_type"]; ok {
+			m.logger.Info("Found principal_type in metadata", zap.Strings("values", pt))
+		}
+		if sid, ok := md["service_id"]; ok {
+			m.logger.Info("Found service_id in metadata", zap.Strings("values", sid))
+		}
+
+		// Check for service metadata (for service-to-service calls without API key)
+		// This allows services to identify themselves via metadata for operations like seeding
+		// Note: gRPC metadata keys are automatically converted to lowercase
+		// Try both hyphen and underscore formats to be safe
+		var principalType string
+		var serviceID string
+
+		// Try hyphen format first (HTTP-style conversion)
+		if pt, ok := md["principal-type"]; ok && len(pt) > 0 {
+			principalType = pt[0]
+		} else if pt, ok := md["principal_type"]; ok && len(pt) > 0 {
+			principalType = pt[0]
+		}
+
+		if sid, ok := md["service-id"]; ok && len(sid) > 0 {
+			serviceID = sid[0]
+		} else if sid, ok := md["service_id"]; ok && len(sid) > 0 {
+			serviceID = sid[0]
+		}
+
+		if principalType == "service" && serviceID != "" {
+			// Set service context from metadata
+			ctx = context.WithValue(ctx, "principal_type", "service")
+			ctx = context.WithValue(ctx, "service_id", serviceID)
+			ctx = context.WithValue(ctx, "user_id", serviceID) // Set user_id to service_id for compatibility
+			m.logger.Info("gRPC service identified via metadata",
+				zap.String("service_id", serviceID),
+				zap.String("method", info.FullMethod))
+			return handler(ctx, req)
+		}
+
 		// Check for API key authentication (for service-to-service calls)
 		if apiKeys, ok := md["x-api-key"]; ok && len(apiKeys) > 0 {
 			return m.authenticateService(ctx, apiKeys[0], info.FullMethod, handler, req)

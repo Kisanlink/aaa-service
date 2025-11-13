@@ -57,14 +57,22 @@ func (ac *AuthorizationChecker) CheckSeedPermission(ctx context.Context, targetS
 		zap.String("principal_type", principalType),
 		zap.String("target_service_id", targetServiceID))
 
-	// CRITICAL FIX: Route based on principal type
+	// Identify if this request is from a service (either via principal_type OR explicit context values)
+	serviceName := ac.getContextValue(ctx, "service_name")
+	isServicePrincipal := principalType == "service" || serviceName != ""
+
 	// Services bypass permission checks and use ownership validation only
-	if principalType == "service" {
-		// Extract service name (FIX: use service_name, not service_id)
-		serviceName := ac.getContextValue(ctx, "service_name")
+	if isServicePrincipal {
 		if serviceName == "" {
-			ac.logger.Error("Service name missing in context",
-				zap.String("service_id", principalID))
+			// Fallback: try to resolve service name from context if not already available
+			serviceName = ac.getContextValue(ctx, "service_id")
+		}
+
+		if serviceName == "" {
+			ac.logger.Error("Service name missing in context (service principal detected)",
+				zap.String("principal_id", principalID),
+				zap.String("principal_type", principalType),
+				zap.String("target_service_id", targetServiceID))
 			return status.Errorf(codes.Unauthenticated,
 				"service authentication incomplete: service_name missing")
 		}
