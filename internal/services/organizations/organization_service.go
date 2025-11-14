@@ -1025,6 +1025,22 @@ func (s *Service) GetGroupRolesInOrganization(ctx context.Context, orgID, groupI
 		zap.Int("limit", limit),
 		zap.Int("offset", offset))
 
+	// Validate input parameters
+	if orgID == "" {
+		return nil, errors.NewValidationError("organization_id cannot be empty")
+	}
+	if groupID == "" {
+		return nil, errors.NewValidationError("group_id cannot be empty")
+	}
+
+	// Set default pagination if not provided
+	if limit <= 0 {
+		limit = 50
+	}
+	if offset < 0 {
+		offset = 0
+	}
+
 	// Verify organization exists
 	org, err := s.orgRepo.GetByID(ctx, orgID)
 	if err != nil || org == nil {
@@ -1032,12 +1048,42 @@ func (s *Service) GetGroupRolesInOrganization(ctx context.Context, orgID, groupI
 		return nil, errors.NewNotFoundError("organization not found")
 	}
 
-	// This would query the GroupRole table with organization context validation
-	// For now, return placeholder response
+	// Verify group exists and belongs to the organization
+	var group models.Group
+	_, err = s.groupRepo.GetByID(ctx, groupID, &group)
+	if err != nil {
+		s.logger.Error("Group not found", zap.String("group_id", groupID))
+		return nil, errors.NewNotFoundError("group not found")
+	}
+
+	if group.OrganizationID != orgID {
+		s.logger.Error("Group does not belong to organization",
+			zap.String("group_id", groupID),
+			zap.String("group_org_id", group.OrganizationID),
+			zap.String("requested_org_id", orgID))
+		return nil, errors.NewValidationError("group does not belong to the specified organization")
+	}
+
+	// Get group roles using the group service
+	groupRoles, err := s.groupService.GetGroupRoles(ctx, groupID)
+	if err != nil {
+		s.logger.Error("Failed to retrieve group roles", zap.Error(err))
+		return nil, errors.NewInternalError(err)
+	}
+
+	// The groupService returns the roles with details already loaded
+	// Wrap the response with organization context
+	result := map[string]interface{}{
+		"organization_id": orgID,
+		"group_id":        groupID,
+		"roles":           groupRoles,
+	}
+
 	s.logger.Info("Group roles retrieved from organization successfully",
 		zap.String("org_id", orgID),
 		zap.String("group_id", groupID))
-	return []interface{}{}, nil
+
+	return result, nil
 }
 
 // buildGroupHierarchy builds the complete group hierarchy for an organization with role assignments

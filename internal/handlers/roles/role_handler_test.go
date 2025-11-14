@@ -72,6 +72,38 @@ func (m *MockRoleService) GetUserRoles(ctx context.Context, userID string) ([]*m
 	return args.Get(0).([]*models.UserRole), args.Error(1)
 }
 
+func (m *MockRoleService) GetRoleHierarchy(ctx context.Context) ([]*models.Role, error) {
+	return nil, nil
+}
+
+func (m *MockRoleService) AddChildRole(ctx context.Context, parentRoleID, childRoleID string) error {
+	return nil
+}
+
+func (m *MockRoleService) RemoveChildRole(ctx context.Context, parentRoleID, childRoleID string) error {
+	return nil
+}
+
+func (m *MockRoleService) GetRoleWithChildren(ctx context.Context, roleID string) (*models.Role, error) {
+	return nil, nil
+}
+
+func (m *MockRoleService) ValidateRoleAssignment(ctx context.Context, userID, roleID string) error {
+	return nil
+}
+
+func (m *MockRoleService) AssignRole(ctx context.Context, userID, roleID string) error {
+	return nil
+}
+
+func (m *MockRoleService) RemoveRole(ctx context.Context, userID, roleID string) error {
+	return nil
+}
+
+func (m *MockRoleService) HardDeleteRole(ctx context.Context, roleID string) error {
+	return nil
+}
+
 // MockValidator is a mock implementation of the Validator interface
 type MockValidator struct {
 	mock.Mock

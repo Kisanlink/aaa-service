@@ -18,6 +18,7 @@ type Service struct {
 	rolePermissionRepo     *role_permissions.RolePermissionRepository
 	resourcePermissionRepo *resource_permissions.ResourcePermissionRepository
 	permissionRepo         *permissions.PermissionRepository
+	auditRepo              interfaces.AuditRepository
 	cache                  interfaces.CacheService
 	audit                  interfaces.AuditService
 	logger                 interfaces.Logger
@@ -29,6 +30,7 @@ func NewService(
 	rolePermissionRepo *role_permissions.RolePermissionRepository,
 	resourcePermissionRepo *resource_permissions.ResourcePermissionRepository,
 	permissionRepo *permissions.PermissionRepository,
+	auditRepo interfaces.AuditRepository,
 	cache interfaces.CacheService,
 	audit interfaces.AuditService,
 	logger interfaces.Logger,
@@ -38,6 +40,7 @@ func NewService(
 		rolePermissionRepo:     rolePermissionRepo,
 		resourcePermissionRepo: resourcePermissionRepo,
 		permissionRepo:         permissionRepo,
+		auditRepo:              auditRepo,
 		cache:                  cache,
 		audit:                  audit,
 		logger:                 logger.Named("role_assignment_service"),

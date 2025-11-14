@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/Kisanlink/aaa-service/v2/internal/entities/requests/users"
+	userResponses "github.com/Kisanlink/aaa-service/v2/internal/entities/responses/users"
 	"github.com/Kisanlink/aaa-service/v2/internal/interfaces"
 	"github.com/Kisanlink/aaa-service/v2/internal/services"
 	pb "github.com/Kisanlink/aaa-service/v2/pkg/proto"
@@ -238,19 +239,34 @@ func (h *CombinedUserHandler) GetAllUsers(ctx context.Context, req *pb.GetAllUse
 		}, status.Error(codes.Internal, err.Error())
 	}
 
-	// Convert interface{} to slice - this is a limitation of the current service interface
+	// Convert interface{} to typed user response slice
 	var pbUsers []*pb.User
+	var totalCount int32
 
-	// For now, return empty list with success status
-	// TODO: Fix the service interface to return proper typed responses
-	// Log the type for debugging
-	h.logger.Debug("Retrieved users", zap.Any("users_type", usersInterface))
+	// Type assert to the expected response type
+	if userList, ok := usersInterface.([]*userResponses.UserResponse); ok {
+		pbUsers = make([]*pb.User, len(userList))
+		for i, userResp := range userList {
+			pbUsers[i] = &pb.User{
+				Id:          userResp.ID,
+				Username:    getStringValue(userResp.Username),
+				PhoneNumber: userResp.PhoneNumber,
+				CountryCode: userResp.CountryCode,
+				IsValidated: userResp.IsValidated,
+				CreatedAt:   timestamppb.New(userResp.CreatedAt).String(),
+				UpdatedAt:   timestamppb.New(userResp.UpdatedAt).String(),
+			}
+		}
+		totalCount = int32(len(userList))
+	} else {
+		h.logger.Warn("Unexpected type from user service", zap.Any("type", usersInterface))
+	}
 
 	return &pb.GetAllUsersResponse{
 		StatusCode: 200,
 		Message:    "Users retrieved successfully",
 		Users:      pbUsers,
-		TotalCount: 0,
+		TotalCount: totalCount,
 		Page:       int32(page),
 		PerPage:    int32(perPage),
 	}, nil
@@ -357,11 +373,71 @@ func (h *CombinedUserHandler) VerifyUserPassword(ctx context.Context, req *pb.Ve
 func (h *CombinedUserHandler) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest) (*pb.UpdateUserResponse, error) {
 	h.logger.Info("gRPC UpdateUser request", zap.String("user_id", req.Id))
 
-	// TODO: Implement update user functionality
+	// Validate request
+	if req.Id == "" {
+		return &pb.UpdateUserResponse{
+			StatusCode: 400,
+			Message:    "User ID is required",
+		}, status.Error(codes.InvalidArgument, "user ID is required")
+	}
+
+	// Build update request
+	updateReq := &users.UpdateUserRequest{
+		UserID: req.Id,
+	}
+
+	// Map optional fields from protobuf to service request
+	if req.Username != "" {
+		updateReq.Name = &req.Username
+	}
+	if req.Email != "" {
+		updateReq.EmailHash = &req.Email
+	}
+	if req.FullName != "" {
+		updateReq.Name = &req.FullName
+	}
+	if req.Status != "" {
+		updateReq.Status = &req.Status
+	}
+
+	// Set user ID in context for service layer
+	type userIDKey struct{}
+	ctxWithUser := context.WithValue(ctx, userIDKey{}, req.Id)
+
+	// Update user via service
+	userResponse, err := h.userService.UpdateUser(ctxWithUser, updateReq)
+	if err != nil {
+		h.logger.Error("Failed to update user", zap.String("user_id", req.Id), zap.Error(err))
+
+		if err.Error() == "user not found" {
+			return &pb.UpdateUserResponse{
+				StatusCode: 404,
+				Message:    "User not found",
+			}, status.Error(codes.NotFound, "user not found")
+		}
+
+		return &pb.UpdateUserResponse{
+			StatusCode: 500,
+			Message:    "Internal server error",
+		}, status.Error(codes.Internal, err.Error())
+	}
+
+	// Convert to protobuf user
+	pbUser := &pb.User{
+		Id:          userResponse.ID,
+		Username:    getStringValue(userResponse.Username),
+		PhoneNumber: userResponse.PhoneNumber,
+		CountryCode: userResponse.CountryCode,
+		IsValidated: userResponse.IsValidated,
+		CreatedAt:   timestamppb.New(userResponse.CreatedAt).String(),
+		UpdatedAt:   timestamppb.New(userResponse.UpdatedAt).String(),
+	}
+
 	return &pb.UpdateUserResponse{
-		StatusCode: 501,
-		Message:    "Update user not implemented yet",
-	}, status.Error(codes.Unimplemented, "update user not implemented")
+		StatusCode: 200,
+		Message:    "User updated successfully",
+		User:       pbUser,
+	}, nil
 }
 
 // DeleteUser deletes a user
@@ -404,22 +480,88 @@ func (h *CombinedUserHandler) DeleteUser(ctx context.Context, req *pb.DeleteUser
 func (h *CombinedUserHandler) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequest) (*pb.RefreshTokenResponse, error) {
 	h.logger.Info("gRPC RefreshToken request")
 
-	// TODO: Implement refresh token functionality
-	return &pb.RefreshTokenResponse{
-		StatusCode: 501,
-		Message:    "Refresh token not implemented yet",
-	}, status.Error(codes.Unimplemented, "refresh token not implemented")
+	// Validate request
+	if req.RefreshToken == "" {
+		return &pb.RefreshTokenResponse{
+			StatusCode: 400,
+			Message:    "Refresh token is required",
+		}, status.Error(codes.InvalidArgument, "refresh token is required")
+	}
+
+	// Call auth service to refresh token
+	// Note: The gRPC proto doesn't include mPin, so we pass empty string
+	// This is a limitation that should be addressed in the proto definition
+	response, err := h.authService.RefreshToken(ctx, req.RefreshToken, "")
+	if err != nil {
+		h.logger.Error("Token refresh failed", zap.Error(err))
+		return &pb.RefreshTokenResponse{
+			StatusCode: 401,
+			Message:    "Token refresh failed",
+		}, status.Error(codes.Unauthenticated, err.Error())
+	}
+
+	// Convert service response to gRPC response
+	grpcResponse := &pb.RefreshTokenResponse{
+		StatusCode:   200,
+		Message:      "Token refreshed successfully",
+		AccessToken:  response.AccessToken,
+		RefreshToken: response.RefreshToken,
+		ExpiresIn:    int32(response.ExpiresIn),
+	}
+
+	h.logger.Info("Token refresh successful")
+	return grpcResponse, nil
 }
 
 // Logout logs out a user
 func (h *CombinedUserHandler) Logout(ctx context.Context, req *pb.LogoutRequest) (*pb.LogoutResponse, error) {
 	h.logger.Info("gRPC Logout request")
 
-	// TODO: Implement logout functionality
-	return &pb.LogoutResponse{
-		StatusCode: 501,
-		Message:    "Logout not implemented yet",
-	}, status.Error(codes.Unimplemented, "logout not implemented")
+	// Validate request
+	if req.AccessToken == "" {
+		return &pb.LogoutResponse{
+			StatusCode: 400,
+			Message:    "Access token is required",
+		}, status.Error(codes.InvalidArgument, "access token is required")
+	}
+
+	// Extract user ID from token
+	claims, err := h.authService.ValidateToken(req.AccessToken)
+	if err != nil {
+		h.logger.Error("Invalid token for logout", zap.Error(err))
+		return &pb.LogoutResponse{
+			StatusCode: 401,
+			Message:    "Invalid token",
+		}, status.Error(codes.Unauthenticated, "invalid token")
+	}
+
+	// Extract user ID from claims
+	userID := claims.UserID
+	if userID == "" {
+		h.logger.Error("Could not extract user ID from token")
+		return &pb.LogoutResponse{
+			StatusCode: 401,
+			Message:    "Invalid token claims",
+		}, status.Error(codes.Unauthenticated, "invalid token claims")
+	}
+
+	// Call authentication service logout
+	err = h.authService.Logout(ctx, userID)
+	if err != nil {
+		h.logger.Error("Logout failed", zap.String("user_id", userID), zap.Error(err))
+		return &pb.LogoutResponse{
+			StatusCode: 500,
+			Message:    "Logout failed",
+		}, status.Error(codes.Internal, err.Error())
+	}
+
+	grpcResponse := &pb.LogoutResponse{
+		StatusCode: 200,
+		Message:    "Logout successful",
+	}
+
+	h.logger.Info("Logout successful", zap.String("user_id", userID))
+	return grpcResponse, nil
 }
 
 // Helper function to safely get string value from pointer

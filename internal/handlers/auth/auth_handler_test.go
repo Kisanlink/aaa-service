@@ -112,6 +112,15 @@ func (m *MockUserService) UpdateMPin(ctx context.Context, userID, currentMPin, n
 func (m *MockUserService) GetUserByPhoneNumber(ctx context.Context, phoneNumber, countryCode string) (*userResponses.UserResponse, error) {
 	return nil, nil
 }
+func (m *MockUserService) GetUserByEmail(ctx context.Context, email string) (*userResponses.UserResponse, error) {
+	return nil, nil
+}
+func (m *MockUserService) InitiatePasswordReset(ctx context.Context, phoneNumber, countryCode, username, email *string) (string, error) {
+	return "", nil
+}
+func (m *MockUserService) ResetPassword(ctx context.Context, token, newPassword string) error {
+	return nil
+}
 
 func (m *MockUserService) SoftDeleteUserWithCascade(ctx context.Context, userID, deletedBy string) error {
 	args := m.Called(ctx, userID, deletedBy)

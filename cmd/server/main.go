@@ -443,6 +443,7 @@ func initializeServer(
 		rolePermissionRepository,
 		resourcePermissionRepository,
 		permissionRepository,
+		auditRepository,
 		cacheService,
 		auditServiceAdapter,
 		loggerAdapter,

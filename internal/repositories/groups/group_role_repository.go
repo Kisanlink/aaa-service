@@ -107,6 +107,18 @@ func (r *GroupRoleRepository) GetByOrganizationID(ctx context.Context, organizat
 	return r.BaseFilterableRepository.Find(ctx, filter)
 }
 
+// GetByOrganizationAndGroupID retrieves all roles assigned to a specific group within an organization
+func (r *GroupRoleRepository) GetByOrganizationAndGroupID(ctx context.Context, organizationID, groupID string, limit, offset int) ([]*models.GroupRole, error) {
+	filter := base.NewFilterBuilder().
+		Where("organization_id", base.OpEqual, organizationID).
+		Where("group_id", base.OpEqual, groupID).
+		Where("is_active", base.OpEqual, true).
+		Limit(limit, offset).
+		Build()
+
+	return r.BaseFilterableRepository.Find(ctx, filter)
+}
+
 // GetByRoleID retrieves all groups that have a specific role assigned
 func (r *GroupRoleRepository) GetByRoleID(ctx context.Context, roleID string) ([]*models.GroupRole, error) {
 	filter := base.NewFilterBuilder().

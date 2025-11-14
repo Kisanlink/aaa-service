@@ -27,13 +27,21 @@ type AuditService interface {
 	LogAccessDenied(ctx context.Context, userID, action, resource, resourceID, reason string)
 }
 
+// RoleAssignmentService interface for role-permission assignments
+type RoleAssignmentService interface {
+	AssignPermissionToRole(ctx context.Context, roleID, permissionID string, assignedBy string) error
+	RevokePermissionFromRole(ctx context.Context, roleID, permissionID string, revokedBy string) error
+	GetRolePermissions(ctx context.Context, roleID string) ([]*models.Permission, error)
+}
+
 // RoleHandler handles role-related HTTP requests
 type RoleHandler struct {
-	roleService  interfaces.RoleService
-	validator    interfaces.Validator
-	responder    interfaces.Responder
-	auditService AuditService
-	logger       *zap.Logger
+	roleService           interfaces.RoleService
+	roleAssignmentService RoleAssignmentService
+	validator             interfaces.Validator
+	responder             interfaces.Responder
+	auditService          AuditService
+	logger                *zap.Logger
 }
 
 // NewRoleHandler creates a new RoleHandler instance
@@ -51,6 +59,11 @@ func NewRoleHandler(
 		auditService: auditService,
 		logger:       logger,
 	}
+}
+
+// SetRoleAssignmentService sets the role assignment service (for dependency injection)
+func (h *RoleHandler) SetRoleAssignmentService(service RoleAssignmentService) {
+	h.roleAssignmentService = service
 }
 
 // CreateRole handles POST /v1/roles
@@ -348,31 +361,44 @@ func (h *RoleHandler) AssignPermissionV2(c *gin.Context) {
 	roleID := c.Param("id")
 	h.logger.Info("Assigning permission to role", zap.String("roleID", roleID))
 
-	var req roles.AssignRoleRequest
+	var req struct {
+		PermissionID string `json:"permission_id" binding:"required"`
+	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		h.logger.Error("Failed to bind request", zap.Error(err))
 		h.responder.SendValidationError(c, []string{err.Error()})
 		return
 	}
 
-	// Set role ID from URL parameter
-	req.RoleID = roleID
-
-	// Validate request
-	if err := req.Validate(); err != nil {
-		h.logger.Error("Request validation failed", zap.Error(err))
-		h.responder.SendValidationError(c, []string{err.Error()})
+	// Check if role assignment service is available
+	if h.roleAssignmentService == nil {
+		h.logger.Error("Role assignment service not available")
+		h.responder.SendError(c, http.StatusServiceUnavailable, "Role assignment service not configured", nil)
 		return
 	}
 
-	// TODO: Implement permission assignment through service
-	// For now, return placeholder response
-	result := map[string]interface{}{
-		"message": "Permission assigned successfully",
-		"role_id": roleID,
+	// Get user ID from context (set by auth middleware)
+	userID, _ := c.Get("userID")
+	assignedBy := ""
+	if uid, ok := userID.(string); ok {
+		assignedBy = uid
 	}
 
-	h.logger.Info("Permission assigned successfully", zap.String("roleID", roleID))
+	// Assign permission to role
+	err := h.roleAssignmentService.AssignPermissionToRole(c.Request.Context(), roleID, req.PermissionID, assignedBy)
+	if err != nil {
+		h.logger.Error("Failed to assign permission to role", zap.Error(err))
+		h.responder.SendInternalError(c, err)
+		return
+	}
+
+	result := map[string]interface{}{
+		"message":       "Permission assigned successfully",
+		"role_id":       roleID,
+		"permission_id": req.PermissionID,
+	}
+
+	h.logger.Info("Permission assigned successfully", zap.String("roleID", roleID), zap.String("permissionID", req.PermissionID))
 	h.responder.SendSuccess(c, http.StatusOK, result)
 }
 
@@ -382,8 +408,28 @@ func (h *RoleHandler) RemovePermissionV2(c *gin.Context) {
 	permissionID := c.Param("permissionId")
 	h.logger.Info("Removing permission from role", zap.String("roleID", roleID), zap.String("permissionID", permissionID))
 
-	// TODO: Implement permission removal through service
-	// For now, return placeholder response
+	// Check if role assignment service is available
+	if h.roleAssignmentService == nil {
+		h.logger.Error("Role assignment service not available")
+		h.responder.SendError(c, http.StatusServiceUnavailable, "Role assignment service not configured", nil)
+		return
+	}
+
+	// Get user ID from context (set by auth middleware)
+	userID, _ := c.Get("userID")
+	revokedBy := ""
+	if uid, ok := userID.(string); ok {
+		revokedBy = uid
+	}
+
+	// Revoke permission from role
+	err := h.roleAssignmentService.RevokePermissionFromRole(c.Request.Context(), roleID, permissionID, revokedBy)
+	if err != nil {
+		h.logger.Error("Failed to revoke permission from role", zap.Error(err))
+		h.responder.SendInternalError(c, err)
+		return
+	}
+
 	result := map[string]interface{}{
 		"message":       "Permission removed successfully",
 		"role_id":       roleID,
@@ -399,13 +445,38 @@ func (h *RoleHandler) GetRolePermissionsV2(c *gin.Context) {
 	roleID := c.Param("id")
 	h.logger.Info("Getting role permissions", zap.String("roleID", roleID))
 
-	// TODO: Implement through service
-	result := map[string]interface{}{
-		"role_id":     roleID,
-		"permissions": []interface{}{},
+	// Check if role assignment service is available
+	if h.roleAssignmentService == nil {
+		h.logger.Error("Role assignment service not available")
+		h.responder.SendError(c, http.StatusServiceUnavailable, "Role assignment service not configured", nil)
+		return
 	}
 
-	h.logger.Info("Role permissions retrieved successfully", zap.String("roleID", roleID))
+	// Get permissions from service
+	permissions, err := h.roleAssignmentService.GetRolePermissions(c.Request.Context(), roleID)
+	if err != nil {
+		h.logger.Error("Failed to get role permissions", zap.Error(err))
+		h.responder.SendInternalError(c, err)
+		return
+	}
+
+	// Convert to response format
+	permissionList := make([]map[string]interface{}, len(permissions))
+	for i, perm := range permissions {
+		permissionList[i] = map[string]interface{}{
+			"id":          perm.GetID(),
+			"name":        perm.Name,
+			"description": perm.Description,
+		}
+	}
+
+	result := map[string]interface{}{
+		"role_id":     roleID,
+		"permissions": permissionList,
+		"count":       len(permissions),
+	}
+
+	h.logger.Info("Role permissions retrieved successfully", zap.String("roleID", roleID), zap.Int("count", len(permissions)))
 	h.responder.SendSuccess(c, http.StatusOK, result)
 }
 
@@ -413,13 +484,52 @@ func (h *RoleHandler) GetRolePermissionsV2(c *gin.Context) {
 func (h *RoleHandler) GetRoleHierarchyV2(c *gin.Context) {
 	h.logger.Info("Getting role hierarchy")
 
-	// TODO: Implement through service
-	result := map[string]interface{}{
-		"hierarchy": []interface{}{},
+	// Get role hierarchy from service
+	hierarchy, err := h.roleService.GetRoleHierarchy(c.Request.Context())
+	if err != nil {
+		h.logger.Error("Failed to get role hierarchy", zap.Error(err))
+		h.responder.SendError(c, http.StatusInternalServerError, "Failed to retrieve role hierarchy", err)
+		return
 	}
 
-	h.logger.Info("Role hierarchy retrieved successfully")
+	// Convert to response format
+	hierarchyData := make([]map[string]interface{}, len(hierarchy))
+	for i, role := range hierarchy {
+		hierarchyData[i] = h.convertRoleToMap(role)
+	}
+
+	result := map[string]interface{}{
+		"hierarchy": hierarchyData,
+		"count":     len(hierarchy),
+	}
+
+	h.logger.Info("Role hierarchy retrieved successfully", zap.Int("root_roles", len(hierarchy)))
 	h.responder.SendSuccess(c, http.StatusOK, result)
+}
+
+// convertRoleToMap recursively converts a role and its children to a map
+func (h *RoleHandler) convertRoleToMap(role *models.Role) map[string]interface{} {
+	roleMap := map[string]interface{}{
+		"id":          role.GetID(),
+		"name":        role.Name,
+		"description": role.Description,
+		"scope":       role.Scope,
+		"is_active":   role.IsActive,
+	}
+
+	if role.ParentID != nil {
+		roleMap["parent_id"] = *role.ParentID
+	}
+
+	if len(role.Children) > 0 {
+		children := make([]map[string]interface{}, len(role.Children))
+		for i, child := range role.Children {
+			children[i] = h.convertRoleToMap(&child)
+		}
+		roleMap["children"] = children
+	}
+
+	return roleMap
 }
 
 // AddChildRoleV2 handles POST /v2/roles/:id/children
@@ -436,7 +546,20 @@ func (h *RoleHandler) AddChildRoleV2(c *gin.Context) {
 		return
 	}
 
-	// TODO: Implement through service
+	// Validate request
+	if err := h.validator.ValidateStruct(&req); err != nil {
+		h.responder.SendValidationError(c, []string{err.Error()})
+		return
+	}
+
+	// Add child role through service
+	err := h.roleService.AddChildRole(c.Request.Context(), parentRoleID, req.ChildRoleID)
+	if err != nil {
+		h.logger.Error("Failed to add child role", zap.Error(err))
+		h.responder.SendError(c, http.StatusBadRequest, "Failed to add child role", err)
+		return
+	}
+
 	result := map[string]interface{}{
 		"message":        "Child role added successfully",
 		"parent_role_id": parentRoleID,
