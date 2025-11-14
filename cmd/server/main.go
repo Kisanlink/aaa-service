@@ -98,6 +98,12 @@ func runSeedScripts(ctx context.Context, dbManager *db.DatabaseManager, logger *
 			return fmt.Errorf("failed to seed comprehensive RBAC: %w", err)
 		}
 
+		// Seed wildcard permissions for super_admin role
+		// This ensures super_admin has explicit wildcard resource_permissions for all resource types
+		if err := migrations.SeedSuperAdminWildcardPermissionsWithDBManager(ctx, dbManager, logger); err != nil {
+			return fmt.Errorf("failed to seed super_admin wildcard permissions: %w", err)
+		}
+
 		// Add performance indexes after all migrations complete
 		logger.Info("🔧 Creating performance indexes for optimal query performance...")
 		pm := dbManager.GetPostgresManager()
