@@ -360,6 +360,28 @@ func (r *AuditRepository) ArchiveOldLogs(ctx context.Context, cutoffDate time.Ti
 	return r.dbManager.Count(ctx, filter, &model)
 }
 
+// ListByResourceAndActions retrieves audit logs for a specific resource with specific actions
+func (r *AuditRepository) ListByResourceAndActions(ctx context.Context, resourceType, resourceID string, actions []string, limit, offset int) ([]*models.AuditLog, error) {
+	var results []*models.AuditLog
+	filter := &base.Filter{
+		Group: base.FilterGroup{
+			Conditions: []base.FilterCondition{
+				{Field: "resource_type", Operator: base.OpEqual, Value: resourceType},
+				{Field: "resource_id", Operator: base.OpEqual, Value: resourceID},
+				{Field: "action", Operator: base.OpIn, Value: actions},
+			},
+			Logic: base.LogicAnd,
+		},
+		Limit:  limit,
+		Offset: offset,
+		Sort: []base.SortField{
+			{Field: "timestamp", Direction: "desc"},
+		},
+	}
+	err := r.dbManager.List(ctx, filter, &results)
+	return results, err
+}
+
 // ValidateIntegrity performs basic integrity checks on audit logs
 func (r *AuditRepository) ValidateIntegrity(ctx context.Context, auditLogID string) (*models.AuditLog, error) {
 	auditLog, err := r.GetByID(ctx, auditLogID)

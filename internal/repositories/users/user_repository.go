@@ -29,6 +29,11 @@ func NewUserRepository(dbManager db.DBManager) *UserRepository {
 	}
 }
 
+// GetDBManager returns the database manager
+func (r *UserRepository) GetDBManager() db.DBManager {
+	return r.dbManager
+}
+
 // Create creates a new user using the base repository
 func (r *UserRepository) Create(ctx context.Context, user *models.User) error {
 	return r.BaseFilterableRepository.Create(ctx, user)
@@ -595,20 +600,32 @@ func (r *UserRepository) BulkValidateUsers(ctx context.Context, userIDs []string
 
 // GetByEmail retrieves a user by email using database-level filtering
 func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*models.User, error) {
-	filter := base.NewFilterBuilder().
-		Where("email", base.OpEqual, email).
-		Build()
-
-	users, err := r.BaseFilterableRepository.Find(ctx, filter)
+	// Get database connection
+	db, err := r.getDB(ctx, true)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get user by email: %w", err)
+		return nil, fmt.Errorf("failed to get database connection: %w", err)
 	}
 
-	if len(users) == 0 {
-		return nil, fmt.Errorf("user not found with email: %s", email)
+	// Search for user by email in contacts table
+	var contact models.Contact
+	err = db.WithContext(ctx).
+		Where("type = ? AND value = ?", "email", email).
+		First(&contact).Error
+
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("user not found with email: %s", email)
+		}
+		return nil, fmt.Errorf("failed to search email in contacts: %w", err)
 	}
 
-	return users[0], nil
+	// Get the user by ID
+	var user models.User
+	if err := r.dbManager.GetByID(ctx, contact.UserID, &user); err != nil {
+		return nil, fmt.Errorf("failed to get user: %w", err)
+	}
+
+	return &user, nil
 }
 
 // GetByStatus retrieves users by status using database-level filtering

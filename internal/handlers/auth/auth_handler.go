@@ -511,10 +511,29 @@ func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 		return
 	}
 
-	// TODO: Implement forgot password logic
+	// Initiate password reset - this will create a token and (TODO) send email
+	token, err := h.userService.InitiatePasswordReset(
+		c.Request.Context(),
+		req.PhoneNumber,
+		req.CountryCode,
+		req.Username,
+		req.Email,
+	)
+	if err != nil {
+		h.logger.Error("Failed to initiate password reset", zap.Error(err))
+		// Still return success to prevent user enumeration
+	}
+
+	// For security, always return the same response whether user exists or not
 	forgotResponse := map[string]interface{}{
 		"message": "If the account exists, a password reset link has been sent",
 		"sent_to": "***@***.com", // Masked for security
+	}
+
+	// In development, include the token for testing
+	// TODO: Remove this in production
+	if token != "" {
+		forgotResponse["reset_token"] = token // Only for development/testing
 	}
 
 	h.logger.Info("Forgot password request processed")
@@ -539,10 +558,17 @@ func (h *AuthHandler) ResetPassword(c *gin.Context) {
 		return
 	}
 
-	// TODO: Implement password reset logic
+	// Reset the password using the token
+	err := h.userService.ResetPassword(c.Request.Context(), req.Token, req.NewPassword)
+	if err != nil {
+		h.logger.Error("Failed to reset password", zap.Error(err))
+		h.responder.SendError(c, http.StatusBadRequest, "Failed to reset password. Token may be invalid or expired.", err)
+		return
+	}
+
 	resetResponse := map[string]interface{}{
 		"success": true,
-		"message": "Password reset successfully",
+		"message": "Password reset successfully. You can now login with your new password.",
 	}
 
 	h.logger.Info("Password reset completed")

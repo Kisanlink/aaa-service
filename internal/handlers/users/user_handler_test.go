@@ -192,6 +192,18 @@ func (m *MockUserService) GetUserGroups(ctx context.Context, userID string) ([]m
 	return args.Get(0).([]map[string]interface{}), args.Error(1)
 }
 
+func (m *MockUserService) GetUserByEmail(ctx context.Context, email string) (*userResponses.UserResponse, error) {
+	return nil, nil
+}
+
+func (m *MockUserService) InitiatePasswordReset(ctx context.Context, phoneNumber, countryCode, username, email *string) (string, error) {
+	return "", nil
+}
+
+func (m *MockUserService) ResetPassword(ctx context.Context, token, newPassword string) error {
+	return nil
+}
+
 // MockRoleService is a mock implementation of RoleService for testing
 type MockRoleService struct {
 	mock.Mock
@@ -261,6 +273,38 @@ func (m *MockRoleService) GetUserRoles(ctx context.Context, userID string) ([]*m
 		return nil, args.Error(1)
 	}
 	return args.Get(0).([]*models.UserRole), args.Error(1)
+}
+
+func (m *MockRoleService) GetRoleHierarchy(ctx context.Context) ([]*models.Role, error) {
+	return nil, nil
+}
+
+func (m *MockRoleService) AddChildRole(ctx context.Context, parentRoleID, childRoleID string) error {
+	return nil
+}
+
+func (m *MockRoleService) RemoveChildRole(ctx context.Context, parentRoleID, childRoleID string) error {
+	return nil
+}
+
+func (m *MockRoleService) GetRoleWithChildren(ctx context.Context, roleID string) (*models.Role, error) {
+	return nil, nil
+}
+
+func (m *MockRoleService) ValidateRoleAssignment(ctx context.Context, userID, roleID string) error {
+	return nil
+}
+
+func (m *MockRoleService) AssignRole(ctx context.Context, userID, roleID string) error {
+	return nil
+}
+
+func (m *MockRoleService) RemoveRole(ctx context.Context, userID, roleID string) error {
+	return nil
+}
+
+func (m *MockRoleService) HardDeleteRole(ctx context.Context, roleID string) error {
+	return nil
 }
 
 // MockValidator is a mock implementation of Validator for testing

@@ -6,7 +6,7 @@ meta {
 
 grpc {
   url: https://beta.aaa.kisanlink.in
-  method: /pb.UserService/GetUser
+  method: /pb.OrganizationService/ListOrganizations
   body: grpc
   auth: apikey
   methodType: unary
@@ -21,6 +21,6 @@ auth:apikey {
 body:grpc {
   name: message 1
   content: '''
-    {"id": "USER00000001"}
+    {"id": "USER00000001", "include_roles": true}
   '''
 }

@@ -601,3 +601,22 @@ func (r *RoleRepository) GetByDeletedByAndDeletedDateRange(ctx context.Context, 
 
 	return r.BaseFilterableRepository.Find(ctx, filter)
 }
+
+// GetChildRoles retrieves all direct children of a role
+func (r *RoleRepository) GetChildRoles(ctx context.Context, parentRoleID string) ([]*models.Role, error) {
+	filter := base.NewFilterBuilder().
+		Where("parent_id", base.OpEqual, parentRoleID).
+		WhereNull("deleted_at").
+		Build()
+
+	return r.BaseFilterableRepository.Find(ctx, filter)
+}
+
+// GetAll retrieves all roles (including deleted ones if specified)
+func (r *RoleRepository) GetAll(ctx context.Context) ([]*models.Role, error) {
+	filter := base.NewFilterBuilder().
+		WhereNull("deleted_at").
+		Build()
+
+	return r.BaseFilterableRepository.Find(ctx, filter)
+}

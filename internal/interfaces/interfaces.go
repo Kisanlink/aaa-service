@@ -83,6 +83,9 @@ type UserService interface {
 	SoftDeleteUserWithCascade(ctx context.Context, userID, deletedBy string) error
 	GetUserOrganizations(ctx context.Context, userID string) ([]map[string]interface{}, error)
 	GetUserGroups(ctx context.Context, userID string) ([]map[string]interface{}, error)
+	InitiatePasswordReset(ctx context.Context, phoneNumber, countryCode, username, email *string) (string, error)
+	ResetPassword(ctx context.Context, token, newPassword string) error
+	GetUserByEmail(ctx context.Context, email string) (*userResponses.UserResponse, error)
 }
 
 // AddressService interface for address-related operations
@@ -107,6 +110,10 @@ type RoleService interface {
 	AssignRoleToUser(ctx context.Context, userID, roleID string) error
 	RemoveRoleFromUser(ctx context.Context, userID, roleID string) error
 	GetUserRoles(ctx context.Context, userID string) ([]*models.UserRole, error)
+	GetRoleHierarchy(ctx context.Context) ([]*models.Role, error)
+	AddChildRole(ctx context.Context, parentRoleID, childRoleID string) error
+	RemoveChildRole(ctx context.Context, parentRoleID, childRoleID string) error
+	GetRoleWithChildren(ctx context.Context, roleID string) (*models.Role, error)
 }
 
 // GroupService interface for group management operations
@@ -179,6 +186,7 @@ type UserRepository interface {
 	GetByPhoneNumber(ctx context.Context, phoneNumber string, countryCode string) (*models.User, error)
 	GetByMobileNumber(ctx context.Context, mobileNumber uint64) (*models.User, error)
 	GetByAadhaarNumber(ctx context.Context, aadhaarNumber string) (*models.User, error)
+	GetByEmail(ctx context.Context, email string) (*models.User, error)
 	ListActive(ctx context.Context, limit, offset int) ([]*models.User, error)
 	CountActive(ctx context.Context) (int64, error)
 	Search(ctx context.Context, keyword string, limit, offset int) ([]*models.User, error)
@@ -206,6 +214,8 @@ type RoleRepository interface {
 	GetActive(ctx context.Context, limit, offset int) ([]*models.Role, error)
 	Search(ctx context.Context, query string, limit, offset int) ([]*models.Role, error)
 	ExistsByName(ctx context.Context, name string) (bool, error)
+	GetChildRoles(ctx context.Context, parentRoleID string) ([]*models.Role, error)
+	GetAll(ctx context.Context) ([]*models.Role, error)
 }
 
 // UserRoleRepository interface for user-role relationship operations
@@ -255,6 +265,7 @@ type GroupRoleRepository interface {
 	GetByRoleID(ctx context.Context, roleID string) ([]*models.GroupRole, error)
 	GetByGroupAndRole(ctx context.Context, groupID, roleID string) (*models.GroupRole, error)
 	GetByOrganizationID(ctx context.Context, organizationID string, limit, offset int) ([]*models.GroupRole, error)
+	GetByOrganizationAndGroupID(ctx context.Context, organizationID, groupID string, limit, offset int) ([]*models.GroupRole, error)
 	ExistsByGroupAndRole(ctx context.Context, groupID, roleID string) (bool, error)
 	DeactivateByGroupAndRole(ctx context.Context, groupID, roleID string) error
 	GetEffectiveRolesForUser(ctx context.Context, organizationID, userID string) ([]*models.GroupRole, error)
@@ -472,6 +483,7 @@ type AuditRepository interface {
 	GetFailedOperations(ctx context.Context, days int, limit, offset int) ([]*models.AuditLog, error)
 	ArchiveOldLogs(ctx context.Context, cutoffDate time.Time) (int64, error)
 	ValidateIntegrity(ctx context.Context, auditLogID string) (*models.AuditLog, error)
+	ListByResourceAndActions(ctx context.Context, resourceType, resourceID string, actions []string, limit, offset int) ([]*models.AuditLog, error)
 }
 
 // OrganizationRepository interface for organization data operations

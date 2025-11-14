@@ -175,12 +175,69 @@ func (s *Service) GetPermissionAssignmentHistory(ctx context.Context, roleID str
 		return nil, fmt.Errorf("role ID is required")
 	}
 
-	// TODO: Implement assignment history tracking
-	// This would require audit log queries or a separate assignment_history table
-	s.logger.Warn("GetPermissionAssignmentHistory not yet implemented",
-		zap.String("role_id", roleID))
+	// Set defaults for pagination
+	if limit <= 0 {
+		limit = 50
+	}
+	if offset < 0 {
+		offset = 0
+	}
 
-	return []*AssignmentHistory{}, nil
+	// Query audit logs for role-permission related actions
+	permissionActions := []string{
+		models.AuditActionGrantPermission,
+		models.AuditActionRevokePermission,
+	}
+
+	auditLogs, err := s.auditRepo.ListByResourceAndActions(ctx, models.ResourceTypeRole, roleID, permissionActions, limit, offset)
+	if err != nil {
+		s.logger.Error("Failed to retrieve assignment history from audit logs",
+			zap.String("role_id", roleID),
+			zap.Error(err))
+		return nil, fmt.Errorf("failed to retrieve assignment history: %w", err)
+	}
+
+	// Convert audit logs to AssignmentHistory format
+	history := make([]*AssignmentHistory, 0, len(auditLogs))
+	for _, log := range auditLogs {
+		assignmentHist := &AssignmentHistory{
+			RoleID:         roleID,
+			AssignedAt:     log.Timestamp,
+			AssignmentType: "permission",
+		}
+
+		// Extract permission ID from details
+		if log.Details != nil {
+			if permID, ok := log.Details["permission_id"].(string); ok && permID != "" {
+				assignmentHist.PermissionID = permID
+			}
+		}
+
+		// Extract assigned_by from ResourceID or details
+		if log.UserID != nil && *log.UserID != "" {
+			assignmentHist.AssignedBy = *log.UserID
+		} else if log.Details != nil {
+			if assignedBy, ok := log.Details["assigned_by"].(string); ok {
+				assignmentHist.AssignedBy = assignedBy
+			}
+		}
+
+		// Check if this is a revocation action
+		if log.Action == models.AuditActionRevokePermission {
+			assignmentHist.RevokedAt = &log.Timestamp
+			if assignmentHist.AssignedBy != "" {
+				assignmentHist.RevokedBy = &assignmentHist.AssignedBy
+			}
+		}
+
+		history = append(history, assignmentHist)
+	}
+
+	s.logger.Info("Retrieved permission assignment history",
+		zap.String("role_id", roleID),
+		zap.Int("count", len(history)))
+
+	return history, nil
 }
 
 // GetRolePermissionStats retrieves statistics about role-permission assignments
