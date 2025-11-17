@@ -1309,3 +1309,53 @@ func (s *Service) cleanupRoleForAllGroupMembers(ctx context.Context, groupID, ro
 
 	return nil
 }
+
+// GetUserGroupsInOrganization retrieves all groups a user belongs to in a specific organization
+func (s *Service) GetUserGroupsInOrganization(ctx context.Context, orgID, userID string, limit, offset int) (interface{}, error) {
+	// Validate inputs
+	if orgID == "" {
+		return nil, fmt.Errorf("org_id cannot be empty")
+	}
+	if userID == "" {
+		return nil, fmt.Errorf("user_id cannot be empty")
+	}
+
+	// Set default pagination
+	if limit <= 0 {
+		limit = 10
+	}
+	if offset < 0 {
+		offset = 0
+	}
+
+	// Get the groups from repository
+	groups, err := s.groupMembershipRepo.GetUserGroupsInOrganization(ctx, orgID, userID, limit, offset)
+	if err != nil {
+		s.logger.Error("Failed to get user groups in organization",
+			zap.String("org_id", orgID),
+			zap.String("user_id", userID),
+			zap.Error(err))
+		return nil, fmt.Errorf("failed to get user groups: %w", err)
+	}
+
+	// Count total groups for pagination
+	totalCount, err := s.groupMembershipRepo.CountUserGroupsInOrganization(ctx, orgID, userID)
+	if err != nil {
+		s.logger.Warn("Failed to count user groups",
+			zap.String("org_id", orgID),
+			zap.String("user_id", userID),
+			zap.Error(err))
+		// Continue without total count
+		totalCount = int64(len(groups))
+	}
+
+	// Return paginated response
+	return map[string]interface{}{
+		"groups": groups,
+		"pagination": map[string]interface{}{
+			"limit":  limit,
+			"offset": offset,
+			"total":  totalCount,
+		},
+	}, nil
+}

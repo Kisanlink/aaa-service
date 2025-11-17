@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/Kisanlink/kisanlink-db/pkg/base"
@@ -16,7 +17,10 @@ type Group struct {
 	OrganizationID string  `json:"organization_id" gorm:"type:varchar(255);not null"`
 	ParentID       *string `json:"parent_id" gorm:"type:varchar(255);default:null"` // For group hierarchy
 	IsActive       bool    `json:"is_active" gorm:"default:true"`
-	Metadata       *string `json:"metadata" gorm:"type:jsonb"` // Additional group metadata
+	Metadata       *string `json:"metadata" gorm:"type:jsonb"`                                                                                           // Additional group metadata
+	Version        int     `json:"version" gorm:"column:version;default:1;not null"`                                                                     // Optimistic locking
+	HierarchyDepth int     `json:"hierarchy_depth" gorm:"column:hierarchy_depth;default:0;not null;check:hierarchy_depth >= 0 AND hierarchy_depth <= 8"` // Depth in hierarchy (0=root, max=8)
+	HierarchyPath  string  `json:"hierarchy_path" gorm:"column:hierarchy_path;type:text;index:idx_group_hierarchy_path"`                                 // Materialized path for efficient queries
 
 	// Relationships
 	Organization *Organization      `json:"organization" gorm:"foreignKey:OrganizationID;references:ID"`
@@ -36,8 +40,9 @@ type GroupMembership struct {
 	StartsAt      *time.Time `json:"starts_at" gorm:"type:timestamp"`                // When membership becomes active
 	EndsAt        *time.Time `json:"ends_at" gorm:"type:timestamp"`                  // When membership expires
 	IsActive      bool       `json:"is_active" gorm:"default:true"`
-	AddedByID     string     `json:"added_by_id" gorm:"type:varchar(255);not null"` // Who added this member
-	Metadata      *string    `json:"metadata" gorm:"type:jsonb"`                    // Additional membership metadata
+	AddedByID     string     `json:"added_by_id" gorm:"type:varchar(255);not null"`    // Who added this member
+	Metadata      *string    `json:"metadata" gorm:"type:jsonb"`                       // Additional membership metadata
+	Version       int        `json:"version" gorm:"column:version;default:1;not null"` // Optimistic locking
 
 	// Relationships
 	Group   *Group `json:"group" gorm:"foreignKey:GroupID;references:ID"`
@@ -106,6 +111,14 @@ func NewGroupInheritance(parentGroupID, childGroupID string) *GroupInheritance {
 
 // BeforeCreate hooks
 func (g *Group) BeforeCreate() error {
+	// Set hierarchy fields if not already set
+	if g.ParentID == nil || *g.ParentID == "" {
+		// Root group
+		g.HierarchyDepth = 0
+		if g.BaseModel != nil && g.BaseModel.ID != "" {
+			g.HierarchyPath = "/" + g.BaseModel.ID
+		}
+	}
 	return g.BaseModel.BeforeCreate()
 }
 
@@ -119,7 +132,39 @@ func (gi *GroupInheritance) BeforeCreate() error {
 
 // GORM Hooks
 func (g *Group) BeforeCreateGORM(tx *gorm.DB) error {
+	// Calculate hierarchy fields based on parent
+	if g.ParentID != nil && *g.ParentID != "" {
+		var parent Group
+		if err := tx.Where("id = ?", *g.ParentID).First(&parent).Error; err == nil {
+			g.HierarchyDepth = parent.HierarchyDepth + 1
+			if g.HierarchyDepth > 8 {
+				return fmt.Errorf("maximum group hierarchy depth (8) exceeded")
+			}
+			// Path will be set after ID is generated
+		}
+	} else {
+		g.HierarchyDepth = 0
+	}
 	return g.BeforeCreate()
+}
+
+// AfterCreate updates the hierarchy path after the ID is generated
+func (g *Group) AfterCreate(tx *gorm.DB) error {
+	if g.HierarchyPath == "" && g.BaseModel != nil && g.BaseModel.ID != "" {
+		if g.ParentID != nil && *g.ParentID != "" {
+			var parent Group
+			if err := tx.Where("id = ?", *g.ParentID).First(&parent).Error; err == nil {
+				g.HierarchyPath = parent.HierarchyPath + "/" + g.BaseModel.ID
+			} else {
+				g.HierarchyPath = "/" + g.BaseModel.ID
+			}
+		} else {
+			g.HierarchyPath = "/" + g.BaseModel.ID
+		}
+		// Update the path in the database
+		return tx.Model(g).Update("hierarchy_path", g.HierarchyPath).Error
+	}
+	return nil
 }
 
 func (gm *GroupMembership) BeforeCreateGORM(tx *gorm.DB) error {

@@ -118,6 +118,19 @@ func runSeedScripts(ctx context.Context, dbManager *db.DatabaseManager, logger *
 				} else {
 					logger.Info("✅ Performance indexes created successfully")
 				}
+
+				// Run hierarchy fields migration
+				if err := migrations.AddHierarchyFields(ctx, gormDB, logger); err != nil {
+					logger.Warn("Failed to add hierarchy fields and indexes", zap.Error(err))
+					// Don't fail startup - migration can be run manually
+				} else {
+					logger.Info("✅ Hierarchy fields and indexes created successfully")
+				}
+
+				// Validate hierarchy migration
+				if err := migrations.ValidateHierarchyMigration(ctx, gormDB, logger); err != nil {
+					logger.Warn("Hierarchy migration validation issues", zap.Error(err))
+				}
 			}
 		}
 	}
@@ -581,7 +594,7 @@ func initializeHTTPServer(
 	)
 	// Inject user service for cache invalidation
 	groupServiceConcrete.SetUserService(userService)
-	groupServiceInstance := groupService.NewServiceAdapter(groupServiceConcrete, logger)
+	groupServiceInstance := groupServiceConcrete
 
 	// Create gin router
 	router := gin.New()

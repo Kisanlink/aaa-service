@@ -6,8 +6,10 @@ import (
 	"time"
 
 	"github.com/Kisanlink/aaa-service/v2/internal/entities/models"
+	pkgErrors "github.com/Kisanlink/aaa-service/v2/pkg/errors"
 	"github.com/Kisanlink/kisanlink-db/pkg/base"
 	"github.com/Kisanlink/kisanlink-db/pkg/db"
+	"gorm.io/gorm"
 )
 
 // GroupMembershipRepository handles database operations for GroupMembership entities
@@ -40,6 +42,73 @@ func (r *GroupMembershipRepository) GetByID(ctx context.Context, id string) (*mo
 // Update updates an existing group membership using the base repository
 func (r *GroupMembershipRepository) Update(ctx context.Context, membership *models.GroupMembership) error {
 	return r.BaseFilterableRepository.Update(ctx, membership)
+}
+
+// UpdateWithVersion updates a group membership with optimistic locking
+// Returns OptimisticLockError if version mismatch occurs
+func (r *GroupMembershipRepository) UpdateWithVersion(ctx context.Context, membership *models.GroupMembership, expectedVersion int) error {
+	// Get database connection through dbManager
+	var db *gorm.DB
+	if postgresMgr, ok := r.dbManager.(interface {
+		GetDB(context.Context, bool) (*gorm.DB, error)
+	}); ok {
+		var err error
+		db, err = postgresMgr.GetDB(ctx, false) // Write operation
+		if err != nil {
+			return fmt.Errorf("failed to get database connection: %w", err)
+		}
+	} else {
+		return fmt.Errorf("database manager does not support GetDB method")
+	}
+
+	// First, get the current version
+	var current models.GroupMembership
+	if err := db.Where("id = ?", membership.ID).First(&current).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return pkgErrors.NewNotFoundError(fmt.Sprintf("group membership not found with id: %s", membership.ID))
+		}
+		return fmt.Errorf("failed to get current group membership: %w", err)
+	}
+
+	// Check if version matches
+	if current.Version != expectedVersion {
+		return pkgErrors.NewOptimisticLockError("group_membership", membership.ID, expectedVersion, current.Version)
+	}
+
+	// Perform the update with version check and increment
+	result := db.Model(&models.GroupMembership{}).
+		Where("id = ? AND version = ?", membership.ID, expectedVersion).
+		Updates(map[string]interface{}{
+			"group_id":       membership.GroupID,
+			"principal_id":   membership.PrincipalID,
+			"principal_type": membership.PrincipalType,
+			"starts_at":      membership.StartsAt,
+			"ends_at":        membership.EndsAt,
+			"is_active":      membership.IsActive,
+			"added_by_id":    membership.AddedByID,
+			"metadata":       membership.Metadata,
+			"version":        gorm.Expr("version + 1"),
+			"updated_at":     gorm.Expr("NOW()"),
+			"updated_by":     membership.UpdatedBy,
+		})
+
+	if result.Error != nil {
+		return fmt.Errorf("failed to update group membership: %w", result.Error)
+	}
+
+	// Double-check that exactly one row was affected
+	if result.RowsAffected == 0 {
+		// Re-fetch to get current version for accurate error reporting
+		if err := db.Where("id = ?", membership.ID).First(&current).Error; err == nil {
+			return pkgErrors.NewOptimisticLockError("group_membership", membership.ID, expectedVersion, current.Version)
+		}
+		return fmt.Errorf("no rows updated for group membership: %s", membership.ID)
+	}
+
+	// Update the model's version to reflect the new state
+	membership.Version = expectedVersion + 1
+
+	return nil
 }
 
 // Delete deletes a group membership by ID using the base repository

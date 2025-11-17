@@ -126,6 +126,7 @@ type GroupService interface {
 	AddMemberToGroup(ctx context.Context, req interface{}) (interface{}, error)
 	RemoveMemberFromGroup(ctx context.Context, groupID, principalID string, removedBy string) error
 	GetGroupMembers(ctx context.Context, groupID string, limit, offset int) (interface{}, error)
+	GetUserGroupsInOrganization(ctx context.Context, orgID, userID string, limit, offset int) (interface{}, error)
 
 	// Role assignment methods for organization-scoped group operations
 	AssignRoleToGroup(ctx context.Context, groupID, roleID, assignedBy string) (interface{}, error)

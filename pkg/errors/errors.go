@@ -37,6 +37,11 @@ type BadRequestError struct {
 	details []string
 }
 
+type OptimisticLockError struct {
+	message string
+	details map[string]interface{}
+}
+
 // Error method implementations
 func (e *ValidationError) Error() string {
 	if len(e.details) > 0 {
@@ -75,12 +80,20 @@ func (e *BadRequestError) Error() string {
 	return e.message
 }
 
+func (e *OptimisticLockError) Error() string {
+	return e.message
+}
+
 // Details methods for error details
 func (e *ValidationError) Details() []string {
 	return e.details
 }
 
 func (e *BadRequestError) Details() []string {
+	return e.details
+}
+
+func (e *OptimisticLockError) Details() map[string]interface{} {
 	return e.details
 }
 
@@ -127,6 +140,19 @@ func NewBadRequestError(message string, details ...string) *BadRequestError {
 	return &BadRequestError{
 		message: sanitizeErrorMessage(message),
 		details: sanitizeErrorDetails(details),
+	}
+}
+
+func NewOptimisticLockError(resourceType, resourceID string, expectedVersion, actualVersion int) *OptimisticLockError {
+	return &OptimisticLockError{
+		message: fmt.Sprintf("Resource has been modified by another process. Please retry with the latest version."),
+		details: map[string]interface{}{
+			"resource_type":     resourceType,
+			"resource_id":       resourceID,
+			"expected_version":  expectedVersion,
+			"current_version":   actualVersion,
+			"retry_recommended": true,
+		},
 	}
 }
 
@@ -262,6 +288,11 @@ func IsBadRequestError(err error) bool {
 	return ok
 }
 
+func IsOptimisticLockError(err error) bool {
+	_, ok := err.(*OptimisticLockError)
+	return ok
+}
+
 // GetErrorCode returns the appropriate HTTP status code for an error
 func GetErrorCode(err error) int {
 	switch err.(type) {
@@ -276,6 +307,8 @@ func GetErrorCode(err error) int {
 	case *NotFoundError:
 		return 404
 	case *ConflictError:
+		return 409
+	case *OptimisticLockError:
 		return 409
 	case *InternalError:
 		return 500
@@ -299,6 +332,8 @@ func GetErrorType(err error) string {
 		return "NOT_FOUND"
 	case *ConflictError:
 		return "CONFLICT"
+	case *OptimisticLockError:
+		return "OPTIMISTIC_LOCK_ERROR"
 	case *InternalError:
 		return "INTERNAL_ERROR"
 	default:
@@ -327,6 +362,9 @@ func WrapError(err error, message string) error {
 		return NewInternalError(fmt.Errorf("%s: %w", message, e.err))
 	case *BadRequestError:
 		return NewBadRequestError(fmt.Sprintf("%s: %s", message, e.message), e.details...)
+	case *OptimisticLockError:
+		// Preserve optimistic lock error details
+		return e
 	default:
 		return NewInternalError(fmt.Errorf("%s: %w", message, err))
 	}
