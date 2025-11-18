@@ -1,6 +1,8 @@
 package models
 
 import (
+	"time"
+
 	"github.com/Kisanlink/kisanlink-db/pkg/base"
 	"github.com/Kisanlink/kisanlink-db/pkg/core/hash"
 	"gorm.io/gorm"
@@ -19,6 +21,11 @@ type UserProfile struct {
 	EmailHash     *string `json:"email_hash" gorm:"type:varchar(255)"`
 	ShareCode     *string `json:"share_code" gorm:"type:varchar(50)"`
 	AddressID     *string `json:"address_id" gorm:"type:varchar(255)"`
+
+	// KYC fields
+	AadhaarVerified   bool       `json:"aadhaar_verified" gorm:"default:false"`
+	AadhaarVerifiedAt *time.Time `json:"aadhaar_verified_at,omitempty"`
+	KYCStatus         string     `json:"kyc_status" gorm:"type:varchar(50);default:'PENDING'"`
 
 	// Relationships
 	Address Address `json:"address" gorm:"foreignKey:AddressID;references:ID"`

@@ -1548,6 +1548,219 @@
                 }
             }
         },
+        "/api/v1/kyc/aadhaar/otp": {
+            "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Generate OTP for Aadhaar verification. Requires user consent and valid Aadhaar number.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "kyc"
+                ],
+                "summary": "Generate OTP for Aadhaar verification",
+                "parameters": [
+                    {
+                        "description": "Generate OTP request with Aadhaar number and consent",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/kyc.GenerateOTPRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/kyc.GenerateOTPResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request or validation error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - authentication required",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "429": {
+                        "description": "Rate limit exceeded",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/kyc/aadhaar/otp/verify": {
+            "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Verify OTP and complete Aadhaar verification. Updates user profile with verified Aadhaar data.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "kyc"
+                ],
+                "summary": "Verify Aadhaar OTP",
+                "parameters": [
+                    {
+                        "description": "Verify OTP request with reference ID and OTP",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/kyc.VerifyOTPRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/kyc.VerifyOTPResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid OTP or validation error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - authentication required",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Reference ID not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "429": {
+                        "description": "Max OTP attempts exceeded",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/kyc/status/{user_id}": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Retrieve KYC verification status for a user. Users can only view their own status unless they have admin privileges.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "kyc"
+                ],
+                "summary": "Get KYC verification status",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/kyc.KYCStatusResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - authentication required",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - can only view own status",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "User not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/modules": {
             "get": {
                 "security": [
@@ -5578,6 +5791,119 @@
                 }
             }
         },
+        "/catalog/seed": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Seeds predefined roles, permissions, actions, and resources for a specific service. Requires catalog:seed permission. Services can only seed their own roles unless user has admin:* permission.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Catalog"
+                ],
+                "summary": "Seed roles and permissions for a service",
+                "parameters": [
+                    {
+                        "description": "Seed request parameters",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/routes.SeedRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully seeded roles and permissions",
+                        "schema": {
+                            "$ref": "#/definitions/routes.SeedResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request parameters",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Authentication required",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Insufficient permissions",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/catalog/seed/status": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns information about currently seeded roles, permissions, and registered services",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Catalog"
+                ],
+                "summary": "Get seed status",
+                "responses": {
+                    "200": {
+                        "description": "Seed status information",
+                        "schema": {
+                            "$ref": "#/definitions/routes.SeedStatusResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Authentication required",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "403": {
+                        "description": "Insufficient permissions",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/health": {
             "get": {
                 "description": "Get basic service health status",
@@ -6209,6 +6535,166 @@
                 },
                 "name": {
                     "type": "string"
+                }
+            }
+        },
+        "kyc.AadhaarAddr": {
+            "type": "object",
+            "properties": {
+                "country": {
+                    "type": "string"
+                },
+                "district": {
+                    "type": "string"
+                },
+                "house": {
+                    "type": "string"
+                },
+                "landmark": {
+                    "type": "string"
+                },
+                "pincode": {
+                    "type": "integer"
+                },
+                "state": {
+                    "type": "string"
+                },
+                "street": {
+                    "type": "string"
+                }
+            }
+        },
+        "kyc.AadhaarData": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "$ref": "#/definitions/kyc.AadhaarAddr"
+                },
+                "care_of": {
+                    "type": "string"
+                },
+                "date_of_birth": {
+                    "type": "string"
+                },
+                "full_address": {
+                    "type": "string"
+                },
+                "gender": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "photo_url": {
+                    "type": "string"
+                },
+                "share_code": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "year_of_birth": {
+                    "type": "integer"
+                }
+            }
+        },
+        "kyc.GenerateOTPRequest": {
+            "type": "object",
+            "required": [
+                "aadhaar_number",
+                "consent"
+            ],
+            "properties": {
+                "aadhaar_number": {
+                    "type": "string"
+                },
+                "consent": {
+                    "type": "string"
+                }
+            }
+        },
+        "kyc.GenerateOTPResponse": {
+            "type": "object",
+            "properties": {
+                "expires_at": {
+                    "type": "integer"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "reference_id": {
+                    "type": "string"
+                },
+                "status_code": {
+                    "type": "integer"
+                },
+                "timestamp": {
+                    "type": "integer"
+                },
+                "transaction_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "kyc.KYCStatusResponse": {
+            "type": "object",
+            "properties": {
+                "aadhaar_verified": {
+                    "type": "boolean"
+                },
+                "aadhaar_verified_at": {
+                    "type": "string"
+                },
+                "kyc_status": {
+                    "type": "string"
+                },
+                "last_verification_attempt": {
+                    "type": "string"
+                },
+                "status_code": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "type": "string"
+                },
+                "verification_attempts": {
+                    "type": "integer"
+                }
+            }
+        },
+        "kyc.VerifyOTPRequest": {
+            "type": "object",
+            "required": [
+                "otp",
+                "reference_id"
+            ],
+            "properties": {
+                "otp": {
+                    "type": "string"
+                },
+                "reference_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "kyc.VerifyOTPResponse": {
+            "type": "object",
+            "properties": {
+                "aadhaar_data": {
+                    "$ref": "#/definitions/kyc.AadhaarData"
+                },
+                "address_id": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "profile_id": {
+                    "type": "string"
+                },
+                "status_code": {
+                    "type": "integer"
                 }
             }
         },
@@ -8574,6 +9060,93 @@
                 },
                 "version": {
                     "type": "string"
+                }
+            }
+        },
+        "routes.SeedRequest": {
+            "type": "object",
+            "properties": {
+                "force": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "service_id": {
+                    "type": "string",
+                    "example": "erp-service"
+                }
+            }
+        },
+        "routes.SeedResponse": {
+            "type": "object",
+            "properties": {
+                "actions_created": {
+                    "type": "integer",
+                    "example": 9
+                },
+                "created_roles": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "farmer",
+                        "kisansathi",
+                        "CEO",
+                        "fpo_manager",
+                        "admin",
+                        "readonly"
+                    ]
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Successfully seeded roles and permissions"
+                },
+                "permissions_created": {
+                    "type": "integer",
+                    "example": 72
+                },
+                "resources_created": {
+                    "type": "integer",
+                    "example": 8
+                },
+                "roles_created": {
+                    "type": "integer",
+                    "example": 6
+                },
+                "status_code": {
+                    "type": "integer",
+                    "example": 200
+                }
+            }
+        },
+        "routes.SeedStatusResponse": {
+            "type": "object",
+            "properties": {
+                "registered_services": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "farmers-module",
+                        "erp-service"
+                    ]
+                },
+                "total_actions": {
+                    "type": "integer",
+                    "example": 9
+                },
+                "total_permissions": {
+                    "type": "integer",
+                    "example": 150
+                },
+                "total_resources": {
+                    "type": "integer",
+                    "example": 12
+                },
+                "total_roles": {
+                    "type": "integer",
+                    "example": 25
                 }
             }
         },

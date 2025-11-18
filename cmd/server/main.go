@@ -17,6 +17,7 @@ import (
 	"github.com/Kisanlink/aaa-service/v2/internal/grpc_server"
 	actionHandlers "github.com/Kisanlink/aaa-service/v2/internal/handlers/actions"
 	"github.com/Kisanlink/aaa-service/v2/internal/handlers/admin"
+	kycHandlers "github.com/Kisanlink/aaa-service/v2/internal/handlers/kyc"
 	"github.com/Kisanlink/aaa-service/v2/internal/handlers/permissions"
 	principalHandlers "github.com/Kisanlink/aaa-service/v2/internal/handlers/principals"
 	resourceHandlers "github.com/Kisanlink/aaa-service/v2/internal/handlers/resources"
@@ -29,6 +30,7 @@ import (
 	auditRepo "github.com/Kisanlink/aaa-service/v2/internal/repositories/audit"
 	contactRepo "github.com/Kisanlink/aaa-service/v2/internal/repositories/contacts"
 	groupRepo "github.com/Kisanlink/aaa-service/v2/internal/repositories/groups"
+	kycRepositories "github.com/Kisanlink/aaa-service/v2/internal/repositories/kyc"
 	organizationRepo "github.com/Kisanlink/aaa-service/v2/internal/repositories/organizations"
 	permissionRepo "github.com/Kisanlink/aaa-service/v2/internal/repositories/permissions"
 	principalRepo "github.com/Kisanlink/aaa-service/v2/internal/repositories/principals"
@@ -43,6 +45,7 @@ import (
 	serviceAdapters "github.com/Kisanlink/aaa-service/v2/internal/services/adapters"
 	contactService "github.com/Kisanlink/aaa-service/v2/internal/services/contacts"
 	groupService "github.com/Kisanlink/aaa-service/v2/internal/services/groups"
+	kycServices "github.com/Kisanlink/aaa-service/v2/internal/services/kyc"
 	organizationService "github.com/Kisanlink/aaa-service/v2/internal/services/organizations"
 	permissionService "github.com/Kisanlink/aaa-service/v2/internal/services/permissions"
 	principalService "github.com/Kisanlink/aaa-service/v2/internal/services/principals"
@@ -321,6 +324,7 @@ func initializeServer(
 
 	// Initialize repositories with the DatabaseManager for advanced operations
 	userRepository := userRepo.NewUserRepository(primaryDBManager)
+	userProfileRepository := userRepo.NewUserProfileRepository(primaryDBManager)
 	addressRepository := addressRepo.NewAddressRepository(primaryDBManager)
 	roleRepository := roleRepo.NewRoleRepository(primaryDBManager)
 	userRoleRepository := roleRepo.NewUserRoleRepository(primaryDBManager)
@@ -340,6 +344,31 @@ func initializeServer(
 	permissionRepository := permissionRepo.NewPermissionRepository(primaryDBManager)
 	rolePermissionRepository := rolePermRepo.NewRolePermissionRepository(primaryDBManager)
 	resourcePermissionRepository := resourcePermRepo.NewResourcePermissionRepository(primaryDBManager)
+
+	// Initialize S3Manager for photo/document storage (optional, configured via AWS env vars)
+	// The S3Manager from kisanlink-db handles AWS S3 operations
+	// AWS credentials are picked up from environment variables (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
+	var s3Manager *db.S3Manager
+	awsBucket := getEnv("AWS_S3_BUCKET", "")
+	if awsBucket != "" {
+		s3Config := &db.Config{
+			S3Bucket: awsBucket,
+			S3Region: getEnv("AWS_REGION", "us-east-1"),
+		}
+		s3Manager = db.NewS3Manager(s3Config, logger)
+		if err := s3Manager.Connect(context.Background()); err != nil {
+			logger.Warn("Failed to connect to S3, photo upload features will not work",
+				zap.Error(err),
+				zap.String("bucket", awsBucket))
+			s3Manager = nil
+		} else {
+			logger.Info("S3Manager initialized successfully",
+				zap.String("bucket", awsBucket),
+				zap.String("region", getEnv("AWS_REGION", "us-east-1")))
+		}
+	} else {
+		logger.Info("AWS_S3_BUCKET not configured, photo upload features will be disabled")
+	}
 
 	// Initialize cache service
 	// FIX: Check CACHE_DISABLED environment variable to optionally disable Redis
@@ -468,17 +497,58 @@ func initializeServer(
 		loggerAdapter,
 	)
 
+	// Initialize KYC service and dependencies
+	// Sandbox API client for Aadhaar verification
+	sandboxBaseURL := getEnv("AADHAAR_SANDBOX_URL", "")
+	sandboxAPIKey := getEnv("AADHAAR_SANDBOX_API_KEY", "")
+	sandboxAPISecret := getEnv("AADHAAR_SANDBOX_API_SECRET", "")
+
+	if sandboxBaseURL == "" {
+		logger.Warn("AADHAAR_SANDBOX_URL not configured, Aadhaar verification will not work")
+	}
+
+	sandboxClient := kycServices.NewSandboxClient(sandboxBaseURL, sandboxAPIKey, sandboxAPISecret, logger)
+
+	// Create Aadhaar verification repository
+	aadhaarRepo := kycRepositories.NewAadhaarVerificationRepository(primaryDBManager, s3Manager, logger)
+
+	// Create user service adapter for KYC operations
+	kycUserServiceAdapter := kycServices.NewUserServiceAdapter(userRepository, userProfileRepository, logger)
+
+	// Create address service adapter (wrapping existing address service)
+	kycAddressServiceAdapter := serviceAdapters.NewAddressServiceAdapter(addressService)
+
+	// KYC service configuration
+	kycConfig := &kycServices.Config{
+		OTPExpirationSeconds: parseIntEnv("OTP_EXPIRATION_SECONDS", 300),
+		OTPMaxAttempts:       parseIntEnv("OTP_MAX_ATTEMPTS", 3),
+		OTPCooldownSeconds:   parseIntEnv("OTP_COOLDOWN_SECONDS", 60),
+		PhotoMaxSizeMB:       parseIntEnv("PHOTO_MAX_SIZE_MB", 5),
+	}
+
+	// Create KYC service with all dependencies
+	kycService := kycServices.NewService(
+		aadhaarRepo,
+		kycUserServiceAdapter,
+		kycAddressServiceAdapter,
+		sandboxClient,
+		auditServiceAdapter,
+		logger,
+		kycConfig,
+	)
+
 	// Initialize handlers
 	permissionHandler := permissions.NewPermissionHandler(permissionService, roleAssignmentService, validator, responder, logger)
 	resourceHandler := resourceHandlers.NewResourceHandler(resourceService, validator, responder, logger)
 	actionHandler := actionHandlers.NewActionHandler(actionService, validator, responder, logger)
 	principalHandler := principalHandlers.NewPrincipalHandler(principalService, responder, logger)
+	kycHandler := kycHandlers.NewHandler(kycService, validator, responder, logger)
 
 	// Initialize HTTP server
 	httpServer, err := initializeHTTPServer(
 		httpPort, jwtSecret,
 		primaryDBManager, userService, roleService, userRepository, userRoleRepository,
-		cacheService, validator, responder, maintenanceService, logger, permissionHandler, resourceHandler, actionHandler, principalHandler, contactServiceInstance, addressService,
+		cacheService, validator, responder, maintenanceService, logger, permissionHandler, resourceHandler, actionHandler, principalHandler, kycHandler, contactServiceInstance, addressService,
 		organizationRepository, groupRepository, groupRoleRepository, groupMembershipRepository, roleRepository,
 		serviceRepository,
 	)
@@ -528,6 +598,7 @@ func initializeHTTPServer(
 	resourceHandler *resourceHandlers.ResourceHandler,
 	actionHandler *actionHandlers.ActionHandler,
 	principalHandler *principalHandlers.Handler,
+	kycHandler *kycHandlers.Handler,
 	contactServiceInstance *contactService.ContactService,
 	addressService interfaces.AddressService,
 	organizationRepository *organizationRepo.OrganizationRepository,
@@ -596,6 +667,9 @@ func initializeHTTPServer(
 	groupServiceConcrete.SetUserService(userService)
 	groupServiceInstance := groupServiceConcrete
 
+	// Inject group service into organization service to resolve circular dependency
+	organizationServiceConcrete.SetGroupService(groupServiceInstance)
+
 	// Create gin router
 	router := gin.New()
 
@@ -603,7 +677,7 @@ func initializeHTTPServer(
 	setupHTTPMiddleware(router, authMiddleware, auditMiddleware, maintenanceService, responder, logger)
 
 	// Setup routes and docs
-	setupRoutesAndDocs(router, authService, authzService, auditService, authMiddleware, maintenanceService, validator, responder, logger, roleHandler, permissionHandler, resourceHandler, actionHandler, principalHandler, userService, roleService, contactServiceInstance, addressService, organizationServiceInstance, groupServiceInstance)
+	setupRoutesAndDocs(router, authService, authzService, auditService, authMiddleware, maintenanceService, validator, responder, logger, roleHandler, permissionHandler, resourceHandler, actionHandler, principalHandler, kycHandler, userService, roleService, contactServiceInstance, addressService, organizationServiceInstance, groupServiceInstance)
 
 	return &HTTPServer{
 		router:                      router,
@@ -725,6 +799,7 @@ func setupRoutesAndDocs(
 	resourceHandler *resourceHandlers.ResourceHandler,
 	actionHandler *actionHandlers.ActionHandler,
 	principalHandler *principalHandlers.Handler,
+	kycHandler *kycHandlers.Handler,
 	userService interfaces.UserService,
 	roleService interfaces.RoleService,
 	contactServiceInstance *contactService.ContactService,
@@ -764,6 +839,9 @@ func setupRoutesAndDocs(
 
 	// Register RBAC action routes
 	routes.RegisterActionRoutes(router.Group("/api/v1"), actionHandler)
+
+	// Register KYC routes
+	kycHandlers.RegisterRoutes(router, kycHandler, authMiddleware.HTTPAuthMiddleware())
 
 	// Serve OpenAPI and Scalar-powered docs UI (gated by env)
 	if getEnv("AAA_ENABLE_DOCS", "true") == "true" {

@@ -388,6 +388,111 @@ definitions:
       name:
         type: string
     type: object
+  kyc.AadhaarAddr:
+    properties:
+      country:
+        type: string
+      district:
+        type: string
+      house:
+        type: string
+      landmark:
+        type: string
+      pincode:
+        type: integer
+      state:
+        type: string
+      street:
+        type: string
+    type: object
+  kyc.AadhaarData:
+    properties:
+      address:
+        $ref: '#/definitions/kyc.AadhaarAddr'
+      care_of:
+        type: string
+      date_of_birth:
+        type: string
+      full_address:
+        type: string
+      gender:
+        type: string
+      name:
+        type: string
+      photo_url:
+        type: string
+      share_code:
+        type: string
+      status:
+        type: string
+      year_of_birth:
+        type: integer
+    type: object
+  kyc.GenerateOTPRequest:
+    properties:
+      aadhaar_number:
+        type: string
+      consent:
+        type: string
+    required:
+    - aadhaar_number
+    - consent
+    type: object
+  kyc.GenerateOTPResponse:
+    properties:
+      expires_at:
+        type: integer
+      message:
+        type: string
+      reference_id:
+        type: string
+      status_code:
+        type: integer
+      timestamp:
+        type: integer
+      transaction_id:
+        type: string
+    type: object
+  kyc.KYCStatusResponse:
+    properties:
+      aadhaar_verified:
+        type: boolean
+      aadhaar_verified_at:
+        type: string
+      kyc_status:
+        type: string
+      last_verification_attempt:
+        type: string
+      status_code:
+        type: integer
+      user_id:
+        type: string
+      verification_attempts:
+        type: integer
+    type: object
+  kyc.VerifyOTPRequest:
+    properties:
+      otp:
+        type: string
+      reference_id:
+        type: string
+    required:
+    - otp
+    - reference_id
+    type: object
+  kyc.VerifyOTPResponse:
+    properties:
+      aadhaar_data:
+        $ref: '#/definitions/kyc.AadhaarData'
+      address_id:
+        type: string
+      message:
+        type: string
+      profile_id:
+        type: string
+      status_code:
+        type: integer
+    type: object
   organizations.AssignRoleToGroupRequest:
     description: Request body for assigning a role to a group in an organization
     properties:
@@ -2081,6 +2186,69 @@ definitions:
     required:
     - role_id
     type: object
+  routes.SeedRequest:
+    properties:
+      force:
+        example: false
+        type: boolean
+      service_id:
+        example: erp-service
+        type: string
+    type: object
+  routes.SeedResponse:
+    properties:
+      actions_created:
+        example: 9
+        type: integer
+      created_roles:
+        example:
+        - farmer
+        - kisansathi
+        - CEO
+        - fpo_manager
+        - admin
+        - readonly
+        items:
+          type: string
+        type: array
+      message:
+        example: Successfully seeded roles and permissions
+        type: string
+      permissions_created:
+        example: 72
+        type: integer
+      resources_created:
+        example: 8
+        type: integer
+      roles_created:
+        example: 6
+        type: integer
+      status_code:
+        example: 200
+        type: integer
+    type: object
+  routes.SeedStatusResponse:
+    properties:
+      registered_services:
+        example:
+        - farmers-module
+        - erp-service
+        items:
+          type: string
+        type: array
+      total_actions:
+        example: 9
+        type: integer
+      total_permissions:
+        example: 150
+        type: integer
+      total_resources:
+        example: 12
+        type: integer
+      total_roles:
+        example: 25
+        type: integer
+    type: object
   users.AddressResponse:
     properties:
       country:
@@ -3280,6 +3448,150 @@ paths:
       summary: Health check (V2)
       tags:
       - health
+  /api/v1/kyc/aadhaar/otp:
+    post:
+      consumes:
+      - application/json
+      description: Generate OTP for Aadhaar verification. Requires user consent and
+        valid Aadhaar number.
+      parameters:
+      - description: Generate OTP request with Aadhaar number and consent
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/kyc.GenerateOTPRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/kyc.GenerateOTPResponse'
+        "400":
+          description: Invalid request or validation error
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - authentication required
+          schema:
+            additionalProperties: true
+            type: object
+        "429":
+          description: Rate limit exceeded
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - Bearer: []
+      summary: Generate OTP for Aadhaar verification
+      tags:
+      - kyc
+  /api/v1/kyc/aadhaar/otp/verify:
+    post:
+      consumes:
+      - application/json
+      description: Verify OTP and complete Aadhaar verification. Updates user profile
+        with verified Aadhaar data.
+      parameters:
+      - description: Verify OTP request with reference ID and OTP
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/kyc.VerifyOTPRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/kyc.VerifyOTPResponse'
+        "400":
+          description: Invalid OTP or validation error
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - authentication required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Reference ID not found
+          schema:
+            additionalProperties: true
+            type: object
+        "429":
+          description: Max OTP attempts exceeded
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - Bearer: []
+      summary: Verify Aadhaar OTP
+      tags:
+      - kyc
+  /api/v1/kyc/status/{user_id}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve KYC verification status for a user. Users can only view
+        their own status unless they have admin privileges.
+      parameters:
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/kyc.KYCStatusResponse'
+        "400":
+          description: Invalid request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - authentication required
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - can only view own status
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: User not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - Bearer: []
+      summary: Get KYC verification status
+      tags:
+      - kyc
   /api/v1/modules:
     get:
       description: Get a list of all registered modules
@@ -5986,6 +6298,83 @@ paths:
       summary: Search users
       tags:
       - users
+  /catalog/seed:
+    post:
+      consumes:
+      - application/json
+      description: Seeds predefined roles, permissions, actions, and resources for
+        a specific service. Requires catalog:seed permission. Services can only seed
+        their own roles unless user has admin:* permission.
+      parameters:
+      - description: Seed request parameters
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/routes.SeedRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully seeded roles and permissions
+          schema:
+            $ref: '#/definitions/routes.SeedResponse'
+        "400":
+          description: Invalid request parameters
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Authentication required
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Insufficient permissions
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Seed roles and permissions for a service
+      tags:
+      - Catalog
+  /catalog/seed/status:
+    get:
+      description: Returns information about currently seeded roles, permissions,
+        and registered services
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Seed status information
+          schema:
+            $ref: '#/definitions/routes.SeedStatusResponse'
+        "401":
+          description: Authentication required
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Insufficient permissions
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get seed status
+      tags:
+      - Catalog
   /health:
     get:
       consumes:

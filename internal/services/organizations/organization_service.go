@@ -52,6 +52,11 @@ func NewOrganizationService(
 	}
 }
 
+// SetGroupService sets the group service to resolve circular dependency during initialization
+func (s *Service) SetGroupService(groupService interfaces.GroupService) {
+	s.groupService = groupService
+}
+
 // CreateOrganization creates a new organization with proper validation and business logic
 func (s *Service) CreateOrganization(ctx context.Context, req *organizations.CreateOrganizationRequest) (*organizationResponses.OrganizationResponse, error) {
 	s.logger.Info("Creating new organization", zap.String("name", req.Name))
@@ -1064,6 +1069,14 @@ func (s *Service) GetGroupRolesInOrganization(ctx context.Context, orgID, groupI
 		return nil, errors.NewValidationError("group does not belong to the specified organization")
 	}
 
+	// Defensive check: ensure groupService is initialized
+	if s.groupService == nil {
+		s.logger.Error("groupService is nil - this indicates improper service initialization",
+			zap.String("org_id", orgID),
+			zap.String("group_id", groupID))
+		return nil, errors.NewInternalError(fmt.Errorf("groupService not initialized"))
+	}
+
 	// Get group roles using the group service
 	groupRoles, err := s.groupService.GetGroupRoles(ctx, groupID)
 	if err != nil {
@@ -1169,7 +1182,17 @@ func (s *Service) createGroupHierarchyNode(ctx context.Context, group *models.Gr
 	}
 
 	// Get roles for this group
-	roles, err := s.groupService.GetGroupRoles(ctx, group.ID)
+	var roles interface{}
+	var err error
+
+	// Defensive check: ensure groupService is initialized
+	if s.groupService == nil {
+		s.logger.Error("groupService is nil - this indicates improper service initialization",
+			zap.String("group_id", group.ID))
+		return nil, errors.NewInternalError(fmt.Errorf("groupService not initialized"))
+	}
+
+	roles, err = s.groupService.GetGroupRoles(ctx, group.ID)
 	if err != nil {
 		s.logger.Warn("Failed to get roles for group",
 			zap.String("group_id", group.ID),
