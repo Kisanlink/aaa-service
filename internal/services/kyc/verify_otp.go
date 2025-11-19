@@ -189,15 +189,19 @@ func (s *Service) verifyOTP(ctx context.Context, req *kycRequests.VerifyOTPReque
 	verification.Gender = sandboxResp.Data.Gender
 	verification.FullAddress = sandboxResp.Data.FullAddress
 
-	// Parse date of birth
+	// Parse date of birth - Sandbox API returns DD-MM-YYYY format
 	if sandboxResp.Data.DateOfBirth != "" {
-		dob, err := time.Parse("2006-01-02", sandboxResp.Data.DateOfBirth)
+		dob, err := time.Parse("02-01-2006", sandboxResp.Data.DateOfBirth)
 		if err != nil {
 			s.logger.Warn("Failed to parse date of birth",
 				zap.String("date_of_birth", sandboxResp.Data.DateOfBirth),
+				zap.String("expected_format", "DD-MM-YYYY"),
 				zap.Error(err))
 		} else {
 			verification.DateOfBirth = &dob
+			s.logger.Info("Date of birth parsed successfully",
+				zap.String("user_id", userID),
+				zap.Time("dob", dob))
 		}
 	}
 
