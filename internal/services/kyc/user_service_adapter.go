@@ -41,29 +41,36 @@ func (a *UserServiceAdapter) Update(ctx context.Context, userID string, updates 
 		return fmt.Errorf("no updates provided")
 	}
 
-	// Get existing user
+	// Get existing user - this is optional, we'll try to update it but profile is the priority
 	existingUser := &models.User{}
+	canUpdateUser := true
 	_, err := a.userRepo.GetByID(ctx, userID, existingUser)
 	if err != nil {
-		a.logger.Error("Failed to get existing user for update",
+		a.logger.Warn("Failed to get existing user for update, will skip user record update",
 			zap.String("user_id", userID),
 			zap.Error(err))
-		return fmt.Errorf("user not found: %w", err)
-	}
-
-	// Defensive check: ensure user was actually populated
-	// BaseModel is an embedded pointer, so we need to check if it's nil
-	if existingUser == nil {
-		a.logger.Error("User object is nil after GetByID", zap.String("user_id", userID))
-		return fmt.Errorf("user record is nil")
-	}
-	if existingUser.BaseModel == nil {
-		a.logger.Error("User BaseModel is nil after GetByID", zap.String("user_id", userID))
-		return fmt.Errorf("user record has nil BaseModel")
-	}
-	if existingUser.GetID() == "" {
-		a.logger.Error("User ID is empty after GetByID", zap.String("user_id", userID))
-		return fmt.Errorf("user record has empty ID")
+		canUpdateUser = false
+	} else {
+		// Defensive check: ensure user was actually populated
+		// BaseModel is an embedded pointer, so we need to check if it's nil
+		if existingUser == nil {
+			a.logger.Warn("User object is nil after GetByID, will skip user record update",
+				zap.String("user_id", userID))
+			canUpdateUser = false
+		} else if existingUser.BaseModel == nil {
+			a.logger.Warn("User BaseModel is nil after GetByID, will skip user record update",
+				zap.String("user_id", userID))
+			canUpdateUser = false
+		} else if existingUser.GetID() == "" {
+			a.logger.Warn("User ID is empty after GetByID, will skip user record update",
+				zap.String("user_id", userID))
+			canUpdateUser = false
+		} else {
+			a.logger.Info("User record loaded successfully",
+				zap.String("user_id", userID),
+				zap.String("phone_number", existingUser.PhoneNumber),
+				zap.Bool("is_validated", existingUser.IsValidated))
+		}
 	}
 
 	// Get or create user profile
@@ -80,37 +87,69 @@ func (a *UserServiceAdapter) Update(ctx context.Context, userID string, updates 
 	userUpdated := false
 	profileUpdated := false
 
+	a.logger.Info("Processing field updates",
+		zap.String("user_id", userID),
+		zap.Any("fields", func() []string {
+			fields := make([]string, 0, len(updates))
+			for k := range updates {
+				fields = append(fields, k)
+			}
+			return fields
+		}()))
+
 	for field, value := range updates {
 		switch field {
 		case "is_validated":
-			if v, ok := value.(bool); ok {
+			if v, ok := value.(bool); ok && canUpdateUser {
 				existingUser.IsValidated = v
 				userUpdated = true
+				a.logger.Info("Setting user validation status",
+					zap.String("user_id", userID),
+					zap.Bool("is_validated", v))
+			} else if !canUpdateUser {
+				a.logger.Warn("Skipping user field update - user record not available",
+					zap.String("field", field),
+					zap.String("user_id", userID))
 			}
 		case "full_name", "name":
 			if v, ok := value.(string); ok {
 				existingProfile.Name = &v
 				profileUpdated = true
+				a.logger.Info("Setting profile name",
+					zap.String("user_id", userID),
+					zap.String("name", v))
 			}
 		case "aadhaar_verified":
 			if v, ok := value.(bool); ok {
 				existingProfile.AadhaarVerified = v
 				profileUpdated = true
+				a.logger.Info("Setting Aadhaar verification status",
+					zap.String("user_id", userID),
+					zap.Bool("verified", v))
 			}
 		case "aadhaar_verified_at":
 			if v, ok := value.(time.Time); ok {
 				existingProfile.AadhaarVerifiedAt = &v
 				profileUpdated = true
+				a.logger.Info("Setting Aadhaar verification timestamp",
+					zap.String("user_id", userID),
+					zap.Time("verified_at", v))
 			}
 		case "kyc_status":
 			if v, ok := value.(string); ok {
 				existingProfile.KYCStatus = v
 				profileUpdated = true
+				a.logger.Info("Setting KYC status",
+					zap.String("user_id", userID),
+					zap.String("kyc_status", v))
 			}
 		case "photo_url", "photo":
 			if v, ok := value.(string); ok {
 				existingProfile.Photo = &v
 				profileUpdated = true
+				a.logger.Info("Setting profile photo",
+					zap.String("user_id", userID),
+					zap.Int("photo_length", len(v)))
 			}
 		case "address_id":
 			if v, ok := value.(string); ok {
@@ -139,21 +178,25 @@ func (a *UserServiceAdapter) Update(ctx context.Context, userID string, updates 
 			}()))
 	}
 
-	// Update user if needed
-	if userUpdated {
-		// Defensive check before updating
-		if existingUser == nil {
-			a.logger.Error("Cannot update user: existingUser is nil",
-				zap.String("user_id", userID))
-			return fmt.Errorf("internal error: user object is nil")
-		}
+	// Update user if needed and possible
+	if userUpdated && canUpdateUser {
+		a.logger.Info("Updating user record",
+			zap.String("user_id", userID),
+			zap.Bool("is_validated", existingUser.IsValidated))
 		existingUser.UpdatedAt = time.Now()
 		if err := a.userRepo.Update(ctx, existingUser); err != nil {
 			a.logger.Error("Failed to update user in repository",
 				zap.String("user_id", userID),
 				zap.Error(err))
-			return fmt.Errorf("failed to update user: %w", err)
+			// Don't return error - profile update is more critical
+			a.logger.Warn("Continuing despite user update failure - profile is priority")
+		} else {
+			a.logger.Info("User record updated successfully",
+				zap.String("user_id", userID))
 		}
+	} else if userUpdated && !canUpdateUser {
+		a.logger.Warn("User record needs update but cannot be loaded - skipping user update",
+			zap.String("user_id", userID))
 	}
 
 	// Update or create profile if needed
@@ -161,27 +204,59 @@ func (a *UserServiceAdapter) Update(ctx context.Context, userID string, updates 
 		existingProfile.UpdatedAt = time.Now()
 		if existingProfile.ID == "" {
 			// Create new profile
+			a.logger.Info("Creating new user profile",
+				zap.String("user_id", userID),
+				zap.String("name", func() string {
+					if existingProfile.Name != nil {
+						return *existingProfile.Name
+					}
+					return ""
+				}()),
+				zap.Bool("aadhaar_verified", existingProfile.AadhaarVerified),
+				zap.String("kyc_status", existingProfile.KYCStatus))
 			if err := a.userProfileRepo.Create(ctx, existingProfile); err != nil {
 				a.logger.Error("Failed to create user profile in repository",
 					zap.String("user_id", userID),
 					zap.Error(err))
 				return fmt.Errorf("failed to create user profile: %w", err)
 			}
+			a.logger.Info("User profile created successfully",
+				zap.String("user_id", userID),
+				zap.String("profile_id", existingProfile.ID))
 		} else {
 			// Update existing profile
+			a.logger.Info("Updating existing user profile",
+				zap.String("user_id", userID),
+				zap.String("profile_id", existingProfile.ID),
+				zap.String("name", func() string {
+					if existingProfile.Name != nil {
+						return *existingProfile.Name
+					}
+					return ""
+				}()),
+				zap.Bool("aadhaar_verified", existingProfile.AadhaarVerified),
+				zap.String("kyc_status", existingProfile.KYCStatus))
 			if err := a.userProfileRepo.Update(ctx, existingProfile); err != nil {
 				a.logger.Error("Failed to update user profile in repository",
 					zap.String("user_id", userID),
+					zap.String("profile_id", existingProfile.ID),
 					zap.Error(err))
 				return fmt.Errorf("failed to update user profile: %w", err)
 			}
+			a.logger.Info("User profile updated successfully",
+				zap.String("user_id", userID),
+				zap.String("profile_id", existingProfile.ID))
 		}
+	} else {
+		a.logger.Info("No profile updates needed",
+			zap.String("user_id", userID))
 	}
 
-	a.logger.Info("User and profile updated successfully",
+	a.logger.Info("User and profile processing completed",
 		zap.String("user_id", userID),
-		zap.Bool("user_updated", userUpdated),
-		zap.Bool("profile_updated", profileUpdated))
+		zap.Bool("user_updated", userUpdated && canUpdateUser),
+		zap.Bool("profile_updated", profileUpdated),
+		zap.Bool("profile_exists", profileExists))
 
 	return nil
 }
