@@ -1561,7 +1561,7 @@ const docTemplate = `{
                         "Bearer": []
                     }
                 ],
-                "description": "Generate OTP for Aadhaar verification. Requires user consent and valid Aadhaar number.",
+                "description": "Generate OTP for Aadhaar verification. Requires user consent and valid Aadhaar number. Consent accepts three formats: boolean (true), string (\"Y\"), or object with purpose/timestamp/version for audit compliance.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1574,7 +1574,7 @@ const docTemplate = `{
                 "summary": "Generate OTP for Aadhaar verification",
                 "parameters": [
                     {
-                        "description": "Generate OTP request with Aadhaar number and consent",
+                        "description": "Generate OTP request. Consent can be: true, \\",
                         "name": "request",
                         "in": "body",
                         "required": true,

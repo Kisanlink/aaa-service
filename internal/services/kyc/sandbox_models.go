@@ -5,6 +5,7 @@ type SandboxOTPRequest struct {
 	Entity        string `json:"@entity"`
 	AadhaarNumber string `json:"aadhaar_number"`
 	Consent       string `json:"consent"`
+	Reason        string `json:"reason"` // Purpose of verification (optional but recommended)
 }
 
 // SandboxOTPResponse represents the response from OTP generation
@@ -76,4 +77,10 @@ type SandboxErrorResponse struct {
 	Code          int    `json:"code"`
 	Message       string `json:"message"`
 	Error         string `json:"error"`
+}
+
+// SandboxAuthResponse represents the authentication response from Sandbox
+type SandboxAuthResponse struct {
+	AccessToken string `json:"access_token"`
+	ExpiresIn   int    `json:"expires_in"` // seconds (24 hours = 86400)
 }

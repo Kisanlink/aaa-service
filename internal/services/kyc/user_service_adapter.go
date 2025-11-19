@@ -51,10 +51,18 @@ func (a *UserServiceAdapter) Update(ctx context.Context, userID string, updates 
 		return fmt.Errorf("user not found: %w", err)
 	}
 
+	// Defensive check: ensure user was actually populated
+	if existingUser == nil || existingUser.ID == "" {
+		a.logger.Error("User was not properly populated after GetByID",
+			zap.String("user_id", userID))
+		return fmt.Errorf("user record is invalid or not found")
+	}
+
 	// Get or create user profile
 	existingProfile, err := a.userProfileRepo.GetByUserID(ctx, userID)
+	profileExists := err == nil
 	if err != nil {
-		// Profile doesn't exist, create it
+		// Profile doesn't exist, create it using constructor
 		a.logger.Info("User profile not found, creating new profile",
 			zap.String("user_id", userID))
 		existingProfile = models.NewUserProfile(userID)
@@ -96,6 +104,14 @@ func (a *UserServiceAdapter) Update(ctx context.Context, userID string, updates 
 				existingProfile.Photo = &v
 				profileUpdated = true
 			}
+		case "address_id":
+			if v, ok := value.(string); ok {
+				existingProfile.AddressID = &v
+				profileUpdated = true
+				a.logger.Info("Linking address to user profile",
+					zap.String("user_id", userID),
+					zap.String("address_id", v))
+			}
 		default:
 			a.logger.Warn("Unknown field in updates",
 				zap.String("field", field),
@@ -103,8 +119,26 @@ func (a *UserServiceAdapter) Update(ctx context.Context, userID string, updates 
 		}
 	}
 
+	// If profile was just created, ensure it's marked for creation
+	if !profileExists && profileUpdated {
+		a.logger.Info("New profile created with Aadhaar verification data",
+			zap.String("user_id", userID),
+			zap.String("name", func() string {
+				if existingProfile.Name != nil {
+					return *existingProfile.Name
+				}
+				return ""
+			}()))
+	}
+
 	// Update user if needed
 	if userUpdated {
+		// Defensive check before updating
+		if existingUser == nil {
+			a.logger.Error("Cannot update user: existingUser is nil",
+				zap.String("user_id", userID))
+			return fmt.Errorf("internal error: user object is nil")
+		}
 		existingUser.UpdatedAt = time.Now()
 		if err := a.userRepo.Update(ctx, existingUser); err != nil {
 			a.logger.Error("Failed to update user in repository",

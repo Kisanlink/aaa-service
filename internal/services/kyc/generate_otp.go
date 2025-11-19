@@ -36,7 +36,7 @@ func (s *Service) generateOTP(ctx context.Context, req *kycRequests.GenerateOTPR
 	}
 
 	// 3. Call Sandbox API to generate OTP
-	sandboxResp, err := s.sandboxClient.GenerateOTP(ctx, req.AadhaarNumber, req.Consent, authToken)
+	sandboxResp, err := s.sandboxClient.GenerateOTP(ctx, req.AadhaarNumber, req.Consent.String(), authToken)
 	if err != nil {
 		s.logger.Error("Failed to generate OTP via Sandbox API",
 			zap.String("user_id", userID),

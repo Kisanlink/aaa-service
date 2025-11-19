@@ -38,11 +38,11 @@ func NewHandler(
 // GenerateOTP handles POST /api/v1/kyc/aadhaar/otp
 //
 //	@Summary		Generate OTP for Aadhaar verification
-//	@Description	Generate OTP for Aadhaar verification. Requires user consent and valid Aadhaar number.
+//	@Description	Generate OTP for Aadhaar verification. Requires user consent and valid Aadhaar number. Consent accepts three formats: boolean (true), string ("Y"), or object with purpose/timestamp/version for audit compliance.
 //	@Tags			kyc
 //	@Accept			json
 //	@Produce		json
-//	@Param			request	body		kyc.GenerateOTPRequest	true	"Generate OTP request with Aadhaar number and consent"
+//	@Param			request	body		kyc.GenerateOTPRequest	true	"Generate OTP request. Consent can be: true, \"Y\", or {\"purpose\":\"...\",\"timestamp\":\"...\",\"version\":\"...\"}"
 //	@Success		200		{object}	kyc.GenerateOTPResponse
 //	@Failure		400		{object}	map[string]interface{}	"Invalid request or validation error"
 //	@Failure		401		{object}	map[string]interface{}	"Unauthorized - authentication required"

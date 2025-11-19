@@ -151,21 +151,7 @@ func (s *Service) verifyOTP(ctx context.Context, req *kycRequests.VerifyOTPReque
 		}
 	}
 
-	// 8. Update user profile with Aadhaar data
-	if err := s.updateUserProfile(ctx, userID, &sandboxResp.Data, photoURL); err != nil {
-		s.logger.Error("Failed to update user profile",
-			zap.String("user_id", userID),
-			zap.Error(err))
-
-		// Log audit event for profile update failure
-		s.auditService.LogUserActionWithError(ctx, userID, "aadhaar_profile_update_failed", "user_profile", userID, err, map[string]interface{}{
-			"reference_id": req.ReferenceID,
-		})
-
-		return nil, fmt.Errorf("failed to update user profile: %w", err)
-	}
-
-	// 9. Create address from Aadhaar data
+	// 8. Create address from Aadhaar data first (before updating profile)
 	addressID := ""
 	addressID, err = s.createAddress(ctx, userID, &sandboxResp.Data)
 	if err != nil {
@@ -177,6 +163,20 @@ func (s *Service) verifyOTP(ctx context.Context, req *kycRequests.VerifyOTPReque
 		s.logger.Info("Address created successfully",
 			zap.String("user_id", userID),
 			zap.String("address_id", addressID))
+	}
+
+	// 9. Update user profile with Aadhaar data and link address
+	if err := s.updateUserProfile(ctx, userID, &sandboxResp.Data, photoURL, addressID); err != nil {
+		s.logger.Error("Failed to update user profile",
+			zap.String("user_id", userID),
+			zap.Error(err))
+
+		// Log audit event for profile update failure
+		s.auditService.LogUserActionWithError(ctx, userID, "aadhaar_profile_update_failed", "user_profile", userID, err, map[string]interface{}{
+			"reference_id": req.ReferenceID,
+		})
+
+		return nil, fmt.Errorf("failed to update user profile: %w", err)
 	}
 
 	// 10. Update verification status in database
@@ -258,10 +258,11 @@ func (s *Service) verifyOTP(ctx context.Context, req *kycRequests.VerifyOTPReque
 }
 
 // updateUserProfile updates user profile with verified Aadhaar data
-func (s *Service) updateUserProfile(ctx context.Context, userID string, kycData *KYCData, photoURL string) error {
+func (s *Service) updateUserProfile(ctx context.Context, userID string, kycData *KYCData, photoURL string, addressID string) error {
 	s.logger.Info("Updating user profile with Aadhaar data",
 		zap.String("user_id", userID),
-		zap.String("name", kycData.Name))
+		zap.String("name", kycData.Name),
+		zap.String("address_id", addressID))
 
 	updates := map[string]interface{}{
 		"is_validated":        true,
@@ -273,6 +274,11 @@ func (s *Service) updateUserProfile(ctx context.Context, userID string, kycData 
 
 	if photoURL != "" {
 		updates["photo_url"] = photoURL
+	}
+
+	// Link the address to the user profile
+	if addressID != "" {
+		updates["address_id"] = addressID
 	}
 
 	if err := s.userService.Update(ctx, userID, updates); err != nil {
