@@ -240,12 +240,18 @@ func (s *Service) verifyOTP(ctx context.Context, req *kycRequests.VerifyOTPReque
 		zap.String("reference_id", req.ReferenceID),
 		zap.String("name", verification.Name))
 
-	// 12. Return response
+	// 12. Fetch profile, address, and contacts to include in response
+	profile, address, contacts := s.fetchUserData(ctx, userID, addressID)
+
+	// 13. Return response with complete user data
 	return &kycResponses.VerifyOTPResponse{
 		StatusCode: 200,
 		Message:    "OTP verification successful",
 		ProfileID:  userID,
 		AddressID:  addressID,
+		Profile:    profile,
+		Address:    address,
+		Contacts:   contacts,
 		AadhaarData: &kycResponses.AadhaarData{
 			Name:        sandboxResp.Data.Name,
 			Gender:      sandboxResp.Data.Gender,
@@ -361,6 +367,46 @@ func (s *Service) createAddress(ctx context.Context, userID string, kycData *KYC
 	}
 
 	return addressID, nil
+}
+
+// fetchUserData fetches profile, address, and contacts for the user
+func (s *Service) fetchUserData(ctx context.Context, userID, addressID string) (*models.UserProfile, *models.Address, []*models.Contact) {
+	var profile *models.UserProfile
+	var address *models.Address
+	var contacts []*models.Contact
+
+	// Fetch user profile
+	if p, err := s.userService.GetProfile(ctx, userID); err == nil {
+		profile = p
+		s.logger.Info("Fetched user profile for response",
+			zap.String("user_id", userID),
+			zap.String("profile_id", p.ID))
+	} else {
+		s.logger.Warn("Failed to fetch user profile for response",
+			zap.String("user_id", userID),
+			zap.Error(err))
+	}
+
+	// Fetch address
+	if addressID != "" {
+		if a, err := s.addressService.GetAddressByID(ctx, addressID); err == nil {
+			address = a
+			s.logger.Info("Fetched address for response",
+				zap.String("user_id", userID),
+				zap.String("address_id", addressID))
+		} else {
+			s.logger.Warn("Failed to fetch address for response",
+				zap.String("user_id", userID),
+				zap.String("address_id", addressID),
+				zap.Error(err))
+		}
+	}
+
+	// Note: Contacts are not available from Aadhaar, return empty slice
+	// Contacts must be added separately through the contacts API
+	contacts = []*models.Contact{}
+
+	return profile, address, contacts
 }
 
 // mapSandboxAddress maps Sandbox address to response address

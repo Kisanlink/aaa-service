@@ -55,6 +55,8 @@ func NewService(
 type UserService interface {
 	// Update updates user profile fields
 	Update(ctx context.Context, userID string, updates map[string]interface{}) error
+	// GetProfile retrieves the user profile by user ID
+	GetProfile(ctx context.Context, userID string) (*models.UserProfile, error)
 }
 
 // AddressService defines the interface for address operations
@@ -64,6 +66,8 @@ type AddressService interface {
 	// FindOrCreateAddress finds an existing address by full_address or creates a new one
 	// Returns (addressID string, wasCreated bool, error)
 	FindOrCreateAddress(ctx context.Context, address *models.Address) (string, bool, error)
+	// GetAddressByID retrieves an address by ID
+	GetAddressByID(ctx context.Context, addressID string) (*models.Address, error)
 }
 
 // AuditService defines the interface for audit logging

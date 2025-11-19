@@ -1,12 +1,19 @@
 package kyc
 
+import (
+	"github.com/Kisanlink/aaa-service/v2/internal/entities/models"
+)
+
 // VerifyOTPResponse represents the response for OTP verification request
 type VerifyOTPResponse struct {
-	StatusCode  int          `json:"status_code"`
-	Message     string       `json:"message"`
-	AadhaarData *AadhaarData `json:"aadhaar_data,omitempty"`
-	ProfileID   string       `json:"profile_id,omitempty"`
-	AddressID   string       `json:"address_id,omitempty"`
+	StatusCode  int                 `json:"status_code"`
+	Message     string              `json:"message"`
+	AadhaarData *AadhaarData        `json:"aadhaar_data,omitempty"`
+	ProfileID   string              `json:"profile_id,omitempty"`
+	AddressID   string              `json:"address_id,omitempty"`
+	Profile     *models.UserProfile `json:"profile,omitempty"`
+	Address     *models.Address     `json:"address,omitempty"`
+	Contacts    []*models.Contact   `json:"contacts,omitempty"`
 }
 
 // AadhaarData represents the Aadhaar verification data returned in the response

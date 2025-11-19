@@ -27,3 +27,8 @@ func (a *AddressServiceAdapter) CreateAddress(ctx context.Context, address *mode
 func (a *AddressServiceAdapter) FindOrCreateAddress(ctx context.Context, address *models.Address) (string, bool, error) {
 	return a.service.FindOrCreateAddress(ctx, address)
 }
+
+// GetAddressByID retrieves an address by ID
+func (a *AddressServiceAdapter) GetAddressByID(ctx context.Context, addressID string) (*models.Address, error) {
+	return a.service.GetAddressByID(ctx, addressID)
+}

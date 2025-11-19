@@ -27,6 +27,11 @@ func NewUserServiceAdapter(userRepo interfaces.UserRepository, userProfileRepo *
 	}
 }
 
+// GetProfile retrieves the user profile by user ID
+func (a *UserServiceAdapter) GetProfile(ctx context.Context, userID string) (*models.UserProfile, error) {
+	return a.userProfileRepo.GetByUserID(ctx, userID)
+}
+
 // Update updates user and user profile fields using a map of field names to values
 func (a *UserServiceAdapter) Update(ctx context.Context, userID string, updates map[string]interface{}) error {
 	a.logger.Info("Updating user profile fields",
