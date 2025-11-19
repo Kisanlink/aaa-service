@@ -1,0 +1,26 @@
+meta {
+  name: ssdfasd
+  type: http
+  seq: 6
+}
+
+post {
+  url: http://localhost:8080/api/v1/admin/seed
+  body: json
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "force": true
+  }
+}
+
+settings {
+  encodeUrl: false
+}
