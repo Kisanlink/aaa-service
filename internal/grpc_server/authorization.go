@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/Kisanlink/aaa-service/v2/internal/authorization"
+	"github.com/Kisanlink/aaa-service/v2/internal/config"
 	"github.com/Kisanlink/aaa-service/v2/internal/services"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
@@ -12,8 +14,9 @@ import (
 
 // AuthorizationChecker provides authorization checking for gRPC handlers
 type AuthorizationChecker struct {
-	authzService *services.AuthorizationService
-	logger       *zap.Logger
+	authzService      *services.AuthorizationService
+	serviceAuthorizer *authorization.ServiceAuthorizer
+	logger            *zap.Logger
 }
 
 // NewAuthorizationChecker creates a new authorization checker
@@ -21,24 +24,48 @@ func NewAuthorizationChecker(
 	authzService *services.AuthorizationService,
 	logger *zap.Logger,
 ) *AuthorizationChecker {
+	// Load service authorization configuration
+	serviceAuthConfig, err := config.LoadServiceAuthorizationConfig()
+	if err != nil {
+		logger.Warn("Failed to load service authorization config, using defaults",
+			zap.Error(err))
+		// Create default config that allows all
+		serviceAuthConfig = &config.ServiceAuthorizationConfig{
+			ServiceAuthorization: config.ServiceAuthSection{
+				Enabled:  false,
+				Services: make(map[string]config.ServicePermission),
+			},
+			DefaultBehavior: config.DefaultBehavior{
+				WhenDisabled:            "allow_all",
+				LogUnauthorizedAttempts: true,
+			},
+		}
+	}
+
+	// Create service authorizer
+	serviceAuthorizer := authorization.NewServiceAuthorizer(serviceAuthConfig, logger)
+
 	return &AuthorizationChecker{
-		authzService: authzService,
-		logger:       logger,
+		authzService:      authzService,
+		serviceAuthorizer: serviceAuthorizer,
+		logger:            logger,
 	}
 }
 
 // CheckSeedPermission validates that the caller has permission to seed roles
 //
-// FIXED IMPLEMENTATION - Critical Bug Fixes:
-// 1. Services bypass catalog:seed permission check (services don't have permissions)
-// 2. Use service_name (not service_id) for ownership comparison
-// 3. Clear separation between service and user authorization paths
+// ENHANCED IMPLEMENTATION - Configuration-Based Authorization:
+// 1. Services use configuration-based permission checking via ServiceAuthorizer
+// 2. User principals still use RBAC permission checks
+// 3. Service principals must have catalog:seed_roles permission in config
+// 4. Backward compatible - falls back to old behavior if config not loaded
 //
 // Authorization Rules:
 // SERVICE PRINCIPALS (authenticated via API key):
-//   - Skip permission checks (services don't have roles/permissions)
+//   - Must be configured in service_permissions.yaml
+//   - Must have catalog:seed_roles or catalog:* permission
+//   - API key validation if api_key_required is true
 //   - Can only seed their own roles (service_name must match targetServiceID)
-//   - Cannot seed default/farmers-module roles
 //
 // USER PRINCIPALS (authenticated via JWT):
 //   - Must have catalog:seed permission
@@ -61,7 +88,7 @@ func (ac *AuthorizationChecker) CheckSeedPermission(ctx context.Context, targetS
 	serviceName := ac.getContextValue(ctx, "service_name")
 	isServicePrincipal := principalType == "service" || serviceName != ""
 
-	// Services bypass permission checks and use ownership validation only
+	// Services use configuration-based authorization
 	if isServicePrincipal {
 		if serviceName == "" {
 			// Fallback: try to resolve service name from context if not already available
@@ -77,7 +104,19 @@ func (ac *AuthorizationChecker) CheckSeedPermission(ctx context.Context, targetS
 				"service authentication incomplete: service_name missing")
 		}
 
-		// Services cannot seed default/farmers-module
+		// Use configuration-based authorization
+		// Check if service has catalog:seed_roles permission
+		if err := ac.serviceAuthorizer.Authorize(ctx, serviceName, "catalog:seed_roles"); err != nil {
+			ac.logger.Warn("Service authorization failed",
+				zap.String("service_id", principalID),
+				zap.String("service_name", serviceName),
+				zap.String("target_service_id", targetServiceID),
+				zap.Error(err))
+			return status.Errorf(codes.PermissionDenied,
+				"service '%s' is not authorized to seed roles: %v", serviceName, err)
+		}
+
+		// Services cannot seed default/farmers-module roles (business rule)
 		if targetServiceID == "" || targetServiceID == "farmers-module" {
 			ac.logger.Warn("Service cannot seed default/farmers-module roles",
 				zap.String("service_id", principalID),
@@ -99,7 +138,7 @@ func (ac *AuthorizationChecker) CheckSeedPermission(ctx context.Context, targetS
 		}
 
 		// Service is authorized to seed its own roles
-		ac.logger.Info("Service authorized to seed own roles",
+		ac.logger.Info("Service authorized to seed own roles via configuration",
 			zap.String("service_id", principalID),
 			zap.String("service_name", serviceName),
 			zap.String("target_service_id", targetServiceID))

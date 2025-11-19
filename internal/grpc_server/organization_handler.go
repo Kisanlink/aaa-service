@@ -386,23 +386,160 @@ func (h *OrganizationHandler) AddUserToOrganization(ctx context.Context, req *pb
 		zap.String("org_id", req.OrganizationId),
 		zap.String("user_id", req.UserId))
 
-	// Validate request
+	// 1. Validate request inputs
 	if req.OrganizationId == "" || req.UserId == "" {
+		h.logger.Warn("AddUserToOrganization called with empty Organization ID or User ID")
 		return &pb.AddUserToOrganizationResponse{
 			StatusCode: 400,
 			Message:    "Organization ID and User ID are required",
 		}, status.Error(codes.InvalidArgument, "organization ID and user ID are required")
 	}
 
-	// For adding users to organizations, we typically add them to a group within the organization
-	// Since the proto doesn't specify which group, we could create a default "Members" group
-	// or require a group_id parameter. For now, we'll return a simpler implementation.
+	// 2. Check if groupService is available
+	if h.groupService == nil {
+		h.logger.Error("Group service not configured")
+		return &pb.AddUserToOrganizationResponse{
+			StatusCode: 503,
+			Message:    "Group service not available",
+		}, status.Error(codes.Unavailable, "group service not configured")
+	}
 
-	// Note: The OrganizationService has methods for group-user management
-	// A complete implementation would:
-	// 1. Get or create a default "Members" group for the organization
-	// 2. Add the user to that group using AddUserToGroupInOrganization
-	// 3. Optionally assign roles if role_ids are provided
+	// 3. Verify organization exists and is active
+	orgInterface, err := h.orgService.GetOrganization(ctx, req.OrganizationId)
+	if err != nil {
+		h.logger.Error("Organization not found",
+			zap.String("org_id", req.OrganizationId),
+			zap.Error(err))
+		return &pb.AddUserToOrganizationResponse{
+			StatusCode: 404,
+			Message:    "Organization not found",
+		}, status.Error(codes.NotFound, "organization not found")
+	}
+
+	// Type assert to check if organization is active
+	type OrgWithStatus interface {
+		GetIsActive() bool
+	}
+	if orgWithStatus, ok := orgInterface.(OrgWithStatus); ok {
+		if !orgWithStatus.GetIsActive() {
+			h.logger.Warn("Cannot add user to inactive organization",
+				zap.String("org_id", req.OrganizationId))
+			return &pb.AddUserToOrganizationResponse{
+				StatusCode: 400,
+				Message:    "Cannot add user to inactive organization",
+			}, status.Error(codes.FailedPrecondition, "organization is not active")
+		}
+	}
+
+	// 4. Get or create "Members" group for the organization
+	groupsInterface, err := h.orgService.GetOrganizationGroups(ctx, req.OrganizationId, 1000, 0, false)
+	if err != nil {
+		h.logger.Error("Failed to get organization groups",
+			zap.String("org_id", req.OrganizationId),
+			zap.Error(err))
+		return &pb.AddUserToOrganizationResponse{
+			StatusCode: 500,
+			Message:    "Failed to retrieve organization groups",
+		}, status.Error(codes.Internal, "failed to retrieve organization groups")
+	}
+
+	// Find the "Members" group
+	var membersGroupID string
+	if groupSlice, ok := groupsInterface.([]interface{}); ok {
+		for _, g := range groupSlice {
+			if groupMap, ok := g.(map[string]interface{}); ok {
+				if name, ok := groupMap["name"].(string); ok && name == "Members" {
+					if id, ok := groupMap["id"].(string); ok {
+						membersGroupID = id
+						break
+					}
+				}
+			}
+		}
+	}
+
+	// If "Members" group doesn't exist, create it
+	if membersGroupID == "" {
+		h.logger.Info("Creating Members group for organization",
+			zap.String("org_id", req.OrganizationId))
+
+		createGroupReq := map[string]interface{}{
+			"name":            "Members",
+			"description":     "Default members group for organization",
+			"organization_id": req.OrganizationId,
+		}
+
+		createdGroupInterface, err := h.orgService.CreateGroupInOrganization(ctx, req.OrganizationId, createGroupReq)
+		if err != nil {
+			h.logger.Error("Failed to create Members group",
+				zap.String("org_id", req.OrganizationId),
+				zap.Error(err))
+			return &pb.AddUserToOrganizationResponse{
+				StatusCode: 500,
+				Message:    "Failed to create members group",
+			}, status.Error(codes.Internal, "failed to create members group")
+		}
+
+		// Extract group ID from created group
+		if groupMap, ok := createdGroupInterface.(map[string]interface{}); ok {
+			if id, ok := groupMap["id"].(string); ok {
+				membersGroupID = id
+			}
+		}
+
+		if membersGroupID == "" {
+			h.logger.Error("Failed to extract group ID from created Members group")
+			return &pb.AddUserToOrganizationResponse{
+				StatusCode: 500,
+				Message:    "Failed to create members group",
+			}, status.Error(codes.Internal, "failed to get members group ID")
+		}
+	}
+
+	// 5. Add user to Members group
+	h.logger.Info("Adding user to Members group",
+		zap.String("org_id", req.OrganizationId),
+		zap.String("user_id", req.UserId),
+		zap.String("group_id", membersGroupID))
+
+	addMemberReq := map[string]interface{}{
+		"group_id":       membersGroupID,
+		"principal_id":   req.UserId,
+		"principal_type": "user",
+		"added_by_id":    "system", // TODO: Extract from context
+	}
+
+	_, err = h.orgService.AddUserToGroupInOrganization(ctx, req.OrganizationId, membersGroupID, req.UserId, addMemberReq)
+	if err != nil {
+		// Check if error is due to user already being a member
+		if err.Error() == "user is already a member of this group" ||
+			err.Error() == "membership already exists" {
+			h.logger.Info("User is already a member of organization",
+				zap.String("org_id", req.OrganizationId),
+				zap.String("user_id", req.UserId))
+
+			return &pb.AddUserToOrganizationResponse{
+				StatusCode: 200,
+				Message:    "User is already a member of organization",
+				OrganizationUser: &pb.OrganizationUser{
+					UserId:         req.UserId,
+					OrganizationId: req.OrganizationId,
+					Status:         "ACTIVE",
+				},
+			}, nil
+		}
+
+		h.logger.Error("Failed to add user to organization group",
+			zap.String("org_id", req.OrganizationId),
+			zap.String("user_id", req.UserId),
+			zap.String("group_id", membersGroupID),
+			zap.Error(err))
+
+		return &pb.AddUserToOrganizationResponse{
+			StatusCode: 500,
+			Message:    "Failed to add user to organization",
+		}, status.Error(codes.Internal, "failed to add user to organization")
+	}
 
 	h.logger.Info("User added to organization successfully",
 		zap.String("org_id", req.OrganizationId),
@@ -424,8 +561,9 @@ func (h *OrganizationHandler) RemoveUserFromOrganization(ctx context.Context, re
 		zap.String("org_id", req.OrganizationId),
 		zap.String("user_id", req.UserId))
 
-	// Validate request
+	// 1. Validate request inputs
 	if req.OrganizationId == "" || req.UserId == "" {
+		h.logger.Warn("RemoveUserFromOrganization called with empty Organization ID or User ID")
 		return &pb.RemoveUserFromOrganizationResponse{
 			StatusCode: 400,
 			Message:    "Organization ID and User ID are required",
@@ -433,7 +571,7 @@ func (h *OrganizationHandler) RemoveUserFromOrganization(ctx context.Context, re
 		}, status.Error(codes.InvalidArgument, "organization ID and user ID are required")
 	}
 
-	// Check if groupService is available
+	// 2. Check if groupService is available
 	if h.groupService == nil {
 		h.logger.Error("Group service not configured")
 		return &pb.RemoveUserFromOrganizationResponse{
@@ -443,15 +581,99 @@ func (h *OrganizationHandler) RemoveUserFromOrganization(ctx context.Context, re
 		}, status.Error(codes.Unavailable, "group service not configured")
 	}
 
-	// Note: A complete implementation would:
-	// 1. Get all groups in the organization
-	// 2. Remove the user from all groups in this organization
-	// 3. Revoke all organization-scoped roles from the user
-	// For now, we'll return a success response assuming the removal is handled
+	// 3. Verify organization exists
+	_, err := h.orgService.GetOrganization(ctx, req.OrganizationId)
+	if err != nil {
+		h.logger.Error("Organization not found",
+			zap.String("org_id", req.OrganizationId),
+			zap.Error(err))
+		return &pb.RemoveUserFromOrganizationResponse{
+			StatusCode: 404,
+			Message:    "Organization not found",
+			Success:    false,
+		}, status.Error(codes.NotFound, "organization not found")
+	}
+
+	// 4. Get all groups the user belongs to in this organization
+	userGroupsInterface, err := h.groupService.GetUserGroupsInOrganization(ctx, req.OrganizationId, req.UserId, 1000, 0)
+	if err != nil {
+		h.logger.Error("Failed to get user groups in organization",
+			zap.String("org_id", req.OrganizationId),
+			zap.String("user_id", req.UserId),
+			zap.Error(err))
+		return &pb.RemoveUserFromOrganizationResponse{
+			StatusCode: 500,
+			Message:    "Failed to retrieve user memberships",
+			Success:    false,
+		}, status.Error(codes.Internal, "failed to retrieve user memberships")
+	}
+
+	// Extract group IDs
+	var groupIDs []string
+	if groupSlice, ok := userGroupsInterface.([]interface{}); ok {
+		for _, g := range groupSlice {
+			if groupMap, ok := g.(map[string]interface{}); ok {
+				if id, ok := groupMap["id"].(string); ok {
+					groupIDs = append(groupIDs, id)
+				}
+			}
+		}
+	}
+
+	// If user is not a member of any groups, they're not in the organization
+	if len(groupIDs) == 0 {
+		h.logger.Info("User is not a member of organization",
+			zap.String("org_id", req.OrganizationId),
+			zap.String("user_id", req.UserId))
+		return &pb.RemoveUserFromOrganizationResponse{
+			StatusCode: 200,
+			Message:    "User is not a member of organization",
+			Success:    true,
+		}, nil
+	}
+
+	// 5. Remove user from all groups in the organization
+	var removalErrors []string
+	removedCount := 0
+
+	for _, groupID := range groupIDs {
+		h.logger.Info("Removing user from group",
+			zap.String("org_id", req.OrganizationId),
+			zap.String("user_id", req.UserId),
+			zap.String("group_id", groupID))
+
+		err := h.groupService.RemoveMemberFromGroup(ctx, groupID, req.UserId, "system") // TODO: Extract from context
+		if err != nil {
+			h.logger.Warn("Failed to remove user from group",
+				zap.String("org_id", req.OrganizationId),
+				zap.String("user_id", req.UserId),
+				zap.String("group_id", groupID),
+				zap.Error(err))
+			removalErrors = append(removalErrors, "failed to remove from group "+groupID)
+		} else {
+			removedCount++
+		}
+	}
+
+	// 6. Check if all removals were successful
+	if len(removalErrors) > 0 {
+		h.logger.Error("Failed to remove user from some groups",
+			zap.String("org_id", req.OrganizationId),
+			zap.String("user_id", req.UserId),
+			zap.Int("removed_count", removedCount),
+			zap.Int("failed_count", len(removalErrors)))
+
+		return &pb.RemoveUserFromOrganizationResponse{
+			StatusCode: 500,
+			Message:    "Partially removed user from organization. Some group removals failed.",
+			Success:    false,
+		}, status.Error(codes.Internal, "partial removal failure")
+	}
 
 	h.logger.Info("User removed from organization successfully",
 		zap.String("org_id", req.OrganizationId),
-		zap.String("user_id", req.UserId))
+		zap.String("user_id", req.UserId),
+		zap.Int("groups_removed", removedCount))
 
 	return &pb.RemoveUserFromOrganizationResponse{
 		StatusCode: 200,
@@ -467,38 +689,155 @@ func (h *OrganizationHandler) ValidateOrganizationAccess(ctx context.Context, re
 		zap.String("resource_type", req.ResourceType),
 		zap.String("action", req.Action))
 
-	// Validate request
+	// 1. Validate request inputs
 	if req.UserId == "" || req.OrganizationId == "" {
+		h.logger.Warn("ValidateOrganizationAccess called with empty User ID or Organization ID")
 		return &pb.ValidateOrganizationAccessResponse{
 			Allowed: false,
+			Reasons: []string{"user ID and organization ID are required"},
 		}, status.Error(codes.InvalidArgument, "user ID and organization ID are required")
 	}
 
-	// Check if the user belongs to the organization
-	// Note: This requires a method to check user-organization membership
-	// For now, we'll use a basic validation approach
-
-	// If resource and action are specified, validate permission
-	if req.ResourceType != "" && req.Action != "" {
-		// Note: A complete implementation would:
-		// 1. Get user's roles in this organization
-		// 2. Get permissions for those roles
-		// 3. Check if any permission matches the resource:action
-		// For now, we'll return a conservative response
-		h.logger.Warn("ValidateOrganizationAccess requires permission checking implementation",
-			zap.String("resource_type", req.ResourceType),
-			zap.String("action", req.Action))
-
+	// 2. Check if groupService is available
+	if h.groupService == nil {
+		h.logger.Error("Group service not configured")
 		return &pb.ValidateOrganizationAccessResponse{
 			Allowed: false,
+			Reasons: []string{"authorization service not available"},
+		}, status.Error(codes.Unavailable, "group service not configured")
+	}
+
+	// 3. Verify organization exists and is active
+	orgInterface, err := h.orgService.GetOrganization(ctx, req.OrganizationId)
+	if err != nil {
+		h.logger.Warn("Organization not found for access validation",
+			zap.String("org_id", req.OrganizationId),
+			zap.Error(err))
+		return &pb.ValidateOrganizationAccessResponse{
+			Allowed: false,
+			Reasons: []string{"organization not found"},
 		}, nil
 	}
 
-	// Basic organization membership check
-	// Note: This requires orgService to have a method like CheckUserInOrganization
-	h.logger.Info("Organization access validation completed",
-		zap.String("user_id", req.UserId),
-		zap.String("org_id", req.OrganizationId))
+	// Check if organization is active
+	type OrgWithStatus interface {
+		GetIsActive() bool
+	}
+	if orgWithStatus, ok := orgInterface.(OrgWithStatus); ok {
+		if !orgWithStatus.GetIsActive() {
+			h.logger.Warn("Access denied: organization is inactive",
+				zap.String("org_id", req.OrganizationId),
+				zap.String("user_id", req.UserId))
+			return &pb.ValidateOrganizationAccessResponse{
+				Allowed: false,
+				Reasons: []string{"organization is not active"},
+			}, nil
+		}
+	}
+
+	// 4. Check if user is a member of the organization
+	userGroupsInterface, err := h.groupService.GetUserGroupsInOrganization(ctx, req.OrganizationId, req.UserId, 100, 0)
+	if err != nil {
+		h.logger.Error("Failed to get user groups in organization",
+			zap.String("org_id", req.OrganizationId),
+			zap.String("user_id", req.UserId),
+			zap.Error(err))
+		return &pb.ValidateOrganizationAccessResponse{
+			Allowed: false,
+			Reasons: []string{"failed to check membership"},
+		}, nil
+	}
+
+	// Check if user has any groups in the organization
+	var userHasGroups bool
+	if groupSlice, ok := userGroupsInterface.([]interface{}); ok {
+		userHasGroups = len(groupSlice) > 0
+	}
+
+	if !userHasGroups {
+		h.logger.Info("Access denied: user is not a member of organization",
+			zap.String("org_id", req.OrganizationId),
+			zap.String("user_id", req.UserId))
+		return &pb.ValidateOrganizationAccessResponse{
+			Allowed: false,
+			Reasons: []string{"user is not a member of this organization"},
+		}, nil
+	}
+
+	// 5. If resource_type and action are specified, check permissions
+	if req.ResourceType != "" && req.Action != "" {
+		h.logger.Info("Checking resource-specific permissions",
+			zap.String("user_id", req.UserId),
+			zap.String("org_id", req.OrganizationId),
+			zap.String("resource_type", req.ResourceType),
+			zap.String("action", req.Action))
+
+		// Get user's effective roles in the organization
+		effectiveRolesInterface, err := h.groupService.GetUserEffectiveRoles(ctx, req.OrganizationId, req.UserId)
+		if err != nil {
+			h.logger.Error("Failed to get user effective roles",
+				zap.String("org_id", req.OrganizationId),
+				zap.String("user_id", req.UserId),
+				zap.Error(err))
+			return &pb.ValidateOrganizationAccessResponse{
+				Allowed: false,
+				Reasons: []string{"failed to check permissions"},
+			}, nil
+		}
+
+		// Extract permissions from effective roles
+		var hasPermission bool
+		requiredPermission := req.ResourceType + ":" + req.Action
+
+		if rolesSlice, ok := effectiveRolesInterface.([]interface{}); ok {
+			for _, role := range rolesSlice {
+				if roleMap, ok := role.(map[string]interface{}); ok {
+					if permissions, ok := roleMap["permissions"].([]interface{}); ok {
+						for _, perm := range permissions {
+							if permStr, ok := perm.(string); ok {
+								// Check for exact match or wildcard
+								if permStr == requiredPermission ||
+									permStr == req.ResourceType+":*" ||
+									permStr == "*:*" {
+									hasPermission = true
+									break
+								}
+							}
+						}
+					}
+					if hasPermission {
+						break
+					}
+				}
+			}
+		}
+
+		if !hasPermission {
+			h.logger.Info("Access denied: user lacks required permission",
+				zap.String("org_id", req.OrganizationId),
+				zap.String("user_id", req.UserId),
+				zap.String("required_permission", requiredPermission))
+
+			return &pb.ValidateOrganizationAccessResponse{
+				Allowed: false,
+				Reasons: []string{"user does not have permission for " + requiredPermission},
+			}, nil
+		}
+
+		h.logger.Info("Access granted with resource permission",
+			zap.String("org_id", req.OrganizationId),
+			zap.String("user_id", req.UserId),
+			zap.String("permission", requiredPermission))
+
+		return &pb.ValidateOrganizationAccessResponse{
+			Allowed: true,
+		}, nil
+	}
+
+	// 6. Basic membership check passed
+	h.logger.Info("Access granted: user is a member of organization",
+		zap.String("org_id", req.OrganizationId),
+		zap.String("user_id", req.UserId))
 
 	return &pb.ValidateOrganizationAccessResponse{
 		Allowed: true,

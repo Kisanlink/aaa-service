@@ -744,20 +744,47 @@ func (s *Service) GetOrganizationGroups(ctx context.Context, orgID string, limit
 		zap.Int("offset", offset),
 		zap.Bool("include_inactive", includeInactive))
 
-	// Verify organization exists and is active
+	// Verify organization exists
 	org, err := s.orgRepo.GetByID(ctx, orgID)
 	if err != nil || org == nil {
 		s.logger.Error("Organization not found", zap.String("org_id", orgID))
 		return nil, errors.NewNotFoundError("organization not found")
 	}
 
-	// Get groups from the organization using the group repository
-	// Note: This would typically be done through a group service, but for now we'll implement it here
-	// In a real implementation, you'd inject a GroupService or GroupRepository
+	// Delegate to group service if available
+	if s.groupService != nil {
+		return s.groupService.ListGroups(ctx, limit, offset, orgID, includeInactive)
+	}
 
-	// For now, return empty slice as placeholder - this would be implemented with actual group repository
-	s.logger.Info("Organization groups retrieved successfully", zap.String("org_id", orgID))
-	return []interface{}{}, nil
+	// Fallback: try to get from group repository directly
+	if s.groupRepo != nil {
+		groups, err := s.groupRepo.GetByOrganization(ctx, orgID, limit, offset, includeInactive)
+		if err != nil {
+			s.logger.Error("Failed to retrieve organization groups", zap.Error(err))
+			return nil, errors.NewInternalError(err)
+		}
+
+		// Convert to response format
+		responses := make([]*groupResponses.GroupResponse, len(groups))
+		for i, group := range groups {
+			responses[i] = &groupResponses.GroupResponse{
+				ID:             group.ID,
+				Name:           group.Name,
+				Description:    group.Description,
+				OrganizationID: group.OrganizationID,
+				ParentID:       group.ParentID,
+				IsActive:       group.IsActive,
+				CreatedAt:      &group.CreatedAt,
+				UpdatedAt:      &group.UpdatedAt,
+			}
+		}
+
+		s.logger.Info("Organization groups retrieved successfully", zap.String("org_id", orgID))
+		return responses, nil
+	}
+
+	s.logger.Warn("Group service and repository not available")
+	return []*groupResponses.GroupResponse{}, nil
 }
 
 // CreateGroupInOrganization creates a new group within an organization
@@ -776,10 +803,13 @@ func (s *Service) CreateGroupInOrganization(ctx context.Context, orgID string, r
 		return nil, errors.NewValidationError("cannot create group in inactive organization")
 	}
 
-	// This would delegate to the group service with organization context
-	// For now, return placeholder response
-	s.logger.Info("Group created in organization successfully", zap.String("org_id", orgID))
-	return map[string]interface{}{"message": "group creation not fully implemented"}, nil
+	// Delegate to group service if available
+	if s.groupService != nil {
+		return s.groupService.CreateGroup(ctx, req)
+	}
+
+	s.logger.Error("Group service not available")
+	return nil, errors.NewInternalError(fmt.Errorf("group service not configured"))
 }
 
 // GetGroupInOrganization retrieves a specific group within an organization
@@ -881,20 +911,38 @@ func (s *Service) AddUserToGroupInOrganization(ctx context.Context, orgID, group
 		return nil, errors.NewNotFoundError("organization not found")
 	}
 
-	// Verify user exists and belongs to organization (this would need user-organization relationship)
+	// Verify user exists
 	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil || user == nil {
 		s.logger.Error("User not found", zap.String("user_id", userID))
 		return nil, errors.NewNotFoundError("user not found")
 	}
 
-	// This would delegate to the group service with organization context validation
-	// For now, return placeholder response
-	s.logger.Info("User added to group in organization successfully",
-		zap.String("org_id", orgID),
-		zap.String("group_id", groupID),
-		zap.String("user_id", userID))
-	return map[string]interface{}{"message": "user-group assignment not fully implemented"}, nil
+	// Verify group exists and belongs to this organization
+	if s.groupRepo != nil {
+		var group models.Group
+		_, err := s.groupRepo.GetByID(ctx, groupID, &group)
+		if err != nil {
+			s.logger.Error("Group not found", zap.String("group_id", groupID))
+			return nil, errors.NewNotFoundError("group not found")
+		}
+
+		if group.OrganizationID != orgID {
+			s.logger.Error("Group does not belong to organization",
+				zap.String("group_id", groupID),
+				zap.String("group_org_id", group.OrganizationID),
+				zap.String("requested_org_id", orgID))
+			return nil, errors.NewValidationError("group does not belong to the specified organization")
+		}
+	}
+
+	// Delegate to group service if available
+	if s.groupService != nil {
+		return s.groupService.AddMemberToGroup(ctx, req)
+	}
+
+	s.logger.Error("Group service not available")
+	return nil, errors.NewInternalError(fmt.Errorf("group service not configured"))
 }
 
 // RemoveUserFromGroupInOrganization removes a user from a group within an organization

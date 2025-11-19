@@ -1,0 +1,72 @@
+# Service Authorization Configuration - Production/Staging Environment
+# This is the default configuration file used in production and staging
+
+service_authorization:
+  # Enable authorization in production
+  enabled: true
+
+  # Service-specific permissions
+  # Each service must be explicitly configured with allowed permissions
+  services:
+    # Farmers Module Service
+    # Note: The key must match the ServiceId sent in the gRPC request
+    # Supporting both formats for backward compatibility
+    "Farmers Module":
+      service_id: "Farmers Module"
+      display_name: "Farmers Module Service"
+      description: "Farmer management and agricultural operations service"
+
+      # API key authentication required for this service
+      # The actual API key should be provided via environment variable:
+      # AAA_SERVICE_API_KEY_FARMERS_MODULE
+      api_key_required: true
+
+      # Allowed permissions for this service
+      # Format: resource:action or resource:* for wildcard
+      permissions:
+        - "catalog:seed_roles"
+        - "catalog:seed_permissions"
+        - "catalog:register_resource"
+        - "catalog:register_action"
+
+    # Farmers Module Service (alternate format for backward compatibility)
+    farmers-module:
+      service_id: "farmers-module"
+      display_name: "Farmers Module Service (Legacy ID)"
+      description: "Farmer management and agricultural operations service"
+      api_key_required: true
+      permissions:
+        - "catalog:seed_roles"
+        - "catalog:seed_permissions"
+        - "catalog:register_resource"
+        - "catalog:register_action"
+
+    # Example: ERP Module (currently disabled, uncomment to enable)
+    # erp-module:
+    #   service_id: "erp-module"
+    #   display_name: "ERP Module Service"
+    #   description: "Enterprise Resource Planning module"
+    #   api_key_required: true
+    #   permissions:
+    #     - "catalog:seed_roles"
+    #     - "catalog:seed_permissions"
+    #     - "catalog:register_resource"
+    #     - "catalog:register_action"
+
+    # Example: Reporting Service with wildcard permissions
+    # reporting-service:
+    #   service_id: "reporting-service"
+    #   display_name: "Reporting Service"
+    #   description: "Data reporting and analytics service"
+    #   api_key_required: true
+    #   permissions:
+    #     - "catalog:*"  # All catalog operations
+
+# Default behavior when authorization is disabled
+default_behavior:
+  # Options: "allow_all" or "deny_all"
+  # In production, deny all requests if authorization is disabled
+  when_disabled: "allow_all"
+
+  # Always log unauthorized attempts in production
+  log_unauthorized_attempts: true

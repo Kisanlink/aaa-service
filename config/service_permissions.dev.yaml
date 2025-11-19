@@ -1,0 +1,15 @@
+# Service Authorization Configuration - Development Environment
+# This configuration is used when AAA_ENV=development or AAA_ENV=dev
+
+service_authorization:
+  # Authorization disabled in development for easier testing
+  enabled: false
+
+# Default behavior when authorization is disabled
+default_behavior:
+  # Options: "allow_all" or "deny_all"
+  # In development, allow all requests to facilitate testing
+  when_disabled: "allow_all"
+
+  # Log unauthorized attempts even when disabled (for debugging)
+  log_unauthorized_attempts: true
