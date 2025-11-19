@@ -52,10 +52,18 @@ func (a *UserServiceAdapter) Update(ctx context.Context, userID string, updates 
 	}
 
 	// Defensive check: ensure user was actually populated
-	if existingUser == nil || existingUser.ID == "" {
-		a.logger.Error("User was not properly populated after GetByID",
-			zap.String("user_id", userID))
-		return fmt.Errorf("user record is invalid or not found")
+	// BaseModel is an embedded pointer, so we need to check if it's nil
+	if existingUser == nil {
+		a.logger.Error("User object is nil after GetByID", zap.String("user_id", userID))
+		return fmt.Errorf("user record is nil")
+	}
+	if existingUser.BaseModel == nil {
+		a.logger.Error("User BaseModel is nil after GetByID", zap.String("user_id", userID))
+		return fmt.Errorf("user record has nil BaseModel")
+	}
+	if existingUser.GetID() == "" {
+		a.logger.Error("User ID is empty after GetByID", zap.String("user_id", userID))
+		return fmt.Errorf("user record has empty ID")
 	}
 
 	// Get or create user profile
