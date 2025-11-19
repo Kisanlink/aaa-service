@@ -21,3 +21,9 @@ func NewAddressServiceAdapter(service interfaces.AddressService) *AddressService
 func (a *AddressServiceAdapter) CreateAddress(ctx context.Context, address *models.Address) error {
 	return a.service.CreateAddress(ctx, address)
 }
+
+// FindOrCreateAddress finds an existing address by full_address or creates a new one
+// Returns (addressID string, wasCreated bool, error)
+func (a *AddressServiceAdapter) FindOrCreateAddress(ctx context.Context, address *models.Address) (string, bool, error) {
+	return a.service.FindOrCreateAddress(ctx, address)
+}

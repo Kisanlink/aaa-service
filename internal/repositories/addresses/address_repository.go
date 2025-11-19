@@ -92,6 +92,25 @@ func (r *AddressRepository) Search(ctx context.Context, query string, limit, off
 	return r.BaseFilterableRepository.Find(ctx, filter)
 }
 
+// GetByFullAddress retrieves an address by exact full_address match
+func (r *AddressRepository) GetByFullAddress(ctx context.Context, fullAddress string) (*models.Address, error) {
+	filter := base.NewFilterBuilder().
+		Where("full_address", base.OpEqual, fullAddress).
+		Limit(1, 0).
+		Build()
+
+	addresses, err := r.BaseFilterableRepository.Find(ctx, filter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find address by full_address: %w", err)
+	}
+
+	if len(addresses) == 0 {
+		return nil, nil // No address found (not an error, just no match)
+	}
+
+	return addresses[0], nil
+}
+
 // GetByType retrieves addresses by type using database-level filtering
 func (r *AddressRepository) GetByType(ctx context.Context, addressType string, limit, offset int) ([]*models.Address, error) {
 	filter := base.NewFilterBuilder().

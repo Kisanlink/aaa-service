@@ -61,6 +61,9 @@ type UserService interface {
 type AddressService interface {
 	// CreateAddress creates a new address record
 	CreateAddress(ctx context.Context, address *models.Address) error
+	// FindOrCreateAddress finds an existing address by full_address or creates a new one
+	// Returns (addressID string, wasCreated bool, error)
+	FindOrCreateAddress(ctx context.Context, address *models.Address) (string, bool, error)
 }
 
 // AuditService defines the interface for audit logging

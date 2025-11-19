@@ -298,9 +298,10 @@ func (s *Service) updateUserProfile(ctx context.Context, userID string, kycData 
 	return nil
 }
 
-// createAddress creates address from Aadhaar data
+// createAddress finds or creates address from Aadhaar data
+// If an address with the same full_address already exists, reuses it
 func (s *Service) createAddress(ctx context.Context, userID string, kycData *KYCData) (string, error) {
-	s.logger.Info("Creating address from Aadhaar data",
+	s.logger.Info("Finding or creating address from Aadhaar data",
 		zap.String("user_id", userID))
 
 	// Create address model using NewAddress()
@@ -331,25 +332,35 @@ func (s *Service) createAddress(ctx context.Context, userID string, kycData *KYC
 		address.Pincode = &pincode
 	}
 
-	// Build full address
+	// Build full address for logging
 	fullAddr := address.BuildFullAddress()
-	address.FullAddress = &fullAddr
 
 	// Set created by (CreatedBy is string, not pointer)
 	address.CreatedBy = userID
 
-	if err := s.addressService.CreateAddress(ctx, address); err != nil {
-		s.logger.Error("Failed to create address",
+	// Find existing address or create new one
+	addressID, wasCreated, err := s.addressService.FindOrCreateAddress(ctx, address)
+	if err != nil {
+		s.logger.Error("Failed to find or create address",
 			zap.String("user_id", userID),
+			zap.String("full_address", fullAddr),
 			zap.Error(err))
-		return "", fmt.Errorf("failed to create address: %w", err)
+		return "", fmt.Errorf("failed to find or create address: %w", err)
 	}
 
-	s.logger.Info("Address created successfully",
-		zap.String("user_id", userID),
-		zap.String("address_id", address.ID))
+	if wasCreated {
+		s.logger.Info("New address created",
+			zap.String("user_id", userID),
+			zap.String("address_id", addressID),
+			zap.String("full_address", fullAddr))
+	} else {
+		s.logger.Info("Reusing existing address",
+			zap.String("user_id", userID),
+			zap.String("address_id", addressID),
+			zap.String("full_address", fullAddr))
+	}
 
-	return address.ID, nil
+	return addressID, nil
 }
 
 // mapSandboxAddress maps Sandbox address to response address

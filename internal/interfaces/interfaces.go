@@ -91,6 +91,7 @@ type UserService interface {
 // AddressService interface for address-related operations
 type AddressService interface {
 	CreateAddress(ctx context.Context, address *models.Address) error
+	FindOrCreateAddress(ctx context.Context, address *models.Address) (string, bool, error)
 	GetAddressByID(ctx context.Context, addressID string) (*models.Address, error)
 	UpdateAddress(ctx context.Context, address *models.Address) error
 	DeleteAddress(ctx context.Context, addressID string) error
@@ -205,6 +206,7 @@ type ServiceRepository interface {
 type AddressRepository interface {
 	base.Repository[*models.Address]
 	GetByUserID(ctx context.Context, userID string) ([]*models.Address, error)
+	GetByFullAddress(ctx context.Context, fullAddress string) (*models.Address, error)
 	Search(ctx context.Context, query string, limit, offset int) ([]*models.Address, error)
 }
 

@@ -61,6 +61,59 @@ func (s *AddressService) CreateAddress(ctx context.Context, address *models.Addr
 	return nil
 }
 
+// FindOrCreateAddress finds an existing address by full_address or creates a new one
+// This prevents duplicate addresses for the same location
+func (s *AddressService) FindOrCreateAddress(ctx context.Context, address *models.Address) (string, bool, error) {
+	// Build full address first
+	fullAddr := address.BuildFullAddress()
+
+	s.logger.Info("Finding or creating address",
+		zap.String("full_address", fullAddr))
+
+	// Try to find existing address with same full_address
+	existingAddr, err := s.addressRepo.GetByFullAddress(ctx, fullAddr)
+	if err != nil {
+		s.logger.Error("Failed to search for existing address", zap.Error(err))
+		// Continue with creation if search fails
+	}
+
+	if existingAddr != nil {
+		s.logger.Info("Found existing address, reusing",
+			zap.String("address_id", existingAddr.ID),
+			zap.String("full_address", fullAddr),
+			zap.String("original_user_id", existingAddr.UserID),
+			zap.String("requesting_user_id", address.UserID))
+		return existingAddr.ID, false, nil
+	}
+
+	// No existing address found, create new one
+	s.logger.Info("No existing address found, creating new one",
+		zap.String("full_address", fullAddr),
+		zap.String("user_id", address.UserID))
+
+	// Validate address
+	if err := s.validateAddress(address); err != nil {
+		return "", false, fmt.Errorf("validation failed: %w", err)
+	}
+
+	// Create address in database
+	if err := s.addressRepo.Create(ctx, address); err != nil {
+		s.logger.Error("Failed to create address", zap.Error(err))
+		return "", false, fmt.Errorf("failed to create address: %w", err)
+	}
+
+	// Clear cache
+	if err := s.cacheService.Delete(fmt.Sprintf("address:%s", address.ID)); err != nil {
+		s.logger.Error("Failed to delete address from cache", zap.Error(err))
+	}
+
+	s.logger.Info("New address created successfully",
+		zap.String("address_id", address.ID),
+		zap.String("full_address", fullAddr))
+
+	return address.ID, true, nil
+}
+
 // GetAddressByID retrieves an address by ID with caching
 func (s *AddressService) GetAddressByID(ctx context.Context, addressID string) (*models.Address, error) {
 	// Try to get from cache first
