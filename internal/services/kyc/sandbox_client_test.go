@@ -66,8 +66,8 @@ func mockVerifyResponse() SandboxVerifyResponse {
 			},
 			Photo:     "base64encodedphotodata...",
 			ShareCode: "1234",
-			Status:    "success",
-			Message:   "Aadhaar verification successful",
+			Status:    "VALID",
+			Message:   "Aadhaar Card Exists",
 		},
 	}
 }
@@ -248,6 +248,17 @@ func TestGenerateOTP_RetrySuccess(t *testing.T) {
 // TestVerifyOTP_Success tests successful OTP verification
 func TestVerifyOTP_Success(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Handle authentication endpoint
+		if strings.Contains(r.URL.Path, "/authenticate") {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(SandboxAuthResponse{
+				AccessToken: "test-access-token",
+				ExpiresIn:   86400,
+			})
+			return
+		}
+
 		// Verify request
 		if r.Method != http.MethodPost {
 			t.Errorf("Expected POST request, got %s", r.Method)
@@ -301,8 +312,8 @@ func TestVerifyOTP_Success(t *testing.T) {
 	if resp.Data.Name != "John Doe" {
 		t.Errorf("Expected name John Doe, got %s", resp.Data.Name)
 	}
-	if resp.Data.Status != "success" {
-		t.Errorf("Expected status success, got %s", resp.Data.Status)
+	if resp.Data.Status != "VALID" {
+		t.Errorf("Expected status VALID, got %s", resp.Data.Status)
 	}
 	if resp.Data.Address.State != "State Name" {
 		t.Errorf("Expected state State Name, got %s", resp.Data.Address.State)

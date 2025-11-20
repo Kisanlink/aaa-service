@@ -8,6 +8,7 @@ import (
 	"github.com/Kisanlink/aaa-service/v2/internal/entities/models"
 	userResponses "github.com/Kisanlink/aaa-service/v2/internal/entities/responses/users"
 	"github.com/Kisanlink/aaa-service/v2/internal/repositories/users"
+	"github.com/Kisanlink/kisanlink-db/pkg/base"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -133,9 +134,11 @@ func (s *Service) ResetPassword(ctx context.Context, token, newPassword string) 
 		return fmt.Errorf("invalid or expired reset token")
 	}
 
-	// Get user
-	var user models.User
-	_, err = s.userRepo.GetByID(ctx, resetToken.UserID, &user)
+	// Get user - Initialize with BaseModel to allow GORM to scan into it
+	user := &models.User{
+		BaseModel: &base.BaseModel{},
+	}
+	_, err = s.userRepo.GetByID(ctx, resetToken.UserID, user)
 	if err != nil {
 		s.logger.Error("Failed to get user", zap.Error(err))
 		return fmt.Errorf("user not found")
@@ -150,7 +153,7 @@ func (s *Service) ResetPassword(ctx context.Context, token, newPassword string) 
 
 	// Update user password
 	user.Password = string(hashedPassword)
-	if err := s.userRepo.Update(ctx, &user); err != nil {
+	if err := s.userRepo.Update(ctx, user); err != nil {
 		s.logger.Error("Failed to update password", zap.Error(err))
 		return fmt.Errorf("failed to update password")
 	}

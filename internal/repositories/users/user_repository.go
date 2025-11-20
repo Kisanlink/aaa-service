@@ -345,14 +345,17 @@ func (r *UserRepository) GetWithAddress(ctx context.Context, userID string) (*mo
 		return nil, fmt.Errorf("failed to get database connection: %w", err)
 	}
 
-	var user models.User
+	// Initialize user pointer with BaseModel to allow GORM to scan into it
+	user := &models.User{
+		BaseModel: &base.BaseModel{},
+	}
 
 	// Use efficient single query with preloading for all address relationships
 	err = db.WithContext(ctx).
 		Preload("Profile.Address").
 		Preload("Contacts.Address").
 		Where("id = ? AND deleted_at IS NULL", userID).
-		First(&user).Error
+		First(user).Error
 
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -361,7 +364,7 @@ func (r *UserRepository) GetWithAddress(ctx context.Context, userID string) (*mo
 		return nil, fmt.Errorf("failed to get user with addresses: %w", err)
 	}
 
-	return &user, nil
+	return user, nil
 }
 
 // GetWithProfile retrieves a user with their profile using efficient preloading
@@ -372,14 +375,20 @@ func (r *UserRepository) GetWithProfile(ctx context.Context, userID string) (*mo
 		return nil, fmt.Errorf("failed to get database connection: %w", err)
 	}
 
-	var user models.User
+	// Initialize user pointer with BaseModel to allow GORM to scan into it
+	user := &models.User{
+		BaseModel: &base.BaseModel{},
+	}
 
-	// Use efficient single query with preloading for profile and address
+	// Use efficient single query with preloading for profile, address, contacts, and active roles
 	err = db.WithContext(ctx).
 		Preload("Profile").
 		Preload("Profile.Address").
+		Preload("Contacts").
+		Preload("Roles", "is_active = ?", true).
+		Preload("Roles.Role", "is_active = ?", true).
 		Where("id = ? AND deleted_at IS NULL", userID).
-		First(&user).Error
+		First(user).Error
 
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -388,7 +397,7 @@ func (r *UserRepository) GetWithProfile(ctx context.Context, userID string) (*mo
 		return nil, fmt.Errorf("failed to get user with profile: %w", err)
 	}
 
-	return &user, nil
+	return user, nil
 }
 
 // Search searches for users by keyword in username using the BaseFilterableRepository
@@ -619,13 +628,15 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*models.
 		return nil, fmt.Errorf("failed to search email in contacts: %w", err)
 	}
 
-	// Get the user by ID
-	var user models.User
-	if err := r.dbManager.GetByID(ctx, contact.UserID, &user); err != nil {
+	// Get the user by ID - Initialize user pointer with BaseModel
+	user := &models.User{
+		BaseModel: &base.BaseModel{},
+	}
+	if err := r.dbManager.GetByID(ctx, contact.UserID, user); err != nil {
 		return nil, fmt.Errorf("failed to get user: %w", err)
 	}
 
-	return &user, nil
+	return user, nil
 }
 
 // GetByStatus retrieves users by status using database-level filtering
@@ -890,14 +901,17 @@ func (r *UserRepository) GetWithActiveRoles(ctx context.Context, userID string) 
 		return nil, fmt.Errorf("failed to get database connection: %w", err)
 	}
 
-	var user models.User
+	// Initialize user pointer with BaseModel to allow GORM to scan into it
+	user := &models.User{
+		BaseModel: &base.BaseModel{},
+	}
 
 	// Use a single query with preloading to efficiently load user and active roles
 	err = db.WithContext(ctx).
 		Preload("Roles", "is_active = ?", true).
 		Preload("Roles.Role", "is_active = ?", true).
 		Where("id = ? AND deleted_at IS NULL", userID).
-		First(&user).Error
+		First(user).Error
 
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -916,7 +930,7 @@ func (r *UserRepository) GetWithActiveRoles(ctx context.Context, userID string) 
 	}
 	user.Roles = activeUserRoles
 
-	return &user, nil
+	return user, nil
 }
 
 // VerifyMPin verifies a user's MPIN against the stored hash
@@ -928,11 +942,14 @@ func (r *UserRepository) VerifyMPin(ctx context.Context, userID, plainMPin strin
 		return fmt.Errorf("failed to get database connection: %w", err)
 	}
 
-	var user models.User
+	// Initialize user pointer with BaseModel to allow GORM to scan into it
+	user := &models.User{
+		BaseModel: &base.BaseModel{},
+	}
 	err = db.WithContext(ctx).
 		Select("id, m_pin").
 		Where("id = ? AND deleted_at IS NULL", userID).
-		First(&user).Error
+		First(user).Error
 
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {

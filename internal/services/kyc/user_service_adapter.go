@@ -8,6 +8,7 @@ import (
 	"github.com/Kisanlink/aaa-service/v2/internal/entities/models"
 	"github.com/Kisanlink/aaa-service/v2/internal/interfaces"
 	"github.com/Kisanlink/aaa-service/v2/internal/repositories/users"
+	"github.com/Kisanlink/kisanlink-db/pkg/base"
 	"go.uber.org/zap"
 )
 
@@ -47,9 +48,11 @@ func (a *UserServiceAdapter) Update(ctx context.Context, userID string, updates 
 	}
 
 	// Get existing user - this is optional, we'll try to update it but profile is the priority
-	existingUser := &models.User{}
+	// Initialize with BaseModel to allow GORM to scan into it
 	canUpdateUser := true
-	_, err := a.userRepo.GetByID(ctx, userID, existingUser)
+	existingUser, err := a.userRepo.GetByID(ctx, userID, &models.User{
+		BaseModel: &base.BaseModel{},
+	})
 	if err != nil {
 		a.logger.Warn("Failed to get existing user for update, will skip user record update",
 			zap.String("user_id", userID),
@@ -113,6 +116,18 @@ func (a *UserServiceAdapter) Update(ctx context.Context, userID string, updates 
 					zap.Bool("is_validated", v))
 			} else if !canUpdateUser {
 				a.logger.Warn("Skipping user field update - user record not available",
+					zap.String("field", field),
+					zap.String("user_id", userID))
+			}
+		case "status":
+			if v, ok := value.(string); ok && canUpdateUser {
+				existingUser.Status = &v
+				userUpdated = true
+				a.logger.Info("Setting user status",
+					zap.String("user_id", userID),
+					zap.String("status", v))
+			} else if !canUpdateUser {
+				a.logger.Warn("Skipping user status update - user record not available",
 					zap.String("field", field),
 					zap.String("user_id", userID))
 			}
@@ -207,8 +222,8 @@ func (a *UserServiceAdapter) Update(ctx context.Context, userID string, updates 
 	// Update or create profile if needed
 	if profileUpdated {
 		existingProfile.UpdatedAt = time.Now()
-		if existingProfile.ID == "" {
-			// Create new profile
+		if !profileExists {
+			// Create new profile (use profileExists flag, not ID check)
 			a.logger.Info("Creating new user profile",
 				zap.String("user_id", userID),
 				zap.String("name", func() string {
@@ -218,7 +233,13 @@ func (a *UserServiceAdapter) Update(ctx context.Context, userID string, updates 
 					return ""
 				}()),
 				zap.Bool("aadhaar_verified", existingProfile.AadhaarVerified),
-				zap.String("kyc_status", existingProfile.KYCStatus))
+				zap.String("kyc_status", existingProfile.KYCStatus),
+				zap.String("address_id", func() string {
+					if existingProfile.AddressID != nil {
+						return *existingProfile.AddressID
+					}
+					return "nil"
+				}()))
 			if err := a.userProfileRepo.Create(ctx, existingProfile); err != nil {
 				a.logger.Error("Failed to create user profile in repository",
 					zap.String("user_id", userID),

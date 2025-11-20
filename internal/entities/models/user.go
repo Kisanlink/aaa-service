@@ -99,6 +99,18 @@ func (u *User) BeforeDeleteGORM(tx *gorm.DB) error {
 	return u.BeforeDelete()
 }
 
+// AfterFind is called by GORM after loading a record from the database
+// This initializes the embedded BaseModel pointer if it's nil
+// GORM needs this because it can't populate fields into a nil embedded pointer
+func (u *User) AfterFind(tx *gorm.DB) error {
+	// Initialize BaseModel if it's nil
+	// This happens when GORM loads a record using First() or Find()
+	if u.BaseModel == nil {
+		u.BaseModel = &base.BaseModel{}
+	}
+	return nil
+}
+
 func (u *User) BeforeUpdate() error     { return u.BaseModel.BeforeUpdate() }
 func (u *User) BeforeDelete() error     { return u.BaseModel.BeforeDelete() }
 func (u *User) BeforeSoftDelete() error { return u.BaseModel.BeforeSoftDelete() }

@@ -8,27 +8,29 @@ import (
 
 // UserResponse represents the user data sent in API responses
 type UserResponse struct {
-	ID            string           `json:"id"`
-	PhoneNumber   string           `json:"phone_number"`
-	CountryCode   string           `json:"country_code"`
-	Username      *string          `json:"username,omitempty"`
-	IsValidated   bool             `json:"is_validated"`
-	CreatedAt     time.Time        `json:"created_at"`
-	UpdatedAt     time.Time        `json:"updated_at"`
-	AadhaarNumber *string          `json:"aadhaar_number,omitempty"`
-	Status        *string          `json:"status,omitempty"`
-	Name          *string          `json:"name,omitempty"`
-	CareOf        *string          `json:"care_of,omitempty"`
-	DateOfBirth   *string          `json:"date_of_birth,omitempty"`
-	Photo         *string          `json:"photo,omitempty"`
-	EmailHash     *string          `json:"email_hash,omitempty"`
-	ShareCode     *string          `json:"share_code,omitempty"`
-	YearOfBirth   *string          `json:"year_of_birth,omitempty"`
-	Message       *string          `json:"message,omitempty"`
-	Tokens        int              `json:"tokens"`
-	Address       *AddressResponse `json:"address,omitempty"`
-	Roles         []UserRoleDetail `json:"roles"`
-	HasMPin       bool             `json:"has_mpin"`
+	ID            string            `json:"id"`
+	PhoneNumber   string            `json:"phone_number"`
+	CountryCode   string            `json:"country_code"`
+	Username      *string           `json:"username,omitempty"`
+	IsValidated   bool              `json:"is_validated"`
+	CreatedAt     time.Time         `json:"created_at"`
+	UpdatedAt     time.Time         `json:"updated_at"`
+	AadhaarNumber *string           `json:"aadhaar_number,omitempty"`
+	Status        *string           `json:"status,omitempty"`
+	Name          *string           `json:"name,omitempty"`
+	CareOf        *string           `json:"care_of,omitempty"`
+	DateOfBirth   *string           `json:"date_of_birth,omitempty"`
+	Photo         *string           `json:"photo,omitempty"`
+	EmailHash     *string           `json:"email_hash,omitempty"`
+	ShareCode     *string           `json:"share_code,omitempty"`
+	YearOfBirth   *string           `json:"year_of_birth,omitempty"`
+	Message       *string           `json:"message,omitempty"`
+	KYCStatus     string            `json:"kyc_status,omitempty"`
+	Tokens        int               `json:"tokens"`
+	Address       *AddressResponse  `json:"address,omitempty"`
+	Contacts      []ContactResponse `json:"contacts,omitempty"`
+	Roles         []UserRoleDetail  `json:"roles"`
+	HasMPin       bool              `json:"has_mpin"`
 }
 
 // GetType returns the type of response
@@ -53,6 +55,36 @@ func (r *UserResponse) FromModel(user *models.User) {
 	r.Status = user.Status
 	r.Tokens = user.Tokens
 	r.HasMPin = user.HasMPin()
+
+	// Map profile fields if profile exists
+	// Check if profile is populated (GORM loads an empty struct if not found)
+	if user.Profile.BaseModel != nil && user.Profile.ID != "" {
+		r.Name = user.Profile.Name
+		r.CareOf = user.Profile.CareOf
+		r.Photo = user.Profile.Photo
+		r.AadhaarNumber = user.Profile.AadhaarNumber
+		r.EmailHash = user.Profile.EmailHash
+		r.ShareCode = user.Profile.ShareCode
+		r.YearOfBirth = user.Profile.YearOfBirth
+		r.Message = user.Profile.Message
+		r.DateOfBirth = user.Profile.DateOfBirth
+		r.KYCStatus = user.Profile.KYCStatus
+
+		// Map address if present
+		if user.Profile.Address.BaseModel != nil && user.Profile.Address.ID != "" {
+			addressResp := &AddressResponse{}
+			addressResp.FromModel(&user.Profile.Address)
+			r.Address = addressResp
+		}
+	}
+
+	// Map contacts using existing ContactResponse
+	r.Contacts = make([]ContactResponse, 0, len(user.Contacts))
+	for _, contact := range user.Contacts {
+		contactResp := ContactResponse{}
+		contactResp.FromModel(&contact)
+		r.Contacts = append(r.Contacts, contactResp)
+	}
 
 	// Convert roles
 	r.Roles = make([]UserRoleDetail, len(user.Roles))

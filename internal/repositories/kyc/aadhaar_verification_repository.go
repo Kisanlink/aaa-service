@@ -25,6 +25,9 @@ type AadhaarVerificationRepository interface {
 	// Get verification by reference ID (from Sandbox API)
 	GetByReferenceID(ctx context.Context, referenceID string) (*models.AadhaarVerification, error)
 
+	// Update verification record with all fields
+	Update(ctx context.Context, verification *models.AadhaarVerification) error
+
 	// Update verification status (PENDING, VERIFIED, FAILED)
 	UpdateStatus(ctx context.Context, id string, status string) error
 
@@ -159,6 +162,62 @@ func (r *aadhaarVerificationRepository) GetByReferenceID(ctx context.Context, re
 	}
 
 	return verification, nil
+}
+
+// Update updates the entire verification record
+func (r *aadhaarVerificationRepository) Update(ctx context.Context, verification *models.AadhaarVerification) error {
+	if verification == nil {
+		return fmt.Errorf("verification cannot be nil")
+	}
+
+	if verification.ID == "" {
+		return fmt.Errorf("verification ID is required")
+	}
+
+	db, err := r.getDB(ctx, false)
+	if err != nil {
+		r.logger.Error("Failed to get database connection",
+			zap.String("id", verification.ID),
+			zap.Error(err))
+		return fmt.Errorf("failed to get database connection: %w", err)
+	}
+
+	// Update all fields
+	result := db.WithContext(ctx).
+		Model(&models.AadhaarVerification{}).
+		Where("id = ?", verification.ID).
+		Updates(map[string]interface{}{
+			"verification_status": verification.VerificationStatus,
+			"kyc_status":          verification.KYCStatus,
+			"otp_verified_at":     verification.OTPVerifiedAt,
+			"photo_url":           verification.PhotoURL,
+			"name":                verification.Name,
+			"gender":              verification.Gender,
+			"date_of_birth":       verification.DateOfBirth,
+			"full_address":        verification.FullAddress,
+			"address_json":        verification.AddressJSON,
+			"updated_by":          verification.UpdatedBy,
+			"updated_at":          verification.UpdatedAt,
+		})
+
+	if result.Error != nil {
+		r.logger.Error("Failed to update verification",
+			zap.String("id", verification.ID),
+			zap.Error(result.Error))
+		return fmt.Errorf("failed to update verification: %w", result.Error)
+	}
+
+	if result.RowsAffected == 0 {
+		return fmt.Errorf("aadhaar verification not found with id: %s", verification.ID)
+	}
+
+	r.logger.Info("Updated verification record",
+		zap.String("id", verification.ID),
+		zap.String("verification_status", verification.VerificationStatus),
+		zap.String("kyc_status", verification.KYCStatus),
+		zap.String("name", verification.Name))
+
+	return nil
 }
 
 // UpdateStatus updates the verification status

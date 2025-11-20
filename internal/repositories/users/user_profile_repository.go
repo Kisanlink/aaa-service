@@ -17,8 +17,10 @@ type UserProfileRepository struct {
 
 // NewUserProfileRepository creates a new UserProfileRepository instance
 func NewUserProfileRepository(dbManager db.DBManager) *UserProfileRepository {
+	baseRepo := base.NewBaseFilterableRepository[*models.UserProfile]()
+	baseRepo.SetDBManager(dbManager) // Connect the base repository to the actual database
 	return &UserProfileRepository{
-		BaseFilterableRepository: base.NewBaseFilterableRepository[*models.UserProfile](),
+		BaseFilterableRepository: baseRepo,
 		dbManager:                dbManager,
 	}
 }

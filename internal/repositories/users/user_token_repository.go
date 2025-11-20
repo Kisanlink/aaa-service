@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/Kisanlink/aaa-service/v2/internal/entities/models"
+	"github.com/Kisanlink/kisanlink-db/pkg/base"
 	"github.com/Kisanlink/kisanlink-db/pkg/db"
 )
 
@@ -22,19 +23,25 @@ func NewUserTokenRepository(dbManager db.DBManager) *UserTokenRepository {
 
 // UpdateTokens updates user tokens
 func (r *UserTokenRepository) UpdateTokens(ctx context.Context, userID string, tokens int) error {
-	var user models.User
-	if err := r.dbManager.GetByID(ctx, userID, &user); err != nil {
+	// Initialize user pointer with BaseModel to allow GORM to scan into it
+	user := &models.User{
+		BaseModel: &base.BaseModel{},
+	}
+	if err := r.dbManager.GetByID(ctx, userID, user); err != nil {
 		return fmt.Errorf("failed to get user for token update: %w", err)
 	}
 
 	user.Tokens = tokens
-	return r.dbManager.Update(ctx, &user)
+	return r.dbManager.Update(ctx, user)
 }
 
 // DeductTokens deducts tokens from user account
 func (r *UserTokenRepository) DeductTokens(ctx context.Context, userID string, amount int) error {
-	var user models.User
-	if err := r.dbManager.GetByID(ctx, userID, &user); err != nil {
+	// Initialize user pointer with BaseModel to allow GORM to scan into it
+	user := &models.User{
+		BaseModel: &base.BaseModel{},
+	}
+	if err := r.dbManager.GetByID(ctx, userID, user); err != nil {
 		return fmt.Errorf("failed to get user for token deduction: %w", err)
 	}
 
@@ -42,27 +49,33 @@ func (r *UserTokenRepository) DeductTokens(ctx context.Context, userID string, a
 		return fmt.Errorf("insufficient tokens for user %s", userID)
 	}
 
-	return r.dbManager.Update(ctx, &user)
+	return r.dbManager.Update(ctx, user)
 }
 
 // AddTokens adds tokens to user account
 func (r *UserTokenRepository) AddTokens(ctx context.Context, userID string, amount int) error {
-	var user models.User
-	if err := r.dbManager.GetByID(ctx, userID, &user); err != nil {
+	// Initialize user pointer with BaseModel to allow GORM to scan into it
+	user := &models.User{
+		BaseModel: &base.BaseModel{},
+	}
+	if err := r.dbManager.GetByID(ctx, userID, user); err != nil {
 		return fmt.Errorf("failed to get user for token addition: %w", err)
 	}
 
 	user.AddTokens(amount)
-	return r.dbManager.Update(ctx, &user)
+	return r.dbManager.Update(ctx, user)
 }
 
 // ValidateUser validates a user's Aadhaar
 func (r *UserTokenRepository) ValidateUser(ctx context.Context, userID string) error {
-	var user models.User
-	if err := r.dbManager.GetByID(ctx, userID, &user); err != nil {
+	// Initialize user pointer with BaseModel to allow GORM to scan into it
+	user := &models.User{
+		BaseModel: &base.BaseModel{},
+	}
+	if err := r.dbManager.GetByID(ctx, userID, user); err != nil {
 		return fmt.Errorf("failed to get user for validation: %w", err)
 	}
 
 	user.ValidateAadhaar()
-	return r.dbManager.Update(ctx, &user)
+	return r.dbManager.Update(ctx, user)
 }

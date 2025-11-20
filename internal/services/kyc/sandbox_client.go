@@ -322,6 +322,10 @@ func (s *SandboxClient) VerifyOTP(ctx context.Context, referenceID, otp, authTok
 		return nil, s.handleErrorResponse(resp.StatusCode, body)
 	}
 
+	// Log raw response for debugging
+	s.logger.Info("Raw Sandbox API verify response",
+		zap.String("response_body", string(body)))
+
 	// Parse success response
 	var verifyResp SandboxVerifyResponse
 	if err := json.Unmarshal(body, &verifyResp); err != nil {
@@ -331,10 +335,52 @@ func (s *SandboxClient) VerifyOTP(ctx context.Context, referenceID, otp, authTok
 		return nil, fmt.Errorf("failed to parse response: %w", err)
 	}
 
-	s.logger.Info("OTP verified successfully",
+	// Check Status field first - VALID means success regardless of message
+	if verifyResp.Data.Status != "VALID" {
+		// Status is not VALID, check for specific error messages
+		if verifyResp.Data.Message == "OTP expired" {
+			s.logger.Warn("OTP has expired",
+				zap.String("transaction_id", verifyResp.TransactionID),
+				zap.String("status", verifyResp.Data.Status))
+			return nil, errors.NewBadRequestError("OTP has expired, please generate a new OTP")
+		}
+
+		// Generic error for non-VALID status
+		errorMsg := "Aadhaar verification failed"
+		if verifyResp.Data.Message != "" {
+			errorMsg = verifyResp.Data.Message
+		}
+		s.logger.Error("Sandbox API returned non-VALID status",
+			zap.String("transaction_id", verifyResp.TransactionID),
+			zap.String("status", verifyResp.Data.Status),
+			zap.String("message", verifyResp.Data.Message))
+		return nil, errors.NewBadRequestError(fmt.Sprintf("verification failed: %s", errorMsg))
+	}
+
+	// Status is VALID - log message as informational
+	if verifyResp.Data.Message != "" {
+		s.logger.Info("Sandbox API verification successful",
+			zap.String("transaction_id", verifyResp.TransactionID),
+			zap.String("status", verifyResp.Data.Status),
+			zap.String("message", verifyResp.Data.Message))
+	}
+
+	// Validate that we received actual KYC data
+	if verifyResp.Data.Name == "" {
+		s.logger.Error("Sandbox API returned VALID status but no KYC data",
+			zap.String("transaction_id", verifyResp.TransactionID),
+			zap.String("response", string(body)))
+		return nil, errors.NewInternalError(fmt.Errorf("verification succeeded but no KYC data was returned"))
+	}
+
+	s.logger.Info("OTP verified successfully with KYC data",
 		zap.String("transaction_id", verifyResp.TransactionID),
 		zap.String("name", verifyResp.Data.Name),
-		zap.String("status", verifyResp.Data.Status))
+		zap.String("gender", verifyResp.Data.Gender),
+		zap.String("dob", verifyResp.Data.DateOfBirth),
+		zap.String("full_address", verifyResp.Data.FullAddress),
+		zap.String("status", verifyResp.Data.Status),
+		zap.Int("photo_length", len(verifyResp.Data.Photo)))
 
 	return &verifyResp, nil
 }

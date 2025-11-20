@@ -10,6 +10,7 @@ import (
 	"github.com/Kisanlink/aaa-service/v2/internal/entities/models"
 	kycRequests "github.com/Kisanlink/aaa-service/v2/internal/entities/requests/kyc"
 	kycResponses "github.com/Kisanlink/aaa-service/v2/internal/entities/responses/kyc"
+	"github.com/Kisanlink/aaa-service/v2/pkg/errors"
 	"go.uber.org/zap"
 )
 
@@ -25,7 +26,7 @@ func (s *Service) verifyOTP(ctx context.Context, req *kycRequests.VerifyOTPReque
 			zap.String("user_id", userID),
 			zap.String("reference_id", req.ReferenceID),
 			zap.Error(err))
-		return nil, fmt.Errorf("validation error: %w", err)
+		return nil, errors.NewValidationError(fmt.Sprintf("validation error: %s", err.Error()))
 	}
 
 	// 2. Get verification record
@@ -42,7 +43,7 @@ func (s *Service) verifyOTP(ctx context.Context, req *kycRequests.VerifyOTPReque
 			"reason":       "verification_record_not_found",
 		})
 
-		return nil, fmt.Errorf("verification record not found")
+		return nil, errors.NewNotFoundError("verification record not found")
 	}
 
 	// 3. Check if verification belongs to this user
@@ -59,7 +60,7 @@ func (s *Service) verifyOTP(ctx context.Context, req *kycRequests.VerifyOTPReque
 				"verification_user_id": verification.UserID,
 			})
 
-		return nil, fmt.Errorf("unauthorized: verification does not belong to this user")
+		return nil, errors.NewForbiddenError("verification does not belong to this user")
 	}
 
 	// 4. Check if OTP has expired
@@ -80,7 +81,7 @@ func (s *Service) verifyOTP(ctx context.Context, req *kycRequests.VerifyOTPReque
 					"expiration_seconds": s.config.OTPExpirationSeconds,
 				})
 
-			return nil, fmt.Errorf("OTP has expired")
+			return nil, errors.NewBadRequestError("OTP has expired, please generate a new OTP")
 		}
 	}
 
@@ -100,7 +101,7 @@ func (s *Service) verifyOTP(ctx context.Context, req *kycRequests.VerifyOTPReque
 				"max_attempts": s.config.OTPMaxAttempts,
 			})
 
-		return nil, fmt.Errorf("maximum OTP attempts exceeded")
+		return nil, errors.NewBadRequestError("maximum OTP attempts exceeded, please generate a new OTP")
 	}
 
 	// 6. Call Sandbox API to verify OTP
@@ -124,7 +125,8 @@ func (s *Service) verifyOTP(ctx context.Context, req *kycRequests.VerifyOTPReque
 			"attempts":     verification.Attempts + 1,
 		})
 
-		return nil, fmt.Errorf("OTP verification failed: %w", err)
+		// Return the typed error directly from sandbox client
+		return nil, err
 	}
 
 	// 7. Upload photo to S3 (decode from base64)
@@ -176,7 +178,7 @@ func (s *Service) verifyOTP(ctx context.Context, req *kycRequests.VerifyOTPReque
 			"reference_id": req.ReferenceID,
 		})
 
-		return nil, fmt.Errorf("failed to update user profile: %w", err)
+		return nil, errors.NewInternalError(fmt.Errorf("failed to update user profile: %w", err))
 	}
 
 	// 10. Update verification status in database
@@ -217,9 +219,11 @@ func (s *Service) verifyOTP(ctx context.Context, req *kycRequests.VerifyOTPReque
 	}
 
 	verification.UpdatedBy = userID
+	verification.UpdatedAt = now
 
-	if err := s.aadhaarRepo.UpdateStatus(ctx, verification.ID, "VERIFIED"); err != nil {
-		s.logger.Error("Failed to update verification status",
+	// Update the complete verification record with all fields
+	if err := s.aadhaarRepo.Update(ctx, verification); err != nil {
+		s.logger.Error("Failed to update verification record",
 			zap.String("verification_id", verification.ID),
 			zap.Error(err))
 		// Continue anyway, as user profile is already updated
@@ -276,6 +280,7 @@ func (s *Service) updateUserProfile(ctx context.Context, userID string, kycData 
 
 	updates := map[string]interface{}{
 		"is_validated":        true,
+		"status":              "active", // Set user status to active after Aadhaar verification
 		"full_name":           kycData.Name,
 		"aadhaar_verified":    true,
 		"aadhaar_verified_at": time.Now(),
@@ -295,7 +300,7 @@ func (s *Service) updateUserProfile(ctx context.Context, userID string, kycData 
 		s.logger.Error("Failed to update user profile",
 			zap.String("user_id", userID),
 			zap.Error(err))
-		return fmt.Errorf("failed to update user profile: %w", err)
+		return errors.NewInternalError(fmt.Errorf("failed to update user profile: %w", err))
 	}
 
 	s.logger.Info("User profile updated successfully",
@@ -351,7 +356,7 @@ func (s *Service) createAddress(ctx context.Context, userID string, kycData *KYC
 			zap.String("user_id", userID),
 			zap.String("full_address", fullAddr),
 			zap.Error(err))
-		return "", fmt.Errorf("failed to find or create address: %w", err)
+		return "", errors.NewInternalError(fmt.Errorf("failed to find or create address: %w", err))
 	}
 
 	if wasCreated {
