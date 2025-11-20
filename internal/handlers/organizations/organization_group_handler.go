@@ -881,15 +881,16 @@ func (h *Handler) GetUserGroupsInOrganization(c *gin.Context) {
 }
 
 // getUserGroupsInOrganization is a helper method to get user's groups within an organization
-// This would need to be implemented properly with the service layer
 func (h *Handler) getUserGroupsInOrganization(ctx context.Context, orgID, userID string, limit, offset int) (interface{}, error) {
-	// This is a placeholder implementation
-	// In a real implementation, this would call a service method that:
-	// 1. Gets all groups in the organization
-	// 2. Filters for groups where the user is a member
-	// 3. Returns the filtered list with pagination
+	// Call organization service to get user's groups within the organization
+	groups, err := h.orgService.GetUserGroupsInOrganization(ctx, orgID, userID, limit, offset)
+	if err != nil {
+		h.logger.Error("Failed to get user groups in organization",
+			zap.String("org_id", orgID),
+			zap.String("user_id", userID),
+			zap.Error(err))
+		return nil, err
+	}
 
-	// For now, return an empty list to prevent compilation errors
-	// This should be replaced with actual service implementation
-	return []interface{}{}, nil
+	return groups, nil
 }

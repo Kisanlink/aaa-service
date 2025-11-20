@@ -104,6 +104,31 @@ func (m *AuthMiddleware) HTTPAuthMiddleware() gin.HandlerFunc {
 
 		// Set user context used by downstream handlers
 		c.Set("user_id", claims.Sub)
+
+		// Extract roles from JWT claims and set in context
+		if rolesData, exists := claims.Raw["roles"]; exists {
+			// Roles can be either a slice of maps or slice of interfaces
+			var roleNames []string
+			if rolesSlice, ok := rolesData.([]interface{}); ok {
+				for _, roleItem := range rolesSlice {
+					if roleMap, ok := roleItem.(map[string]interface{}); ok {
+						// Extract role name from the nested "role" object
+						if roleObj, hasRole := roleMap["role"]; hasRole {
+							if roleDetails, ok := roleObj.(map[string]interface{}); ok {
+								if roleName, ok := roleDetails["name"].(string); ok {
+									roleNames = append(roleNames, roleName)
+								}
+							}
+						}
+					}
+				}
+			}
+			c.Set("roles", roleNames)
+			m.logger.Debug("User roles extracted from JWT",
+				zap.String("user_id", claims.Sub),
+				zap.Strings("roles", roleNames))
+		}
+
 		m.logger.Debug("Authenticated user context set", zap.String("user_id", claims.Sub), zap.String("path", c.Request.URL.Path))
 		ctx := context.WithValue(c.Request.Context(), "user_id", claims.Sub)
 		ctx = context.WithValue(ctx, "ip_address", c.ClientIP())
@@ -370,7 +395,7 @@ func (m *AuthMiddleware) hashAPIKey(apiKey string) string {
 // RequireRole creates a middleware that requires specific roles
 func (m *AuthMiddleware) RequireRole(requiredRoles ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Get user roles from context
+		// Get user roles from context (set by HTTPAuthMiddleware)
 		rolesInterface, exists := c.Get("roles")
 		if !exists {
 			c.JSON(http.StatusForbidden, gin.H{
@@ -381,7 +406,8 @@ func (m *AuthMiddleware) RequireRole(requiredRoles ...string) gin.HandlerFunc {
 			return
 		}
 
-		userRoles, ok := rolesInterface.([]*services.TokenClaims)
+		// Roles should be a []string containing role names
+		userRoles, ok := rolesInterface.([]string)
 		if !ok {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error":   "internal_error",
@@ -391,10 +417,10 @@ func (m *AuthMiddleware) RequireRole(requiredRoles ...string) gin.HandlerFunc {
 			return
 		}
 
-		// Extract role names from user roles
+		// Create a map for quick lookup
 		userRoleNames := make(map[string]bool)
-		for _, role := range userRoles {
-			userRoleNames[role.UserID] = true // This would need proper role name extraction
+		for _, roleName := range userRoles {
+			userRoleNames[roleName] = true
 		}
 
 		// Check if user has any of the required roles
@@ -410,6 +436,7 @@ func (m *AuthMiddleware) RequireRole(requiredRoles ...string) gin.HandlerFunc {
 			userID, _ := c.Get("user_id")
 			m.logger.Warn("Access denied - insufficient roles",
 				zap.String("user_id", fmt.Sprintf("%v", userID)),
+				zap.Strings("user_roles", userRoles),
 				zap.Strings("required_roles", requiredRoles))
 
 			c.JSON(http.StatusForbidden, gin.H{

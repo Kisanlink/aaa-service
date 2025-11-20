@@ -1003,23 +1003,31 @@ func (s *Service) GetUserGroupsInOrganization(ctx context.Context, orgID, userID
 	// Verify organization exists
 	org, err := s.orgRepo.GetByID(ctx, orgID)
 	if err != nil || org == nil {
-		s.logger.Error("Organization not found", zap.String("org_id", orgID))
+		s.logger.Error("Organization not found", zap.String("org_id", orgID), zap.Error(err))
 		return nil, errors.NewNotFoundError("organization not found")
 	}
 
 	// Verify user exists
 	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil || user == nil {
-		s.logger.Error("User not found", zap.String("user_id", userID))
+		s.logger.Error("User not found", zap.String("user_id", userID), zap.Error(err))
 		return nil, errors.NewNotFoundError("user not found")
 	}
 
-	// This would delegate to the group service with organization context validation
-	// For now, return placeholder response
+	// Delegate to group service to get user's groups within the organization
+	groups, err := s.groupService.GetUserGroupsInOrganization(ctx, orgID, userID, limit, offset)
+	if err != nil {
+		s.logger.Error("Failed to retrieve user groups from group service",
+			zap.String("org_id", orgID),
+			zap.String("user_id", userID),
+			zap.Error(err))
+		return nil, err
+	}
+
 	s.logger.Info("User groups retrieved from organization successfully",
 		zap.String("org_id", orgID),
 		zap.String("user_id", userID))
-	return []interface{}{}, nil
+	return groups, nil
 }
 
 // AssignRoleToGroupInOrganization assigns a role to a group within an organization
