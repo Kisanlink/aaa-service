@@ -69,7 +69,7 @@ type UserService interface {
 	DeleteUser(ctx context.Context, userID string) error
 	ListUsers(ctx context.Context, limit, offset int) (*responses.PaginatedResult, error)
 	ListActiveUsers(ctx context.Context, limit, offset int) (interface{}, error)
-	SearchUsers(ctx context.Context, keyword string, limit, offset int) (interface{}, error)
+	SearchUsers(ctx context.Context, keyword string, limit, offset int) (*responses.PaginatedResult, error)
 	ValidateUser(ctx context.Context, userID string) error
 	DeductTokens(ctx context.Context, userID string, amount int) error
 	AddTokens(ctx context.Context, userID string, amount int) error
@@ -109,6 +109,7 @@ type RoleService interface {
 	UpdateRole(ctx context.Context, role *models.Role) error
 	DeleteRole(ctx context.Context, roleID string) error
 	ListRoles(ctx context.Context, limit, offset int) ([]*models.Role, error)
+	CountRoles(ctx context.Context) (int64, error)
 	SearchRoles(ctx context.Context, query string, limit, offset int) ([]*models.Role, error)
 	AssignRoleToUser(ctx context.Context, userID, roleID string) error
 	RemoveRoleFromUser(ctx context.Context, userID, roleID string) error
@@ -194,6 +195,7 @@ type UserRepository interface {
 	ListActive(ctx context.Context, limit, offset int) ([]*models.User, error)
 	CountActive(ctx context.Context) (int64, error)
 	Search(ctx context.Context, keyword string, limit, offset int) ([]*models.User, error)
+	SearchCount(ctx context.Context, keyword string) (int64, error)
 	ListAll(ctx context.Context) ([]*models.User, error)
 	GetWithAddress(ctx context.Context, userID string) (*models.User, error)
 	GetWithProfile(ctx context.Context, userID string) (*models.User, error)

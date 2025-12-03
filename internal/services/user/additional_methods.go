@@ -6,6 +6,7 @@ import (
 	"reflect"
 
 	"github.com/Kisanlink/aaa-service/v2/internal/entities/models"
+	"github.com/Kisanlink/aaa-service/v2/internal/entities/responses"
 	userResponses "github.com/Kisanlink/aaa-service/v2/internal/entities/responses/users"
 	"github.com/Kisanlink/aaa-service/v2/pkg/errors"
 	"go.uber.org/zap"
@@ -98,8 +99,15 @@ func (s *Service) ListActiveUsers(ctx context.Context, limit, offset int) (inter
 }
 
 // SearchUsers searches for users by keyword
-func (s *Service) SearchUsers(ctx context.Context, keyword string, limit, offset int) (interface{}, error) {
+func (s *Service) SearchUsers(ctx context.Context, keyword string, limit, offset int) (*responses.PaginatedResult, error) {
 	s.logger.Info("Searching users", zap.String("keyword", keyword), zap.Int("limit", limit))
+
+	// Get total count for pagination
+	total, err := s.userRepo.SearchCount(ctx, keyword)
+	if err != nil {
+		s.logger.Error("Failed to count search results", zap.Error(err))
+		return nil, errors.NewInternalError(err)
+	}
 
 	// Use the repository's Search method which has database-level pagination
 	users, err := s.userRepo.Search(ctx, keyword, limit, offset)
@@ -108,12 +116,12 @@ func (s *Service) SearchUsers(ctx context.Context, keyword string, limit, offset
 		return nil, errors.NewInternalError(err)
 	}
 
-	s.logger.Info("Search completed", zap.Int("result_count", len(users)))
+	s.logger.Info("Search completed", zap.Int("result_count", len(users)), zap.Int64("total", total))
 
 	// Convert to response format
-	responses := make([]*userResponses.UserResponse, len(users))
+	userList := make([]*userResponses.UserResponse, len(users))
 	for i, user := range users {
-		responses[i] = &userResponses.UserResponse{
+		userList[i] = &userResponses.UserResponse{
 			ID:          user.ID,
 			Username:    user.Username,
 			PhoneNumber: user.PhoneNumber,
@@ -124,7 +132,10 @@ func (s *Service) SearchUsers(ctx context.Context, keyword string, limit, offset
 		}
 	}
 
-	return responses, nil
+	return &responses.PaginatedResult{
+		Data:  userList,
+		Total: total,
+	}, nil
 }
 
 // ValidateUser validates a user account

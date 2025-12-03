@@ -394,7 +394,7 @@ func (h *UserHandler) SearchUsers(c *gin.Context) {
 	}
 
 	h.logger.Info("Users search completed", zap.String("query", query))
-	h.responder.SendSuccess(c, http.StatusOK, result)
+	h.responder.SendPaginatedResponse(c, result.Data, int(result.Total), limit, offset)
 }
 
 // ValidateUser handles POST /users/:id/validate

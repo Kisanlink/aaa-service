@@ -100,8 +100,13 @@ func (h *PermissionHandler) ListPermissions(c *gin.Context) {
 		return
 	}
 
-	// Calculate total count (simplified - in production, service should provide this)
-	total := len(permissions)
+	// Get total count from database
+	total, err := h.permissionService.CountPermissions(c.Request.Context(), filter)
+	if err != nil {
+		h.logger.Error("Failed to count permissions", zap.Error(err))
+		h.responder.SendError(c, http.StatusInternalServerError, "Failed to count permissions", err)
+		return
+	}
 
 	// Calculate page number
 	page := (req.GetOffset() / req.GetLimit()) + 1
@@ -111,13 +116,13 @@ func (h *PermissionHandler) ListPermissions(c *gin.Context) {
 		permissions,
 		page,
 		req.GetLimit(),
-		total,
+		int(total),
 		h.getRequestID(c),
 	)
 
 	h.logger.Info("Permissions listed successfully",
 		zap.Int("count", len(permissions)),
-		zap.Int("total", total))
+		zap.Int64("total", total))
 
 	c.JSON(http.StatusOK, response)
 }

@@ -226,6 +226,11 @@ func (s *RoleService) ListRoles(ctx context.Context, limit, offset int) ([]*mode
 	return roles, nil
 }
 
+// CountRoles returns the total count of roles
+func (s *RoleService) CountRoles(ctx context.Context) (int64, error) {
+	return s.roleRepo.Count(ctx)
+}
+
 // SearchRoles searches roles by keyword
 func (s *RoleService) SearchRoles(ctx context.Context, query string, limit, offset int) ([]*models.Role, error) {
 	s.logger.Info("Searching roles", zap.String("query", query), zap.Int("limit", limit), zap.Int("offset", offset))

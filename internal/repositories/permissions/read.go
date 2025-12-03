@@ -118,3 +118,8 @@ func (r *PermissionRepository) GetActiveByResource(ctx context.Context, resource
 
 	return r.BaseFilterableRepository.Find(ctx, filter)
 }
+
+// CountFiltered returns total count of permissions matching the filter (without pagination)
+func (r *PermissionRepository) CountFiltered(ctx context.Context, filter *base.Filter) (int64, error) {
+	return r.BaseFilterableRepository.CountWithFilter(ctx, filter)
+}

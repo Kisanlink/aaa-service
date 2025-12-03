@@ -52,6 +52,11 @@ func (m *MockRoleService) ListRoles(ctx context.Context, limit, offset int) ([]*
 	return args.Get(0).([]*models.Role), args.Error(1)
 }
 
+func (m *MockRoleService) CountRoles(ctx context.Context) (int64, error) {
+	args := m.Called(ctx)
+	return args.Get(0).(int64), args.Error(1)
+}
+
 func (m *MockRoleService) SearchRoles(ctx context.Context, query string, limit, offset int) ([]*models.Role, error) {
 	args := m.Called(ctx, query, limit, offset)
 	return args.Get(0).([]*models.Role), args.Error(1)

@@ -81,6 +81,7 @@ type ServiceInterface interface {
 	UpdatePermission(ctx context.Context, permission *models.Permission) error
 	DeletePermission(ctx context.Context, id string) error
 	ListPermissions(ctx context.Context, filter *PermissionFilter) ([]*models.Permission, error)
+	CountPermissions(ctx context.Context, filter *PermissionFilter) (int64, error)
 
 	// Query operations
 	GetPermissionsForRole(ctx context.Context, roleID string) ([]*models.Permission, error)

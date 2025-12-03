@@ -67,9 +67,12 @@ func (m *MockUserService) ListUsers(ctx context.Context, limit, offset int) (*re
 	return args.Get(0).(*responses.PaginatedResult), args.Error(1)
 }
 
-func (m *MockUserService) SearchUsers(ctx context.Context, query string, limit, offset int) (interface{}, error) {
+func (m *MockUserService) SearchUsers(ctx context.Context, query string, limit, offset int) (*responses.PaginatedResult, error) {
 	args := m.Called(ctx, query, limit, offset)
-	return args.Get(0), args.Error(1)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*responses.PaginatedResult), args.Error(1)
 }
 
 func (m *MockUserService) ValidateUser(ctx context.Context, userID string) error {
@@ -261,6 +264,11 @@ func (m *MockRoleService) ListRoles(ctx context.Context, limit, offset int) ([]*
 		return nil, args.Error(1)
 	}
 	return args.Get(0).([]*models.Role), args.Error(1)
+}
+
+func (m *MockRoleService) CountRoles(ctx context.Context) (int64, error) {
+	args := m.Called(ctx)
+	return args.Get(0).(int64), args.Error(1)
 }
 
 func (m *MockRoleService) SearchRoles(ctx context.Context, query string, limit, offset int) ([]*models.Role, error) {

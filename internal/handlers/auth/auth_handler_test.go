@@ -82,7 +82,7 @@ func (m *MockUserService) ListUsers(ctx context.Context, limit, offset int) (*re
 func (m *MockUserService) ListActiveUsers(ctx context.Context, limit, offset int) (interface{}, error) {
 	return nil, nil
 }
-func (m *MockUserService) SearchUsers(ctx context.Context, keyword string, limit, offset int) (interface{}, error) {
+func (m *MockUserService) SearchUsers(ctx context.Context, keyword string, limit, offset int) (*responses.PaginatedResult, error) {
 	return nil, nil
 }
 func (m *MockUserService) ValidateUser(ctx context.Context, userID string) error {

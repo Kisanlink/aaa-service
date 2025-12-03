@@ -450,6 +450,25 @@ func (r *UserRepository) Search(ctx context.Context, keyword string, limit, offs
 	return users, nil
 }
 
+// SearchCount returns the total count of users matching the search keyword
+func (r *UserRepository) SearchCount(ctx context.Context, keyword string) (int64, error) {
+	// If no keyword, count all active users
+	if strings.TrimSpace(keyword) == "" {
+		return r.CountActive(ctx)
+	}
+
+	// Create filter with same search criteria but without pagination
+	filter := base.NewFilterBuilder().
+		Or(
+			base.FilterCondition{Field: "username", Operator: base.OpContains, Value: keyword},
+			base.FilterCondition{Field: "phone_number", Operator: base.OpContains, Value: keyword},
+		).
+		WhereNull("deleted_at").
+		Build()
+
+	return r.BaseFilterableRepository.CountWithFilter(ctx, filter)
+}
+
 // GetUsersWithRelationships efficiently loads multiple users with their relationships using goroutines
 func (r *UserRepository) GetUsersWithRelationships(ctx context.Context, userIDs []string, includeRoles, includeProfile, includeAddresses bool) ([]*models.User, error) {
 	if len(userIDs) == 0 {

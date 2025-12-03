@@ -81,21 +81,8 @@ func (s *Service) GetPermissionByName(ctx context.Context, name string) (*models
 	return permission, nil
 }
 
-// ListPermissions retrieves permissions with filtering and pagination
-func (s *Service) ListPermissions(ctx context.Context, filter *PermissionFilter) ([]*models.Permission, error) {
-	if filter == nil {
-		filter = &PermissionFilter{
-			Limit:  50,
-			Offset: 0,
-		}
-	}
-
-	// Apply defaults
-	if filter.Limit <= 0 || filter.Limit > 100 {
-		filter.Limit = 50
-	}
-
-	// Build database filter
+// buildPermissionFilter creates a base filter from PermissionFilter (without pagination)
+func (s *Service) buildPermissionFilter(filter *PermissionFilter) *base.FilterBuilder {
 	dbFilter := base.NewFilterBuilder()
 
 	if filter.ResourceID != nil && *filter.ResourceID != "" {
@@ -110,6 +97,25 @@ func (s *Service) ListPermissions(ctx context.Context, filter *PermissionFilter)
 		dbFilter.Where("is_active", base.OpEqual, *filter.IsActive)
 	}
 
+	return dbFilter
+}
+
+// ListPermissions retrieves permissions with filtering and pagination
+func (s *Service) ListPermissions(ctx context.Context, filter *PermissionFilter) ([]*models.Permission, error) {
+	if filter == nil {
+		filter = &PermissionFilter{
+			Limit:  50,
+			Offset: 0,
+		}
+	}
+
+	// Apply defaults
+	if filter.Limit <= 0 || filter.Limit > 100 {
+		filter.Limit = 50
+	}
+
+	// Build database filter with pagination
+	dbFilter := s.buildPermissionFilter(filter)
 	dbFilter.Limit(filter.Limit, filter.Offset)
 
 	// Fetch from database
@@ -120,6 +126,24 @@ func (s *Service) ListPermissions(ctx context.Context, filter *PermissionFilter)
 	}
 
 	return permissions, nil
+}
+
+// CountPermissions returns total count of permissions matching the filter
+func (s *Service) CountPermissions(ctx context.Context, filter *PermissionFilter) (int64, error) {
+	if filter == nil {
+		filter = &PermissionFilter{}
+	}
+
+	// Build database filter without pagination
+	dbFilter := s.buildPermissionFilter(filter)
+
+	count, err := s.permissionRepo.CountFiltered(ctx, dbFilter.Build())
+	if err != nil {
+		s.logger.Error("Failed to count permissions", zap.Error(err))
+		return 0, fmt.Errorf("failed to count permissions: %w", err)
+	}
+
+	return count, nil
 }
 
 // GetPermissionsForRole retrieves all permissions assigned to a role

@@ -317,8 +317,16 @@ func (h *RoleHandler) ListRoles(c *gin.Context) {
 		return
 	}
 
-	h.logger.Info("Roles listed successfully")
-	h.responder.SendSuccess(c, http.StatusOK, result)
+	// Get total count
+	total, err := h.roleService.CountRoles(c.Request.Context())
+	if err != nil {
+		h.logger.Error("Failed to count roles", zap.Error(err))
+		h.responder.SendInternalError(c, err)
+		return
+	}
+
+	h.logger.Info("Roles listed successfully", zap.Int64("total", total))
+	h.responder.SendPaginatedResponse(c, result, int(total), limit, offset)
 }
 
 // CreateRoleV2 handles POST /v2/roles
