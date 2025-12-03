@@ -16,10 +16,9 @@ service_authorization:
       display_name: "Farmers Module Service"
       description: "Farmer management and agricultural operations service"
 
-      # API key authentication required for this service
-      # The actual API key should be provided via environment variable:
-      # AAA_SERVICE_API_KEY_FARMERS_MODULE
-      api_key_required: true
+      # API key is validated by middleware against database
+      # No need for secondary validation via env var
+      api_key_required: false
 
       # Allowed permissions for this service
       # Format: resource:action or resource:* for wildcard
@@ -34,7 +33,7 @@ service_authorization:
       service_id: "farmers-module"
       display_name: "Farmers Module Service (Legacy ID)"
       description: "Farmer management and agricultural operations service"
-      api_key_required: true
+      api_key_required: false
       permissions:
         - "catalog:seed_roles"
         - "catalog:seed_permissions"
