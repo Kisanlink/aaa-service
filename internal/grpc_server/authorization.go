@@ -3,6 +3,7 @@ package grpc_server
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/Kisanlink/aaa-service/v2/internal/authorization"
 	"github.com/Kisanlink/aaa-service/v2/internal/config"
@@ -116,18 +117,9 @@ func (ac *AuthorizationChecker) CheckSeedPermission(ctx context.Context, targetS
 				"service '%s' is not authorized to seed roles: %v", serviceName, err)
 		}
 
-		// Services cannot seed default/farmers-module roles (business rule)
-		if targetServiceID == "" || targetServiceID == "farmers-module" {
-			ac.logger.Warn("Service cannot seed default/farmers-module roles",
-				zap.String("service_id", principalID),
-				zap.String("service_name", serviceName),
-				zap.String("target_service_id", targetServiceID))
-			return status.Errorf(codes.PermissionDenied,
-				"service '%s' cannot seed default farmers-module roles", serviceName)
-		}
-
 		// Check ownership: service can only seed its own roles
-		if serviceName != targetServiceID {
+		// Normalize names for comparison (handle "Farmers Module" vs "farmers-module")
+		if !normalizeServiceName(serviceName, targetServiceID) {
 			ac.logger.Warn("Service attempting to seed another service's roles",
 				zap.String("service_id", principalID),
 				zap.String("caller_service_name", serviceName),
@@ -302,4 +294,16 @@ func (ac *AuthorizationChecker) getContextValue(ctx context.Context, key string)
 		}
 	}
 	return ""
+}
+
+// normalizeServiceName compares two service names after normalization
+// Handles cases like "Farmers Module" vs "farmers-module"
+func normalizeServiceName(name1, name2 string) bool {
+	normalize := func(s string) string {
+		s = strings.ToLower(s)
+		s = strings.ReplaceAll(s, " ", "-")
+		s = strings.ReplaceAll(s, "_", "-")
+		return s
+	}
+	return normalize(name1) == normalize(name2)
 }
