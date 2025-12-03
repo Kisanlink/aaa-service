@@ -81,7 +81,14 @@ func (h *Handler) GetOrganizationGroups(c *gin.Context) {
 		return
 	}
 
-	h.responder.SendSuccess(c, http.StatusOK, groups)
+	total, err := h.groupService.CountGroups(c.Request.Context(), orgID, includeInactive)
+	if err != nil {
+		h.logger.Error("Failed to count organization groups", zap.Error(err), zap.String("org_id", orgID))
+		h.responder.SendInternalError(c, err)
+		return
+	}
+
+	h.responder.SendPaginatedResponse(c, groups, int(total), limit, offset)
 }
 
 // CreateGroupInOrganization handles POST /organizations/:orgId/groups

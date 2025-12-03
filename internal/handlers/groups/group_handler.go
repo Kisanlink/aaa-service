@@ -144,7 +144,14 @@ func (h *Handler) ListGroups(c *gin.Context) {
 		return
 	}
 
-	h.responder.SendSuccess(c, http.StatusOK, response)
+	total, err := h.groupService.CountGroups(c.Request.Context(), organizationID, includeInactive)
+	if err != nil {
+		h.logger.Error("Failed to count groups", zap.Error(err))
+		h.handleServiceError(c, err)
+		return
+	}
+
+	h.responder.SendPaginatedResponse(c, response, int(total), limit, offset)
 }
 
 // AddMemberToGroup handles POST /groups/:id/members
@@ -231,7 +238,14 @@ func (h *Handler) GetGroupMembers(c *gin.Context) {
 		return
 	}
 
-	h.responder.SendSuccess(c, http.StatusOK, response)
+	total, err := h.groupService.CountGroupMembers(c.Request.Context(), groupID)
+	if err != nil {
+		h.logger.Error("Failed to count group members", zap.Error(err))
+		h.handleServiceError(c, err)
+		return
+	}
+
+	h.responder.SendPaginatedResponse(c, response, int(total), limit, offset)
 }
 
 // handleServiceError converts service errors to appropriate HTTP responses

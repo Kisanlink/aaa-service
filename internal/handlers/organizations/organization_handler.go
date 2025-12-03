@@ -283,7 +283,14 @@ func (h *Handler) ListOrganizations(c *gin.Context) {
 		return
 	}
 
-	h.responder.SendSuccess(c, http.StatusOK, orgs)
+	total, err := h.orgService.CountOrganizations(c.Request.Context(), includeInactive, orgType)
+	if err != nil {
+		h.logger.Error("Failed to count organizations", zap.Error(err))
+		h.responder.SendError(c, http.StatusInternalServerError, "failed to count organizations", nil)
+		return
+	}
+
+	h.responder.SendPaginatedResponse(c, orgs, int(total), limit, offset)
 }
 
 // GetOrganizationHierarchy handles GET /organizations/:id/hierarchy

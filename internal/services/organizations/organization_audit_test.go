@@ -705,6 +705,21 @@ func (m *MockGroupService) ValidateGroupHierarchy(ctx context.Context, groupID, 
 	return args.Error(0)
 }
 
+func (m *MockGroupService) CountGroups(ctx context.Context, organizationID string, includeInactive bool) (int64, error) {
+	args := m.Called(ctx, organizationID, includeInactive)
+	return args.Get(0).(int64), args.Error(1)
+}
+
+func (m *MockGroupService) CountGroupMembers(ctx context.Context, groupID string) (int64, error) {
+	args := m.Called(ctx, groupID)
+	return args.Get(0).(int64), args.Error(1)
+}
+
+func (m *MockGroupService) GetUserGroupsInOrganization(ctx context.Context, orgID, userID string, limit, offset int) (interface{}, error) {
+	args := m.Called(ctx, orgID, userID, limit, offset)
+	return args.Get(0), args.Error(1)
+}
+
 // MockCacheService for testing
 type MockCacheService struct {
 	mock.Mock

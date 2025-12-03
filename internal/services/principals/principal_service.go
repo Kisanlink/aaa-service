@@ -390,6 +390,18 @@ func (s *Service) ListPrincipals(ctx context.Context, limit, offset int, princip
 	return responses, nil
 }
 
+// CountPrincipals returns the count of principals matching the filters
+func (s *Service) CountPrincipals(ctx context.Context, principalType, organizationID string) (int64, error) {
+	if principalType != "" && organizationID != "" {
+		return s.principalRepo.CountByTypeAndOrganization(ctx, principalType, organizationID)
+	} else if principalType != "" {
+		return s.principalRepo.CountByType(ctx, principalType)
+	} else if organizationID != "" {
+		return s.principalRepo.CountByOrganization(ctx, organizationID)
+	}
+	return s.principalRepo.CountActive(ctx)
+}
+
 // ListServices retrieves services with pagination and filtering
 func (s *Service) ListServices(ctx context.Context, limit, offset int, organizationID string) ([]*principalResponses.ServiceResponse, error) {
 	s.logger.Info("Listing services", zap.Int("limit", limit), zap.Int("offset", offset))
@@ -425,6 +437,14 @@ func (s *Service) ListServices(ctx context.Context, limit, offset int, organizat
 	}
 
 	return responses, nil
+}
+
+// CountServices returns the count of services matching the filters
+func (s *Service) CountServices(ctx context.Context, organizationID string) (int64, error) {
+	if organizationID != "" {
+		return s.serviceRepo.CountByOrganization(ctx, organizationID)
+	}
+	return s.serviceRepo.CountActive(ctx)
 }
 
 // GenerateAPIKey generates a secure API key for services

@@ -276,7 +276,7 @@ func (h *ContactHandler) ListContacts(c *gin.Context) {
 		return
 	}
 
-	h.responder.SendSuccess(c, http.StatusOK, contactsResponse)
+	h.responder.SendPaginatedResponse(c, contactsResponse.Contacts, int(contactsResponse.Total), limit, offset)
 }
 
 // GetContactsByUser handles GET /contacts/user/:userID
@@ -326,5 +326,5 @@ func (h *ContactHandler) GetContactsByUser(c *gin.Context) {
 		return
 	}
 
-	h.responder.SendSuccess(c, http.StatusOK, contactsResponse)
+	h.responder.SendPaginatedResponse(c, contactsResponse.Contacts, int(contactsResponse.Total), limit, offset)
 }

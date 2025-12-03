@@ -250,6 +250,13 @@ func (h *AddressHandler) SearchAddresses(c *gin.Context) {
 		return
 	}
 
+	total, err := h.addressService.SearchAddressesCount(c.Request.Context(), query)
+	if err != nil {
+		h.logger.Error("Failed to count search addresses", zap.String("query", query), zap.Error(err))
+		h.responder.SendInternalError(c, err)
+		return
+	}
+
 	h.logger.Info("Address search completed", zap.String("query", query))
-	h.responder.SendSuccess(c, http.StatusOK, result)
+	h.responder.SendPaginatedResponse(c, result, int(total), limit, offset)
 }

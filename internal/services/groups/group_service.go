@@ -460,6 +460,17 @@ func (s *Service) ListGroups(ctx context.Context, limit, offset int, organizatio
 	return responses, nil
 }
 
+// CountGroups returns total count of groups matching the filters
+func (s *Service) CountGroups(ctx context.Context, organizationID string, includeInactive bool) (int64, error) {
+	if organizationID != "" {
+		return s.groupRepo.CountByOrganization(ctx, organizationID, includeInactive)
+	}
+	if includeInactive {
+		return s.groupRepo.Count(ctx)
+	}
+	return s.groupRepo.CountActive(ctx)
+}
+
 // AddMemberToGroup adds a member to a group
 func (s *Service) AddMemberToGroup(ctx context.Context, req interface{}) (interface{}, error) {
 	addMemberReq, ok := req.(*groupRequests.AddMemberRequest)
@@ -982,6 +993,11 @@ func (s *Service) GetGroupMembers(ctx context.Context, groupID string, limit, of
 	}
 
 	return responses, nil
+}
+
+// CountGroupMembers returns the count of active members in a group
+func (s *Service) CountGroupMembers(ctx context.Context, groupID string) (int64, error) {
+	return s.groupMembershipRepo.CountByGroupID(ctx, groupID)
 }
 
 // GetUserEffectiveRoles calculates and returns all effective roles for a user in an organization

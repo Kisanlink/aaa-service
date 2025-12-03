@@ -99,6 +99,7 @@ type AddressService interface {
 	DeleteAddress(ctx context.Context, addressID string) error
 	GetAddressesByUserID(ctx context.Context, userID string) ([]*models.Address, error)
 	SearchAddresses(ctx context.Context, query string, limit, offset int) ([]*models.Address, error)
+	SearchAddressesCount(ctx context.Context, query string) (int64, error)
 }
 
 // RoleService interface for role management operations
@@ -127,9 +128,11 @@ type GroupService interface {
 	UpdateGroup(ctx context.Context, groupID string, req interface{}) (interface{}, error)
 	DeleteGroup(ctx context.Context, groupID string, deletedBy string) error
 	ListGroups(ctx context.Context, limit, offset int, organizationID string, includeInactive bool) (interface{}, error)
+	CountGroups(ctx context.Context, organizationID string, includeInactive bool) (int64, error)
 	AddMemberToGroup(ctx context.Context, req interface{}) (interface{}, error)
 	RemoveMemberFromGroup(ctx context.Context, groupID, principalID string, removedBy string) error
 	GetGroupMembers(ctx context.Context, groupID string, limit, offset int) (interface{}, error)
+	CountGroupMembers(ctx context.Context, groupID string) (int64, error)
 	GetUserGroupsInOrganization(ctx context.Context, orgID, userID string, limit, offset int) (interface{}, error)
 
 	// Role assignment methods for organization-scoped group operations
@@ -146,6 +149,7 @@ type OrganizationService interface {
 	UpdateOrganization(ctx context.Context, orgID string, req interface{}) (interface{}, error)
 	DeleteOrganization(ctx context.Context, orgID string, deletedBy string) error
 	ListOrganizations(ctx context.Context, limit, offset int, includeInactive bool, orgType string) ([]interface{}, error)
+	CountOrganizations(ctx context.Context, includeInactive bool, orgType string) (int64, error)
 	GetOrganizationHierarchy(ctx context.Context, orgID string) (interface{}, error)
 	ActivateOrganization(ctx context.Context, orgID string) error
 	DeactivateOrganization(ctx context.Context, orgID string) error
@@ -212,6 +216,7 @@ type AddressRepository interface {
 	GetByUserID(ctx context.Context, userID string) ([]*models.Address, error)
 	GetByFullAddress(ctx context.Context, fullAddress string) (*models.Address, error)
 	Search(ctx context.Context, query string, limit, offset int) ([]*models.Address, error)
+	SearchCount(ctx context.Context, query string) (int64, error)
 }
 
 // RoleRepository interface for role data operations
@@ -508,6 +513,8 @@ type OrganizationRepository interface {
 	GetByName(ctx context.Context, name string) (*models.Organization, error)
 	GetByType(ctx context.Context, orgType string, limit, offset int) ([]*models.Organization, error)
 	ListActive(ctx context.Context, limit, offset int) ([]*models.Organization, error)
+	CountActive(ctx context.Context) (int64, error)
+	CountByType(ctx context.Context, orgType string) (int64, error)
 	GetChildren(ctx context.Context, parentID string) ([]*models.Organization, error)
 	GetActiveChildren(ctx context.Context, parentID string) ([]*models.Organization, error)
 	GetParentHierarchy(ctx context.Context, orgID string) ([]*models.Organization, error)

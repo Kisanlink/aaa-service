@@ -128,6 +128,16 @@ func (r *GroupMembershipRepository) GetByGroupID(ctx context.Context, groupID st
 	return r.BaseFilterableRepository.Find(ctx, filter)
 }
 
+// CountByGroupID returns the count of active memberships for a specific group
+func (r *GroupMembershipRepository) CountByGroupID(ctx context.Context, groupID string) (int64, error) {
+	filter := base.NewFilterBuilder().
+		Where("group_id", base.OpEqual, groupID).
+		Where("is_active", base.OpEqual, true).
+		Build()
+
+	return r.BaseFilterableRepository.CountWithFilter(ctx, filter)
+}
+
 // GetByPrincipalID retrieves all memberships for a specific principal (user/service)
 func (r *GroupMembershipRepository) GetByPrincipalID(ctx context.Context, principalID string, limit, offset int) ([]*models.GroupMembership, error) {
 	filter := base.NewFilterBuilder().

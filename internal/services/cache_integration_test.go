@@ -54,9 +54,14 @@ func (m *MockOrganizationService) DeleteOrganization(ctx context.Context, orgID 
 	return args.Error(0)
 }
 
-func (m *MockOrganizationService) ListOrganizations(ctx context.Context, limit, offset int, includeInactive bool) ([]interface{}, error) {
-	args := m.Called(ctx, limit, offset, includeInactive)
+func (m *MockOrganizationService) ListOrganizations(ctx context.Context, limit, offset int, includeInactive bool, orgType string) ([]interface{}, error) {
+	args := m.Called(ctx, limit, offset, includeInactive, orgType)
 	return args.Get(0).([]interface{}), args.Error(1)
+}
+
+func (m *MockOrganizationService) CountOrganizations(ctx context.Context, includeInactive bool, orgType string) (int64, error) {
+	args := m.Called(ctx, includeInactive, orgType)
+	return args.Get(0).(int64), args.Error(1)
 }
 
 func (m *MockOrganizationService) GetOrganizationHierarchy(ctx context.Context, orgID string) (interface{}, error) {
@@ -211,6 +216,21 @@ func (m *MockGroupService) GetGroupRoles(ctx context.Context, groupID string) (i
 
 func (m *MockGroupService) GetUserEffectiveRoles(ctx context.Context, orgID, userID string) (interface{}, error) {
 	args := m.Called(ctx, orgID, userID)
+	return args.Get(0), args.Error(1)
+}
+
+func (m *MockGroupService) CountGroups(ctx context.Context, organizationID string, includeInactive bool) (int64, error) {
+	args := m.Called(ctx, organizationID, includeInactive)
+	return args.Get(0).(int64), args.Error(1)
+}
+
+func (m *MockGroupService) CountGroupMembers(ctx context.Context, groupID string) (int64, error) {
+	args := m.Called(ctx, groupID)
+	return args.Get(0).(int64), args.Error(1)
+}
+
+func (m *MockGroupService) GetUserGroupsInOrganization(ctx context.Context, orgID, userID string, limit, offset int) (interface{}, error) {
+	args := m.Called(ctx, orgID, userID, limit, offset)
 	return args.Get(0), args.Error(1)
 }
 

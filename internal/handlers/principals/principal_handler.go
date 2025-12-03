@@ -249,7 +249,14 @@ func (h *Handler) ListPrincipals(c *gin.Context) {
 		return
 	}
 
-	h.responder.SendSuccess(c, http.StatusOK, response)
+	total, err := h.principalService.CountPrincipals(c.Request.Context(), principalType, organizationID)
+	if err != nil {
+		h.logger.Error("Failed to count principals", zap.Error(err))
+		h.handleServiceError(c, err)
+		return
+	}
+
+	h.responder.SendPaginatedResponse(c, response, int(total), limit, offset)
 }
 
 // ListServices handles GET /api/v1/services
@@ -294,7 +301,14 @@ func (h *Handler) ListServices(c *gin.Context) {
 		return
 	}
 
-	h.responder.SendSuccess(c, http.StatusOK, response)
+	total, err := h.principalService.CountServices(c.Request.Context(), organizationID)
+	if err != nil {
+		h.logger.Error("Failed to count services", zap.Error(err))
+		h.handleServiceError(c, err)
+		return
+	}
+
+	h.responder.SendPaginatedResponse(c, response, int(total), limit, offset)
 }
 
 // GenerateAPIKey handles POST /api/v1/services/generate-api-key

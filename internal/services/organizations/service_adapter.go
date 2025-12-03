@@ -67,6 +67,11 @@ func (a *ServiceAdapter) ListOrganizations(ctx context.Context, limit, offset in
 	return result, nil
 }
 
+// CountOrganizations adapts the concrete method to the interface
+func (a *ServiceAdapter) CountOrganizations(ctx context.Context, includeInactive bool, orgType string) (int64, error) {
+	return a.service.CountOrganizations(ctx, includeInactive, orgType)
+}
+
 // GetOrganizationHierarchy adapts the concrete method to the interface
 func (a *ServiceAdapter) GetOrganizationHierarchy(ctx context.Context, orgID string) (interface{}, error) {
 	return a.service.GetOrganizationHierarchy(ctx, orgID)

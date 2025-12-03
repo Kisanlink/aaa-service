@@ -441,6 +441,17 @@ func (s *Service) ListOrganizations(ctx context.Context, limit, offset int, incl
 	return responses, nil
 }
 
+// CountOrganizations returns the total count of organizations matching the filters
+func (s *Service) CountOrganizations(ctx context.Context, includeInactive bool, orgType string) (int64, error) {
+	// Apply type filter if provided
+	if orgType != "" {
+		return s.orgRepo.CountByType(ctx, orgType)
+	} else if includeInactive {
+		return s.orgRepo.Count(ctx)
+	}
+	return s.orgRepo.CountActive(ctx)
+}
+
 // GetOrganizationHierarchy retrieves the complete hierarchy for an organization including groups and roles
 func (s *Service) GetOrganizationHierarchy(ctx context.Context, orgID string) (*organizationResponses.OrganizationHierarchyResponse, error) {
 	s.logger.Info("Retrieving organization hierarchy with groups", zap.String("org_id", orgID))

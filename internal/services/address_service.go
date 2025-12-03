@@ -258,6 +258,14 @@ func (s *AddressService) SearchAddresses(ctx context.Context, query string, limi
 	return addresses, nil
 }
 
+// SearchAddressesCount returns the count of addresses matching the search query
+func (s *AddressService) SearchAddressesCount(ctx context.Context, query string) (int64, error) {
+	if strings.TrimSpace(query) == "" {
+		return 0, fmt.Errorf("search query cannot be empty")
+	}
+	return s.addressRepo.SearchCount(ctx, query)
+}
+
 // ValidateAddress validates an address
 func (s *AddressService) ValidateAddress(ctx context.Context, address interface{}) error {
 	s.logger.Info("Validating address")
