@@ -328,10 +328,11 @@ func (r *UserRepository) ListActive(ctx context.Context, limit, offset int) ([]*
 	return users, nil
 }
 
-// CountActive returns the total number of active users using database-level counting
+// CountActive returns the total number of active (non-deleted) users using database-level counting
+// This matches the filter used in List() to ensure accurate pagination
 func (r *UserRepository) CountActive(ctx context.Context) (int64, error) {
 	filter := base.NewFilterBuilder().
-		Where("status", base.OpEqual, "active").
+		WhereNull("deleted_at"). // Match the List() filter - only non-deleted users
 		Build()
 
 	return r.BaseFilterableRepository.CountWithFilter(ctx, filter)

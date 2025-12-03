@@ -72,18 +72,24 @@ func (r *ActionRepository) Count(ctx context.Context, filter *base.Filter) (int6
 	return count, nil
 }
 
-// Exists checks if an action exists by ID using the base repository
+// Exists checks if an action exists by ID using a database query
 func (r *ActionRepository) Exists(ctx context.Context, id string) (bool, error) {
 	if id == "" {
 		return false, fmt.Errorf("action ID is required")
 	}
 
-	exists, err := r.BaseFilterableRepository.Exists(ctx, id)
+	// Use a filter-based query to check existence in the database
+	filter := base.NewFilterBuilder().
+		Where("id", base.OpEqual, id).
+		Limit(1, 0).
+		Build()
+
+	actions, err := r.BaseFilterableRepository.Find(ctx, filter)
 	if err != nil {
 		return false, fmt.Errorf("failed to check if action exists: %w", err)
 	}
 
-	return exists, nil
+	return len(actions) > 0, nil
 }
 
 // GetByCategory retrieves actions by category
