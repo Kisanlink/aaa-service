@@ -169,6 +169,11 @@ func (m *MockResponder) SendInternalError(c *gin.Context, err error) {
 	c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 }
 
+func (m *MockResponder) SendPaginatedResponse(c *gin.Context, data interface{}, total, limit, offset int) {
+	m.Called(c, data, total, limit, offset)
+	c.JSON(http.StatusOK, gin.H{"data": data, "pagination": gin.H{"total": total, "limit": limit, "offset": offset}})
+}
+
 // MockAuditService is a mock implementation of the AuditService
 type MockAuditService struct {
 	mock.Mock

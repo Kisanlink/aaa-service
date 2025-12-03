@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/Kisanlink/aaa-service/v2/internal/entities/models"
+	"github.com/Kisanlink/aaa-service/v2/internal/entities/responses"
 	userResponses "github.com/Kisanlink/aaa-service/v2/internal/entities/responses/users"
 	"github.com/Kisanlink/aaa-service/v2/pkg/errors"
 	"go.uber.org/zap"
@@ -54,13 +55,20 @@ func (s *Service) GetUserByID(ctx context.Context, userID string) (*userResponse
 }
 
 // ListUsers retrieves a paginated list of active (non-deleted) users
-func (s *Service) ListUsers(ctx context.Context, limit, offset int) (interface{}, error) {
+func (s *Service) ListUsers(ctx context.Context, limit, offset int) (*responses.PaginatedResult, error) {
 	s.logger.Info("Listing users",
 		zap.Int("limit", limit),
 		zap.Int("offset", offset))
 
 	if limit < 1 || limit > 100 {
 		limit = 20
+	}
+
+	// Get total count for pagination
+	total, err := s.userRepo.CountActive(ctx)
+	if err != nil {
+		s.logger.Error("Failed to count users", zap.Error(err))
+		return nil, errors.NewInternalError(err)
 	}
 
 	// Get only active (non-deleted) users using repository method
@@ -82,13 +90,18 @@ func (s *Service) ListUsers(ctx context.Context, limit, offset int) (interface{}
 	}
 
 	// Convert to response format using FromModel to include roles
-	responses := make([]*userResponses.UserResponse, len(activeUsers))
+	userList := make([]*userResponses.UserResponse, len(activeUsers))
 	for i, user := range activeUsers {
-		responses[i] = &userResponses.UserResponse{}
-		responses[i].FromModel(user)
+		userList[i] = &userResponses.UserResponse{}
+		userList[i].FromModel(user)
 	}
 
 	s.logger.Info("Users retrieved successfully",
-		zap.Int("count", len(responses)))
-	return responses, nil
+		zap.Int("count", len(userList)),
+		zap.Int64("total", total))
+
+	return &responses.PaginatedResult{
+		Data:  userList,
+		Total: total,
+	}, nil
 }

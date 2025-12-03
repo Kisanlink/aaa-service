@@ -12,6 +12,7 @@ import (
 
 	"github.com/Kisanlink/aaa-service/v2/internal/entities/requests"
 	userRequests "github.com/Kisanlink/aaa-service/v2/internal/entities/requests/users"
+	"github.com/Kisanlink/aaa-service/v2/internal/entities/responses"
 	userResponses "github.com/Kisanlink/aaa-service/v2/internal/entities/responses/users"
 	"github.com/Kisanlink/aaa-service/v2/pkg/errors"
 	"github.com/gin-gonic/gin"
@@ -75,7 +76,7 @@ func (m *MockUserService) UpdateUser(ctx context.Context, req *userRequests.Upda
 func (m *MockUserService) DeleteUser(ctx context.Context, userID string) error {
 	return nil
 }
-func (m *MockUserService) ListUsers(ctx context.Context, limit, offset int) (interface{}, error) {
+func (m *MockUserService) ListUsers(ctx context.Context, limit, offset int) (*responses.PaginatedResult, error) {
 	return nil, nil
 }
 func (m *MockUserService) ListActiveUsers(ctx context.Context, limit, offset int) (interface{}, error) {
@@ -191,6 +192,10 @@ func (m *MockResponder) SendValidationError(c *gin.Context, errors []string) {
 
 func (m *MockResponder) SendInternalError(c *gin.Context, err error) {
 	m.Called(c, err)
+}
+
+func (m *MockResponder) SendPaginatedResponse(c *gin.Context, data interface{}, total, limit, offset int) {
+	m.Called(c, data, total, limit, offset)
 }
 
 func setupTestHandler() (*AuthHandler, *MockUserService, *MockValidator, *MockResponder) {

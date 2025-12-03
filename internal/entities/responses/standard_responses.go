@@ -260,3 +260,9 @@ type PaginationInfo struct {
 	HasNext    bool `json:"has_next"`
 	HasPrev    bool `json:"has_prev"`
 }
+
+// PaginatedResult is a generic container for paginated data from services
+type PaginatedResult struct {
+	Data  interface{} `json:"data"`
+	Total int64       `json:"total"`
+}

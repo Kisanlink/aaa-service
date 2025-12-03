@@ -6,6 +6,7 @@ import (
 
 	"github.com/Kisanlink/aaa-service/v2/internal/entities/models"
 	userRequests "github.com/Kisanlink/aaa-service/v2/internal/entities/requests/users"
+	"github.com/Kisanlink/aaa-service/v2/internal/entities/responses"
 	userResponses "github.com/Kisanlink/aaa-service/v2/internal/entities/responses/users"
 	"github.com/Kisanlink/kisanlink-db/pkg/base"
 	"github.com/gin-gonic/gin"
@@ -54,6 +55,7 @@ type Responder interface {
 	SendError(c *gin.Context, statusCode int, message string, err error)
 	SendValidationError(c *gin.Context, errors []string)
 	SendInternalError(c *gin.Context, err error)
+	SendPaginatedResponse(c *gin.Context, data interface{}, total, limit, offset int)
 }
 
 // UserService interface for user-related business operations
@@ -65,7 +67,7 @@ type UserService interface {
 	GetUserByAadhaarNumber(ctx context.Context, aadhaarNumber string) (*userResponses.UserResponse, error)
 	UpdateUser(ctx context.Context, req *userRequests.UpdateUserRequest) (*userResponses.UserResponse, error)
 	DeleteUser(ctx context.Context, userID string) error
-	ListUsers(ctx context.Context, limit, offset int) (interface{}, error)
+	ListUsers(ctx context.Context, limit, offset int) (*responses.PaginatedResult, error)
 	ListActiveUsers(ctx context.Context, limit, offset int) (interface{}, error)
 	SearchUsers(ctx context.Context, keyword string, limit, offset int) (interface{}, error)
 	ValidateUser(ctx context.Context, userID string) error

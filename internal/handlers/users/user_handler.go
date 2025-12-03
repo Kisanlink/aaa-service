@@ -337,7 +337,7 @@ func (h *UserHandler) ListUsers(c *gin.Context) {
 	}
 
 	h.logger.Info("Users listed successfully")
-	h.responder.SendSuccess(c, http.StatusOK, result)
+	h.responder.SendPaginatedResponse(c, result.Data, int(result.Total), limit, offset)
 }
 
 // SearchUsers handles GET /users/search
