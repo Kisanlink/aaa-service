@@ -50,6 +50,7 @@ func (r *ResourceRepository) Delete(ctx context.Context, id string) error {
 // List retrieves resources with pagination using database-level filtering
 func (r *ResourceRepository) List(ctx context.Context, limit, offset int) ([]*models.Resource, error) {
 	filter := base.NewFilterBuilder().
+		Sort("id", "asc"). // Default sort by ID ascending
 		Limit(limit, offset).
 		Build()
 

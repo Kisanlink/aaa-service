@@ -56,6 +56,7 @@ func (r *AddressRepository) Delete(ctx context.Context, id string, address *mode
 func (r *AddressRepository) List(ctx context.Context, limit, offset int) ([]*models.Address, error) {
 	// Use base filterable repository for optimized database-level filtering
 	filter := base.NewFilterBuilder().
+		Sort("id", "asc"). // Default sort by ID ascending
 		Limit(limit, offset).
 		Build()
 
@@ -90,6 +91,15 @@ func (r *AddressRepository) Search(ctx context.Context, query string, limit, off
 		Build()
 
 	return r.BaseFilterableRepository.Find(ctx, filter)
+}
+
+// SearchCount returns the count of addresses matching the search query
+func (r *AddressRepository) SearchCount(ctx context.Context, query string) (int64, error) {
+	filter := base.NewFilterBuilder().
+		Where("full_address", base.OpContains, query).
+		Build()
+
+	return r.BaseFilterableRepository.CountWithFilter(ctx, filter)
 }
 
 // GetByFullAddress retrieves an address by exact full_address match

@@ -68,6 +68,7 @@ func (r *RoleRepository) List(ctx context.Context, limit, offset int) ([]*models
 	filter := base.NewFilterBuilder().
 		Where("is_active", base.OpEqual, true).
 		WhereNull("deleted_at").
+		Sort("id", "asc"). // Default sort by ID ascending
 		Limit(limit, offset).
 		Build()
 

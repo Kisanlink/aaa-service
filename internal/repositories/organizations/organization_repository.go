@@ -50,6 +50,7 @@ func (r *OrganizationRepository) Delete(ctx context.Context, id string) error {
 // List retrieves organizations with pagination using database-level filtering
 func (r *OrganizationRepository) List(ctx context.Context, limit, offset int) ([]*models.Organization, error) {
 	filter := base.NewFilterBuilder().
+		Sort("id", "asc"). // Default sort by ID ascending
 		Limit(limit, offset).
 		Build()
 
@@ -138,6 +139,24 @@ func (r *OrganizationRepository) ListActive(ctx context.Context, limit, offset i
 		Build()
 
 	return r.BaseFilterableRepository.Find(ctx, filter)
+}
+
+// CountActive returns the count of active organizations
+func (r *OrganizationRepository) CountActive(ctx context.Context) (int64, error) {
+	filter := base.NewFilterBuilder().
+		Where("is_active", base.OpEqual, true).
+		Build()
+
+	return r.BaseFilterableRepository.CountWithFilter(ctx, filter)
+}
+
+// CountByType returns the count of organizations by type
+func (r *OrganizationRepository) CountByType(ctx context.Context, orgType string) (int64, error) {
+	filter := base.NewFilterBuilder().
+		Where("type", base.OpEqual, orgType).
+		Build()
+
+	return r.BaseFilterableRepository.CountWithFilter(ctx, filter)
 }
 
 // GetChildren retrieves all child organizations

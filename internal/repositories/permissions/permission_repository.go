@@ -59,6 +59,7 @@ func (r *PermissionRepository) Restore(ctx context.Context, id string) error {
 // List retrieves permissions with pagination
 func (r *PermissionRepository) List(ctx context.Context, limit, offset int) ([]*models.Permission, error) {
 	filter := base.NewFilterBuilder().
+		Sort("id", "asc"). // Default sort by ID ascending
 		Limit(limit, offset).
 		Build()
 

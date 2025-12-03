@@ -132,6 +132,7 @@ func (r *PrincipalRepository) GetByOrganization(ctx context.Context, organizatio
 // List retrieves principals with pagination using database-level filtering
 func (r *PrincipalRepository) List(ctx context.Context, limit, offset int) ([]*models.Principal, error) {
 	filter := base.NewFilterBuilder().
+		Sort("id", "asc"). // Default sort by ID ascending
 		Limit(limit, offset).
 		Build()
 
@@ -142,6 +143,7 @@ func (r *PrincipalRepository) List(ctx context.Context, limit, offset int) ([]*m
 func (r *PrincipalRepository) ListActive(ctx context.Context, limit, offset int) ([]*models.Principal, error) {
 	filter := base.NewFilterBuilder().
 		Where("is_active", base.OpEqual, true).
+		Sort("id", "asc"). // Default sort by ID ascending
 		Limit(limit, offset).
 		Build()
 
@@ -152,6 +154,42 @@ func (r *PrincipalRepository) ListActive(ctx context.Context, limit, offset int)
 func (r *PrincipalRepository) Count(ctx context.Context) (int64, error) {
 	filter := base.NewFilter()
 	return r.BaseFilterableRepository.Count(ctx, filter, models.Principal{})
+}
+
+// CountActive returns the count of active principals
+func (r *PrincipalRepository) CountActive(ctx context.Context) (int64, error) {
+	filter := base.NewFilterBuilder().
+		Where("is_active", base.OpEqual, true).
+		Build()
+	return r.BaseFilterableRepository.CountWithFilter(ctx, filter)
+}
+
+// CountByType returns the count of principals by type
+func (r *PrincipalRepository) CountByType(ctx context.Context, principalType string) (int64, error) {
+	filter := base.NewFilterBuilder().
+		Where("type", base.OpEqual, principalType).
+		Where("is_active", base.OpEqual, true).
+		Build()
+	return r.BaseFilterableRepository.CountWithFilter(ctx, filter)
+}
+
+// CountByOrganization returns the count of principals by organization
+func (r *PrincipalRepository) CountByOrganization(ctx context.Context, organizationID string) (int64, error) {
+	filter := base.NewFilterBuilder().
+		Where("organization_id", base.OpEqual, organizationID).
+		Where("is_active", base.OpEqual, true).
+		Build()
+	return r.BaseFilterableRepository.CountWithFilter(ctx, filter)
+}
+
+// CountByTypeAndOrganization returns the count of principals by type and organization
+func (r *PrincipalRepository) CountByTypeAndOrganization(ctx context.Context, principalType, organizationID string) (int64, error) {
+	filter := base.NewFilterBuilder().
+		Where("type", base.OpEqual, principalType).
+		Where("organization_id", base.OpEqual, organizationID).
+		Where("is_active", base.OpEqual, true).
+		Build()
+	return r.BaseFilterableRepository.CountWithFilter(ctx, filter)
 }
 
 // Exists checks if a principal exists by ID using the base repository
@@ -240,6 +278,7 @@ func (r *ServiceRepository) GetByAPIKey(ctx context.Context, apiKeyHash string) 
 // List retrieves services with pagination using database-level filtering
 func (r *ServiceRepository) List(ctx context.Context, limit, offset int) ([]*models.Service, error) {
 	filter := base.NewFilterBuilder().
+		Sort("id", "asc"). // Default sort by ID ascending
 		Limit(limit, offset).
 		Build()
 
@@ -250,6 +289,7 @@ func (r *ServiceRepository) List(ctx context.Context, limit, offset int) ([]*mod
 func (r *ServiceRepository) ListActive(ctx context.Context, limit, offset int) ([]*models.Service, error) {
 	filter := base.NewFilterBuilder().
 		Where("is_active", base.OpEqual, true).
+		Sort("id", "asc"). // Default sort by ID ascending
 		Limit(limit, offset).
 		Build()
 
@@ -260,6 +300,23 @@ func (r *ServiceRepository) ListActive(ctx context.Context, limit, offset int) (
 func (r *ServiceRepository) Count(ctx context.Context) (int64, error) {
 	filter := base.NewFilter()
 	return r.BaseFilterableRepository.Count(ctx, filter, models.Service{})
+}
+
+// CountActive returns the count of active services
+func (r *ServiceRepository) CountActive(ctx context.Context) (int64, error) {
+	filter := base.NewFilterBuilder().
+		Where("is_active", base.OpEqual, true).
+		Build()
+	return r.BaseFilterableRepository.CountWithFilter(ctx, filter)
+}
+
+// CountByOrganization returns the count of services by organization
+func (r *ServiceRepository) CountByOrganization(ctx context.Context, organizationID string) (int64, error) {
+	filter := base.NewFilterBuilder().
+		Where("organization_id", base.OpEqual, organizationID).
+		Where("is_active", base.OpEqual, true).
+		Build()
+	return r.BaseFilterableRepository.CountWithFilter(ctx, filter)
 }
 
 // Exists checks if a service exists by ID using the base repository
@@ -331,26 +388,6 @@ func (r *PrincipalRepository) GetPrincipalsByTypeAndOrganization(ctx context.Con
 	return r.BaseFilterableRepository.Find(ctx, filter)
 }
 
-// CountByType returns the count of principals by type
-func (r *PrincipalRepository) CountByType(ctx context.Context, principalType string) (int64, error) {
-	filter := base.NewFilterBuilder().
-		Where("type", base.OpEqual, principalType).
-		Where("is_active", base.OpEqual, true).
-		Build()
-
-	return r.BaseFilterableRepository.CountWithFilter(ctx, filter)
-}
-
-// CountByOrganization returns the count of principals by organization
-func (r *PrincipalRepository) CountByOrganization(ctx context.Context, organizationID string) (int64, error) {
-	filter := base.NewFilterBuilder().
-		Where("organization_id", base.OpEqual, organizationID).
-		Where("is_active", base.OpEqual, true).
-		Build()
-
-	return r.BaseFilterableRepository.CountWithFilter(ctx, filter)
-}
-
 // GetPrincipalsWithMetadata retrieves principals with specific metadata
 func (r *PrincipalRepository) GetPrincipalsWithMetadata(ctx context.Context, metadataKey, metadataValue string, limit, offset int) ([]*models.Principal, error) {
 	// This would need JSONB query support in the base repository
@@ -388,16 +425,6 @@ func (r *ServiceRepository) GetServicesByMetadata(ctx context.Context, metadataK
 		Build()
 
 	return r.BaseFilterableRepository.Find(ctx, filter)
-}
-
-// CountByOrganization returns the count of services by organization
-func (r *ServiceRepository) CountByOrganization(ctx context.Context, organizationID string) (int64, error) {
-	filter := base.NewFilterBuilder().
-		Where("organization_id", base.OpEqual, organizationID).
-		Where("is_active", base.OpEqual, true).
-		Build()
-
-	return r.BaseFilterableRepository.CountWithFilter(ctx, filter)
 }
 
 // GetServicesByStatus retrieves services by active status

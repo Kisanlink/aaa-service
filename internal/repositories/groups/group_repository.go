@@ -50,6 +50,7 @@ func (r *GroupRepository) Delete(ctx context.Context, id string) error {
 // List retrieves groups with pagination using database-level filtering
 func (r *GroupRepository) List(ctx context.Context, limit, offset int) ([]*models.Group, error) {
 	filter := base.NewFilterBuilder().
+		Sort("id", "asc"). // Default sort by ID ascending
 		Limit(limit, offset).
 		Build()
 
@@ -60,6 +61,24 @@ func (r *GroupRepository) List(ctx context.Context, limit, offset int) ([]*model
 func (r *GroupRepository) Count(ctx context.Context) (int64, error) {
 	filter := base.NewFilter()
 	return r.BaseFilterableRepository.Count(ctx, filter, models.Group{})
+}
+
+// CountActive returns the total number of active groups
+func (r *GroupRepository) CountActive(ctx context.Context) (int64, error) {
+	filter := base.NewFilterBuilder().
+		Where("is_active", base.OpEqual, true).
+		Build()
+	return r.BaseFilterableRepository.CountWithFilter(ctx, filter)
+}
+
+// CountByOrganization returns the count of groups for an organization
+func (r *GroupRepository) CountByOrganization(ctx context.Context, organizationID string, includeInactive bool) (int64, error) {
+	filterBuilder := base.NewFilterBuilder().
+		Where("organization_id", base.OpEqual, organizationID)
+	if !includeInactive {
+		filterBuilder.Where("is_active", base.OpEqual, true)
+	}
+	return r.BaseFilterableRepository.CountWithFilter(ctx, filterBuilder.Build())
 }
 
 // Exists checks if a group exists by ID using the base repository

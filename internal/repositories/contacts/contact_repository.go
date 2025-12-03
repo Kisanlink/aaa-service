@@ -49,6 +49,7 @@ func (r *ContactRepository) Delete(ctx context.Context, id string) error {
 // List retrieves contacts with pagination using database-level filtering
 func (r *ContactRepository) List(ctx context.Context, limit, offset int) ([]*models.Contact, error) {
 	filter := base.NewFilterBuilder().
+		Sort("id", "asc"). // Default sort by ID ascending
 		Limit(limit, offset).
 		Build()
 

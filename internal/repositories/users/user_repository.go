@@ -100,6 +100,7 @@ func (r *UserRepository) List(ctx context.Context, limit, offset int) ([]*models
 		WhereNull("deleted_at").                      // Only get users that are not soft-deleted
 		Preload("Roles", "is_active = ?", true).      // Preload only active user roles
 		Preload("Roles.Role", "is_active = ?", true). // Preload only active roles
+		Sort("id", "asc").                            // Default sort by ID ascending
 		Limit(limit, offset).
 		Build()
 
