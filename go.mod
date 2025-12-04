@@ -28,6 +28,9 @@ require (
 require github.com/authzed/authzed-go v1.4.1 // indirect
 
 require (
+	github.com/aws/aws-sdk-go-v2 v1.40.1
+	github.com/aws/aws-sdk-go-v2/config v1.29.17
+	github.com/aws/aws-sdk-go-v2/service/sns v1.39.8
 	github.com/stretchr/testify v1.10.0
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -37,13 +40,11 @@ require (
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
-	github.com/aws/aws-sdk-go-v2 v1.36.5 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.6.11 // indirect
-	github.com/aws/aws-sdk-go-v2/config v1.29.17 // indirect
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.70 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.32 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/configsources v1.3.36 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.6.36 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/configsources v1.4.15 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.7.15 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/ini v1.8.3 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/v4a v1.3.36 // indirect
 	github.com/aws/aws-sdk-go-v2/service/dynamodb v1.44.0 // indirect
@@ -56,7 +57,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sso v1.25.5 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.30.3 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.34.0 // indirect
-	github.com/aws/smithy-go v1.22.4 // indirect
+	github.com/aws/smithy-go v1.24.0 // indirect
 	github.com/bytedance/sonic v1.13.3 // indirect
 	github.com/bytedance/sonic/loader v0.2.4 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect

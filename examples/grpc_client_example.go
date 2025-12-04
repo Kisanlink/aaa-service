@@ -22,7 +22,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to connect to gRPC server: %v", err)
 	}
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 
 	// Create CatalogService client
 	client := pb.NewCatalogServiceClient(conn)

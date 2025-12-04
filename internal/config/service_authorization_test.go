@@ -12,8 +12,8 @@ import (
 func TestLoadServiceAuthorizationConfig(t *testing.T) {
 	// Test loading with non-existent file (should return default config)
 	t.Run("non-existent config returns defaults", func(t *testing.T) {
-		os.Setenv("AAA_ENV", "test-nonexistent")
-		defer os.Unsetenv("AAA_ENV")
+		_ = os.Setenv("AAA_ENV", "test-nonexistent")
+		defer func() { _ = os.Unsetenv("AAA_ENV") }()
 
 		cfg, err := LoadServiceAuthorizationConfig()
 		require.NoError(t, err)
@@ -42,12 +42,12 @@ default_behavior:
 
 		// Change to temp directory
 		oldWd, _ := os.Getwd()
-		defer os.Chdir(oldWd)
+		defer func() { _ = os.Chdir(oldWd) }()
 
-		os.Chdir(tmpDir)
+		_ = os.Chdir(tmpDir)
 
-		os.Setenv("AAA_ENV", "development")
-		defer os.Unsetenv("AAA_ENV")
+		_ = os.Setenv("AAA_ENV", "development")
+		defer func() { _ = os.Unsetenv("AAA_ENV") }()
 
 		cfg, err := LoadServiceAuthorizationConfig()
 		require.NoError(t, err)

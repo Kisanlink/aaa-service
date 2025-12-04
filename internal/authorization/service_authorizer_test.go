@@ -396,8 +396,8 @@ func TestServiceAuthorizer_APIKeyValidation(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Set environment variables
 			for key, value := range tt.envVars {
-				os.Setenv(key, value)
-				defer os.Unsetenv(key)
+				_ = os.Setenv(key, value)
+				defer func(k string) { _ = os.Unsetenv(k) }(key)
 			}
 
 			authorizer := NewServiceAuthorizer(tt.config, logger)
@@ -496,8 +496,8 @@ func TestIsValidPermissionFormat(t *testing.T) {
 
 func TestLoadServiceAuthorizationConfig(t *testing.T) {
 	// Test that loading non-existent config returns default config
-	os.Setenv("AAA_ENV", "test-non-existent")
-	defer os.Unsetenv("AAA_ENV")
+	_ = os.Setenv("AAA_ENV", "test-non-existent")
+	defer func() { _ = os.Unsetenv("AAA_ENV") }()
 
 	cfg, err := config.LoadServiceAuthorizationConfig()
 	require.NoError(t, err)

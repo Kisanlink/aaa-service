@@ -38,6 +38,7 @@ import (
 	resourceRepo "github.com/Kisanlink/aaa-service/v2/internal/repositories/resources"
 	rolePermRepo "github.com/Kisanlink/aaa-service/v2/internal/repositories/role_permissions"
 	roleRepo "github.com/Kisanlink/aaa-service/v2/internal/repositories/roles"
+	smsRepo "github.com/Kisanlink/aaa-service/v2/internal/repositories/sms"
 	userRepo "github.com/Kisanlink/aaa-service/v2/internal/repositories/users"
 	"github.com/Kisanlink/aaa-service/v2/internal/routes"
 	"github.com/Kisanlink/aaa-service/v2/internal/services"
@@ -51,6 +52,7 @@ import (
 	principalService "github.com/Kisanlink/aaa-service/v2/internal/services/principals"
 	resourceService "github.com/Kisanlink/aaa-service/v2/internal/services/resources"
 	roleAssignmentService "github.com/Kisanlink/aaa-service/v2/internal/services/role_assignments"
+	smsService "github.com/Kisanlink/aaa-service/v2/internal/services/sms"
 	"github.com/Kisanlink/aaa-service/v2/internal/services/user"
 	"github.com/Kisanlink/aaa-service/v2/migrations"
 	"github.com/Kisanlink/aaa-service/v2/utils"
@@ -461,6 +463,42 @@ func initializeServer(
 	auditRepository := auditRepo.NewAuditRepository(primaryDBManager)
 	auditServiceConcrete := services.NewAuditService(primaryDBManager, auditRepository, cacheService, logger)
 	auditServiceAdapter := serviceAdapters.NewAuditServiceAdapter(auditServiceConcrete)
+
+	// Initialize SMS service (AWS SNS) for OTP delivery
+	smsEnabled := getEnv("SMS_ENABLED", "false") == "true"
+	if smsEnabled {
+		smsConfig := &smsService.SNSConfig{
+			Region:        getEnv("AWS_REGION", "ap-south-1"),
+			Enabled:       true,
+			SenderID:      getEnv("SMS_SENDER_ID", "KISANLINK"),
+			MessageType:   getEnv("SMS_MESSAGE_TYPE", "Transactional"),
+			OTPExpiry:     time.Duration(parseIntEnv("SMS_OTP_EXPIRY_MINUTES", 10)) * time.Minute,
+			MaxSMSPerHour: parseIntEnv("SMS_MAX_PER_HOUR", 5),
+			MaxSMSPerDay:  parseIntEnv("SMS_MAX_PER_DAY", 20),
+		}
+		smsDeliveryRepository := smsRepo.NewSMSDeliveryRepository(primaryDBManager, logger)
+		snsServiceInstance, err := smsService.NewSNSService(
+			context.Background(),
+			smsConfig,
+			smsDeliveryRepository,
+			auditServiceAdapter,
+			logger,
+		)
+		if err != nil {
+			logger.Warn("Failed to initialize SMS service, SMS features disabled",
+				zap.Error(err))
+		} else {
+			// Inject SMS service into user service
+			if svc, ok := userServiceInstance.(*user.Service); ok {
+				svc.SetSMSService(snsServiceInstance)
+			}
+			logger.Info("SMS service (AWS SNS) initialized successfully",
+				zap.String("region", smsConfig.Region),
+				zap.String("sender_id", smsConfig.SenderID))
+		}
+	} else {
+		logger.Info("SMS service disabled (SMS_ENABLED=false)")
+	}
 
 	// Initialize RBAC services with proper dependencies
 	resourceService := resourceService.NewService(

@@ -60,10 +60,10 @@ func TestCORS(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Set environment variable for test
 			if tt.envOrigins != "" {
-				os.Setenv("AAA_CORS_ALLOWED_ORIGINS", tt.envOrigins)
-				defer os.Unsetenv("AAA_CORS_ALLOWED_ORIGINS")
+				_ = os.Setenv("AAA_CORS_ALLOWED_ORIGINS", tt.envOrigins)
+				defer func() { _ = os.Unsetenv("AAA_CORS_ALLOWED_ORIGINS") }()
 			} else {
-				os.Unsetenv("AAA_CORS_ALLOWED_ORIGINS")
+				_ = os.Unsetenv("AAA_CORS_ALLOWED_ORIGINS")
 			}
 
 			// Create router with CORS middleware

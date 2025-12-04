@@ -207,7 +207,11 @@ func (m *MockUserService) InitiatePasswordReset(ctx context.Context, phoneNumber
 	return "", nil
 }
 
-func (m *MockUserService) ResetPassword(ctx context.Context, token, newPassword string) error {
+func (m *MockUserService) ResetPassword(ctx context.Context, tokenID, otp, newPassword string) error {
+	return nil
+}
+
+func (m *MockUserService) ResetPasswordWithToken(ctx context.Context, token, newPassword string) error {
 	return nil
 }
 

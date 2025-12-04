@@ -124,6 +124,10 @@ func (m *mockOrganizationService) GetUserEffectiveRolesInOrganization(ctx contex
 	return nil, errors.New("not implemented")
 }
 
+func (m *mockOrganizationService) CountOrganizations(ctx context.Context, includeInactive bool, orgType string) (int64, error) {
+	return 0, errors.New("not implemented")
+}
+
 // Mock GroupService
 type mockGroupService struct {
 	getUserGroupsFunc         func(ctx context.Context, orgID, userID string, limit, offset int) (interface{}, error)
@@ -191,6 +195,14 @@ func (m *mockGroupService) RemoveRoleFromGroup(ctx context.Context, groupID, rol
 
 func (m *mockGroupService) GetGroupRoles(ctx context.Context, groupID string) (interface{}, error) {
 	return nil, errors.New("not implemented")
+}
+
+func (m *mockGroupService) CountGroupMembers(ctx context.Context, groupID string) (int64, error) {
+	return 0, errors.New("not implemented")
+}
+
+func (m *mockGroupService) CountGroups(ctx context.Context, organizationID string, includeInactive bool) (int64, error) {
+	return 0, errors.New("not implemented")
 }
 
 // Mock organization response

@@ -252,16 +252,27 @@ func (r *ForgotPasswordRequest) GetType() string {
 	return "forgot_password"
 }
 
-// ResetPasswordRequest represents a reset password request
+// ResetPasswordRequest represents a reset password request with OTP
 type ResetPasswordRequest struct {
-	Token       string `json:"token" validate:"required"`
-	NewPassword string `json:"new_password" validate:"required,min=8"`
+	TokenID     string `json:"token_id" validate:"required" example:"PRTOK-abc123xyz"`
+	OTP         string `json:"otp" validate:"required,len=6" example:"123456"`
+	NewPassword string `json:"new_password" validate:"required,min=8" example:"newSecurePassword123"`
 }
 
 // Validate validates the ResetPasswordRequest
 func (r *ResetPasswordRequest) Validate() error {
-	if r.Token == "" {
-		return fmt.Errorf("reset token is required")
+	if r.TokenID == "" {
+		return fmt.Errorf("token ID is required")
+	}
+	if r.OTP == "" {
+		return fmt.Errorf("OTP is required")
+	}
+	if len(r.OTP) != 6 {
+		return fmt.Errorf("OTP must be 6 digits")
+	}
+	otpRegex := regexp.MustCompile(`^\d{6}$`)
+	if !otpRegex.MatchString(r.OTP) {
+		return fmt.Errorf("OTP must contain only digits")
 	}
 	if r.NewPassword == "" {
 		return fmt.Errorf("new password is required")
@@ -275,6 +286,32 @@ func (r *ResetPasswordRequest) Validate() error {
 // GetType returns the request type
 func (r *ResetPasswordRequest) GetType() string {
 	return "reset_password"
+}
+
+// ResetPasswordWithTokenRequest represents a legacy reset password request (deprecated)
+// Deprecated: Use ResetPasswordRequest with OTP instead
+type ResetPasswordWithTokenRequest struct {
+	Token       string `json:"token" validate:"required"`
+	NewPassword string `json:"new_password" validate:"required,min=8"`
+}
+
+// Validate validates the ResetPasswordWithTokenRequest
+func (r *ResetPasswordWithTokenRequest) Validate() error {
+	if r.Token == "" {
+		return fmt.Errorf("reset token is required")
+	}
+	if r.NewPassword == "" {
+		return fmt.Errorf("new password is required")
+	}
+	if len(r.NewPassword) < 8 {
+		return fmt.Errorf("new password must be at least 8 characters long")
+	}
+	return nil
+}
+
+// GetType returns the request type
+func (r *ResetPasswordWithTokenRequest) GetType() string {
+	return "reset_password_with_token"
 }
 
 // SetMPinRequest represents a request to set or update mPin

@@ -124,7 +124,7 @@ func TestGenerateOTP_Success(t *testing.T) {
 		// Send success response
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(mockOTPResponse())
+		_ = json.NewEncoder(w).Encode(mockOTPResponse())
 	}))
 	defer server.Close()
 
@@ -156,7 +156,7 @@ func TestGenerateOTP_InvalidAadhaar(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(mockErrorResponse(400, "Invalid Aadhaar number"))
+		_ = json.NewEncoder(w).Encode(mockErrorResponse(400, "Invalid Aadhaar number"))
 	}))
 	defer server.Close()
 
@@ -192,7 +192,7 @@ func TestGenerateOTP_Timeout(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Simulate slow response
 		time.Sleep(2 * time.Second)
-		json.NewEncoder(w).Encode(mockOTPResponse())
+		_ = json.NewEncoder(w).Encode(mockOTPResponse())
 	}))
 	defer server.Close()
 
@@ -613,7 +613,7 @@ func TestErrorResponse_MalformedJSON(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
 		// Send malformed JSON
-		fmt.Fprint(w, "{invalid json")
+		_, _ = fmt.Fprint(w, "{invalid json")
 	}))
 	defer server.Close()
 

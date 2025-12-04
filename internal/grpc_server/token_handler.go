@@ -304,7 +304,7 @@ func (h *TokenHandler) RevokeToken(ctx context.Context, req *pb.RevokeTokenReque
 	// Store in cache for the remaining lifetime of the token
 	expiry := time.Until(claims.ExpiresAt.Time)
 	if expiry > 0 {
-		h.cacheService.Set(cacheKey, true, int(expiry.Seconds()))
+		_ = h.cacheService.Set(cacheKey, true, int(expiry.Seconds()))
 	}
 
 	tokensRevoked := int32(1)
@@ -312,8 +312,8 @@ func (h *TokenHandler) RevokeToken(ctx context.Context, req *pb.RevokeTokenReque
 	// If revoking all user tokens, add user to revocation list
 	if req.RevokeAllUserTokens {
 		userCacheKey := fmt.Sprintf("revoked_user:%s", claims.UserID)
-		h.cacheService.Set(userCacheKey, true, int((24 * time.Hour).Seconds())) // Revoke for 24 hours
-		tokensRevoked = -1                                                      // Unknown count when revoking all
+		_ = h.cacheService.Set(userCacheKey, true, int((24 * time.Hour).Seconds())) // Revoke for 24 hours
+		tokensRevoked = -1                                                          // Unknown count when revoking all
 	}
 
 	h.logger.Info("Token revoked successfully",
@@ -417,7 +417,7 @@ func (h *TokenHandler) BlacklistToken(ctx context.Context, req *pb.BlacklistToke
 		expiry = time.Until(req.BlacklistUntil.AsTime())
 	}
 
-	h.cacheService.Set(cacheKey, req.Reason, int(expiry.Seconds()))
+	_ = h.cacheService.Set(cacheKey, req.Reason, int(expiry.Seconds()))
 
 	h.logger.Info("Token blacklisted successfully",
 		zap.String("token_id", req.TokenId),

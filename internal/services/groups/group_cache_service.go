@@ -490,12 +490,12 @@ func (c *GroupCacheService) InvalidateUserEffectiveRolesCache(ctx context.Contex
 // InvalidateHierarchyCache invalidates hierarchy-related cache for a group and its related groups
 func (c *GroupCacheService) InvalidateHierarchyCache(ctx context.Context, groupID string, affectedGroupIDs []string) error {
 	// Invalidate cache for the main group
-	c.InvalidateGroupCache(ctx, groupID)
+	_ = c.InvalidateGroupCache(ctx, groupID)
 
 	// Invalidate cache for all affected groups in the hierarchy
 	for _, affectedGroupID := range affectedGroupIDs {
 		if affectedGroupID != groupID {
-			c.InvalidateGroupCache(ctx, affectedGroupID)
+			_ = c.InvalidateGroupCache(ctx, affectedGroupID)
 		}
 	}
 
@@ -562,12 +562,12 @@ func (c *GroupCacheService) WarmGroupCache(ctx context.Context, groupID string, 
 
 	// Warm group roles cache
 	if roles, err := groupService.GetGroupRoles(ctx, groupID); err == nil {
-		c.CacheGroupRoles(ctx, groupID, roles, false)
+		_ = c.CacheGroupRoles(ctx, groupID, roles, false)
 	}
 
 	// Warm group members cache
 	if members, err := groupService.GetGroupMembers(ctx, groupID, 100, 0); err == nil {
-		c.CacheGroupMembers(ctx, groupID, members, false)
+		_ = c.CacheGroupMembers(ctx, groupID, members, false)
 	}
 
 	c.logger.Info("Group cache warming completed", zap.String("group_id", groupID))

@@ -124,7 +124,7 @@ func (s *SandboxClient) authenticate(ctx context.Context) error {
 			zap.Error(err))
 		return fmt.Errorf("authentication request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Read response
 	body, err := io.ReadAll(resp.Body)
@@ -223,7 +223,7 @@ func (s *SandboxClient) GenerateOTP(ctx context.Context, aadhaarNumber, consent,
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Log response time
 	responseTime := time.Since(startTime).Milliseconds()
@@ -300,7 +300,7 @@ func (s *SandboxClient) VerifyOTP(ctx context.Context, referenceID, otp, authTok
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Log response time
 	responseTime := time.Since(startTime).Milliseconds()
@@ -469,7 +469,7 @@ func (s *SandboxClient) doRequest(ctx context.Context, method, url string, body 
 				zap.Int("attempt", attempt+1),
 				zap.Int("max_retries", maxRetries),
 				zap.Int("status_code", resp.StatusCode))
-			resp.Body.Close()
+			_ = resp.Body.Close()
 		}
 	}
 

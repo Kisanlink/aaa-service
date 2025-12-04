@@ -527,6 +527,8 @@ func (m *AuthMiddleware) isPublicEndpoint(path string) bool {
 		return true
 	case "/api/v1/auth/login", "/api/v1/auth/register", "/api/v1/auth/refresh", "/api/v1/health":
 		return true
+	case "/api/v1/auth/forgot-password", "/api/v1/auth/reset-password":
+		return true
 	}
 
 	// Prefix-based endpoints (documentation assets)

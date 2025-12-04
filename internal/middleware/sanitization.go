@@ -122,7 +122,7 @@ func (m *InputSanitizationMiddleware) sanitizeRequestBody(c *gin.Context) error 
 	}
 
 	// Close the original body
-	c.Request.Body.Close()
+	_ = c.Request.Body.Close()
 
 	// If body is empty, restore and continue
 	if len(bodyBytes) == 0 {

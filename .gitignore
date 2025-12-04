@@ -166,3 +166,4 @@ task-definition-*.json
 
 # Prevent files with special characters that can cause issues
 *'*
+vendor/

@@ -323,15 +323,15 @@ func (s *ErrorTestingService) TestErrorMiddleware(ctx context.Context) error {
 
 	// Add test routes that generate errors
 	router.GET("/test/validation", func(c *gin.Context) {
-		c.Error(errors.NewValidationError("Test validation error", "field is required"))
+		_ = c.Error(errors.NewValidationError("Test validation error", "field is required"))
 	})
 
 	router.GET("/test/unauthorized", func(c *gin.Context) {
-		c.Error(errors.NewUnauthorizedError("Test unauthorized error"))
+		_ = c.Error(errors.NewUnauthorizedError("Test unauthorized error"))
 	})
 
 	router.GET("/test/internal", func(c *gin.Context) {
-		c.Error(errors.NewInternalError(fmt.Errorf("test internal error")))
+		_ = c.Error(errors.NewInternalError(fmt.Errorf("test internal error")))
 	})
 
 	// Test validation error

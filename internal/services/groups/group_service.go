@@ -773,7 +773,7 @@ func (s *Service) AssignRoleToGroup(ctx context.Context, groupID, roleID, assign
 	s.auditService.LogGroupRoleAssignment(ctx, assignedBy, models.AuditActionAssignGroupRole, group.OrganizationID, groupID, roleID, "Role assigned to group successfully", true, auditDetails)
 
 	// Invalidate relevant caches after successful role assignment
-	s.groupCache.InvalidateRoleAssignmentCache(ctx, group.OrganizationID, groupID, roleID)
+	_ = s.groupCache.InvalidateRoleAssignmentCache(ctx, group.OrganizationID, groupID, roleID)
 
 	s.logger.Info("Role assigned to group successfully",
 		zap.String("group_id", groupID),
@@ -873,7 +873,7 @@ func (s *Service) RemoveRoleFromGroup(ctx context.Context, groupID, roleID strin
 	s.auditService.LogGroupRoleAssignment(ctx, "system", models.AuditActionRemoveGroupRole, group.OrganizationID, groupID, roleID, "Role removed from group successfully", true, auditDetails)
 
 	// Invalidate relevant caches after successful role removal
-	s.groupCache.InvalidateRoleAssignmentCache(ctx, group.OrganizationID, groupID, roleID)
+	_ = s.groupCache.InvalidateRoleAssignmentCache(ctx, group.OrganizationID, groupID, roleID)
 
 	// Cleanup this role from all group members who inherited it
 	if err := s.cleanupRoleForAllGroupMembers(ctx, groupID, roleID); err != nil {
@@ -943,7 +943,7 @@ func (s *Service) GetGroupRoles(ctx context.Context, groupID string) (interface{
 	}
 
 	// Cache the results
-	s.groupCache.CacheGroupRoles(ctx, groupID, responses, true)
+	_ = s.groupCache.CacheGroupRoles(ctx, groupID, responses, true)
 
 	s.logger.Info("Group roles retrieved successfully",
 		zap.String("group_id", groupID),
@@ -989,7 +989,7 @@ func (s *Service) GetGroupMembers(ctx context.Context, groupID string, limit, of
 
 	// Cache the results for small result sets
 	if limit <= 100 {
-		s.groupCache.CacheGroupMembers(ctx, cacheKey, responses, true)
+		_ = s.groupCache.CacheGroupMembers(ctx, cacheKey, responses, true)
 	}
 
 	return responses, nil
@@ -1052,7 +1052,7 @@ func (s *Service) GetUserEffectiveRoles(ctx context.Context, orgID, userID strin
 	}
 
 	// Cache the enhanced effective roles
-	s.groupCache.CacheUserEffectiveRoles(ctx, orgID, userID, effectiveRoles)
+	_ = s.groupCache.CacheUserEffectiveRoles(ctx, orgID, userID, effectiveRoles)
 
 	s.logger.Info("User effective roles calculated successfully",
 		zap.String("org_id", orgID),

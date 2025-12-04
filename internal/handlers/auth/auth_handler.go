@@ -494,6 +494,7 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 }
 
 // ForgotPassword handles POST /api/v1/auth/forgot-password
+// Sends a 6-digit OTP via SMS for password reset
 func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 	h.logger.Info("Processing forgot password request")
 
@@ -511,8 +512,8 @@ func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 		return
 	}
 
-	// Initiate password reset - this will create a token and (TODO) send email
-	token, err := h.userService.InitiatePasswordReset(
+	// Initiate password reset - this will create an OTP and send via SMS
+	tokenID, err := h.userService.InitiatePasswordReset(
 		c.Request.Context(),
 		req.PhoneNumber,
 		req.CountryCode,
@@ -526,14 +527,18 @@ func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 
 	// For security, always return the same response whether user exists or not
 	forgotResponse := map[string]interface{}{
-		"message": "If the account exists, a password reset link has been sent",
-		"sent_to": "***@***.com", // Masked for security
+		"message": "If the account exists, a password reset code has been sent via SMS",
 	}
 
-	// In development, include the token for testing
-	// TODO: Remove this in production
-	if token != "" {
-		forgotResponse["reset_token"] = token // Only for development/testing
+	// Include token_id for the reset step (required for OTP verification)
+	if tokenID != "" {
+		forgotResponse["token_id"] = tokenID
+	}
+
+	// Mask the phone number in response
+	if req.PhoneNumber != nil && len(*req.PhoneNumber) >= 4 {
+		maskedPhone := "XXXX-XXX-" + (*req.PhoneNumber)[len(*req.PhoneNumber)-4:]
+		forgotResponse["sent_to"] = maskedPhone
 	}
 
 	h.logger.Info("Forgot password request processed")
@@ -541,6 +546,7 @@ func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 }
 
 // ResetPassword handles POST /api/v1/auth/reset-password
+// Verifies OTP and sets new password
 func (h *AuthHandler) ResetPassword(c *gin.Context) {
 	h.logger.Info("Processing reset password request")
 
@@ -558,11 +564,11 @@ func (h *AuthHandler) ResetPassword(c *gin.Context) {
 		return
 	}
 
-	// Reset the password using the token
-	err := h.userService.ResetPassword(c.Request.Context(), req.Token, req.NewPassword)
+	// Reset the password using token ID and OTP
+	err := h.userService.ResetPassword(c.Request.Context(), req.TokenID, req.OTP, req.NewPassword)
 	if err != nil {
 		h.logger.Error("Failed to reset password", zap.Error(err))
-		h.responder.SendError(c, http.StatusBadRequest, "Failed to reset password. Token may be invalid or expired.", err)
+		h.responder.SendError(c, http.StatusBadRequest, "Failed to reset password. OTP may be invalid or expired.", err)
 		return
 	}
 

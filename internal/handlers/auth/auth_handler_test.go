@@ -119,7 +119,11 @@ func (m *MockUserService) GetUserByEmail(ctx context.Context, email string) (*us
 func (m *MockUserService) InitiatePasswordReset(ctx context.Context, phoneNumber, countryCode, username, email *string) (string, error) {
 	return "", nil
 }
-func (m *MockUserService) ResetPassword(ctx context.Context, token, newPassword string) error {
+func (m *MockUserService) ResetPassword(ctx context.Context, tokenID, otp, newPassword string) error {
+	return nil
+}
+
+func (m *MockUserService) ResetPasswordWithToken(ctx context.Context, token, newPassword string) error {
 	return nil
 }
 

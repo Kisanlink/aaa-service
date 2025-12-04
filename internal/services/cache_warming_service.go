@@ -190,7 +190,7 @@ func (s *CacheWarmingService) warmingLoop(ctx context.Context, config CacheWarmi
 	defer ticker.Stop()
 
 	// Perform initial warming
-	s.WarmNow(ctx, config)
+	_ = s.WarmNow(ctx, config)
 
 	for {
 		select {
@@ -246,7 +246,7 @@ func (s *CacheWarmingService) warmOrganization(ctx context.Context, orgID string
 
 	// Warm organization groups
 	if groups, err := s.orgService.GetOrganizationGroups(ctx, orgID, 100, 0, false); err == nil {
-		s.orgCache.CacheOrganizationGroups(ctx, orgID, groups, false)
+		_ = s.orgCache.CacheOrganizationGroups(ctx, orgID, groups, false)
 		s.logger.Debug("Warmed organization groups", zap.String("org_id", orgID))
 	} else {
 		s.logger.Warn("Failed to warm organization groups",
@@ -256,7 +256,7 @@ func (s *CacheWarmingService) warmOrganization(ctx context.Context, orgID string
 
 	// Warm active organization groups
 	if activeGroups, err := s.orgService.GetOrganizationGroups(ctx, orgID, 100, 0, true); err == nil {
-		s.orgCache.CacheOrganizationGroups(ctx, orgID, activeGroups, true)
+		_ = s.orgCache.CacheOrganizationGroups(ctx, orgID, activeGroups, true)
 		s.logger.Debug("Warmed active organization groups", zap.String("org_id", orgID))
 	} else {
 		s.logger.Warn("Failed to warm active organization groups",

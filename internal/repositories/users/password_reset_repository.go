@@ -35,7 +35,7 @@ func (r *PasswordResetRepository) GenerateToken() (string, error) {
 	return hex.EncodeToString(bytes), nil
 }
 
-// CreateResetToken creates a new password reset token
+// CreateResetToken creates a new password reset token with auto-generated value
 func (r *PasswordResetRepository) CreateResetToken(ctx context.Context, userID string, expiryDuration time.Duration) (*models.PasswordResetToken, error) {
 	// Generate token
 	token, err := r.GenerateToken()
@@ -43,10 +43,16 @@ func (r *PasswordResetRepository) CreateResetToken(ctx context.Context, userID s
 		return nil, err
 	}
 
+	return r.CreateResetTokenWithValue(ctx, userID, token, expiryDuration)
+}
+
+// CreateResetTokenWithValue creates a new password reset token with a provided value
+// This is useful for storing hashed OTPs instead of randomly generated tokens
+func (r *PasswordResetRepository) CreateResetTokenWithValue(ctx context.Context, userID, tokenValue string, expiryDuration time.Duration) (*models.PasswordResetToken, error) {
 	// Create reset token model
 	resetToken := &models.PasswordResetToken{
 		UserID:    userID,
-		Token:     token,
+		Token:     tokenValue,
 		ExpiresAt: time.Now().Add(expiryDuration),
 		Used:      false,
 	}
@@ -71,6 +77,30 @@ func (r *PasswordResetRepository) GetTokenByValue(ctx context.Context, token str
 
 	err = db.WithContext(ctx).
 		Where("token = ?", token).
+		First(&resetToken).Error
+
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("token not found")
+		}
+		return nil, fmt.Errorf("failed to get reset token: %w", err)
+	}
+
+	return &resetToken, nil
+}
+
+// GetTokenByID retrieves a reset token by its ID
+func (r *PasswordResetRepository) GetTokenByID(ctx context.Context, tokenID string) (*models.PasswordResetToken, error) {
+	var resetToken models.PasswordResetToken
+
+	// Use the userRepo's getDB method to get database connection
+	db, err := r.userRepo.getDB(ctx, true)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get database connection: %w", err)
+	}
+
+	err = db.WithContext(ctx).
+		Where("id = ?", tokenID).
 		First(&resetToken).Error
 
 	if err != nil {

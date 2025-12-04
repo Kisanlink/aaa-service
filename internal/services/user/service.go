@@ -15,6 +15,7 @@ type Service struct {
 	organizationRepo      any // Optional: for fetching organization details
 	roleInheritanceEngine any // Optional: for calculating inherited roles from groups
 	cacheService          interfaces.CacheService
+	smsService            interfaces.SMSService // Optional: for SMS OTP delivery
 	logger                *zap.Logger
 	validator             interfaces.Validator
 }
@@ -57,4 +58,11 @@ func (s *Service) SetOrganizationalRepositories(
 func (s *Service) SetRoleInheritanceEngine(engine any) {
 	s.roleInheritanceEngine = engine
 	s.logger.Info("Role inheritance engine injected for group-based role inheritance")
+}
+
+// SetSMSService injects the SMS service for OTP delivery during password reset
+// This is optional and should be called after service initialization if SMS OTP is needed
+func (s *Service) SetSMSService(smsService interfaces.SMSService) {
+	s.smsService = smsService
+	s.logger.Info("SMS service injected for OTP delivery")
 }

@@ -150,6 +150,10 @@ func runAutomigration(dm *db.DatabaseManager, logger *zap.Logger) error {
 		&models.AuditLog{},
 		&models.Event{},
 		&models.EventCheckpoint{},
+
+		// Password reset and SMS
+		&models.PasswordResetToken{},
+		&models.SMSDeliveryLog{},
 	}
 
 	logger.Info("Models to migrate", zap.Int("count", len(allModels)))
