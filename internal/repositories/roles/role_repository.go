@@ -86,10 +86,12 @@ func (r *RoleRepository) CountWithDeleted(ctx context.Context) (int64, error) {
 	return r.BaseFilterableRepository.CountWithDeleted(ctx, &models.Role{})
 }
 
-// GetByName retrieves a role by name using base filterable repository
+// GetByName retrieves an active, non-deleted role by name using base filterable repository
 func (r *RoleRepository) GetByName(ctx context.Context, name string) (*models.Role, error) {
 	filter := base.NewFilterBuilder().
 		Where("name", base.OpEqual, name).
+		Where("is_active", base.OpEqual, true).
+		WhereNull("deleted_at").
 		Build()
 
 	roles, err := r.BaseFilterableRepository.Find(ctx, filter)
@@ -104,12 +106,14 @@ func (r *RoleRepository) GetByName(ctx context.Context, name string) (*models.Ro
 	return roles[0], nil
 }
 
-// GetByServiceAndName retrieves a role by service ID and name using base filterable repository
+// GetByServiceAndName retrieves an active, non-deleted role by service ID and name using base filterable repository
 // This enforces the composite unique constraint on (service_id, name)
 func (r *RoleRepository) GetByServiceAndName(ctx context.Context, serviceID, name string) (*models.Role, error) {
 	filter := base.NewFilterBuilder().
 		Where("service_id", base.OpEqual, serviceID).
 		Where("name", base.OpEqual, name).
+		Where("is_active", base.OpEqual, true).
+		WhereNull("deleted_at").
 		Build()
 
 	roles, err := r.BaseFilterableRepository.Find(ctx, filter)
