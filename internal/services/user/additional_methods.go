@@ -118,18 +118,11 @@ func (s *Service) SearchUsers(ctx context.Context, keyword string, limit, offset
 
 	s.logger.Info("Search completed", zap.Int("result_count", len(users)), zap.Int64("total", total))
 
-	// Convert to response format
+	// Convert to response format using FromModel to include roles
 	userList := make([]*userResponses.UserResponse, len(users))
 	for i, user := range users {
-		userList[i] = &userResponses.UserResponse{
-			ID:          user.ID,
-			Username:    user.Username,
-			PhoneNumber: user.PhoneNumber,
-			CountryCode: user.CountryCode,
-			IsValidated: user.IsValidated,
-			CreatedAt:   user.CreatedAt,
-			UpdatedAt:   user.UpdatedAt,
-		}
+		userList[i] = &userResponses.UserResponse{}
+		userList[i].FromModel(user)
 	}
 
 	return &responses.PaginatedResult{
@@ -170,18 +163,11 @@ func (s *Service) SearchUsersWithOrgScope(ctx context.Context, keyword string, o
 		zap.Int("result_count", len(users)),
 		zap.Int64("total", total))
 
-	// Convert to response format
+	// Convert to response format using FromModel to include roles
 	userList := make([]*userResponses.UserResponse, len(users))
 	for i, user := range users {
-		userList[i] = &userResponses.UserResponse{
-			ID:          user.ID,
-			Username:    user.Username,
-			PhoneNumber: user.PhoneNumber,
-			CountryCode: user.CountryCode,
-			IsValidated: user.IsValidated,
-			CreatedAt:   user.CreatedAt,
-			UpdatedAt:   user.UpdatedAt,
-		}
+		userList[i] = &userResponses.UserResponse{}
+		userList[i].FromModel(user)
 	}
 
 	return &responses.PaginatedResult{
