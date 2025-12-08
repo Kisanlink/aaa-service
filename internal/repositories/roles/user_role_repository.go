@@ -176,18 +176,19 @@ func (r *UserRoleRepository) GetActiveRolesByUserID(ctx context.Context, userID 
 
 	var userRoles []models.UserRole
 	err = db.WithContext(ctx).
-		Preload("Role").
-		Where("user_id = ? AND is_active = ?", userID, true).
+		Preload("Role", "is_active = ? AND deleted_at IS NULL", true).
+		Where("user_id = ? AND is_active = ? AND deleted_at IS NULL", userID, true).
 		Find(&userRoles).Error
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to get active roles for user %s: %w", userID, err)
 	}
 
-	// Filter out roles that are not active and convert to pointers
+	// Filter out user roles where the role wasn't loaded (deleted or inactive)
 	activeUserRoles := make([]*models.UserRole, 0, len(userRoles))
 	for i := range userRoles {
-		if userRoles[i].Role.IsActive {
+		// Role.ID will be empty if preload didn't find a matching active non-deleted role
+		if userRoles[i].Role.ID != "" && userRoles[i].Role.IsActive {
 			activeUserRoles = append(activeUserRoles, &userRoles[i])
 		}
 	}
