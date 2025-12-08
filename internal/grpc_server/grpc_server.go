@@ -254,9 +254,13 @@ func (s *GRPCServer) registerServices() {
 	addressHandlerV2 := NewAddressHandlerV2(s.addressService, s.logger)
 	pbv2.RegisterAddressServiceServer(s.server, addressHandlerV2)
 
+	// Register RoleService for role management
+	roleHandler := NewRoleHandler(s.roleService, s.logger)
+	pb.RegisterRoleServiceServer(s.server, roleHandler)
+
 	s.logger.Info("gRPC services registered successfully",
 		zap.String("primary_service", "AAAService"),
-		zap.Strings("services", []string{"UserServiceV2", "AuthorizationService", "TokenService", "OrganizationService", "CatalogService", "AddressService", "AddressServiceV2"}))
+		zap.Strings("services", []string{"UserServiceV2", "AuthorizationService", "TokenService", "OrganizationService", "CatalogService", "AddressService", "AddressServiceV2", "RoleService"}))
 }
 
 // loggingInterceptor logs gRPC requests

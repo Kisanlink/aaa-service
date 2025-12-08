@@ -1152,3 +1152,107 @@ func (r *UserRepository) GetByUsernameAndStatusAndValidationStatusAndDeletedDate
 
 	return r.BaseFilterableRepository.Find(ctx, filter)
 }
+
+// SearchWithOrgScope searches for users by keyword filtered by organization membership
+// Users are included if they are members of any group belonging to the specified organizations
+// Performance optimized: Uses EXISTS subquery instead of JOINs to avoid DISTINCT overhead
+func (r *UserRepository) SearchWithOrgScope(ctx context.Context, keyword string, organizationIDs []string, limit, offset int) ([]*models.User, error) {
+	// Sanitize pagination
+	if offset < 0 {
+		offset = 0
+	}
+	if limit <= 0 {
+		limit = 10
+	}
+
+	// Get the GORM DB instance for complex query
+	gormDB, err := r.dbManager.(*db.PostgresManager).GetDB(ctx, true)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get database connection: %w", err)
+	}
+
+	// Use EXISTS subquery for better performance at scale
+	// This avoids the need for DISTINCT and allows the query planner to optimize better
+	subquery := gormDB.Table("group_memberships gm").
+		Select("1").
+		Joins("JOIN groups g ON g.id = gm.group_id").
+		Where("gm.principal_id = users.id").
+		Where("gm.principal_type = ?", "user").
+		Where("gm.is_active = ?", true).
+		Where("g.is_active = ?", true).
+		Where("g.organization_id IN ?", organizationIDs)
+
+	query := gormDB.WithContext(ctx).
+		Model(&models.User{}).
+		Where("EXISTS (?)", subquery).
+		Where("users.deleted_at IS NULL")
+
+	// Add keyword search if provided
+	if strings.TrimSpace(keyword) != "" {
+		query = query.Where("(users.username ILIKE ? OR users.phone_number ILIKE ?)",
+			"%"+keyword+"%", "%"+keyword+"%")
+	}
+
+	// Add pagination and ordering
+	query = query.Order("users.id ASC").Offset(offset).Limit(limit)
+
+	// Preload active roles
+	query = query.Preload("Roles", "is_active = ?", true).
+		Preload("Roles.Role", "is_active = ?", true)
+
+	var users []*models.User
+	if err := query.Find(&users).Error; err != nil {
+		return nil, fmt.Errorf("failed to search users with org scope: %w", err)
+	}
+
+	// Filter out any user roles where the role itself is inactive (safety check)
+	for _, user := range users {
+		activeUserRoles := make([]models.UserRole, 0, len(user.Roles))
+		for _, userRole := range user.Roles {
+			if userRole.IsActive && userRole.Role.IsActive {
+				activeUserRoles = append(activeUserRoles, userRole)
+			}
+		}
+		user.Roles = activeUserRoles
+	}
+
+	return users, nil
+}
+
+// SearchCountWithOrgScope returns the total count of users matching the search keyword filtered by organization
+// Performance optimized: Uses EXISTS subquery for consistency with SearchWithOrgScope
+func (r *UserRepository) SearchCountWithOrgScope(ctx context.Context, keyword string, organizationIDs []string) (int64, error) {
+	// Get the GORM DB instance for complex query
+	gormDB, err := r.dbManager.(*db.PostgresManager).GetDB(ctx, true)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get database connection: %w", err)
+	}
+
+	// Use EXISTS subquery for better performance (same pattern as SearchWithOrgScope)
+	subquery := gormDB.Table("group_memberships gm").
+		Select("1").
+		Joins("JOIN groups g ON g.id = gm.group_id").
+		Where("gm.principal_id = users.id").
+		Where("gm.principal_type = ?", "user").
+		Where("gm.is_active = ?", true).
+		Where("g.is_active = ?", true).
+		Where("g.organization_id IN ?", organizationIDs)
+
+	query := gormDB.WithContext(ctx).
+		Model(&models.User{}).
+		Where("EXISTS (?)", subquery).
+		Where("users.deleted_at IS NULL")
+
+	// Add keyword search if provided
+	if strings.TrimSpace(keyword) != "" {
+		query = query.Where("(users.username ILIKE ? OR users.phone_number ILIKE ?)",
+			"%"+keyword+"%", "%"+keyword+"%")
+	}
+
+	var count int64
+	if err := query.Count(&count).Error; err != nil {
+		return 0, fmt.Errorf("failed to count users with org scope: %w", err)
+	}
+
+	return count, nil
+}

@@ -85,6 +85,9 @@ func (m *MockUserService) ListActiveUsers(ctx context.Context, limit, offset int
 func (m *MockUserService) SearchUsers(ctx context.Context, keyword string, limit, offset int) (*responses.PaginatedResult, error) {
 	return nil, nil
 }
+func (m *MockUserService) SearchUsersWithOrgScope(ctx context.Context, keyword string, organizationIDs []string, limit, offset int) (*responses.PaginatedResult, error) {
+	return nil, nil
+}
 func (m *MockUserService) ValidateUser(ctx context.Context, userID string) error {
 	return nil
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/Kisanlink/aaa-service/v2/internal/entities/requests/users"
 	"github.com/Kisanlink/aaa-service/v2/internal/entities/responses"
@@ -18,6 +19,69 @@ import (
 var (
 	_ responses.ErrorResponse
 )
+
+// orgScopeResult holds the result of organization scope check
+type orgScopeResult struct {
+	IsSuperAdmin    bool
+	OrganizationIDs []string
+	UserID          string
+	RoleNames       []string
+}
+
+// getOrgScope checks user's roles and organizations from DB for multi-tenant scoping
+// Returns: scope result, error
+func (h *UserHandler) getOrgScope(c *gin.Context) (*orgScopeResult, error) {
+	userID := c.GetString("user_id")
+	result := &orgScopeResult{UserID: userID}
+
+	// Query DB directly for user's roles to check for super_admin
+	userWithRoles, err := h.userService.GetUserWithRoles(c.Request.Context(), userID)
+	if err != nil {
+		h.logger.Error("Failed to get user roles from DB", zap.String("user_id", userID), zap.Error(err))
+		return nil, err
+	}
+
+	// Check if user has super_admin role
+	if userWithRoles != nil {
+		for _, role := range userWithRoles.Roles {
+			result.RoleNames = append(result.RoleNames, role.Role.Name)
+			if role.Role.Name == "super_admin" {
+				result.IsSuperAdmin = true
+			}
+		}
+	}
+
+	h.logger.Info("Organization scope check",
+		zap.String("user_id", userID),
+		zap.Strings("roles", result.RoleNames),
+		zap.Bool("is_super_admin", result.IsSuperAdmin))
+
+	// If super_admin, no need to get organizations
+	if result.IsSuperAdmin {
+		return result, nil
+	}
+
+	// Query DB for user's organizations through group memberships
+	orgs, err := h.userService.GetUserOrganizations(c.Request.Context(), userID)
+	if err != nil {
+		h.logger.Warn("Failed to get user organizations from DB",
+			zap.String("user_id", userID),
+			zap.Error(err))
+	} else {
+		for _, org := range orgs {
+			if orgID, ok := org["id"].(string); ok && orgID != "" {
+				result.OrganizationIDs = append(result.OrganizationIDs, orgID)
+			}
+		}
+	}
+
+	h.logger.Info("Organization scope result",
+		zap.String("user_id", userID),
+		zap.Int("org_count", len(result.OrganizationIDs)),
+		zap.Strings("organization_ids", result.OrganizationIDs))
+
+	return result, nil
+}
 
 // UserHandler handles HTTP requests for user operations
 type UserHandler struct {
@@ -328,8 +392,29 @@ func (h *UserHandler) ListUsers(c *gin.Context) {
 		return
 	}
 
-	// Get users through service
-	result, err := h.userService.ListUsers(c.Request.Context(), limit, offset)
+	// Get organization scope from DB
+	scope, err := h.getOrgScope(c)
+	if err != nil {
+		h.responder.SendInternalError(c, err)
+		return
+	}
+
+	// If super_admin, return all users (empty keyword = list all)
+	// If has orgs, filter by org scope
+	// If no orgs, return self only
+	if !scope.IsSuperAdmin && len(scope.OrganizationIDs) == 0 {
+		selfUser, err := h.userService.GetUserByID(c.Request.Context(), scope.UserID)
+		if err != nil {
+			h.logger.Error("Failed to get self user", zap.Error(err))
+			h.responder.SendPaginatedResponse(c, []interface{}{}, 0, limit, offset)
+			return
+		}
+		h.responder.SendPaginatedResponse(c, []interface{}{selfUser}, 1, limit, offset)
+		return
+	}
+
+	// Use SearchUsersWithOrgScope with empty keyword to list all users in scope
+	result, err := h.userService.SearchUsersWithOrgScope(c.Request.Context(), "", scope.OrganizationIDs, limit, offset)
 	if err != nil {
 		h.logger.Error("Failed to list users", zap.Error(err))
 		h.responder.SendInternalError(c, err)
@@ -385,8 +470,42 @@ func (h *UserHandler) SearchUsers(c *gin.Context) {
 		return
 	}
 
-	// Search users through service
-	result, err := h.userService.SearchUsers(c.Request.Context(), query, limit, offset)
+	// Get organization scope from DB
+	scope, err := h.getOrgScope(c)
+	if err != nil {
+		h.responder.SendInternalError(c, err)
+		return
+	}
+
+	// If no orgs and not super_admin, check if query matches self
+	if !scope.IsSuperAdmin && len(scope.OrganizationIDs) == 0 {
+		selfUser, err := h.userService.GetUserByID(c.Request.Context(), scope.UserID)
+		if err != nil {
+			h.logger.Error("Failed to get self user", zap.Error(err))
+			h.responder.SendPaginatedResponse(c, []interface{}{}, 0, limit, offset)
+			return
+		}
+
+		// Check if the search query matches the user's own data
+		searchLower := strings.ToLower(query)
+		matchesSelf := false
+		if selfUser.Username != nil && strings.Contains(strings.ToLower(*selfUser.Username), searchLower) {
+			matchesSelf = true
+		}
+		if strings.Contains(selfUser.PhoneNumber, searchLower) {
+			matchesSelf = true
+		}
+
+		if matchesSelf {
+			h.responder.SendPaginatedResponse(c, []interface{}{selfUser}, 1, limit, offset)
+		} else {
+			h.responder.SendPaginatedResponse(c, []interface{}{}, 0, limit, offset)
+		}
+		return
+	}
+
+	// Search users with organization scoping
+	result, err := h.userService.SearchUsersWithOrgScope(c.Request.Context(), query, scope.OrganizationIDs, limit, offset)
 	if err != nil {
 		h.logger.Error("Failed to search users", zap.Error(err))
 		h.responder.SendInternalError(c, err)

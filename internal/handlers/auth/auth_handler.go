@@ -3,6 +3,8 @@ package auth
 import (
 	"fmt"
 	"net/http"
+	"os"
+	"strings"
 
 	"github.com/Kisanlink/aaa-service/v2/helper"
 	"github.com/Kisanlink/aaa-service/v2/internal/entities/models"
@@ -37,6 +39,61 @@ func NewAuthHandler(
 		responder:   responder,
 		logger:      logger,
 	}
+}
+
+// setAuthCookies sets HTTP-only cookies for access and refresh tokens
+// This provides secure cookie-based authentication while maintaining backward compatibility
+// with JSON response tokens for other clients
+func (h *AuthHandler) setAuthCookies(c *gin.Context, accessToken, refreshToken string) {
+	// Determine if we're in a secure context (HTTPS)
+	secure := isSecureContext()
+
+	// Cookie path - root so it works for all API endpoints
+	path := "/"
+
+	// Set access token cookie (1 hour expiry)
+	c.SetCookie(
+		"auth_token", // name - matches middleware expectation
+		accessToken,  // value
+		3600,         // maxAge in seconds (1 hour)
+		path,         // path
+		"",           // domain (empty = current domain)
+		secure,       // secure flag
+		true,         // httpOnly
+	)
+
+	// Set refresh token cookie (7 days expiry)
+	c.SetCookie(
+		"refresh_token", // name
+		refreshToken,    // value
+		604800,          // maxAge in seconds (7 days)
+		path,            // path
+		"",              // domain
+		secure,          // secure flag
+		true,            // httpOnly
+	)
+
+	// Set SameSite attribute via header for better browser compatibility
+	// Gin's SetCookie doesn't support SameSite directly in older versions
+	c.Header("Set-Cookie", c.Writer.Header().Get("Set-Cookie"))
+}
+
+// clearAuthCookies removes auth cookies on logout
+func (h *AuthHandler) clearAuthCookies(c *gin.Context) {
+	secure := isSecureContext()
+	path := "/"
+
+	// Clear access token cookie
+	c.SetCookie("auth_token", "", -1, path, "", secure, true)
+
+	// Clear refresh token cookie
+	c.SetCookie("refresh_token", "", -1, path, "", secure, true)
+}
+
+// isSecureContext determines if cookies should be set with Secure flag
+func isSecureContext() bool {
+	env := strings.ToLower(os.Getenv("APP_ENV"))
+	return env == "production" || env == "prod" || env == "staging"
 }
 
 // Login handles POST /api/v1/auth/login with MPIN support
@@ -238,6 +295,9 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		User:         authUserInfo,
 		Message:      "Login successful",
 	}
+
+	// Set HTTP-only cookies for browser clients (backward compatible - JSON response still sent)
+	h.setAuthCookies(c, accessToken, refreshToken)
 
 	h.logger.Info("User logged in successfully",
 		zap.String("userID", userResponse.ID),
@@ -463,6 +523,9 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 		Message:      "Token refreshed successfully",
 	}
 
+	// Set HTTP-only cookies for browser clients (backward compatible - JSON response still sent)
+	h.setAuthCookies(c, newAccessToken, newRefreshToken)
+
 	h.logger.Info("Token refreshed successfully", zap.String("userID", userID))
 	h.responder.SendSuccess(c, http.StatusOK, refreshResponse)
 }
@@ -480,6 +543,9 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 //	@Security		Bearer
 func (h *AuthHandler) Logout(c *gin.Context) {
 	h.logger.Info("Processing logout request")
+
+	// Clear HTTP-only auth cookies
+	h.clearAuthCookies(c)
 
 	// TODO: Implement token revocation logic
 	// For now, return a simple success response

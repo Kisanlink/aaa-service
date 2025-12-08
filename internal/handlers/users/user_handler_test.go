@@ -75,6 +75,14 @@ func (m *MockUserService) SearchUsers(ctx context.Context, query string, limit, 
 	return args.Get(0).(*responses.PaginatedResult), args.Error(1)
 }
 
+func (m *MockUserService) SearchUsersWithOrgScope(ctx context.Context, query string, organizationIDs []string, limit, offset int) (*responses.PaginatedResult, error) {
+	args := m.Called(ctx, query, organizationIDs, limit, offset)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*responses.PaginatedResult), args.Error(1)
+}
+
 func (m *MockUserService) ValidateUser(ctx context.Context, userID string) error {
 	args := m.Called(ctx, userID)
 	return args.Error(0)

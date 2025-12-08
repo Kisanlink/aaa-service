@@ -138,6 +138,58 @@ func (s *Service) SearchUsers(ctx context.Context, keyword string, limit, offset
 	}, nil
 }
 
+// SearchUsersWithOrgScope searches for users by keyword with organization scoping
+// If organizationIDs is empty, returns all users (for super_admin)
+// If organizationIDs has values, filters users who are members of groups in those organizations
+func (s *Service) SearchUsersWithOrgScope(ctx context.Context, keyword string, organizationIDs []string, limit, offset int) (*responses.PaginatedResult, error) {
+	s.logger.Info("Searching users with organization scope",
+		zap.String("keyword", keyword),
+		zap.Strings("organization_ids", organizationIDs),
+		zap.Int("limit", limit))
+
+	// If no organization filter, return all matching users (super_admin bypass)
+	if len(organizationIDs) == 0 {
+		return s.SearchUsers(ctx, keyword, limit, offset)
+	}
+
+	// Get total count for pagination with organization filter
+	total, err := s.userRepo.SearchCountWithOrgScope(ctx, keyword, organizationIDs)
+	if err != nil {
+		s.logger.Error("Failed to count search results with org scope", zap.Error(err))
+		return nil, errors.NewInternalError(err)
+	}
+
+	// Use the repository's Search method with organization filtering
+	users, err := s.userRepo.SearchWithOrgScope(ctx, keyword, organizationIDs, limit, offset)
+	if err != nil {
+		s.logger.Error("Failed to search users with org scope", zap.Error(err))
+		return nil, errors.NewInternalError(err)
+	}
+
+	s.logger.Info("Search with org scope completed",
+		zap.Int("result_count", len(users)),
+		zap.Int64("total", total))
+
+	// Convert to response format
+	userList := make([]*userResponses.UserResponse, len(users))
+	for i, user := range users {
+		userList[i] = &userResponses.UserResponse{
+			ID:          user.ID,
+			Username:    user.Username,
+			PhoneNumber: user.PhoneNumber,
+			CountryCode: user.CountryCode,
+			IsValidated: user.IsValidated,
+			CreatedAt:   user.CreatedAt,
+			UpdatedAt:   user.UpdatedAt,
+		}
+	}
+
+	return &responses.PaginatedResult{
+		Data:  userList,
+		Total: total,
+	}, nil
+}
+
 // ValidateUser validates a user account
 func (s *Service) ValidateUser(ctx context.Context, userID string) error {
 	s.logger.Info("Validating user", zap.String("user_id", userID))

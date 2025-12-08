@@ -12,11 +12,11 @@ import (
 // Group represents a group in the AAA service that can own roles/policies
 type Group struct {
 	*base.BaseModel
-	Name           string  `json:"name" gorm:"size:100;not null"`
+	Name           string  `json:"name" gorm:"size:100;not null;index:idx_groups_name"`
 	Description    string  `json:"description" gorm:"type:text"`
-	OrganizationID string  `json:"organization_id" gorm:"type:varchar(255);not null"`
-	ParentID       *string `json:"parent_id" gorm:"type:varchar(255);default:null"` // For group hierarchy
-	IsActive       bool    `json:"is_active" gorm:"default:true"`
+	OrganizationID string  `json:"organization_id" gorm:"type:varchar(255);not null;index:idx_groups_org_active,priority:1"`
+	ParentID       *string `json:"parent_id" gorm:"type:varchar(255);default:null;index:idx_groups_parent"` // For group hierarchy
+	IsActive       bool    `json:"is_active" gorm:"default:true;index:idx_groups_org_active,priority:2;index:idx_groups_active"`
 	Metadata       *string `json:"metadata" gorm:"type:jsonb"`                                                                                           // Additional group metadata
 	Version        int     `json:"version" gorm:"column:version;default:1;not null"`                                                                     // Optimistic locking
 	HierarchyDepth int     `json:"hierarchy_depth" gorm:"column:hierarchy_depth;default:0;not null;check:hierarchy_depth >= 0 AND hierarchy_depth <= 8"` // Depth in hierarchy (0=root, max=8)
@@ -34,12 +34,12 @@ type Group struct {
 // GroupMembership represents a user's membership in a group with time bounds
 type GroupMembership struct {
 	*base.BaseModel
-	GroupID       string     `json:"group_id" gorm:"type:varchar(255);not null"`
-	PrincipalID   string     `json:"principal_id" gorm:"type:varchar(255);not null"` // User or Service principal
-	PrincipalType string     `json:"principal_type" gorm:"size:50;not null"`         // "user" or "service"
-	StartsAt      *time.Time `json:"starts_at" gorm:"type:timestamp"`                // When membership becomes active
-	EndsAt        *time.Time `json:"ends_at" gorm:"type:timestamp"`                  // When membership expires
-	IsActive      bool       `json:"is_active" gorm:"default:true"`
+	GroupID       string     `json:"group_id" gorm:"type:varchar(255);not null;index:idx_gm_group;index:idx_gm_principal_group,priority:2"`
+	PrincipalID   string     `json:"principal_id" gorm:"type:varchar(255);not null;index:idx_gm_principal;index:idx_gm_principal_group,priority:1;index:idx_gm_principal_type_active,priority:1"` // User or Service principal
+	PrincipalType string     `json:"principal_type" gorm:"size:50;not null;index:idx_gm_principal_type_active,priority:2"`                                                                        // "user" or "service"
+	StartsAt      *time.Time `json:"starts_at" gorm:"type:timestamp"`                                                                                                                             // When membership becomes active
+	EndsAt        *time.Time `json:"ends_at" gorm:"type:timestamp"`                                                                                                                               // When membership expires
+	IsActive      bool       `json:"is_active" gorm:"default:true;index:idx_gm_active;index:idx_gm_principal_type_active,priority:3"`
 	AddedByID     string     `json:"added_by_id" gorm:"type:varchar(255);not null"`    // Who added this member
 	Metadata      *string    `json:"metadata" gorm:"type:jsonb"`                       // Additional membership metadata
 	Version       int        `json:"version" gorm:"column:version;default:1;not null"` // Optimistic locking

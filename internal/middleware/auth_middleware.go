@@ -106,9 +106,9 @@ func (m *AuthMiddleware) HTTPAuthMiddleware() gin.HandlerFunc {
 		c.Set("user_id", claims.Sub)
 
 		// Extract roles from JWT claims and set in context
+		var roleNames []string
 		if rolesData, exists := claims.Raw["roles"]; exists {
 			// Roles can be either a slice of maps or slice of interfaces
-			var roleNames []string
 			if rolesSlice, ok := rolesData.([]interface{}); ok {
 				for _, roleItem := range rolesSlice {
 					if roleMap, ok := roleItem.(map[string]interface{}); ok {
@@ -128,6 +128,47 @@ func (m *AuthMiddleware) HTTPAuthMiddleware() gin.HandlerFunc {
 				zap.String("user_id", claims.Sub),
 				zap.Strings("roles", roleNames))
 		}
+
+		// Extract organization IDs from user_context for multi-tenant scoping
+		var organizationIDs []string
+		if userContext, exists := claims.Raw["user_context"]; exists {
+			if userCtxMap, ok := userContext.(map[string]interface{}); ok {
+				if orgsData, hasOrgs := userCtxMap["organizations"]; hasOrgs {
+					if orgsSlice, ok := orgsData.([]interface{}); ok {
+						for _, orgItem := range orgsSlice {
+							if orgMap, ok := orgItem.(map[string]interface{}); ok {
+								if orgID, ok := orgMap["id"].(string); ok && orgID != "" {
+									organizationIDs = append(organizationIDs, orgID)
+								}
+							}
+						}
+					}
+				}
+				// Also extract role names from user_context.roles if not already extracted
+				if len(roleNames) == 0 {
+					if rolesData, hasRoles := userCtxMap["roles"]; hasRoles {
+						if rolesSlice, ok := rolesData.([]interface{}); ok {
+							for _, roleItem := range rolesSlice {
+								if roleMap, ok := roleItem.(map[string]interface{}); ok {
+									if roleName, ok := roleMap["name"].(string); ok && roleName != "" {
+										roleNames = append(roleNames, roleName)
+									}
+								}
+							}
+						}
+						if len(roleNames) > 0 {
+							c.Set("roles", roleNames)
+						}
+					}
+				}
+			}
+		}
+		c.Set("organization_ids", organizationIDs)
+		m.logger.Info("JWT context extraction complete",
+			zap.String("user_id", claims.Sub),
+			zap.Strings("roles", roleNames),
+			zap.Int("organization_count", len(organizationIDs)),
+			zap.Strings("organization_ids", organizationIDs))
 
 		m.logger.Debug("Authenticated user context set", zap.String("user_id", claims.Sub), zap.String("path", c.Request.URL.Path))
 		ctx := context.WithValue(c.Request.Context(), "user_id", claims.Sub)

@@ -73,9 +73,18 @@ func NewAuditService(
 	}
 }
 
-// isAnonymousUser checks if the userID represents an anonymous user
+// isAnonymousUser checks if the userID represents an anonymous user or a service principal
+// Service IDs (starting with "SVC") are treated as anonymous since they don't exist in the users table
 func isAnonymousUser(userID string) bool {
-	return userID == "anonymous" || userID == "unknown" || userID == ""
+	if userID == "anonymous" || userID == "unknown" || userID == "" {
+		return true
+	}
+	// Service IDs start with "SVC" and should not be used as user_id in audit_logs
+	// because audit_logs.user_id has a foreign key constraint to the users table
+	if len(userID) >= 3 && userID[:3] == "SVC" {
+		return true
+	}
+	return false
 }
 
 // LogUserAction logs a user action
