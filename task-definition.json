@@ -91,6 +91,14 @@
         {
           "name": "AWS_REGION",
           "value": "REGION"
+        },
+        {
+          "name": "APP_ENV",
+          "value": "ENVIRONMENT"
+        },
+        {
+          "name": "CORS_ORIGIN",
+          "value": "CORS_ORIGIN_URL"
         }
       ],
       "secrets": [

@@ -65,7 +65,8 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
 ENV GIN_MODE=release \
     LOG_LEVEL=info \
     PORT=8080 \
-    GRPC_PORT=50051
+    GRPC_PORT=50051 \
+    APP_ENV=production
 
 # Run the application
 ENTRYPOINT ["./aaa-service"]
