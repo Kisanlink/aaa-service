@@ -93,60 +93,34 @@ func (r *UserRepository) Restore(ctx context.Context, id string) error {
 	return r.BaseFilterableRepository.Restore(ctx, id)
 }
 
-// List retrieves active (non-deleted) users with pagination and preloaded active roles
+// List retrieves active (non-deleted) users with pagination
+// Note: Roles are NOT preloaded for performance. Use GetUserByID for full role details.
 func (r *UserRepository) List(ctx context.Context, limit, offset int) ([]*models.User, error) {
-	// Use BaseFilterableRepository with preloading for active roles
 	filter := base.NewFilterBuilder().
-		WhereNull("deleted_at").                      // Only get users that are not soft-deleted
-		Preload("Roles", "is_active = ?", true).      // Preload only active user roles
-		Preload("Roles.Role", "is_active = ?", true). // Preload only active roles
-		Sort("id", "asc").                            // Default sort by ID ascending
+		WhereNull("deleted_at"). // Only get users that are not soft-deleted
+		Sort("id", "asc").       // Default sort by ID ascending
 		Limit(limit, offset).
 		Build()
 
 	users, err := r.BaseFilterableRepository.Find(ctx, filter)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list users with roles: %w", err)
-	}
-
-	// Filter out any user roles where the role itself is inactive (safety check)
-	for _, user := range users {
-		activeUserRoles := make([]models.UserRole, 0, len(user.Roles))
-		for _, userRole := range user.Roles {
-			if userRole.IsActive && userRole.Role.IsActive {
-				activeUserRoles = append(activeUserRoles, userRole)
-			}
-		}
-		user.Roles = activeUserRoles
+		return nil, fmt.Errorf("failed to list users: %w", err)
 	}
 
 	return users, nil
 }
 
-// ListAll retrieves all active (non-deleted) users with preloaded active roles
+// ListAll retrieves all active (non-deleted) users
+// Note: Roles are NOT preloaded for performance. Use GetUserByID for full role details.
 func (r *UserRepository) ListAll(ctx context.Context) ([]*models.User, error) {
-	// Use a large page size to get all active users with roles preloaded
 	filter := base.NewFilterBuilder().
-		WhereNull("deleted_at").                      // Only get users that are not soft-deleted
-		Preload("Roles", "is_active = ?", true).      // Preload only active user roles
-		Preload("Roles.Role", "is_active = ?", true). // Preload only active roles
-		Page(1, 1000).                                // Get up to 1000 users
+		WhereNull("deleted_at"). // Only get users that are not soft-deleted
+		Page(1, 1000).           // Get up to 1000 users
 		Build()
 
 	users, err := r.BaseFilterableRepository.Find(ctx, filter)
 	if err != nil {
 		return nil, err
-	}
-
-	// Filter out any user roles where the role itself is inactive (safety check)
-	for _, user := range users {
-		activeUserRoles := make([]models.UserRole, 0, len(user.Roles))
-		for _, userRole := range user.Roles {
-			if userRole.IsActive && userRole.Role.IsActive {
-				activeUserRoles = append(activeUserRoles, userRole)
-			}
-		}
-		user.Roles = activeUserRoles
 	}
 
 	return users, nil
@@ -404,6 +378,7 @@ func (r *UserRepository) GetWithProfile(ctx context.Context, userID string) (*mo
 
 // Search searches for users by keyword in username using the BaseFilterableRepository
 // with case-insensitive contains and proper pagination.
+// Note: Roles are NOT preloaded for performance. Use GetUserByID for full role details.
 func (r *UserRepository) Search(ctx context.Context, keyword string, limit, offset int) ([]*models.User, error) {
 	// Sanitize pagination
 	if offset < 0 {
@@ -418,35 +393,19 @@ func (r *UserRepository) Search(ctx context.Context, keyword string, limit, offs
 		return r.List(ctx, limit, offset)
 	}
 
-	// Use database-level search with BaseFilterableRepository and preload roles
-	// Create a filter that searches in username and phone_number fields (only fields that exist)
-	// Since we need OR logic, we'll create multiple conditions and use the Or method
+	// Use database-level search with BaseFilterableRepository
 	filter := base.NewFilterBuilder().
 		Or(
 			base.FilterCondition{Field: "username", Operator: base.OpContains, Value: keyword},
 			base.FilterCondition{Field: "phone_number", Operator: base.OpContains, Value: keyword},
 		).
-		WhereNull("deleted_at").                      // Only get users that are not soft-deleted
-		Preload("Roles", "is_active = ?", true).      // Preload only active user roles
-		Preload("Roles.Role", "is_active = ?", true). // Preload only active roles
+		WhereNull("deleted_at"). // Only get users that are not soft-deleted
 		Limit(limit, offset).
 		Build()
 
-	// Use the base repository's Find method for database-level search
 	users, err := r.BaseFilterableRepository.Find(ctx, filter)
 	if err != nil {
 		return nil, fmt.Errorf("failed to search users: %w", err)
-	}
-
-	// Filter out any user roles where the role itself is inactive (safety check)
-	for _, user := range users {
-		activeUserRoles := make([]models.UserRole, 0, len(user.Roles))
-		for _, userRole := range user.Roles {
-			if userRole.IsActive && userRole.Role.IsActive {
-				activeUserRoles = append(activeUserRoles, userRole)
-			}
-		}
-		user.Roles = activeUserRoles
 	}
 
 	return users, nil
@@ -1156,6 +1115,7 @@ func (r *UserRepository) GetByUsernameAndStatusAndValidationStatusAndDeletedDate
 // SearchWithOrgScope searches for users by keyword filtered by organization membership
 // Users are included if they are members of any group belonging to the specified organizations
 // Performance optimized: Uses EXISTS subquery instead of JOINs to avoid DISTINCT overhead
+// Note: Roles are NOT preloaded for performance. Use GetUserByID for full role details.
 func (r *UserRepository) SearchWithOrgScope(ctx context.Context, keyword string, organizationIDs []string, limit, offset int) ([]*models.User, error) {
 	// Sanitize pagination
 	if offset < 0 {
@@ -1196,24 +1156,9 @@ func (r *UserRepository) SearchWithOrgScope(ctx context.Context, keyword string,
 	// Add pagination and ordering
 	query = query.Order("users.id ASC").Offset(offset).Limit(limit)
 
-	// Preload active roles
-	query = query.Preload("Roles", "is_active = ?", true).
-		Preload("Roles.Role", "is_active = ?", true)
-
 	var users []*models.User
 	if err := query.Find(&users).Error; err != nil {
 		return nil, fmt.Errorf("failed to search users with org scope: %w", err)
-	}
-
-	// Filter out any user roles where the role itself is inactive (safety check)
-	for _, user := range users {
-		activeUserRoles := make([]models.UserRole, 0, len(user.Roles))
-		for _, userRole := range user.Roles {
-			if userRole.IsActive && userRole.Role.IsActive {
-				activeUserRoles = append(activeUserRoles, userRole)
-			}
-		}
-		user.Roles = activeUserRoles
 	}
 
 	return users, nil
