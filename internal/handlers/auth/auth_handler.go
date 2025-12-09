@@ -3,10 +3,9 @@ package auth
 import (
 	"fmt"
 	"net/http"
-	"os"
-	"strings"
 
 	"github.com/Kisanlink/aaa-service/v2/helper"
+	"github.com/Kisanlink/aaa-service/v2/internal/config"
 	"github.com/Kisanlink/aaa-service/v2/internal/entities/models"
 	"github.com/Kisanlink/aaa-service/v2/internal/entities/requests"
 	"github.com/Kisanlink/aaa-service/v2/internal/entities/requests/users"
@@ -123,17 +122,13 @@ func (h *AuthHandler) clearAuthCookies(c *gin.Context) {
 
 // isSecureContext determines if cookies should be set with Secure flag
 func isSecureContext() bool {
-	env := strings.ToLower(os.Getenv("APP_ENV"))
-	return env == "production" || env == "prod" || env == "staging"
+	return config.GetAppConfig().IsProduction()
 }
 
 // isCrossOriginDevelopment checks if we're in a cross-origin development setup
 // (e.g., frontend on localhost:5173, backend on localhost:8080)
 func isCrossOriginDevelopment() bool {
-	env := strings.ToLower(os.Getenv("APP_ENV"))
-	corsOrigin := os.Getenv("CORS_ORIGIN")
-	// If CORS_ORIGIN is set and we're in dev/local, assume cross-origin development
-	return (env == "development" || env == "dev" || env == "local" || env == "") && corsOrigin != ""
+	return config.GetAppConfig().IsCrossOriginDevelopment()
 }
 
 // Login handles POST /api/v1/auth/login with MPIN support
