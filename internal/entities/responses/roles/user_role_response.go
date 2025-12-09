@@ -30,8 +30,8 @@ func NewUserRoleResponse(userRole *models.UserRole) *UserRoleResponse {
 		UpdatedAt: userRole.UpdatedAt.Format(time.RFC3339),
 	}
 
-	// Include role if available
-	if userRole.Role.ID != "" {
+	// Include role if available (check BaseModel is not nil to avoid panic)
+	if userRole.Role.BaseModel != nil {
 		response.Role = NewRoleResponse(&userRole.Role)
 	}
 

@@ -45,55 +45,95 @@ func NewAuthHandler(
 // This provides secure cookie-based authentication while maintaining backward compatibility
 // with JSON response tokens for other clients
 func (h *AuthHandler) setAuthCookies(c *gin.Context, accessToken, refreshToken string) {
-	// Determine if we're in a secure context (HTTPS)
-	secure := isSecureContext()
+	// Determine if we're in a secure context (HTTPS) or cross-origin development
+	secure := isSecureContext() || isCrossOriginDevelopment()
 
 	// Cookie path - root so it works for all API endpoints
 	path := "/"
 
+	// For cross-origin requests (e.g., frontend on localhost:5173, backend on localhost:8080),
+	// we need SameSite=None which requires Secure=true.
+	// Modern browsers treat localhost as a secure context even over HTTP.
+	sameSite := http.SameSiteLaxMode
+	if isCrossOriginDevelopment() || isSecureContext() {
+		sameSite = http.SameSiteNoneMode
+		secure = true // SameSite=None requires Secure
+	}
+
 	// Set access token cookie (1 hour expiry)
-	c.SetCookie(
-		"auth_token", // name - matches middleware expectation
-		accessToken,  // value
-		3600,         // maxAge in seconds (1 hour)
-		path,         // path
-		"",           // domain (empty = current domain)
-		secure,       // secure flag
-		true,         // httpOnly
-	)
+	http.SetCookie(c.Writer, &http.Cookie{
+		Name:     "auth_token",
+		Value:    accessToken,
+		MaxAge:   3600, // 1 hour
+		Path:     path,
+		Domain:   "",
+		Secure:   secure,
+		HttpOnly: true,
+		SameSite: sameSite,
+	})
 
 	// Set refresh token cookie (7 days expiry)
-	c.SetCookie(
-		"refresh_token", // name
-		refreshToken,    // value
-		604800,          // maxAge in seconds (7 days)
-		path,            // path
-		"",              // domain
-		secure,          // secure flag
-		true,            // httpOnly
-	)
-
-	// Set SameSite attribute via header for better browser compatibility
-	// Gin's SetCookie doesn't support SameSite directly in older versions
-	c.Header("Set-Cookie", c.Writer.Header().Get("Set-Cookie"))
+	http.SetCookie(c.Writer, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    refreshToken,
+		MaxAge:   604800, // 7 days
+		Path:     path,
+		Domain:   "",
+		Secure:   secure,
+		HttpOnly: true,
+		SameSite: sameSite,
+	})
 }
 
 // clearAuthCookies removes auth cookies on logout
 func (h *AuthHandler) clearAuthCookies(c *gin.Context) {
-	secure := isSecureContext()
+	secure := isSecureContext() || isCrossOriginDevelopment()
 	path := "/"
 
+	sameSite := http.SameSiteLaxMode
+	if isCrossOriginDevelopment() || isSecureContext() {
+		sameSite = http.SameSiteNoneMode
+		secure = true
+	}
+
 	// Clear access token cookie
-	c.SetCookie("auth_token", "", -1, path, "", secure, true)
+	http.SetCookie(c.Writer, &http.Cookie{
+		Name:     "auth_token",
+		Value:    "",
+		MaxAge:   -1,
+		Path:     path,
+		Domain:   "",
+		Secure:   secure,
+		HttpOnly: true,
+		SameSite: sameSite,
+	})
 
 	// Clear refresh token cookie
-	c.SetCookie("refresh_token", "", -1, path, "", secure, true)
+	http.SetCookie(c.Writer, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    "",
+		MaxAge:   -1,
+		Path:     path,
+		Domain:   "",
+		Secure:   secure,
+		HttpOnly: true,
+		SameSite: sameSite,
+	})
 }
 
 // isSecureContext determines if cookies should be set with Secure flag
 func isSecureContext() bool {
 	env := strings.ToLower(os.Getenv("APP_ENV"))
 	return env == "production" || env == "prod" || env == "staging"
+}
+
+// isCrossOriginDevelopment checks if we're in a cross-origin development setup
+// (e.g., frontend on localhost:5173, backend on localhost:8080)
+func isCrossOriginDevelopment() bool {
+	env := strings.ToLower(os.Getenv("APP_ENV"))
+	corsOrigin := os.Getenv("CORS_ORIGIN")
+	// If CORS_ORIGIN is set and we're in dev/local, assume cross-origin development
+	return (env == "development" || env == "dev" || env == "local" || env == "") && corsOrigin != ""
 }
 
 // Login handles POST /api/v1/auth/login with MPIN support

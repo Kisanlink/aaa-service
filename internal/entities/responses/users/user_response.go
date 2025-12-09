@@ -86,10 +86,14 @@ func (r *UserResponse) FromModel(user *models.User) {
 		r.Contacts = append(r.Contacts, contactResp)
 	}
 
-	// Convert roles
-	r.Roles = make([]UserRoleDetail, len(user.Roles))
-	for i, userRole := range user.Roles {
-		r.Roles[i] = UserRoleDetail{
+	// Convert roles - only include roles where the Role was successfully loaded
+	r.Roles = make([]UserRoleDetail, 0, len(user.Roles))
+	for _, userRole := range user.Roles {
+		// Skip if Role.BaseModel is nil (role wasn't preloaded or doesn't exist)
+		if userRole.Role.BaseModel == nil {
+			continue
+		}
+		r.Roles = append(r.Roles, UserRoleDetail{
 			ID:       userRole.ID,
 			UserID:   userRole.UserID,
 			RoleID:   userRole.RoleID,
@@ -101,7 +105,7 @@ func (r *UserResponse) FromModel(user *models.User) {
 				IsActive:    userRole.Role.IsActive,
 				AssignedAt:  userRole.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
 			},
-		}
+		})
 	}
 }
 

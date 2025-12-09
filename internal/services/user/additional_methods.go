@@ -347,16 +347,21 @@ func (s *Service) GetUserWithRoles(ctx context.Context, userID string) (*userRes
 		HasMPin:     user.HasMPin(),
 	}
 
-	// Add roles to response
-	roles := make([]userResponses.UserRoleDetail, len(allUserRoles))
-	for i, userRole := range allUserRoles {
+	// Add roles to response - only include roles where Role was successfully loaded
+	roles := make([]userResponses.UserRoleDetail, 0, len(allUserRoles))
+	for _, userRole := range allUserRoles {
+		// Skip if Role.BaseModel is nil (role wasn't preloaded or doesn't exist)
+		if userRole.Role.BaseModel == nil {
+			continue
+		}
+
 		// Handle AssignedAt - for inherited roles, BaseModel will be nil
 		assignedAt := ""
 		if userRole.BaseModel != nil {
 			assignedAt = userRole.CreatedAt.Format("2006-01-02T15:04:05Z07:00")
 		}
 
-		roles[i] = userResponses.UserRoleDetail{
+		roles = append(roles, userResponses.UserRoleDetail{
 			ID:       userRole.ID,
 			UserID:   userRole.UserID,
 			RoleID:   userRole.RoleID,
@@ -368,7 +373,7 @@ func (s *Service) GetUserWithRoles(ctx context.Context, userID string) (*userRes
 				IsActive:    userRole.Role.IsActive,
 				AssignedAt:  assignedAt,
 			},
-		}
+		})
 	}
 	response.Roles = roles
 

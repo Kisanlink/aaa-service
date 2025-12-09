@@ -187,8 +187,8 @@ func (r *UserRoleRepository) GetActiveRolesByUserID(ctx context.Context, userID 
 	// Filter out user roles where the role wasn't loaded (deleted or inactive)
 	activeUserRoles := make([]*models.UserRole, 0, len(userRoles))
 	for i := range userRoles {
-		// Role.ID will be empty if preload didn't find a matching active non-deleted role
-		if userRoles[i].Role.ID != "" && userRoles[i].Role.IsActive {
+		// Role.BaseModel will be nil if preload didn't find a matching active non-deleted role
+		if userRoles[i].Role.BaseModel != nil && userRoles[i].Role.IsActive {
 			activeUserRoles = append(activeUserRoles, &userRoles[i])
 		}
 	}
