@@ -23,35 +23,43 @@ func TestCORS(t *testing.T) {
 		expectedStatus int
 	}{
 		{
-			name:           "OPTIONS request with default origins",
+			name:           "OPTIONS request with default origins echoes back origin when credentials enabled",
 			method:         "OPTIONS",
 			origin:         "http://localhost:3000",
 			envOrigins:     "",
-			expectedOrigin: "*",
+			expectedOrigin: "http://localhost:3000", // With credentials=true, wildcard echoes origin
 			expectedStatus: http.StatusNoContent,
 		},
 		{
-			name:           "OPTIONS request with specific origins",
+			name:           "OPTIONS request with specific origins returns matched origin",
 			method:         "OPTIONS",
 			origin:         "http://localhost:3000",
 			envOrigins:     "http://localhost:3000,http://localhost:3001",
-			expectedOrigin: "http://localhost:3000,http://localhost:3001",
+			expectedOrigin: "http://localhost:3000", // Only the matched origin is returned
 			expectedStatus: http.StatusNoContent,
 		},
 		{
-			name:           "GET request with default origins",
+			name:           "GET request with default origins echoes back origin when credentials enabled",
 			method:         "GET",
 			origin:         "http://localhost:3000",
 			envOrigins:     "",
-			expectedOrigin: "*",
+			expectedOrigin: "http://localhost:3000", // With credentials=true, wildcard echoes origin
 			expectedStatus: http.StatusOK,
 		},
 		{
-			name:           "POST request with specific origins",
+			name:           "POST request with specific origins returns matched origin",
 			method:         "POST",
 			origin:         "http://localhost:3000",
 			envOrigins:     "http://localhost:3000",
 			expectedOrigin: "http://localhost:3000",
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "Request from non-allowed origin returns no origin header",
+			method:         "GET",
+			origin:         "http://malicious.com",
+			envOrigins:     "http://localhost:3000",
+			expectedOrigin: "", // Non-matching origin should not be allowed
 			expectedStatus: http.StatusOK,
 		},
 	}

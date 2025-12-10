@@ -67,14 +67,23 @@ func (m *AuthMiddleware) HTTPAuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// Extract token from header or cookie
-		authz := c.GetHeader("Authorization")
+		// Extract token from cookie first, fall back to Authorization header
+		// This order prioritizes browser-based cookie auth while maintaining
+		// backward compatibility with header-based auth for API clients
 		token := ""
-		trimmed := strings.TrimSpace(authz)
-		if strings.HasPrefix(trimmed, "Bearer ") {
-			token = strings.TrimSpace(strings.TrimPrefix(trimmed, "Bearer "))
-		} else if ck, err := c.Request.Cookie("auth_token"); err == nil {
+
+		// Try cookie first (browser clients)
+		if ck, err := c.Request.Cookie("auth_token"); err == nil && strings.TrimSpace(ck.Value) != "" {
 			token = strings.TrimSpace(ck.Value)
+		}
+
+		// Fall back to Authorization header (API clients, service-to-service)
+		if token == "" {
+			authz := c.GetHeader("Authorization")
+			trimmed := strings.TrimSpace(authz)
+			if strings.HasPrefix(trimmed, "Bearer ") {
+				token = strings.TrimSpace(strings.TrimPrefix(trimmed, "Bearer "))
+			}
 		}
 
 		if token == "" {

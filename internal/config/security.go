@@ -28,6 +28,9 @@ type SecurityConfig struct {
 
 	// Encryption configuration
 	Encryption EncryptionConfig
+
+	// Cookie configuration
+	Cookie CookieConfig
 }
 
 // RateLimitConfig holds general rate limiting configuration
@@ -103,6 +106,15 @@ type EncryptionConfig struct {
 	TokenSigningMethod     string
 	TokenExpiration        time.Duration
 	RefreshTokenExpiration time.Duration
+}
+
+// CookieConfig holds cookie configuration for cross-subdomain sharing
+type CookieConfig struct {
+	// Domain sets the cookie domain for cross-subdomain sharing
+	// e.g., ".kisanlink.in" allows cookies to be shared across
+	// aaa.kisanlink.in, farmers.kisanlink.in, etc.
+	// Empty string means cookies are only valid for the exact host
+	Domain string
 }
 
 // LoadSecurityConfig loads security configuration from environment variables
@@ -186,6 +198,11 @@ func LoadSecurityConfig() *SecurityConfig {
 			TokenSigningMethod:     getEnvString("AAA_TOKEN_SIGNING_METHOD", "HS256"),
 			TokenExpiration:        getEnvDuration("AAA_TOKEN_EXPIRATION", 15*time.Minute),
 			RefreshTokenExpiration: getEnvDuration("AAA_REFRESH_TOKEN_EXPIRATION", 7*24*time.Hour),
+		},
+		Cookie: CookieConfig{
+			// Domain for cross-subdomain sharing (e.g., ".kisanlink.in")
+			// Empty string means cookies are only valid for the exact host
+			Domain: getEnvString("AAA_COOKIE_DOMAIN", ""),
 		},
 	}
 }

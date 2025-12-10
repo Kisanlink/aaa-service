@@ -17,7 +17,6 @@ var (
 // AppConfig holds application-wide configuration
 type AppConfig struct {
 	Environment string // development, staging, production
-	CORSOrigin  string // CORS origin URL for cross-origin requests
 }
 
 // GetAppConfig returns the singleton AppConfig instance
@@ -27,7 +26,6 @@ func GetAppConfig() *AppConfig {
 		_ = godotenv.Load()
 		appConfig = &AppConfig{
 			Environment: strings.ToLower(getenv("APP_ENV", "")),
-			CORSOrigin:  getenv("CORS_ORIGIN", ""),
 		}
 	})
 	return appConfig
@@ -38,10 +36,9 @@ func (c *AppConfig) IsProduction() bool {
 	return c.Environment == "production" || c.Environment == "prod" || c.Environment == "staging"
 }
 
-// IsCrossOriginDevelopment returns true if cross-origin development is enabled
-func (c *AppConfig) IsCrossOriginDevelopment() bool {
-	isDev := c.Environment == "development" || c.Environment == "dev" || c.Environment == "local" || c.Environment == ""
-	return isDev && c.CORSOrigin != ""
+// IsDevelopment returns true if running in development environment
+func (c *AppConfig) IsDevelopment() bool {
+	return c.Environment == "development" || c.Environment == "dev" || c.Environment == "local" || c.Environment == ""
 }
 
 // JWTConfig holds JWT signing and verification configuration

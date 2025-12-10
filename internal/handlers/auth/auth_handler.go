@@ -3,6 +3,7 @@ package auth
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/Kisanlink/aaa-service/v2/helper"
 	"github.com/Kisanlink/aaa-service/v2/internal/config"
@@ -44,6 +45,9 @@ func NewAuthHandler(
 // This provides secure cookie-based authentication while maintaining backward compatibility
 // with JSON response tokens for other clients
 func (h *AuthHandler) setAuthCookies(c *gin.Context, accessToken, refreshToken string) {
+	// Get cookie configuration for domain sharing
+	cookieConfig := config.LoadSecurityConfig().Cookie
+
 	// Determine if we're in a secure context (HTTPS) or cross-origin development
 	secure := isSecureContext() || isCrossOriginDevelopment()
 
@@ -65,7 +69,7 @@ func (h *AuthHandler) setAuthCookies(c *gin.Context, accessToken, refreshToken s
 		Value:    accessToken,
 		MaxAge:   3600, // 1 hour
 		Path:     path,
-		Domain:   "",
+		Domain:   cookieConfig.Domain,
 		Secure:   secure,
 		HttpOnly: true,
 		SameSite: sameSite,
@@ -77,7 +81,7 @@ func (h *AuthHandler) setAuthCookies(c *gin.Context, accessToken, refreshToken s
 		Value:    refreshToken,
 		MaxAge:   604800, // 7 days
 		Path:     path,
-		Domain:   "",
+		Domain:   cookieConfig.Domain,
 		Secure:   secure,
 		HttpOnly: true,
 		SameSite: sameSite,
@@ -86,6 +90,9 @@ func (h *AuthHandler) setAuthCookies(c *gin.Context, accessToken, refreshToken s
 
 // clearAuthCookies removes auth cookies on logout
 func (h *AuthHandler) clearAuthCookies(c *gin.Context) {
+	// Get cookie configuration for domain sharing
+	cookieConfig := config.LoadSecurityConfig().Cookie
+
 	secure := isSecureContext() || isCrossOriginDevelopment()
 	path := "/"
 
@@ -101,7 +108,7 @@ func (h *AuthHandler) clearAuthCookies(c *gin.Context) {
 		Value:    "",
 		MaxAge:   -1,
 		Path:     path,
-		Domain:   "",
+		Domain:   cookieConfig.Domain,
 		Secure:   secure,
 		HttpOnly: true,
 		SameSite: sameSite,
@@ -113,7 +120,7 @@ func (h *AuthHandler) clearAuthCookies(c *gin.Context) {
 		Value:    "",
 		MaxAge:   -1,
 		Path:     path,
-		Domain:   "",
+		Domain:   cookieConfig.Domain,
 		Secure:   secure,
 		HttpOnly: true,
 		SameSite: sameSite,
@@ -126,9 +133,27 @@ func isSecureContext() bool {
 }
 
 // isCrossOriginDevelopment checks if we're in a cross-origin development setup
-// (e.g., frontend on localhost:5173, backend on localhost:8080)
+// by examining AAA_CORS_ALLOWED_ORIGINS for non-localhost origins
 func isCrossOriginDevelopment() bool {
-	return config.GetAppConfig().IsCrossOriginDevelopment()
+	if config.GetAppConfig().IsProduction() {
+		return false
+	}
+	corsConfig := config.LoadSecurityConfig().CORS
+	// Cross-origin if credentials enabled and any non-localhost origin is configured
+	if !corsConfig.AllowCredentials {
+		return false
+	}
+	for _, origin := range corsConfig.AllowedOrigins {
+		if origin == "*" {
+			// Wildcard with credentials = cross-origin scenario
+			return true
+		}
+		// Check for non-localhost origins
+		if origin != "" && !strings.Contains(origin, "localhost") && !strings.Contains(origin, "127.0.0.1") {
+			return true
+		}
+	}
+	return false
 }
 
 // Login handles POST /api/v1/auth/login with MPIN support
@@ -432,22 +457,49 @@ func (h *AuthHandler) Register(c *gin.Context) {
 func (h *AuthHandler) RefreshToken(c *gin.Context) {
 	h.logger.Info("Processing token refresh request")
 
-	var req requests.RefreshTokenRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		h.logger.Error("Failed to bind refresh token request", zap.Error(err))
-		h.responder.SendValidationError(c, []string{err.Error()})
-		return
+	var refreshToken string
+	var mpin string
+
+	// Try cookie first (primary source for browser clients)
+	if cookie, err := c.Request.Cookie("refresh_token"); err == nil && cookie.Value != "" {
+		refreshToken = cookie.Value
+		h.logger.Debug("Using refresh token from cookie")
+
+		// MPin still required in request body
+		var req requests.RefreshTokenRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			h.logger.Error("Failed to bind refresh token request", zap.Error(err))
+			h.responder.SendValidationError(c, []string{err.Error()})
+			return
+		}
+		mpin = req.MPin
+	} else {
+		// Fall back to request body (backward compatibility for API clients)
+		var req requests.RefreshTokenRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			h.logger.Error("Failed to bind refresh token request", zap.Error(err))
+			h.responder.SendValidationError(c, []string{err.Error()})
+			return
+		}
+
+		// Validate request
+		if err := req.Validate(); err != nil {
+			h.logger.Error("Refresh token request validation failed", zap.Error(err))
+			h.responder.SendValidationError(c, []string{err.Error()})
+			return
+		}
+		refreshToken = req.RefreshToken
+		mpin = req.MPin
 	}
 
-	// Validate request
-	if err := req.Validate(); err != nil {
-		h.logger.Error("Refresh token request validation failed", zap.Error(err))
-		h.responder.SendValidationError(c, []string{err.Error()})
+	// Validate MPin
+	if mpin == "" {
+		h.responder.SendValidationError(c, []string{"mpin is required"})
 		return
 	}
 
 	// Validate refresh token and get user ID
-	userID, err := helper.ValidateToken(req.RefreshToken)
+	userID, err := helper.ValidateToken(refreshToken)
 	if err != nil {
 		h.logger.Error("Invalid refresh token", zap.Error(err))
 		h.responder.SendError(c, http.StatusUnauthorized, "Invalid refresh token", err)
@@ -455,7 +507,7 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 	}
 
 	// Verify mPin
-	err = h.userService.VerifyMPin(c.Request.Context(), userID, req.MPin)
+	err = h.userService.VerifyMPin(c.Request.Context(), userID, mpin)
 	if err != nil {
 		h.logger.Error("Failed to verify mPin", zap.Error(err))
 		h.responder.SendError(c, http.StatusUnauthorized, "Invalid mPin", err)

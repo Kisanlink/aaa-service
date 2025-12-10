@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
+	"github.com/Kisanlink/aaa-service/v2/helper"
+	"github.com/Kisanlink/aaa-service/v2/internal/config"
 	"github.com/Kisanlink/aaa-service/v2/internal/interfaces"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -44,33 +45,50 @@ func Logger(logger interfaces.Logger) gin.HandlerFunc {
 	})
 }
 
-// CORS handles Cross-Origin Resource Sharing
+// CORS handles Cross-Origin Resource Sharing using centralized config from security.go
 func CORS() gin.HandlerFunc {
+	corsConfig := config.LoadSecurityConfig().CORS
+
 	return func(c *gin.Context) {
-		// Get allowed origins from environment variable
-		allowedOrigins := os.Getenv("AAA_CORS_ALLOWED_ORIGINS")
-		if allowedOrigins == "" {
-			allowedOrigins = "*" // Default to allow all origins
+		origin := c.GetHeader("Origin")
+
+		// Determine allowed origin based on config
+		allowedOrigin := ""
+		for _, allowed := range corsConfig.AllowedOrigins {
+			if allowed == "*" {
+				// Wildcard: if credentials enabled, echo back origin; otherwise use "*"
+				if corsConfig.AllowCredentials && origin != "" {
+					allowedOrigin = origin
+				} else if !corsConfig.AllowCredentials {
+					allowedOrigin = "*"
+				}
+				break
+			}
+			if allowed == origin {
+				allowedOrigin = origin
+				break
+			}
 		}
+
+		// Set CORS headers
+		if allowedOrigin != "" {
+			c.Header("Access-Control-Allow-Origin", allowedOrigin)
+		}
+
+		if corsConfig.AllowCredentials {
+			c.Header("Access-Control-Allow-Credentials", "true")
+		}
+
+		c.Header("Access-Control-Allow-Methods", strings.Join(corsConfig.AllowedMethods, ", "))
+		c.Header("Access-Control-Allow-Headers", strings.Join(corsConfig.AllowedHeaders, ", "))
+		c.Header("Access-Control-Expose-Headers", strings.Join(corsConfig.ExposedHeaders, ", "))
+		c.Header("Access-Control-Max-Age", fmt.Sprintf("%d", corsConfig.MaxAge))
 
 		// Handle preflight requests
 		if c.Request.Method == "OPTIONS" {
-			c.Header("Access-Control-Allow-Origin", allowedOrigins)
-			c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH")
-			c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, X-Request-ID, Accept, Cache-Control, X-Requested-With")
-			c.Header("Access-Control-Expose-Headers", "Content-Length, X-Request-ID, X-Total-Count")
-			c.Header("Access-Control-Allow-Credentials", "true")
-			c.Header("Access-Control-Max-Age", "86400") // 24 hours
 			c.AbortWithStatus(http.StatusNoContent)
 			return
 		}
-
-		// Handle actual requests
-		c.Header("Access-Control-Allow-Origin", allowedOrigins)
-		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH")
-		c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, X-Request-ID, Accept, Cache-Control, X-Requested-With")
-		c.Header("Access-Control-Expose-Headers", "Content-Length, X-Request-ID, X-Total-Count")
-		c.Header("Access-Control-Allow-Credentials", "true")
 
 		c.Next()
 	}
@@ -330,21 +348,45 @@ func Timeout(timeout time.Duration) gin.HandlerFunc {
 }
 
 // Auth handles authentication middleware
+// Deprecated: Use AuthMiddleware.HTTPAuthMiddleware() instead for full JWT validation
 func Auth(authService interfaces.UserService) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Extract token from Authorization header
-		authHeader := c.GetHeader("Authorization")
-		if authHeader == "" {
+		// Extract token from cookie first, fall back to Authorization header
+		// This order prioritizes browser-based cookie auth while maintaining
+		// backward compatibility with header-based auth for API clients
+		token := ""
+
+		// Try cookie first (browser clients)
+		if ck, err := c.Request.Cookie("auth_token"); err == nil && strings.TrimSpace(ck.Value) != "" {
+			token = strings.TrimSpace(ck.Value)
+		}
+
+		// Fall back to Authorization header (API clients, service-to-service)
+		if token == "" {
+			authHeader := c.GetHeader("Authorization")
+			trimmed := strings.TrimSpace(authHeader)
+			if strings.HasPrefix(trimmed, "Bearer ") {
+				token = strings.TrimSpace(strings.TrimPrefix(trimmed, "Bearer "))
+			}
+		}
+
+		if token == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{
-				"error": "Authorization header required",
+				"error": "authentication required",
 			})
 			c.Abort()
 			return
 		}
 
 		// Validate token and extract user info
-		// This is a placeholder - implement actual token validation
-		userID := "placeholder_user_id"
+		userID, err := helper.ValidateToken(token)
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"error": "invalid token",
+			})
+			c.Abort()
+			return
+		}
 
 		// Set user info in context
 		c.Set("user_id", userID)
