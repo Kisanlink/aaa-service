@@ -44,6 +44,8 @@ func (r *UserResponse) IsSuccess() bool {
 }
 
 // FromModel converts a User model to UserResponse
+// This method is optimized for list/search operations - it does NOT populate roles.
+// For responses that need roles, use the GetUserWithRoles service method.
 func (r *UserResponse) FromModel(user *models.User) {
 	r.ID = user.ID
 	r.PhoneNumber = user.PhoneNumber
@@ -86,27 +88,8 @@ func (r *UserResponse) FromModel(user *models.User) {
 		r.Contacts = append(r.Contacts, contactResp)
 	}
 
-	// Convert roles - only include roles where the Role was successfully loaded
-	r.Roles = make([]UserRoleDetail, 0, len(user.Roles))
-	for _, userRole := range user.Roles {
-		// Skip if Role.BaseModel is nil (role wasn't preloaded or doesn't exist)
-		if userRole.Role.BaseModel == nil {
-			continue
-		}
-		r.Roles = append(r.Roles, UserRoleDetail{
-			ID:       userRole.ID,
-			UserID:   userRole.UserID,
-			RoleID:   userRole.RoleID,
-			IsActive: userRole.IsActive,
-			Role: RoleDetail{
-				ID:          userRole.Role.ID,
-				Name:        userRole.Role.Name,
-				Description: userRole.Role.Description,
-				IsActive:    userRole.Role.IsActive,
-				AssignedAt:  userRole.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
-			},
-		})
-	}
+	// Roles are NOT populated - use GetUserWithRoles service method for role details
+	r.Roles = []UserRoleDetail{}
 }
 
 // AddressResponse represents the address data in user responses

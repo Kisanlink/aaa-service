@@ -118,7 +118,7 @@ func (s *Service) SearchUsers(ctx context.Context, keyword string, limit, offset
 
 	s.logger.Info("Search completed", zap.Int("result_count", len(users)), zap.Int64("total", total))
 
-	// Convert to response format using FromModel to include roles
+	// Convert to response format (roles not included for performance)
 	userList := make([]*userResponses.UserResponse, len(users))
 	for i, user := range users {
 		userList[i] = &userResponses.UserResponse{}
@@ -163,7 +163,7 @@ func (s *Service) SearchUsersWithOrgScope(ctx context.Context, keyword string, o
 		zap.Int("result_count", len(users)),
 		zap.Int64("total", total))
 
-	// Convert to response format using FromModel to include roles
+	// Convert to response format (roles not included for performance)
 	userList := make([]*userResponses.UserResponse, len(users))
 	for i, user := range users {
 		userList[i] = &userResponses.UserResponse{}

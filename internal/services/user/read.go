@@ -41,7 +41,7 @@ func (s *Service) GetUserByID(ctx context.Context, userID string) (*userResponse
 		return nil, errors.NewNotFoundError("user not found")
 	}
 
-	// Convert to response format using FromModel to include roles
+	// Convert to response format (roles not included for performance)
 	response := &userResponses.UserResponse{}
 	response.FromModel(user)
 
@@ -89,7 +89,7 @@ func (s *Service) ListUsers(ctx context.Context, limit, offset int) (*responses.
 		}
 	}
 
-	// Convert to response format using FromModel to include roles
+	// Convert to response format (roles not included for performance)
 	userList := make([]*userResponses.UserResponse, len(activeUsers))
 	for i, user := range activeUsers {
 		userList[i] = &userResponses.UserResponse{}

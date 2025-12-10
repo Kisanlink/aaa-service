@@ -28,30 +28,27 @@ type orgScopeResult struct {
 	RoleNames       []string
 }
 
-// getOrgScope checks user's roles and organizations from DB for multi-tenant scoping
+// getOrgScope checks user's roles and organizations for multi-tenant scoping
+// Uses roles from JWT context (set by auth middleware) to avoid expensive DB lookups
 // Returns: scope result, error
 func (h *UserHandler) getOrgScope(c *gin.Context) (*orgScopeResult, error) {
 	userID := c.GetString("user_id")
 	result := &orgScopeResult{UserID: userID}
 
-	// Query DB directly for user's roles to check for super_admin
-	userWithRoles, err := h.userService.GetUserWithRoles(c.Request.Context(), userID)
-	if err != nil {
-		h.logger.Error("Failed to get user roles from DB", zap.String("user_id", userID), zap.Error(err))
-		return nil, err
-	}
-
-	// Check if user has super_admin role
-	if userWithRoles != nil {
-		for _, role := range userWithRoles.Roles {
-			result.RoleNames = append(result.RoleNames, role.Role.Name)
-			if role.Role.Name == "super_admin" {
-				result.IsSuperAdmin = true
+	// Get roles from JWT context (already extracted by auth middleware)
+	if roles, exists := c.Get("roles"); exists {
+		if roleNames, ok := roles.([]string); ok {
+			result.RoleNames = roleNames
+			for _, roleName := range roleNames {
+				if roleName == "super_admin" {
+					result.IsSuperAdmin = true
+					break
+				}
 			}
 		}
 	}
 
-	h.logger.Info("Organization scope check",
+	h.logger.Debug("Organization scope check",
 		zap.String("user_id", userID),
 		zap.Strings("roles", result.RoleNames),
 		zap.Bool("is_super_admin", result.IsSuperAdmin))
@@ -61,21 +58,30 @@ func (h *UserHandler) getOrgScope(c *gin.Context) (*orgScopeResult, error) {
 		return result, nil
 	}
 
-	// Query DB for user's organizations through group memberships
-	orgs, err := h.userService.GetUserOrganizations(c.Request.Context(), userID)
-	if err != nil {
-		h.logger.Warn("Failed to get user organizations from DB",
-			zap.String("user_id", userID),
-			zap.Error(err))
-	} else {
-		for _, org := range orgs {
-			if orgID, ok := org["id"].(string); ok && orgID != "" {
-				result.OrganizationIDs = append(result.OrganizationIDs, orgID)
+	// Get organization IDs from JWT context (already extracted by auth middleware)
+	if orgIDs, exists := c.Get("organization_ids"); exists {
+		if ids, ok := orgIDs.([]string); ok {
+			result.OrganizationIDs = ids
+		}
+	}
+
+	// If no org IDs from JWT, fall back to DB query
+	if len(result.OrganizationIDs) == 0 {
+		orgs, err := h.userService.GetUserOrganizations(c.Request.Context(), userID)
+		if err != nil {
+			h.logger.Warn("Failed to get user organizations from DB",
+				zap.String("user_id", userID),
+				zap.Error(err))
+		} else {
+			for _, org := range orgs {
+				if orgID, ok := org["id"].(string); ok && orgID != "" {
+					result.OrganizationIDs = append(result.OrganizationIDs, orgID)
+				}
 			}
 		}
 	}
 
-	h.logger.Info("Organization scope result",
+	h.logger.Debug("Organization scope result",
 		zap.String("user_id", userID),
 		zap.Int("org_count", len(result.OrganizationIDs)),
 		zap.Strings("organization_ids", result.OrganizationIDs))
