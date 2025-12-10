@@ -211,6 +211,17 @@ Parameters:
       - error
     Description: Application log level
 
+  # Cookie and CORS Configuration
+  CookieDomain:
+    Type: String
+    Default: ''
+    Description: Cookie domain for cross-subdomain sharing (e.g., .kisanlink.in). Empty for exact host only.
+
+  CorsAllowedOrigins:
+    Type: String
+    Default: '*'
+    Description: Comma-separated list of allowed CORS origins (e.g., https://app1.example.com,https://app2.example.com)
+
   # Optional Features
   EnableDynamoDB:
     Type: String
@@ -974,6 +985,12 @@ Resources:
               Value: !Ref EnableDynamoDB
             - Name: ENABLE_S3
               Value: !Ref EnableS3
+            - Name: APP_ENV
+              Value: !Ref Environment
+            - Name: AAA_COOKIE_DOMAIN
+              Value: !Ref CookieDomain
+            - Name: AAA_CORS_ALLOWED_ORIGINS
+              Value: !Ref CorsAllowedOrigins
           Secrets:
             - Name: DB_POSTGRES_USER
               ValueFrom: !Sub '${DBSecret}:username::'

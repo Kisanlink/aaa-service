@@ -75,9 +75,22 @@ jobs:
 
           ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 
+          # Get cookie and CORS config from CloudFormation stack parameters
+          COOKIE_DOMAIN=$(aws cloudformation describe-stacks \
+            --stack-name aaa-service-${ENVIRONMENT} \
+            --query 'Stacks[0].Parameters[?ParameterKey==`CookieDomain`].ParameterValue' \
+            --output text)
+
+          CORS_ORIGINS=$(aws cloudformation describe-stacks \
+            --stack-name aaa-service-${ENVIRONMENT} \
+            --query 'Stacks[0].Parameters[?ParameterKey==`CorsAllowedOrigins`].ParameterValue' \
+            --output text)
+
           echo "db_host=${DB_HOST}" >> $GITHUB_OUTPUT
           echo "redis_host=${REDIS_HOST}" >> $GITHUB_OUTPUT
           echo "account_id=${ACCOUNT_ID}" >> $GITHUB_OUTPUT
+          echo "cookie_domain=${COOKIE_DOMAIN}" >> $GITHUB_OUTPUT
+          echo "cors_origins=${CORS_ORIGINS}" >> $GITHUB_OUTPUT
 
       - name: Fill in task definition template
         id: task-def
@@ -88,6 +101,8 @@ jobs:
           DB_HOST: ${{ steps.get-infra.outputs.db_host }}
           REDIS_HOST: ${{ steps.get-infra.outputs.redis_host }}
           ACCOUNT_ID: ${{ steps.get-infra.outputs.account_id }}
+          COOKIE_DOMAIN: ${{ steps.get-infra.outputs.cookie_domain }}
+          CORS_ORIGINS: ${{ steps.get-infra.outputs.cors_origins }}
         with:
           task-definition: task-definition.json
           container-name: aaa-service
@@ -96,6 +111,9 @@ jobs:
             DB_POSTGRES_HOST=${{ env.DB_HOST }}
             REDIS_HOST=${{ env.REDIS_HOST }}
             ENVIRONMENT=${{ env.ENVIRONMENT }}
+            APP_ENV=${{ env.ENVIRONMENT }}
+            AAA_COOKIE_DOMAIN=${{ env.COOKIE_DOMAIN }}
+            AAA_CORS_ALLOWED_ORIGINS=${{ env.CORS_ORIGINS }}
 
       - name: Deploy to Amazon ECS
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1

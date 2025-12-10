@@ -99,6 +99,14 @@
         {
           "name": "CORS_ORIGIN",
           "value": "CORS_ORIGIN_URL"
+        },
+        {
+          "name": "AAA_COOKIE_DOMAIN",
+          "value": "COOKIE_DOMAIN"
+        },
+        {
+          "name": "AAA_CORS_ALLOWED_ORIGINS",
+          "value": "CORS_ALLOWED_ORIGINS"
         }
       ],
       "secrets": [

@@ -86,5 +86,13 @@
   {
     "ParameterKey": "ContainerImage",
     "ParameterValue": ""
+  },
+  {
+    "ParameterKey": "CookieDomain",
+    "ParameterValue": ".kisanlink.in"
+  },
+  {
+    "ParameterKey": "CorsAllowedOrigins",
+    "ParameterValue": "https://aaa.kisanlink.in,https://farmers.kisanlink.in,https://erp.kisanlink.in"
   }
 ]
