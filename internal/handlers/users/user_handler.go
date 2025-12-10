@@ -175,7 +175,7 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 // GetUserByID handles GET /users/:id
 //
 //	@Summary		Get user by ID
-//	@Description	Retrieve a user by their unique identifier
+//	@Description	Retrieve a user by their unique identifier with calculated roles (direct and inherited)
 //	@Tags			users
 //	@Accept			json
 //	@Produce		json
@@ -194,8 +194,8 @@ func (h *UserHandler) GetUserByID(c *gin.Context) {
 		return
 	}
 
-	// Get user through service
-	userResponse, err := h.userService.GetUserByID(c.Request.Context(), userID)
+	// Get user with roles (includes both direct and inherited roles)
+	userResponse, err := h.userService.GetUserWithRoles(c.Request.Context(), userID)
 	if err != nil {
 		h.logger.Error("Failed to get user", zap.Error(err))
 		if notFoundErr, ok := err.(*errors.NotFoundError); ok {
