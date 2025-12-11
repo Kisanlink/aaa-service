@@ -47,31 +47,53 @@ func (a *UserServiceAdapter) Update(ctx context.Context, userID string, updates 
 		return fmt.Errorf("no updates provided")
 	}
 
-	// Get existing user - this is optional, we'll try to update it but profile is the priority
+	// Check if critical user fields are being updated (is_validated, status)
+	// These fields require the user record to be loaded successfully
+	requiresUserUpdate := false
+	for field := range updates {
+		if field == "is_validated" || field == "status" {
+			requiresUserUpdate = true
+			break
+		}
+	}
+
+	// Get existing user - required for is_validated and status updates
 	// Initialize with BaseModel to allow GORM to scan into it
 	canUpdateUser := true
 	existingUser, err := a.userRepo.GetByID(ctx, userID, &models.User{
 		BaseModel: &base.BaseModel{},
 	})
 	if err != nil {
-		a.logger.Warn("Failed to get existing user for update, will skip user record update",
+		a.logger.Error("Failed to get existing user for update",
 			zap.String("user_id", userID),
 			zap.Error(err))
+		if requiresUserUpdate {
+			return fmt.Errorf("failed to load user record for critical update (is_validated/status): %w", err)
+		}
 		canUpdateUser = false
 	} else {
 		// Defensive check: ensure user was actually populated
 		// BaseModel is an embedded pointer, so we need to check if it's nil
 		if existingUser == nil {
-			a.logger.Warn("User object is nil after GetByID, will skip user record update",
+			a.logger.Error("User object is nil after GetByID",
 				zap.String("user_id", userID))
+			if requiresUserUpdate {
+				return fmt.Errorf("user record is nil for user_id %s", userID)
+			}
 			canUpdateUser = false
 		} else if existingUser.BaseModel == nil {
-			a.logger.Warn("User BaseModel is nil after GetByID, will skip user record update",
+			a.logger.Error("User BaseModel is nil after GetByID",
 				zap.String("user_id", userID))
+			if requiresUserUpdate {
+				return fmt.Errorf("user BaseModel is nil for user_id %s", userID)
+			}
 			canUpdateUser = false
 		} else if existingUser.GetID() == "" {
-			a.logger.Warn("User ID is empty after GetByID, will skip user record update",
+			a.logger.Error("User ID is empty after GetByID",
 				zap.String("user_id", userID))
+			if requiresUserUpdate {
+				return fmt.Errorf("user ID is empty after loading for user_id %s", userID)
+			}
 			canUpdateUser = false
 		} else {
 			a.logger.Info("User record loaded successfully",
@@ -115,9 +137,16 @@ func (a *UserServiceAdapter) Update(ctx context.Context, userID string, updates 
 					zap.String("user_id", userID),
 					zap.Bool("is_validated", v))
 			} else if !canUpdateUser {
-				a.logger.Warn("Skipping user field update - user record not available",
+				// This should not happen as we check requiresUserUpdate above
+				a.logger.Error("Cannot update is_validated - user record not available",
 					zap.String("field", field),
 					zap.String("user_id", userID))
+				return fmt.Errorf("cannot update is_validated: user record not available for user_id %s", userID)
+			} else if !ok {
+				a.logger.Error("Invalid value type for is_validated",
+					zap.String("user_id", userID),
+					zap.Any("value", value))
+				return fmt.Errorf("invalid value type for is_validated field")
 			}
 		case "status":
 			if v, ok := value.(string); ok && canUpdateUser {
@@ -127,9 +156,16 @@ func (a *UserServiceAdapter) Update(ctx context.Context, userID string, updates 
 					zap.String("user_id", userID),
 					zap.String("status", v))
 			} else if !canUpdateUser {
-				a.logger.Warn("Skipping user status update - user record not available",
+				// This should not happen as we check requiresUserUpdate above
+				a.logger.Error("Cannot update status - user record not available",
 					zap.String("field", field),
 					zap.String("user_id", userID))
+				return fmt.Errorf("cannot update status: user record not available for user_id %s", userID)
+			} else if !ok {
+				a.logger.Error("Invalid value type for status",
+					zap.String("user_id", userID),
+					zap.Any("value", value))
+				return fmt.Errorf("invalid value type for status field")
 			}
 		case "full_name", "name":
 			if v, ok := value.(string); ok {

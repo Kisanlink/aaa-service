@@ -293,6 +293,7 @@ func (s *Service) GetUserWithProfile(ctx context.Context, userID string) (*userR
 
 // GetUserWithRoles retrieves user with complete role information with caching
 // Includes both directly assigned roles and roles inherited from groups
+// Also includes profile, address, and contacts for complete user details
 func (s *Service) GetUserWithRoles(ctx context.Context, userID string) (*userResponses.UserResponse, error) {
 	s.logger.Info("Getting user with roles", zap.String("user_id", userID))
 
@@ -309,8 +310,8 @@ func (s *Service) GetUserWithRoles(ctx context.Context, userID string) (*userRes
 		}
 	}
 
-	// Get user from repository
-	user, err := s.userRepo.GetByID(ctx, userID, &models.User{})
+	// Get user from repository with profile, address, and contacts preloaded
+	user, err := s.userRepo.GetWithProfile(ctx, userID)
 	if err != nil {
 		s.logger.Error("Failed to get user by ID", zap.String("user_id", userID), zap.Error(err))
 		return nil, errors.NewNotFoundError("user not found")
@@ -334,18 +335,9 @@ func (s *Service) GetUserWithRoles(ctx context.Context, userID string) (*userRes
 	// Merge direct and inherited roles (direct roles take precedence)
 	allUserRoles := s.mergeDirectAndInheritedRoles(directUserRoles, inheritedRoles)
 
-	// Convert to response format with roles
-	response := &userResponses.UserResponse{
-		ID:          user.ID,
-		Username:    user.Username,
-		PhoneNumber: user.PhoneNumber,
-		CountryCode: user.CountryCode,
-		IsValidated: user.IsValidated,
-		CreatedAt:   user.CreatedAt,
-		UpdatedAt:   user.UpdatedAt,
-		Tokens:      user.Tokens,
-		HasMPin:     user.HasMPin(),
-	}
+	// Convert to response format using FromModel to include profile, address, and contacts
+	response := &userResponses.UserResponse{}
+	response.FromModel(user)
 
 	// Add roles to response - only include roles where Role was successfully loaded
 	roles := make([]userResponses.UserRoleDetail, 0, len(allUserRoles))
