@@ -204,6 +204,55 @@ message DeleteGroupResponse {
     string message = 2;
 }
 
+// GroupRole model for role assignments to groups
+message GroupRole {
+    string id = 1;
+    string group_id = 2;
+    string role_id = 3;
+    string role_name = 4;
+    string assigned_by = 5;
+    bool is_active = 6;
+    google.protobuf.Timestamp created_at = 7;
+    google.protobuf.Timestamp updated_at = 8;
+}
+
+// Assign Role to Group Request
+message AssignRoleToGroupRequest {
+    string group_id = 1;
+    string role_id = 2;
+}
+
+// Assign Role to Group Response
+message AssignRoleToGroupResponse {
+    int32 status_code = 1;
+    string message = 2;
+    GroupRole group_role = 3;
+}
+
+// Remove Role from Group Request
+message RemoveRoleFromGroupRequest {
+    string group_id = 1;
+    string role_id = 2;
+}
+
+// Remove Role from Group Response
+message RemoveRoleFromGroupResponse {
+    int32 status_code = 1;
+    string message = 2;
+}
+
+// Get Group Roles Request
+message GetGroupRolesRequest {
+    string group_id = 1;
+}
+
+// Get Group Roles Response
+message GetGroupRolesResponse {
+    int32 status_code = 1;
+    string message = 2;
+    repeated GroupRole roles = 3;
+}
+
 // Group Service
 service GroupService {
     rpc CreateGroup(CreateGroupRequest) returns (CreateGroupResponse);
@@ -220,4 +269,9 @@ service GroupService {
     // Inheritance management
     rpc LinkGroups(LinkGroupsRequest) returns (LinkGroupsResponse);
     rpc UnlinkGroups(UnlinkGroupsRequest) returns (UnlinkGroupsResponse);
+
+    // Role management for groups
+    rpc AssignRoleToGroup(AssignRoleToGroupRequest) returns (AssignRoleToGroupResponse);
+    rpc RemoveRoleFromGroup(RemoveRoleFromGroupRequest) returns (RemoveRoleFromGroupResponse);
+    rpc GetGroupRoles(GetGroupRolesRequest) returns (GetGroupRolesResponse);
 }

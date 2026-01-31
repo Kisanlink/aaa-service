@@ -220,6 +220,14 @@ func (m *AuthMiddleware) HTTPAuthzMiddleware() gin.HandlerFunc {
 			return
 		}
 
+		// Allow authenticated users to access /me/* endpoints (self-access)
+		// These endpoints use user_id from JWT context, not URL parameters
+		// Authentication is still enforced by HTTPAuthMiddleware
+		if strings.HasPrefix(c.Request.URL.Path, "/api/v1/me/") {
+			c.Next()
+			return
+		}
+
 		// Get user ID from context (set by auth middleware)
 		userID, exists := c.Get("user_id")
 		if !exists {
@@ -426,7 +434,22 @@ func (m *AuthMiddleware) authenticateService(ctx context.Context, apiKey, method
 	ctx = context.WithValue(ctx, "service_id", service.ID)
 	ctx = context.WithValue(ctx, "service_name", service.Name)
 	ctx = context.WithValue(ctx, "principal_type", "service")
-	ctx = context.WithValue(ctx, "user_id", service.ID) // Set user_id to service_id for compatibility
+	ctx = context.WithValue(ctx, "user_id", service.ID) // Default to service ID
+
+	// Also check for JWT token to identify the acting user
+	// This enables audit tracking of which user triggered the service-to-service call
+	if md, ok := metadata.FromIncomingContext(ctx); ok {
+		if authHeaders, ok := md["authorization"]; ok && len(authHeaders) > 0 {
+			token := strings.TrimPrefix(authHeaders[0], "Bearer ")
+			if claims, err := m.authService.ValidateToken(token); err == nil {
+				ctx = context.WithValue(ctx, "user_id", claims.UserID)
+				m.logger.Info("Service call with user context",
+					zap.String("service_id", service.ID),
+					zap.String("acting_user_id", claims.UserID),
+					zap.String("method", method))
+			}
+		}
+	}
 
 	m.logger.Debug("gRPC service authenticated",
 		zap.String("service_id", service.ID),

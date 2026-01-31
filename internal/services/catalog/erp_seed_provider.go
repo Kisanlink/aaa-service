@@ -7,7 +7,6 @@ import (
 )
 
 // ERPSeedProvider provides embedded seed data for ERP-module roles and permissions
-// This is an example provider that demonstrates how other services can register their own roles
 type ERPSeedProvider struct {
 	*BaseSeedProvider
 }
@@ -28,10 +27,14 @@ func (s *ERPSeedProvider) GetResources() []ResourceDefinition {
 		{Name: "product_price", Type: "erp/catalog", Description: "Product price resource"},
 		{Name: "warehouse", Type: "erp/warehouse", Description: "Warehouse resource"},
 		{Name: "inventory", Type: "erp/warehouse", Description: "Inventory resource"},
-		{Name: "batch", Type: "erp/warehouse", Description: "Inventory batch resource"},
+		// Use inventory_batch for handlers; keep batch for legacy compatibility
+		{Name: "inventory_batch", Type: "erp/warehouse", Description: "Inventory batch resource"},
+		{Name: "batch", Type: "erp/warehouse", Description: "Inventory batch resource (legacy)"},
+		{Name: "inventory_transaction", Type: "erp/warehouse", Description: "Inventory transaction resource"},
 		{Name: "grn", Type: "erp/procurement", Description: "Goods Receipt Note resource"},
 		{Name: "purchase_order", Type: "erp/procurement", Description: "Purchase order resource"},
-		{Name: "sales", Type: "erp/sales", Description: "Sales transaction resource"},
+		{Name: "sale", Type: "erp/sales", Description: "Sales transaction resource"},
+		{Name: "sale_summary", Type: "erp/sales", Description: "Sales summary resource"},
 		{Name: "return", Type: "erp/sales", Description: "Return resource"},
 		{Name: "collaborator", Type: "erp/sales", Description: "Collaborator resource"},
 		{Name: "collaborator_product", Type: "erp/sales", Description: "Collaborator-product relationship resource"},
@@ -40,7 +43,12 @@ func (s *ERPSeedProvider) GetResources() []ResourceDefinition {
 		{Name: "bank_payment", Type: "erp/finance", Description: "Bank payment resource"},
 		{Name: "refund_policy", Type: "erp/sales", Description: "Refund policy resource"},
 		{Name: "attachment", Type: "erp/common", Description: "Attachment resource"},
-		// Legacy/Additional Resources (keeping for backward compatibility)
+		{Name: "report", Type: "erp/reporting", Description: "Report resource"},
+		{Name: "category", Type: "erp/catalog", Description: "Category resource"},
+		{Name: "subcategory", Type: "erp/catalog", Description: "Subcategory resource"},
+		{Name: "settings", Type: "erp/common", Description: "Settings resource"},
+
+		// Legacy/Additional Resources
 		{Name: "invoice", Type: "erp/finance", Description: "Invoice resource"},
 		{Name: "vendor", Type: "erp/procurement", Description: "Vendor resource"},
 		{Name: "customer", Type: "erp/sales", Description: "Customer resource"},
@@ -64,12 +72,35 @@ func (s *ERPSeedProvider) GetActions() []ActionDefinition {
 		{Name: "post", Description: "Post to ledger", Category: "accounting", IsStatic: false},
 		{Name: "reconcile", Description: "Reconcile accounts", Category: "accounting", IsStatic: false},
 		{Name: "export", Description: "Export data", Category: "reporting", IsStatic: false},
+		{Name: "cancel", Description: "Cancel a resource", Category: "workflow", IsStatic: false},
 	}
 }
 
 // GetRoles returns all roles to be seeded with their permissions for ERP-module
 func (s *ERPSeedProvider) GetRoles() []RoleDefinition {
 	return []RoleDefinition{
+		{
+			Name:        "erp_customer",
+			Description: "Customer role for browsing catalog and placing orders",
+			Scope:       models.RoleScopeOrg,
+			Permissions: []string{
+				// Browse catalog
+				"product:read", "product:list",
+				"variant:read", "variant:list",
+				"product_price:read", "product_price:list",
+				"discount:read", "discount:list",
+				"tax:calculate",
+
+				// Check product availability
+				"inventory_batch:read", "inventory_batch:list",
+
+				// Order flow
+				"sale:create", "sale:read", "sale:list", "sale:cancel",
+				"invoice:read", "invoice:list",
+				"payment:read", "payment:list",
+				"return:create", "return:read", "return:list",
+			},
+		},
 		{
 			Name:        "erp_accountant",
 			Description: "Accountant role with permissions to manage ledgers and reconciliations",
@@ -97,6 +128,10 @@ func (s *ERPSeedProvider) GetRoles() []RoleDefinition {
 				"budget:approve", "budget:reject",
 				// Reporting
 				"*:export",
+				// Sales summaries
+				"sale_summary:read",
+				// Reports
+				"report:read",
 			},
 		},
 		{
@@ -108,6 +143,8 @@ func (s *ERPSeedProvider) GetRoles() []RoleDefinition {
 				"purchase_order:create", "purchase_order:read", "purchase_order:update", "purchase_order:list",
 				"grn:read", "grn:list",
 				"inventory:read", "inventory:list",
+				"inventory_batch:read", "inventory_batch:list",
+				"inventory_transaction:read",
 			},
 		},
 		{
@@ -117,7 +154,8 @@ func (s *ERPSeedProvider) GetRoles() []RoleDefinition {
 			Permissions: []string{
 				"warehouse:create", "warehouse:read", "warehouse:update", "warehouse:delete", "warehouse:list",
 				"inventory:create", "inventory:read", "inventory:update", "inventory:delete", "inventory:list",
-				"batch:create", "batch:read", "batch:update", "batch:list",
+				"inventory_batch:create", "inventory_batch:read", "inventory_batch:update", "inventory_batch:list",
+				"inventory_transaction:create", "inventory_transaction:read",
 				"grn:create", "grn:read", "grn:update", "grn:list",
 				"purchase_order:read", "purchase_order:list", "purchase_order:approve",
 			},
@@ -130,7 +168,7 @@ func (s *ERPSeedProvider) GetRoles() []RoleDefinition {
 				"customer:create", "customer:read", "customer:update", "customer:list",
 				"collaborator:create", "collaborator:read", "collaborator:update", "collaborator:delete", "collaborator:list",
 				"collaborator_product:create", "collaborator_product:read", "collaborator_product:update", "collaborator_product:delete", "collaborator_product:list",
-				"sales:create", "sales:read", "sales:update", "sales:list",
+				"sale:create", "sale:read", "sale:update", "sale:list", "sale:cancel",
 				"return:create", "return:read", "return:update", "return:delete", "return:list",
 				"invoice:create", "invoice:read", "invoice:update", "invoice:list",
 				"invoice:approve",
@@ -138,6 +176,8 @@ func (s *ERPSeedProvider) GetRoles() []RoleDefinition {
 				"bank_payment:read", "bank_payment:create", "bank_payment:list",
 				"discount:create", "discount:read", "discount:update", "discount:delete", "discount:list",
 				"refund_policy:create", "refund_policy:read", "refund_policy:update", "refund_policy:list",
+				"sale_summary:read",
+				"report:read",
 			},
 		},
 		{
@@ -150,6 +190,8 @@ func (s *ERPSeedProvider) GetRoles() []RoleDefinition {
 				"product_price:create", "product_price:read", "product_price:update", "product_price:delete", "product_price:list",
 				"tax:create", "tax:read", "tax:update", "tax:delete", "tax:list", "tax:calculate",
 				"discount:read", "discount:list",
+				"category:create", "category:read", "category:update", "category:delete", "category:list",
+				"subcategory:create", "subcategory:read", "subcategory:update", "subcategory:delete", "subcategory:list",
 			},
 		},
 		{
@@ -175,31 +217,23 @@ func (s *ERPSeedProvider) GetRoles() []RoleDefinition {
 
 // Validate validates the seed data before execution
 func (s *ERPSeedProvider) Validate(ctx context.Context) error {
-	// First validate base provider
 	if err := s.BaseSeedProvider.Validate(ctx); err != nil {
 		return err
 	}
-
-	// Validate resources
 	for _, resource := range s.GetResources() {
 		if err := ValidateResource(resource); err != nil {
 			return err
 		}
 	}
-
-	// Validate actions
 	for _, action := range s.GetActions() {
 		if err := ValidateAction(action); err != nil {
 			return err
 		}
 	}
-
-	// Validate roles
 	for _, role := range s.GetRoles() {
 		if err := ValidateRole(role); err != nil {
 			return err
 		}
 	}
-
 	return nil
 }

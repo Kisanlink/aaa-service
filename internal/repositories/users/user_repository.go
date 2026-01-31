@@ -890,6 +890,7 @@ func (r *UserRepository) GetWithActiveRoles(ctx context.Context, userID string) 
 	err = db.WithContext(ctx).
 		Preload("Roles", "is_active = ?", true).
 		Preload("Roles.Role", "is_active = ?", true).
+		Preload("Roles.Role.Permissions"). // Load permissions for JWT generation
 		Where("id = ? AND deleted_at IS NULL", userID).
 		First(user).Error
 

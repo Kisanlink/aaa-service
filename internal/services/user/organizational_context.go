@@ -69,10 +69,10 @@ func (s *Service) GetUserOrganizations(ctx context.Context, userID string) ([]ma
 	memberships, err := membershipRepo.GetByPrincipalID(ctx, userID, 1000, 0)
 	if err != nil {
 		s.logger.Error("Failed to get group memberships", zap.String("user_id", userID), zap.Error(err))
-		return []map[string]interface{}{}, nil // Return empty array on error instead of failing
+		// Continue execution to check direct roles even if group fetch fails
 	}
 
-	// Collect unique organization IDs from active memberships
+	// Collect unique organization IDs from active memberships and roles
 	orgIDMap := make(map[string]bool)
 	now := time.Now()
 
@@ -94,6 +94,27 @@ func (s *Service) GetUserOrganizations(ctx context.Context, userID string) ([]ma
 				orgIDMap[group.OrganizationID] = true
 			}
 		}
+	}
+
+	// Fetch direct user roles to find organization associations (e.g. CEO role)
+	// This ensures users with direct role assignments (not via groups) get their org context
+	if s.userRoleRepo != nil {
+		userRoles, err := s.userRoleRepo.GetActiveRolesByUserID(ctx, userID)
+		if err != nil {
+			s.logger.Error("Failed to get user roles for org context", zap.String("user_id", userID), zap.Error(err))
+		} else {
+			for _, userRole := range userRoles {
+				// Check if role is active and has an organization ID
+				// UserRole struct typically has Role populated by repository
+				if userRole.IsActive && userRole.Role.IsActive {
+					if userRole.Role.OrganizationID != nil {
+						orgIDMap[*userRole.Role.OrganizationID] = true
+					}
+				}
+			}
+		}
+	} else {
+		s.logger.Warn("UserRoleRepo not available for GetUserOrganizations", zap.String("user_id", userID))
 	}
 
 	// Fetch organization details for each unique organization ID

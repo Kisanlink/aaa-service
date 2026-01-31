@@ -169,7 +169,7 @@ func LoadSecurityConfig() *SecurityConfig {
 			AllowedHeaders: getEnvStringSlice("AAA_CORS_ALLOWED_HEADERS", []string{
 				"Origin", "Content-Type", "Content-Length", "Accept-Encoding",
 				"X-CSRF-Token", "Authorization", "X-Request-ID", "Accept",
-				"Cache-Control", "X-Requested-With",
+				"Cache-Control", "X-Requested-With", "X-Organization-ID",
 			}),
 			ExposedHeaders: getEnvStringSlice("AAA_CORS_EXPOSED_HEADERS", []string{
 				"Content-Length", "X-Request-ID", "X-Total-Count",

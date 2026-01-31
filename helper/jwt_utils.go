@@ -8,12 +8,46 @@ import (
 	jwt "github.com/golang-jwt/jwt/v4"
 )
 
-// ExtractUserIDFromToken extracts user ID from token without full validation (for middleware)
-func ExtractUserIDFromToken(tokenString string) (string, error) {
+// =============================================================================
+// SECURITY WARNING: UNVERIFIED TOKEN PARSING
+// =============================================================================
+// The following functions use ParseUnverified() which extracts claims WITHOUT
+// validating the token signature. This means:
+//
+// 1. An attacker can forge arbitrary claims
+// 2. Data returned should NEVER be used for authorization decisions
+// 3. Data returned should NEVER be trusted for security-sensitive operations
+//
+// ACCEPTABLE USE CASES:
+// - Logging/tracing (extracting user ID for logs before full validation)
+// - Token type detection (to route to correct validation logic)
+// - Pre-validation checks (before expensive operations)
+//
+// UNACCEPTABLE USE CASES:
+// - Authorization decisions
+// - Access control
+// - User identity verification
+// - Any security-critical operation
+//
+// Always use fully validated tokens (via TokenService.ValidateToken or middleware)
+// for any authorization or security decision.
+// =============================================================================
+
+// ExtractUserIDFromTokenUnsafe extracts user ID from token WITHOUT signature validation.
+//
+// SECURITY WARNING: This function does NOT verify the token signature.
+// The returned user ID should ONLY be used for:
+// - Logging and tracing purposes
+// - Pre-validation checks before full token validation
+//
+// DO NOT use this for authorization decisions. Always use validated tokens for that.
+//
+// Deprecated: Consider using ValidateToken and extracting user ID from verified claims.
+func ExtractUserIDFromTokenUnsafe(tokenString string) (string, error) {
 	// Remove Bearer prefix if present
 	tokenString = strings.TrimPrefix(tokenString, "Bearer ")
 
-	// Parse without verification for quick extraction
+	// SECURITY: ParseUnverified does NOT validate signature - claims can be forged
 	token, _, err := new(jwt.Parser).ParseUnverified(tokenString, jwt.MapClaims{})
 	if err != nil {
 		return "", err
@@ -35,11 +69,27 @@ func ExtractUserIDFromToken(tokenString string) (string, error) {
 	return "", fmt.Errorf("user ID not found in token")
 }
 
-// GetTokenType extracts token type from token without full validation
-func GetTokenType(tokenString string) (string, error) {
+// ExtractUserIDFromToken is an alias for ExtractUserIDFromTokenUnsafe.
+// Deprecated: Use ExtractUserIDFromTokenUnsafe for clarity about security implications.
+func ExtractUserIDFromToken(tokenString string) (string, error) {
+	return ExtractUserIDFromTokenUnsafe(tokenString)
+}
+
+// GetTokenTypeUnsafe extracts token type from token WITHOUT signature validation.
+//
+// SECURITY WARNING: This function does NOT verify the token signature.
+// The returned token type should ONLY be used for:
+// - Routing to the correct validation logic
+// - Logging and tracing purposes
+//
+// DO NOT use this for authorization decisions. Always use validated tokens for that.
+//
+// Deprecated: Consider using ValidateToken and extracting token type from verified claims.
+func GetTokenTypeUnsafe(tokenString string) (string, error) {
 	// Remove Bearer prefix if present
 	tokenString = strings.TrimPrefix(tokenString, "Bearer ")
 
+	// SECURITY: ParseUnverified does NOT validate signature - claims can be forged
 	token, _, err := new(jwt.Parser).ParseUnverified(tokenString, jwt.MapClaims{})
 	if err != nil {
 		return "", err
@@ -55,6 +105,12 @@ func GetTokenType(tokenString string) (string, error) {
 	}
 
 	return "access", nil // Default to access token
+}
+
+// GetTokenType is an alias for GetTokenTypeUnsafe.
+// Deprecated: Use GetTokenTypeUnsafe for clarity about security implications.
+func GetTokenType(tokenString string) (string, error) {
+	return GetTokenTypeUnsafe(tokenString)
 }
 
 // HasPermission checks if the token contains a specific permission

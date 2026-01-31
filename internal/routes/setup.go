@@ -132,6 +132,8 @@ func SetupAAA(router *gin.Engine, handlers RouteHandlers) {
 	if handlers.CatalogService != nil {
 		if catalogSvc, ok := handlers.CatalogService.(CatalogServiceInterface); ok {
 			SetupCatalogRoutes(protectedAPI, handlers.AuthMiddleware, catalogSvc, handlers.Logger)
+		} else if handlers.Logger != nil {
+			handlers.Logger.Warn("CatalogService does not implement CatalogServiceInterface - catalog routes will not be registered")
 		}
 	}
 }
@@ -194,7 +196,7 @@ func SetupAAAWithAdmin(router *gin.Engine, authService *services.AuthService, au
 }
 
 // SetupAAAWithOrganizations is an extended wrapper that includes organization and group services
-func SetupAAAWithOrganizations(router *gin.Engine, authService *services.AuthService, authzService *services.AuthorizationService, auditService *services.AuditService, authMiddleware *middleware.AuthMiddleware, adminHandler *admin.AdminHandler, roleHandler *roles.RoleHandler, permissionHandler *permissions.PermissionHandler, userService interfaces.UserService, roleService interfaces.RoleService, contactService interface{}, addressService interfaces.AddressService, organizationService interfaces.OrganizationService, groupService interfaces.GroupService, validator interfaces.Validator, responder interfaces.Responder, logger *zap.Logger) {
+func SetupAAAWithOrganizations(router *gin.Engine, authService *services.AuthService, authzService *services.AuthorizationService, auditService *services.AuditService, authMiddleware *middleware.AuthMiddleware, adminHandler *admin.AdminHandler, roleHandler *roles.RoleHandler, permissionHandler *permissions.PermissionHandler, userService interfaces.UserService, roleService interfaces.RoleService, contactService interface{}, addressService interfaces.AddressService, organizationService interfaces.OrganizationService, groupService interfaces.GroupService, catalogService interface{}, validator interfaces.Validator, responder interfaces.Responder, logger *zap.Logger) {
 	handlers := RouteHandlers{
 		AuthService:          authService,
 		AuthorizationService: authzService,
@@ -209,6 +211,7 @@ func SetupAAAWithOrganizations(router *gin.Engine, authService *services.AuthSer
 		AddressService:       addressService,
 		OrganizationService:  organizationService,
 		GroupService:         groupService,
+		CatalogService:       catalogService,
 		Validator:            validator,
 		Responder:            responder,
 		Logger:               logger,

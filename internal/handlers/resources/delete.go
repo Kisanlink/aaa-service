@@ -31,6 +31,12 @@ func (h *ResourceHandler) DeleteResource(c *gin.Context) {
 		return
 	}
 
+	// Extract user ID for audit trail
+	var deletedBy string
+	if userID, exists := c.Get("user_id"); exists {
+		deletedBy, _ = userID.(string)
+	}
+
 	// Check if cascade delete is requested
 	cascade := c.DefaultQuery("cascade", "false") == "true"
 
@@ -67,11 +73,15 @@ func (h *ResourceHandler) DeleteResource(c *gin.Context) {
 		}
 	}
 
-	// Delete resource through service
+	// Delete resource through service (soft delete with audit trail)
 	if cascade {
 		err = h.resourceService.DeleteCascade(c.Request.Context(), resourceID)
 	} else {
-		err = h.resourceService.Delete(c.Request.Context(), resourceID)
+		if deletedBy != "" {
+			err = h.resourceService.SoftDelete(c.Request.Context(), resourceID, deletedBy)
+		} else {
+			err = h.resourceService.Delete(c.Request.Context(), resourceID)
+		}
 	}
 
 	if err != nil {

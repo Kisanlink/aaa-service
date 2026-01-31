@@ -23,7 +23,15 @@ import (
 //	@Router			/api/v1/permissions/{id} [delete]
 func (h *PermissionHandler) DeletePermission(c *gin.Context) {
 	permissionID := c.Param("id")
-	h.logger.Info("Deleting permission", zap.String("permissionID", permissionID))
+
+	var deletedBy string
+	if userID, exists := c.Get("user_id"); exists {
+		deletedBy, _ = userID.(string)
+	}
+
+	h.logger.Info("Deleting permission",
+		zap.String("permissionID", permissionID),
+		zap.String("deletedBy", deletedBy))
 
 	if permissionID == "" {
 		h.responder.SendValidationError(c, []string{"permission ID is required"})

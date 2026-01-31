@@ -167,3 +167,9 @@ task-definition-*.json
 # Prevent files with special characters that can cause issues
 *'*
 vendor/
+
+# AI files
+.claude/
+
+# Fly.io
+.fly/

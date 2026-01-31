@@ -21,6 +21,13 @@ func SetupUserRoutes(
 	// Initialize handler with the provided services
 	userHandler := users.NewUserHandler(userService, roleService, validator, responder, logger)
 
+	// Self-access routes - require authentication only (no special permissions)
+	// These endpoints use the user_id from JWT context, so any authenticated user can access their own data
+	meGroup := protectedAPI.Group("/me")
+	{
+		meGroup.GET("/organizations", userHandler.GetMyOrganizations)
+	}
+
 	users := protectedAPI.Group("/users")
 	{
 		// User CRUD operations
@@ -33,6 +40,9 @@ func SetupUserRoutes(
 		// User search and validation
 		users.GET("/search", authMiddleware.RequirePermission("user", "read"), userHandler.SearchUsers)
 		users.POST("/:id/validate", authMiddleware.RequirePermission("user", "update"), userHandler.ValidateUser)
+
+		// User organizations - returns organizations the user belongs to (for multi-tenant frontends)
+		users.GET("/:id/organizations", authMiddleware.RequirePermission("user", "view"), userHandler.GetUserOrganizations)
 
 		// User role management - New bulk-style endpoints with rate limiting for sensitive operations
 		users.GET("/:id/roles", authMiddleware.RequirePermission("user", "view"), userHandler.GetUserRoles)

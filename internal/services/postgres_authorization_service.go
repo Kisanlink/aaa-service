@@ -208,7 +208,7 @@ func (s *PostgresAuthorizationService) roleHasPermission(ctx context.Context, ro
 	// Previously this checked (actions.name = ? OR permissions.name = ?) with only the action,
 	// which allowed ANY permission with that action name regardless of resource_type.
 	// This caused users with "address_read" to be able to access "attachment" resources.
-	expectedPermissionName := resourceType + "_" + action
+	expectedPermissionName := resourceType + ":" + action
 
 	err := s.db.WithContext(ctx).
 		Table("role_permissions").
@@ -227,20 +227,20 @@ func (s *PostgresAuthorizationService) roleHasPermission(ctx context.Context, ro
 // roleHasWildcardPermission checks if a role has admin/wildcard permissions
 func (s *PostgresAuthorizationService) roleHasWildcardPermission(ctx context.Context, role models.Role) bool {
 	// Check for super admin or global admin roles
-	adminRoleNames := []string{"super_admin", "admin", "system_admin"}
+	adminRoleNames := []string{"super_admin", "admin", "system_admin", "CEO"}
 	for _, adminName := range adminRoleNames {
 		if role.Name == adminName {
 			return true
 		}
 	}
 
-	// Check if role has manage or admin permissions
+	// Check if role has manage or admin permissions or the wildcard *:* permission
 	var count int64
 	s.db.WithContext(ctx).
 		Table("role_permissions").
 		Joins("JOIN permissions ON role_permissions.permission_id = permissions.id").
 		Where("role_permissions.role_id = ? AND role_permissions.is_active = ?", role.ID, true).
-		Where("permissions.name IN (?) AND permissions.is_active = ?", []string{"manage", "admin", "super_admin"}, true).
+		Where("permissions.name IN (?) AND permissions.is_active = ?", []string{"manage", "admin", "super_admin", "*:*"}, true).
 		Count(&count)
 
 	return count > 0

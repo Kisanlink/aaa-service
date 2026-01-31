@@ -543,6 +543,12 @@ func (s *Service) AddMemberToGroup(ctx context.Context, req interface{}) (interf
 		return nil, errors.NewInternalError(err)
 	}
 
+	// Invalidate group members cache so the new member appears immediately in listings
+	_ = s.groupCache.InvalidateGroupMembersCache(ctx, addMemberReq.GroupID)
+	s.logger.Debug("Invalidated group members cache after adding member",
+		zap.String("group_id", addMemberReq.GroupID),
+		zap.String("principal_id", addMemberReq.PrincipalID))
+
 	// Invalidate user's organizational cache so they see the organization immediately
 	if s.userService != nil {
 		if userSvc, ok := s.userService.(*user.Service); ok {
@@ -632,6 +638,12 @@ func (s *Service) RemoveMemberFromGroup(ctx context.Context, groupID, principalI
 
 		return errors.NewInternalError(err)
 	}
+
+	// Invalidate group members cache so the removed member disappears immediately from listings
+	_ = s.groupCache.InvalidateGroupMembersCache(ctx, groupID)
+	s.logger.Debug("Invalidated group members cache after removing member",
+		zap.String("group_id", groupID),
+		zap.String("principal_id", principalID))
 
 	// Invalidate user's organizational cache after removing from group
 	if s.userService != nil {

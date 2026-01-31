@@ -43,6 +43,7 @@ import (
 	"github.com/Kisanlink/aaa-service/v2/internal/routes"
 	"github.com/Kisanlink/aaa-service/v2/internal/services"
 	actionService "github.com/Kisanlink/aaa-service/v2/internal/services/actions"
+	"github.com/Kisanlink/aaa-service/v2/internal/services/catalog"
 	serviceAdapters "github.com/Kisanlink/aaa-service/v2/internal/services/adapters"
 	contactService "github.com/Kisanlink/aaa-service/v2/internal/services/contacts"
 	groupService "github.com/Kisanlink/aaa-service/v2/internal/services/groups"
@@ -208,6 +209,7 @@ type HTTPServer struct {
 	port                        string
 	logger                      *zap.Logger
 	organizationServiceInstance interfaces.OrganizationService
+	groupServiceInstance        interfaces.GroupService
 }
 
 func main() {
@@ -582,6 +584,9 @@ func initializeServer(
 	principalHandler := principalHandlers.NewPrincipalHandler(principalService, responder, logger)
 	kycHandler := kycHandlers.NewHandler(kycService, validator, responder, logger)
 
+	// Initialize CatalogService for seeding roles/permissions via HTTP
+	catalogService := catalog.NewCatalogService(primaryDBManager, logger)
+
 	// Initialize HTTP server
 	httpServer, err := initializeHTTPServer(
 		httpPort, jwtSecret,
@@ -589,6 +594,7 @@ func initializeServer(
 		cacheService, validator, responder, maintenanceService, logger, permissionHandler, resourceHandler, actionHandler, principalHandler, kycHandler, contactServiceInstance, addressService,
 		organizationRepository, groupRepository, groupRoleRepository, groupMembershipRepository, roleRepository,
 		serviceRepository,
+		catalogService,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize HTTP server: %w", err)
@@ -604,7 +610,7 @@ func initializeServer(
 	}
 
 	grpcServer, err := grpc_server.NewGRPCServer(
-		grpcConfig, primaryDBManager, userService, roleService,
+		grpcConfig, primaryDBManager, userService, roleService, httpServer.groupServiceInstance,
 		userRoleRepository, userRepository, cacheService, httpServer.organizationServiceInstance,
 		addressService, serviceRepository, logger, validator,
 	)
@@ -645,6 +651,7 @@ func initializeHTTPServer(
 	groupMembershipRepository *groupRepo.GroupMembershipRepository,
 	roleRepository *roleRepo.RoleRepository,
 	serviceRepository interfaces.ServiceRepository,
+	catalogService *catalog.CatalogService,
 ) (*HTTPServer, error) {
 	// Build auth, authorization, and audit stack
 	auditService, authzService, authService, authMiddleware, auditMiddleware, err := setupAuthStack(
@@ -715,13 +722,14 @@ func initializeHTTPServer(
 	setupHTTPMiddleware(router, authMiddleware, auditMiddleware, maintenanceService, responder, logger)
 
 	// Setup routes and docs
-	setupRoutesAndDocs(router, authService, authzService, auditService, authMiddleware, maintenanceService, validator, responder, logger, roleHandler, permissionHandler, resourceHandler, actionHandler, principalHandler, kycHandler, userService, roleService, contactServiceInstance, addressService, organizationServiceInstance, groupServiceInstance)
+	setupRoutesAndDocs(router, authService, authzService, auditService, authMiddleware, maintenanceService, validator, responder, logger, roleHandler, permissionHandler, resourceHandler, actionHandler, principalHandler, kycHandler, userService, roleService, contactServiceInstance, addressService, organizationServiceInstance, groupServiceInstance, catalogService)
 
 	return &HTTPServer{
 		router:                      router,
 		port:                        port,
 		logger:                      logger,
 		organizationServiceInstance: organizationServiceInstance,
+		groupServiceInstance:        groupServiceInstance,
 	}, nil
 }
 
@@ -844,6 +852,7 @@ func setupRoutesAndDocs(
 	addressService interfaces.AddressService,
 	organizationServiceInstance interfaces.OrganizationService,
 	groupServiceInstance interfaces.GroupService,
+	catalogService *catalog.CatalogService,
 ) {
 	// Create AdminHandler for v2 admin routes
 	adminHandler := admin.NewAdminHandler(maintenanceService, validator, responder, logger)
@@ -864,6 +873,7 @@ func setupRoutesAndDocs(
 		addressService,
 		organizationServiceInstance,
 		groupServiceInstance,
+		catalogService,
 		validator,
 		responder,
 		logger,

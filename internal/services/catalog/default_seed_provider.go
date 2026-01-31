@@ -76,18 +76,10 @@ func (s *DefaultSeedProvider) GetRoles() []RoleDefinition {
 		},
 		{
 			Name:        "CEO",
-			Description: "CEO role with full FPO management and all kisansathi permissions",
+			Description: "CEO role with full management access across all modules",
 			Scope:       models.RoleScopeGlobal,
 			Permissions: []string{
-				// All kisansathi permissions
-				"farmer:create", "farmer:read", "farmer:update", "farmer:list", "farmer:manage",
-				"farm:create", "farm:read", "farm:update", "farm:delete", "farm:list",
-				"cycle:create", "cycle:read", "cycle:update", "cycle:end", "cycle:list",
-				"activity:create", "activity:update", "activity:delete",
-				// FPO management permissions
-				"fpo:create", "fpo:read", "fpo:update", "fpo:manage",
-				// Kisansathi management
-				"kisansathi:assign", "kisansathi:manage",
+				"*:*", // Full wildcard access (scoped to organization by middleware)
 			},
 		},
 		{

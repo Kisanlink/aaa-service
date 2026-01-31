@@ -192,9 +192,14 @@ func (s *AddressService) UpdateAddress(ctx context.Context, address *models.Addr
 func (s *AddressService) DeleteAddress(ctx context.Context, addressID string) error {
 	s.logger.Info("Deleting address")
 
-	// Delete address
-	address := &models.Address{}
-	if err := s.addressRepo.Delete(ctx, addressID, address); err != nil {
+	// Extract user ID for audit trail
+	deletedBy := "system"
+	if ctxUserID, ok := ctx.Value("user_id").(string); ok && ctxUserID != "" {
+		deletedBy = ctxUserID
+	}
+
+	// Soft delete address with audit trail
+	if err := s.addressRepo.SoftDelete(ctx, addressID, deletedBy); err != nil {
 		s.logger.Error("Failed to delete address")
 		return fmt.Errorf("failed to delete address: %w", err)
 	}

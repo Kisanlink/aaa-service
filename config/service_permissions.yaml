@@ -41,16 +41,17 @@ service_authorization:
         - "catalog:register_action"
 
     # Example: ERP Module (currently disabled, uncomment to enable)
-    # erp-module:
-    #   service_id: "erp-module"
-    #   display_name: "ERP Module Service"
-    #   description: "Enterprise Resource Planning module"
-    #   api_key_required: true
-    #   permissions:
-    #     - "catalog:seed_roles"
-    #     - "catalog:seed_permissions"
-    #     - "catalog:register_resource"
-    #     - "catalog:register_action"
+    erp-module:
+    
+      service_id: "erp-module"
+      display_name: "ERP Module Service"
+      description: "Enterprise Resource Planning module"
+      api_key_required: false
+      permissions:
+        - "catalog:seed_roles"
+        - "catalog:seed_permissions"
+        - "catalog:register_resource"
+        - "catalog:register_action"
 
     # Example: Reporting Service with wildcard permissions
     # reporting-service:

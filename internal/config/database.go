@@ -9,6 +9,7 @@ import (
 	"github.com/Kisanlink/aaa-service/v2/internal/entities/models"
 	"github.com/Kisanlink/kisanlink-db/pkg/db"
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 )
 
 // DatabaseConfig holds database configuration
@@ -171,6 +172,32 @@ func runAutomigration(dm *db.DatabaseManager, logger *zap.Logger) error {
 	if err := primaryManager.AutoMigrateModels(context.Background(), allModels...); err != nil {
 		logger.Error("Automigration failed", zap.Error(err))
 		return fmt.Errorf("automigration failed: %w", err)
+	}
+
+	// After AutoMigrate, modify column types if needed using GORM Migrator
+	// This handles cases where column sizes need to be updated (e.g., username VARCHAR(10) -> VARCHAR(100))
+	if postgresMgr, ok := primaryManager.(interface {
+		GetDB(context.Context, bool) (*gorm.DB, error)
+	}); ok {
+		ctx := context.Background()
+		gormDB, err := postgresMgr.GetDB(ctx, false)
+		if err != nil {
+			logger.Warn("Could not get GORM DB instance for column modifications", zap.Error(err))
+		} else {
+			migrator := gormDB.Migrator()
+
+			// Modify username column size from VARCHAR(10) to VARCHAR(100) if it exists
+			if migrator.HasColumn(&models.User{}, "username") {
+				if err := migrator.AlterColumn(&models.User{}, "username"); err != nil {
+					logger.Warn("Failed to alter username column", zap.Error(err))
+					// Don't fail the entire migration if this fails - it might already be the correct size
+				} else {
+					logger.Info("Successfully modified username column size to match model definition")
+				}
+			}
+		}
+	} else {
+		logger.Warn("Database manager does not support GetDB method, skipping column modifications")
 	}
 
 	logger.Info("Automigration completed successfully")

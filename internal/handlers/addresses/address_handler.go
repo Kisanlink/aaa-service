@@ -181,7 +181,15 @@ func (h *AddressHandler) UpdateAddress(c *gin.Context) {
 //	@Router			/api/v1/addresses/{id} [delete]
 func (h *AddressHandler) DeleteAddress(c *gin.Context) {
 	addressID := c.Param("id")
-	h.logger.Info("Deleting address", zap.String("addressID", addressID))
+
+	var deletedBy string
+	if userID, exists := c.Get("user_id"); exists {
+		deletedBy, _ = userID.(string)
+	}
+
+	h.logger.Info("Deleting address",
+		zap.String("addressID", addressID),
+		zap.String("deletedBy", deletedBy))
 
 	if addressID == "" {
 		h.responder.SendValidationError(c, []string{"address ID is required"})

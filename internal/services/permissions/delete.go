@@ -37,8 +37,14 @@ func (s *Service) DeletePermission(ctx context.Context, id string) error {
 		return fmt.Errorf("cannot delete permission that is assigned to %d role(s). Revoke all assignments first", count)
 	}
 
+	// Extract user ID for audit trail
+	deletedBy := "system"
+	if ctxUserID, ok := ctx.Value("user_id").(string); ok && ctxUserID != "" {
+		deletedBy = ctxUserID
+	}
+
 	// Perform soft delete
-	if err := s.permissionRepo.SoftDelete(ctx, id, "system"); err != nil {
+	if err := s.permissionRepo.SoftDelete(ctx, id, deletedBy); err != nil {
 		s.logger.Error("Failed to delete permission",
 			zap.String("id", id),
 			zap.Error(err))
@@ -101,8 +107,14 @@ func (s *Service) DeletePermissionWithCascade(ctx context.Context, id string) er
 		}
 	}
 
+	// Extract user ID for audit trail
+	cascadeDeletedBy := "system"
+	if ctxUserID, ok := ctx.Value("user_id").(string); ok && ctxUserID != "" {
+		cascadeDeletedBy = ctxUserID
+	}
+
 	// Delete the permission
-	if err := s.permissionRepo.SoftDelete(ctx, id, "system"); err != nil {
+	if err := s.permissionRepo.SoftDelete(ctx, id, cascadeDeletedBy); err != nil {
 		s.logger.Error("Failed to delete permission",
 			zap.String("id", id),
 			zap.Error(err))

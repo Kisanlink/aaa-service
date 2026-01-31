@@ -177,6 +177,7 @@ func (r *UserRoleRepository) GetActiveRolesByUserID(ctx context.Context, userID 
 	var userRoles []models.UserRole
 	err = db.WithContext(ctx).
 		Preload("Role", "is_active = ? AND deleted_at IS NULL", true).
+		Preload("Role.Permissions").
 		Where("user_id = ? AND is_active = ? AND deleted_at IS NULL", userID, true).
 		Find(&userRoles).Error
 

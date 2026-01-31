@@ -809,3 +809,96 @@ func (h *UserHandler) RemoveRoleFromUser(c *gin.Context) {
 		"role_id": roleID,
 	})
 }
+
+// GetUserOrganizations handles GET /users/:id/organizations
+//
+//	@Summary		Get user organizations
+//	@Description	Get all organizations the user belongs to (from groups and direct role assignments)
+//	@Tags			users
+//	@Accept			json
+//	@Produce		json
+//	@Param			id	path		string	true	"User ID"
+//	@Success		200	{object}	map[string]interface{}
+//	@Failure		400	{object}	responses.ErrorResponse
+//	@Failure		404	{object}	responses.ErrorResponse
+//	@Failure		500	{object}	responses.ErrorResponse
+//	@Router			/api/v1/users/{id}/organizations [get]
+func (h *UserHandler) GetUserOrganizations(c *gin.Context) {
+	userID := c.Param("id")
+	h.logger.Info("Getting user organizations", zap.String("userID", userID))
+
+	if userID == "" {
+		h.responder.SendValidationError(c, []string{"user ID is required"})
+		return
+	}
+
+	// Get user organizations through service
+	// This method returns organizations from groups + direct role assignments
+	organizations, err := h.userService.GetUserOrganizations(c.Request.Context(), userID)
+	if err != nil {
+		h.logger.Error("Failed to get user organizations", zap.Error(err))
+		if notFoundErr, ok := err.(*errors.NotFoundError); ok {
+			h.responder.SendError(c, http.StatusNotFound, notFoundErr.Error(), notFoundErr)
+			return
+		}
+		h.responder.SendInternalError(c, err)
+		return
+	}
+
+	h.logger.Info("User organizations retrieved successfully",
+		zap.String("userID", userID),
+		zap.Int("orgCount", len(organizations)))
+
+	h.responder.SendSuccess(c, http.StatusOK, map[string]interface{}{
+		"organizations": organizations,
+	})
+}
+
+// GetMyOrganizations handles GET /me/organizations
+//
+//	@Summary		Get current user's organizations
+//	@Description	Get all organizations the authenticated user belongs to (no special permission required)
+//	@Tags			users
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{object}	map[string]interface{}
+//	@Failure		401	{object}	responses.ErrorResponse
+//	@Failure		500	{object}	responses.ErrorResponse
+//	@Router			/api/v1/me/organizations [get]
+func (h *UserHandler) GetMyOrganizations(c *gin.Context) {
+	// Get user_id from JWT context (set by auth middleware)
+	userID, exists := c.Get("user_id")
+	if !exists {
+		h.responder.SendError(c, http.StatusUnauthorized, "User not authenticated", nil)
+		return
+	}
+
+	userIDStr, ok := userID.(string)
+	if !ok || userIDStr == "" {
+		h.logger.Error("Invalid user ID type in context")
+		h.responder.SendError(c, http.StatusUnauthorized, "Invalid user authentication", nil)
+		return
+	}
+
+	h.logger.Info("Getting organizations for authenticated user", zap.String("userID", userIDStr))
+
+	// Get user organizations through service
+	organizations, err := h.userService.GetUserOrganizations(c.Request.Context(), userIDStr)
+	if err != nil {
+		h.logger.Error("Failed to get user organizations", zap.Error(err))
+		if notFoundErr, ok := err.(*errors.NotFoundError); ok {
+			h.responder.SendError(c, http.StatusNotFound, notFoundErr.Error(), notFoundErr)
+			return
+		}
+		h.responder.SendInternalError(c, err)
+		return
+	}
+
+	h.logger.Info("User organizations retrieved successfully",
+		zap.String("userID", userIDStr),
+		zap.Int("orgCount", len(organizations)))
+
+	h.responder.SendSuccess(c, http.StatusOK, map[string]interface{}{
+		"organizations": organizations,
+	})
+}

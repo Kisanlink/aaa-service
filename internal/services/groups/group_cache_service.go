@@ -460,6 +460,54 @@ func (c *GroupCacheService) InvalidateGroupCache(ctx context.Context, groupID st
 	return nil
 }
 
+// InvalidateGroupMembersCache invalidates all group members cache entries for a group
+// This handles both fixed patterns and paginated cache keys used by GetGroupMembers
+func (c *GroupCacheService) InvalidateGroupMembersCache(ctx context.Context, groupID string) error {
+	// Invalidate fixed pattern keys
+	fixedPatterns := []string{
+		fmt.Sprintf(GroupMembersPattern, groupID),
+		fmt.Sprintf(GroupActiveMembersPattern, groupID),
+		fmt.Sprintf(GroupMemberDetailsPattern, groupID),
+	}
+
+	deletedCount := 0
+	for _, pattern := range fixedPatterns {
+		if err := c.cache.Delete(pattern); err == nil {
+			deletedCount++
+		}
+	}
+
+	// Invalidate paginated cache keys
+	// GetGroupMembers uses cache keys like: "group:{groupID}_{limit}_{offset}:active_members"
+	// We need to find and delete all keys that match the group ID pattern
+	paginatedPattern := fmt.Sprintf("group:%s_*:active_members", groupID)
+	keys, err := c.cache.Keys(paginatedPattern)
+	if err == nil {
+		for _, key := range keys {
+			if err := c.cache.Delete(key); err == nil {
+				deletedCount++
+			}
+		}
+	}
+
+	// Also try the non-active pattern
+	paginatedPatternAll := fmt.Sprintf("group:%s_*:members", groupID)
+	keysAll, err := c.cache.Keys(paginatedPatternAll)
+	if err == nil {
+		for _, key := range keysAll {
+			if err := c.cache.Delete(key); err == nil {
+				deletedCount++
+			}
+		}
+	}
+
+	c.logger.Debug("Invalidated group members cache",
+		zap.String("group_id", groupID),
+		zap.Int("deleted_keys", deletedCount))
+
+	return nil
+}
+
 // InvalidateUserEffectiveRolesCache invalidates effective roles cache for a user
 func (c *GroupCacheService) InvalidateUserEffectiveRolesCache(ctx context.Context, orgID, userID string) error {
 	patterns := []string{

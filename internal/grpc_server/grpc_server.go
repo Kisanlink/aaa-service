@@ -30,6 +30,7 @@ type GRPCServer struct {
 	auditService        *services.AuditService
 	userService         interfaces.UserService
 	roleService         interfaces.RoleService
+	groupService        interfaces.GroupService
 	cacheService        interfaces.CacheService
 	userRepository      interfaces.UserRepository
 	organizationService interfaces.OrganizationService
@@ -58,6 +59,7 @@ func NewGRPCServer(
 	dbManager db.DBManager,
 	userService interfaces.UserService,
 	roleService interfaces.RoleService,
+	groupService interfaces.GroupService,
 	userRoleRepository interfaces.UserRoleRepository,
 	userRepository interfaces.UserRepository,
 	cacheService interfaces.CacheService,
@@ -134,6 +136,7 @@ func NewGRPCServer(
 		auditService:        auditService,
 		userService:         userService,
 		roleService:         roleService,
+		groupService:        groupService,
 		cacheService:        cacheService,
 		userRepository:      userRepository,
 		organizationService: organizationService,
@@ -258,9 +261,19 @@ func (s *GRPCServer) registerServices() {
 	roleHandler := NewRoleHandler(s.roleService, s.logger)
 	pb.RegisterRoleServiceServer(s.server, roleHandler)
 
+	// Register GroupService for group management
+	// This enables gRPC clients (like farmers-module) to manage groups
+	if s.groupService != nil {
+		groupHandler := NewGroupHandler(s.groupService, s.logger)
+		pb.RegisterGroupServiceServer(s.server, groupHandler)
+		s.logger.Info("GroupService registered for gRPC")
+	} else {
+		s.logger.Warn("GroupService not available - group gRPC endpoints will not be registered")
+	}
+
 	s.logger.Info("gRPC services registered successfully",
 		zap.String("primary_service", "AAAService"),
-		zap.Strings("services", []string{"UserServiceV2", "AuthorizationService", "TokenService", "OrganizationService", "CatalogService", "AddressService", "AddressServiceV2", "RoleService"}))
+		zap.Strings("services", []string{"UserServiceV2", "AuthorizationService", "TokenService", "OrganizationService", "CatalogService", "AddressService", "AddressServiceV2", "RoleService", "GroupService"}))
 }
 
 // loggingInterceptor logs gRPC requests

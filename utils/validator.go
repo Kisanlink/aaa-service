@@ -506,6 +506,11 @@ func validateUserID(fl v10.FieldLevel) bool {
 		return true // Allow empty values (omitempty should handle this)
 	}
 
+	// Allow "system" for service-to-service calls
+	if userID == "system" {
+		return true
+	}
+
 	// User ID must be in format: USER followed by exactly 8 digits
 	// Example: USER00000001, USER00000002, etc.
 	userIDRegex := regexp.MustCompile(`^USER\d{8}$`)
