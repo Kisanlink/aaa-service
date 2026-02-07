@@ -3,6 +3,7 @@ package migrations
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/Kisanlink/aaa-service/v2/internal/entities/models"
 	"github.com/Kisanlink/kisanlink-db/pkg/base"
@@ -245,11 +246,19 @@ func seedAdminAndSuperAdminPermissions(ctx context.Context, db *gorm.DB, logger 
 		return user, nil
 	}
 
-	superAdminUser, err := createUserIfMissing("superadmin", "9999999999", "+91", "SuperAdmin@123")
+	saPhone := os.Getenv("SEED_SUPERADMIN_PHONE")
+	saPass := os.Getenv("SEED_SUPERADMIN_PASSWORD")
+	adPhone := os.Getenv("SEED_ADMIN_PHONE")
+	adPass := os.Getenv("SEED_ADMIN_PASSWORD")
+	if saPhone == "" || saPass == "" || adPhone == "" || adPass == "" {
+		return fmt.Errorf("seed admin credentials not configured: set SEED_SUPERADMIN_PHONE, SEED_SUPERADMIN_PASSWORD, SEED_ADMIN_PHONE, SEED_ADMIN_PASSWORD env vars")
+	}
+
+	superAdminUser, err := createUserIfMissing("superadmin", saPhone, "+91", saPass)
 	if err != nil {
 		return err
 	}
-	adminUser, err := createUserIfMissing("admin", "8888888888", "+91", "Admin@123")
+	adminUser, err := createUserIfMissing("admin", adPhone, "+91", adPass)
 	if err != nil {
 		return err
 	}
@@ -767,11 +776,19 @@ func seedAdminAndSuperAdminPermissionsDM(ctx context.Context, primary db.DBManag
 		return user, nil
 	}
 
-	su, err := createUserIfMissing("superadmin", "9999999999", "+91", "SuperAdmin@123")
+	saPhone := os.Getenv("SEED_SUPERADMIN_PHONE")
+	saPass := os.Getenv("SEED_SUPERADMIN_PASSWORD")
+	adPhone := os.Getenv("SEED_ADMIN_PHONE")
+	adPass := os.Getenv("SEED_ADMIN_PASSWORD")
+	if saPhone == "" || saPass == "" || adPhone == "" || adPass == "" {
+		return fmt.Errorf("seed admin credentials not configured: set SEED_SUPERADMIN_PHONE, SEED_SUPERADMIN_PASSWORD, SEED_ADMIN_PHONE, SEED_ADMIN_PASSWORD env vars")
+	}
+
+	su, err := createUserIfMissing("superadmin", saPhone, "+91", saPass)
 	if err != nil {
 		return err
 	}
-	ad, err := createUserIfMissing("admin", "8888888888", "+91", "Admin@123")
+	ad, err := createUserIfMissing("admin", adPhone, "+91", adPass)
 	if err != nil {
 		return err
 	}
