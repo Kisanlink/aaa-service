@@ -1,0 +1,259 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Kisanlink ERP Stack for a single FPO - reusable for onboarding
+
+Parameters:
+  EnvironmentName:
+    Type: String
+    Default: beta
+    Description: Must match the infrastructure stack environment
+
+  FPOId:
+    Type: String
+    Description: FPO identifier (e.g., fpo001, fpo002)
+    AllowedPattern: ^fpo[0-9]{3}$
+    ConstraintDescription: Must be in format fpoXXX (e.g., fpo001)
+
+  DBPassword:
+    Type: String
+    NoEcho: true
+    MinLength: 8
+    Description: Password for this FPO's RDS database (used to create RDS instance)
+
+  # Existing Secret ARN for ERP Database
+  ERPDBSecretArn:
+    Type: String
+    Description: ARN of existing Secrets Manager secret for this FPO's database credentials (e.g., arn:aws:secretsmanager:ap-south-1:859086474730:secret:erp-fpo001/db-xxxxxx)
+
+  DomainSuffix:
+    Type: String
+    Default: beta.kisanlink.in
+    Description: Domain suffix for services
+
+  ListenerRulePriority:
+    Type: Number
+    Default: 100
+    MinValue: 100
+    MaxValue: 50000
+    Description: ALB listener rule priority (use 100, 101, 102... for each FPO)
+
+Resources:
+  # ===========================================
+  # RDS Instance for this FPO
+  # ===========================================
+  ERPRDSInstance:
+    Type: AWS::RDS::DBInstance
+    DeletionPolicy: Snapshot
+    UpdateReplacePolicy: Snapshot
+    Properties:
+      DBInstanceIdentifier: !Sub erp-${FPOId}-shared-${EnvironmentName}-db
+      DBName: kisanlink_erp
+      Engine: postgres
+      EngineVersion: '16.4'
+      DBInstanceClass: db.t4g.micro
+      AllocatedStorage: 20
+      MaxAllocatedStorage: 100
+      StorageType: gp3
+      StorageEncrypted: true
+      MasterUsername: postgres
+      MasterUserPassword: !Ref DBPassword
+      VPCSecurityGroups:
+        - Fn::ImportValue: !Sub kisanlink-${EnvironmentName}-ERPRDSSecurityGroup
+      DBSubnetGroupName:
+        Fn::ImportValue: !Sub kisanlink-${EnvironmentName}-DBSubnetGroup
+      BackupRetentionPeriod: 3
+      MultiAZ: false
+      PubliclyAccessible: false
+      DeletionProtection: false
+      Tags:
+        - Key: Name
+          Value: !Sub erp-${FPOId}-shared-${EnvironmentName}-db
+        - Key: FPOId
+          Value: !Ref FPOId
+
+  # ===========================================
+  # Secrets Manager - REMOVED
+  # ===========================================
+  # NOTE: This template uses an EXISTING secret instead of creating a new one.
+  # The ERPDBSecretArn parameter must point to an existing secret in Secrets Manager.
+  #
+  # IMPORTANT: After stack creation, you may need to update the existing secret
+  # with the new RDS endpoint address from ERPRDSInstance.
+
+  # ===========================================
+  # CloudWatch Log Group
+  # ===========================================
+  ERPLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /ecs/kisanlink-${EnvironmentName}/erp-${FPOId}
+      RetentionInDays: 7
+
+  # ===========================================
+  # Target Group
+  # ===========================================
+  ERPTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub kisanlink-${EnvironmentName}-erp-${FPOId}-tg
+      Port: 8080
+      Protocol: HTTP
+      TargetType: ip
+      VpcId:
+        Fn::ImportValue: !Sub kisanlink-${EnvironmentName}-VPC
+      HealthCheckEnabled: true
+      HealthCheckPath: /health
+      HealthCheckIntervalSeconds: 30
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 3
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: '30'
+
+  # ===========================================
+  # ALB Listener Rule
+  # ===========================================
+  ERPListenerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      ListenerArn:
+        Fn::ImportValue: !Sub kisanlink-${EnvironmentName}-HTTPSListener
+      Priority: !Ref ListenerRulePriority
+      Conditions:
+        - Field: host-header
+          HostHeaderConfig:
+            Values:
+              - !Sub erp-${FPOId}.${DomainSuffix}
+      Actions:
+        - Type: forward
+          TargetGroupArn: !Ref ERPTargetGroup
+
+  # ===========================================
+  # ECS Task Definition
+  # ===========================================
+  ERPTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: !Sub erp-${FPOId}-shared-${EnvironmentName}
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      Cpu: '512'
+      Memory: '1024'
+      ExecutionRoleArn:
+        Fn::ImportValue: !Sub kisanlink-${EnvironmentName}-ECSTaskExecutionRole
+      TaskRoleArn:
+        Fn::ImportValue: !Sub kisanlink-${EnvironmentName}-ERPTaskRole
+      ContainerDefinitions:
+        - Name: erp-container
+          Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/fpo-erp:latest
+          Essential: true
+          PortMappings:
+            - ContainerPort: 8080
+              Protocol: tcp
+          Environment:
+            - Name: SERVER_MODE
+              Value: release
+            - Name: SERVER_HTTP_PORT
+              Value: '8080'
+            - Name: DB_POSTGRES_PORT
+              Value: '5432'
+            - Name: DB_POSTGRES_SSLMODE
+              Value: require
+            - Name: DB_POSTGRES_DBNAME
+              Value: kisanlink_erp
+            - Name: DB_AUTO_MIGRATE
+              Value: 'true'
+            - Name: POSTGRES_MAX_OPEN_CONNS
+              Value: '10'
+            - Name: POSTGRES_MAX_IDLE_CONNS
+              Value: '5'
+            - Name: AAA_ENABLED
+              Value: 'true'
+            - Name: AAA_GRPC_ADDRESS
+              Value: !Sub aaa.kisanlink-${EnvironmentName}.local:50051
+            - Name: AAA_GRPC_USE_TLS
+              Value: 'false'
+            - Name: AAA_TIMEOUT_SECONDS
+              Value: '30'
+            - Name: AWS_REGION
+              Value: !Ref AWS::Region
+            - Name: AWS_S3_BUCKET
+              Value: !Sub kisanlink-erp-attachments-${EnvironmentName}
+            - Name: CORS_ALLOWED_ORIGINS
+              Value: !Sub https://*.${DomainSuffix}
+          Secrets:
+            - Name: DB_POSTGRES_HOST
+              ValueFrom: !Sub ${ERPDBSecretArn}:host::
+            - Name: DB_POSTGRES_USER
+              ValueFrom: !Sub ${ERPDBSecretArn}:username::
+            - Name: DB_POSTGRES_PASSWORD
+              ValueFrom: !Sub ${ERPDBSecretArn}:password::
+            # JWT secret — shared with AAA (single source of truth)
+            - Name: JWT_SECRET
+              ValueFrom: !Sub
+                - ${JWTSecretArn}:AAA_JWT_SECRET::
+                - JWTSecretArn:
+                    Fn::ImportValue: !Sub kisanlink-${EnvironmentName}-AAAJWTSecret
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref ERPLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: ecs
+          HealthCheck:
+            Command:
+              - CMD-SHELL
+              - curl -f http://localhost:8080/health || exit 1
+            Interval: 30
+            Timeout: 5
+            Retries: 3
+            StartPeriod: 60
+
+  # ===========================================
+  # ECS Service
+  # ===========================================
+  ERPService:
+    Type: AWS::ECS::Service
+    DependsOn:
+      - ERPListenerRule
+    Properties:
+      ServiceName: !Sub erp-${FPOId}-shared-${EnvironmentName}
+      Cluster:
+        Fn::ImportValue: !Sub kisanlink-${EnvironmentName}-ECSCluster
+      TaskDefinition: !Ref ERPTaskDefinition
+      DesiredCount: 1
+      LaunchType: FARGATE
+      PlatformVersion: LATEST
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          SecurityGroups:
+            - Fn::ImportValue: !Sub kisanlink-${EnvironmentName}-ERPSecurityGroup
+          Subnets:
+            - Fn::ImportValue: !Sub kisanlink-${EnvironmentName}-PrivateSubnet1
+            - Fn::ImportValue: !Sub kisanlink-${EnvironmentName}-PrivateSubnet2
+      LoadBalancers:
+        - ContainerName: erp-container
+          ContainerPort: 8080
+          TargetGroupArn: !Ref ERPTargetGroup
+      HealthCheckGracePeriodSeconds: 120
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 100
+        DeploymentCircuitBreaker:
+          Enable: true
+          Rollback: true
+
+Outputs:
+  ERPServiceEndpoint:
+    Description: ERP Service URL for this FPO
+    Value: !Sub https://erp-${FPOId}.${DomainSuffix}
+
+  ERPRDSEndpoint:
+    Description: RDS Endpoint for this FPO
+    Value: !GetAtt ERPRDSInstance.Endpoint.Address
+
+  ERPServiceName:
+    Description: ECS Service Name
+    Value: !Ref ERPService

@@ -1,49 +1,60 @@
 version: 0.2
 
+# AWS CodeBuild specification for AAA Service
+# Builds Docker image, pushes to ECR, and generates imagedefinitions.json for ECS
+
+env:
+  variables:
+    SERVICE_NAME: "aaa-service"
+
 phases:
   pre_build:
     commands:
-      - echo Logging in to Amazon ECR...
+      - echo "Pre-build phase started on $(date)"
+      - echo "Logging in to Amazon ECR..."
       - aws --version
-      - REPOSITORY_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME
+      - REPOSITORY_URI=${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${IMAGE_REPO_NAME}
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $REPOSITORY_URI
       - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
       - IMAGE_TAG=${COMMIT_HASH:=latest}
-      - echo Image tag is $IMAGE_TAG
+      - echo "Repository URI = ${REPOSITORY_URI}"
+      - echo "Image tag = ${IMAGE_TAG}"
 
   build:
     commands:
-      - echo Build started on `date`
-      - echo Building the Docker image...
-      - docker build -t $REPOSITORY_URI:latest .
-      - docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$IMAGE_TAG
+      - echo "Build phase started on $(date)"
+      - echo "Building Docker image..."
+      - |
+        docker build \
+          --platform linux/amd64 \
+          -t ${REPOSITORY_URI}:latest \
+          -t ${REPOSITORY_URI}:${IMAGE_TAG} \
+          -f Dockerfile \
+          .
+      - echo "Docker image built successfully"
+      - docker images
 
   post_build:
     commands:
-      - echo Build completed on `date`
-      - echo Pushing the Docker images...
-      - docker push $REPOSITORY_URI:latest
-      - docker push $REPOSITORY_URI:$IMAGE_TAG
-      - echo Writing image definitions file...
-      - printf '[{"name":"aaa-service","imageUri":"%s"}]' $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
-      - echo Writing task definition file...
+      - echo "Post-build phase started on $(date)"
+      - echo "Pushing Docker image to ECR..."
+      - docker push ${REPOSITORY_URI}:latest
+      - docker push ${REPOSITORY_URI}:${IMAGE_TAG}
+      - echo "Docker images pushed successfully"
       - |
-        cat task-definition.json | \
-        sed "s|ACCOUNT_ID|$AWS_ACCOUNT_ID|g" | \
-        sed "s|REGION|$AWS_DEFAULT_REGION|g" | \
-        sed "s|ENVIRONMENT|$ENVIRONMENT|g" | \
-        sed "s|DB_HOST|$DB_HOST|g" | \
-        sed "s|REDIS_HOST|$REDIS_HOST|g" | \
-        sed "s|:latest|:$IMAGE_TAG|g" > taskdef.json
-      - echo Task definition prepared
+        printf '[{"name":"%s","imageUri":"%s"}]' \
+          ${SERVICE_NAME} \
+          ${REPOSITORY_URI}:${IMAGE_TAG} \
+          > imagedefinitions.json
+      - echo "Generated imagedefinitions.json:"
+      - cat imagedefinitions.json
+      - echo "Build completed successfully on $(date)"
 
 artifacts:
   files:
     - imagedefinitions.json
-    - taskdef.json
-    - appspec.yml
 
 cache:
   paths:
-    - '/root/.cache/**/*'
+    - '/root/.cache/go-build/**/*'
     - '/go/pkg/mod/**/*'
