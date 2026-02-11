@@ -64,7 +64,7 @@ func CORS() gin.HandlerFunc {
 				}
 				break
 			}
-			if allowed == origin {
+			if origin != "" && isOriginAllowed(origin, allowed) {
 				allowedOrigin = origin
 				break
 			}
@@ -74,6 +74,9 @@ func CORS() gin.HandlerFunc {
 		if allowedOrigin != "" {
 			c.Header("Access-Control-Allow-Origin", allowedOrigin)
 		}
+
+		// Vary: Origin is required when the response depends on the request Origin
+		c.Header("Vary", "Origin")
 
 		if corsConfig.AllowCredentials {
 			c.Header("Access-Control-Allow-Credentials", "true")
@@ -92,6 +95,43 @@ func CORS() gin.HandlerFunc {
 
 		c.Next()
 	}
+}
+
+// isOriginAllowed checks if an origin matches an allowed pattern.
+// Supports exact matches and wildcard subdomain patterns like "https://*.kisanlink.in".
+func isOriginAllowed(origin, pattern string) bool {
+	// Exact match
+	if origin == pattern {
+		return true
+	}
+
+	// Wildcard subdomain pattern: e.g., "https://*.kisanlink.in"
+	// Find the wildcard position
+	wildcardIdx := strings.Index(pattern, "*.")
+	if wildcardIdx < 0 {
+		return false
+	}
+
+	// Extract scheme prefix (e.g., "https://") and domain suffix (e.g., ".kisanlink.in")
+	scheme := pattern[:wildcardIdx]  // e.g., "https://"
+	suffix := pattern[wildcardIdx+1:] // e.g., ".kisanlink.in"
+
+	// Origin must start with the same scheme
+	if !strings.HasPrefix(origin, scheme) {
+		return false
+	}
+
+	// Origin must end with the domain suffix
+	if !strings.HasSuffix(origin, suffix) {
+		return false
+	}
+
+	// Extract the subdomain part between scheme and suffix
+	subdomain := origin[len(scheme) : len(origin)-len(suffix)]
+
+	// Subdomain must not be empty and must not contain dots (single level only)
+	// and must not contain slashes
+	return len(subdomain) > 0 && !strings.Contains(subdomain, ".") && !strings.Contains(subdomain, "/")
 }
 
 // RateLimit implements rate limiting using token bucket algorithm

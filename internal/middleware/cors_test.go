@@ -62,6 +62,70 @@ func TestCORS(t *testing.T) {
 			expectedOrigin: "", // Non-matching origin should not be allowed
 			expectedStatus: http.StatusOK,
 		},
+		{
+			name:           "Wildcard pattern matches valid subdomain",
+			method:         "GET",
+			origin:         "https://admin.kisanlink.in",
+			envOrigins:     "https://*.kisanlink.in",
+			expectedOrigin: "https://admin.kisanlink.in",
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "Wildcard pattern matches another subdomain",
+			method:         "GET",
+			origin:         "https://farmers.kisanlink.in",
+			envOrigins:     "https://*.kisanlink.in,https://*.agroslink.in",
+			expectedOrigin: "https://farmers.kisanlink.in",
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "Wildcard pattern matches second domain",
+			method:         "GET",
+			origin:         "https://www.agroslink.in",
+			envOrigins:     "https://*.kisanlink.in,https://*.agroslink.in",
+			expectedOrigin: "https://www.agroslink.in",
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "Wildcard pattern rejects non-matching domain",
+			method:         "GET",
+			origin:         "https://evil.com",
+			envOrigins:     "https://*.kisanlink.in",
+			expectedOrigin: "",
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "Wildcard pattern rejects nested subdomain",
+			method:         "GET",
+			origin:         "https://a.b.kisanlink.in",
+			envOrigins:     "https://*.kisanlink.in",
+			expectedOrigin: "",
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "Wildcard pattern rejects wrong scheme",
+			method:         "GET",
+			origin:         "http://admin.kisanlink.in",
+			envOrigins:     "https://*.kisanlink.in",
+			expectedOrigin: "",
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "Wildcard with exact origin mix - exact match works",
+			method:         "GET",
+			origin:         "http://localhost:3000",
+			envOrigins:     "https://*.kisanlink.in,http://localhost:3000",
+			expectedOrigin: "http://localhost:3000",
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "OPTIONS preflight with wildcard pattern",
+			method:         "OPTIONS",
+			origin:         "https://admin.kisanlink.in",
+			envOrigins:     "https://*.kisanlink.in",
+			expectedOrigin: "https://admin.kisanlink.in",
+			expectedStatus: http.StatusNoContent,
+		},
 	}
 
 	for _, tt := range tests {
@@ -111,6 +175,38 @@ func TestCORS(t *testing.T) {
 				assert.Contains(t, w.Header().Get("Access-Control-Allow-Methods"), "OPTIONS")
 				assert.Contains(t, w.Header().Get("Access-Control-Allow-Headers"), "Content-Type")
 			}
+
+			// Verify Vary: Origin header is always present
+			assert.Equal(t, "Origin", w.Header().Get("Vary"))
+		})
+	}
+}
+
+func TestIsOriginAllowed(t *testing.T) {
+	tests := []struct {
+		name    string
+		origin  string
+		pattern string
+		want    bool
+	}{
+		{"exact match", "https://admin.kisanlink.in", "https://admin.kisanlink.in", true},
+		{"exact mismatch", "https://admin.kisanlink.in", "https://other.kisanlink.in", false},
+		{"wildcard match", "https://admin.kisanlink.in", "https://*.kisanlink.in", true},
+		{"wildcard match www", "https://www.kisanlink.in", "https://*.kisanlink.in", true},
+		{"wildcard rejects nested", "https://a.b.kisanlink.in", "https://*.kisanlink.in", false},
+		{"wildcard rejects wrong scheme", "http://admin.kisanlink.in", "https://*.kisanlink.in", false},
+		{"wildcard rejects bare domain", "https://kisanlink.in", "https://*.kisanlink.in", false},
+		{"wildcard rejects empty subdomain", "https://.kisanlink.in", "https://*.kisanlink.in", false},
+		{"wildcard rejects different domain", "https://admin.evil.com", "https://*.kisanlink.in", false},
+		{"wildcard rejects slash in subdomain", "https://admin/x.kisanlink.in", "https://*.kisanlink.in", false},
+		{"no wildcard exact match", "https://localhost:3000", "https://localhost:3000", true},
+		{"no wildcard mismatch", "https://localhost:3001", "https://localhost:3000", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := isOriginAllowed(tt.origin, tt.pattern)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
