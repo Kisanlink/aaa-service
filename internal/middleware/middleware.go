@@ -10,6 +10,7 @@ import (
 	"github.com/Kisanlink/aaa-service/v2/helper"
 	"github.com/Kisanlink/aaa-service/v2/internal/config"
 	"github.com/Kisanlink/aaa-service/v2/internal/interfaces"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -49,52 +50,60 @@ func Logger(logger interfaces.Logger) gin.HandlerFunc {
 func CORS() gin.HandlerFunc {
 	corsConfig := config.LoadSecurityConfig().CORS
 
-	return func(c *gin.Context) {
-		origin := c.GetHeader("Origin")
+	corsCfg := cors.DefaultConfig()
+	corsCfg.AllowCredentials = corsConfig.AllowCredentials
+	corsCfg.AllowMethods = corsConfig.AllowedMethods
+	corsCfg.AllowHeaders = corsConfig.AllowedHeaders
+	corsCfg.ExposeHeaders = corsConfig.ExposedHeaders
+	corsCfg.MaxAge = time.Duration(corsConfig.MaxAge) * time.Second
 
-		// Determine allowed origin based on config
-		allowedOrigin := ""
-		for _, allowed := range corsConfig.AllowedOrigins {
-			if allowed == "*" {
-				// Wildcard: if credentials enabled, echo back origin; otherwise use "*"
-				if corsConfig.AllowCredentials && origin != "" {
-					allowedOrigin = origin
-				} else if !corsConfig.AllowCredentials {
-					allowedOrigin = "*"
-				}
-				break
-			}
-			if origin != "" && isOriginAllowed(origin, allowed) {
-				allowedOrigin = origin
-				break
-			}
+	// Check if any origin contains a wildcard
+	hasWildcard := false
+	for _, o := range corsConfig.AllowedOrigins {
+		if o == "*" || strings.Contains(o, "*.") {
+			hasWildcard = true
+			break
 		}
-
-		// Set CORS headers
-		if allowedOrigin != "" {
-			c.Header("Access-Control-Allow-Origin", allowedOrigin)
-		}
-
-		// Vary: Origin is required when the response depends on the request Origin
-		c.Header("Vary", "Origin")
-
-		if corsConfig.AllowCredentials {
-			c.Header("Access-Control-Allow-Credentials", "true")
-		}
-
-		c.Header("Access-Control-Allow-Methods", strings.Join(corsConfig.AllowedMethods, ", "))
-		c.Header("Access-Control-Allow-Headers", strings.Join(corsConfig.AllowedHeaders, ", "))
-		c.Header("Access-Control-Expose-Headers", strings.Join(corsConfig.ExposedHeaders, ", "))
-		c.Header("Access-Control-Max-Age", fmt.Sprintf("%d", corsConfig.MaxAge))
-
-		// Handle preflight requests
-		if c.Request.Method == "OPTIONS" {
-			c.AbortWithStatus(http.StatusNoContent)
-			return
-		}
-
-		c.Next()
 	}
+
+	if !hasWildcard {
+		corsCfg.AllowOrigins = corsConfig.AllowedOrigins
+		return cors.New(corsCfg)
+	}
+
+	// Separate exact origins from wildcard patterns
+	exactOrigins := make(map[string]bool)
+	var wildcardPatterns []string
+	allowAll := false
+	for _, o := range corsConfig.AllowedOrigins {
+		if o == "*" {
+			allowAll = true
+		} else if strings.Contains(o, "*.") {
+			wildcardPatterns = append(wildcardPatterns, o)
+		} else {
+			exactOrigins[o] = true
+		}
+	}
+
+	if allowAll {
+		corsCfg.AllowAllOrigins = true
+		corsCfg.AllowCredentials = false // can't use * with credentials
+		return cors.New(corsCfg)
+	}
+
+	corsCfg.AllowOriginFunc = func(origin string) bool {
+		if exactOrigins[origin] {
+			return true
+		}
+		for _, pattern := range wildcardPatterns {
+			if isOriginAllowed(origin, pattern) {
+				return true
+			}
+		}
+		return false
+	}
+
+	return cors.New(corsCfg)
 }
 
 // isOriginAllowed checks if an origin matches an allowed pattern.
