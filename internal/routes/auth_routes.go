@@ -46,6 +46,7 @@ func SetupAuthRoutes(
 	protectedAuthGroup.Use(middleware.ValidateJSONStructure(3, 10))            // Stricter JSON validation for sensitive ops
 	{
 		protectedAuthGroup.POST("/logout", authHandler.Logout)
+		protectedAuthGroup.POST("/change-password", authHandler.ChangePassword)
 
 		// MPIN operations with additional rate limiting
 		mpinGroup := protectedAuthGroup.Group("/")

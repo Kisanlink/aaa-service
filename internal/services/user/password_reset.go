@@ -204,8 +204,9 @@ func (s *Service) ResetPassword(ctx context.Context, tokenID, otp, newPassword s
 		return fmt.Errorf("failed to process password")
 	}
 
-	// Update user password
+	// Update user password and clear force-change flag
 	user.Password = string(hashedPassword)
+	user.MustChangePassword = false
 	if err := s.userRepo.Update(ctx, user); err != nil {
 		s.logger.Error("Failed to update password", zap.Error(err))
 		return fmt.Errorf("failed to update password")
@@ -276,8 +277,9 @@ func (s *Service) ResetPasswordWithToken(ctx context.Context, token, newPassword
 		return fmt.Errorf("failed to process password")
 	}
 
-	// Update user password
+	// Update user password and clear force-change flag
 	user.Password = string(hashedPassword)
+	user.MustChangePassword = false
 	if err := s.userRepo.Update(ctx, user); err != nil {
 		s.logger.Error("Failed to update password", zap.Error(err))
 		return fmt.Errorf("failed to update password")
@@ -312,13 +314,14 @@ func (s *Service) convertToUserResponse(user *models.User) *userResponses.UserRe
 	}
 
 	return &userResponses.UserResponse{
-		ID:          user.ID,
-		Username:    user.Username,
-		PhoneNumber: user.PhoneNumber,
-		CountryCode: user.CountryCode,
-		IsValidated: user.IsValidated,
-		Status:      user.Status,
-		CreatedAt:   user.CreatedAt,
-		UpdatedAt:   user.UpdatedAt,
+		ID:                 user.ID,
+		Username:           user.Username,
+		PhoneNumber:        user.PhoneNumber,
+		CountryCode:        user.CountryCode,
+		IsValidated:        user.IsValidated,
+		MustChangePassword: user.MustChangePassword,
+		Status:             user.Status,
+		CreatedAt:          user.CreatedAt,
+		UpdatedAt:          user.UpdatedAt,
 	}
 }

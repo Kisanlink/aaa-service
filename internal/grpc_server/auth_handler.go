@@ -68,14 +68,24 @@ func (h *AuthHandler) Register(ctx context.Context, req *pb.RegisterRequest) (*p
 	h.logger.Info("gRPC Register request", zap.String("username", req.Username))
 
 	// Convert gRPC request to service request
+	// Use phone_number if provided, fallback to username for backward compatibility
+	phoneNumber := req.PhoneNumber
+	if phoneNumber == "" {
+		phoneNumber = req.Username
+	}
+	countryCode := req.CountryCode
+	if countryCode == "" {
+		countryCode = "+91"
+	}
 	registerReq := &services.RegisterRequest{
-		PhoneNumber: req.Username, // Using username as phone number temporarily
-		CountryCode: "+91",        // Default country code
-		Username:    &req.Username,
-		Email:       &req.Email,
-		FullName:    &req.FullName,
-		Password:    req.Password,
-		RoleIDs:     req.RoleIds,
+		PhoneNumber:        phoneNumber,
+		CountryCode:        countryCode,
+		Username:           &req.Username,
+		Email:              &req.Email,
+		FullName:           &req.FullName,
+		Password:           req.Password,
+		RoleIDs:            req.RoleIds,
+		MustChangePassword: req.MustChangePassword,
 	}
 
 	// Call authentication service

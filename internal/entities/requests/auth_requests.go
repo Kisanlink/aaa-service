@@ -383,3 +383,31 @@ func (r *UpdateMPinRequest) Validate() error {
 func (r *UpdateMPinRequest) GetType() string {
 	return "update_mpin"
 }
+
+// ChangePasswordRequest represents a request to change the user's password
+type ChangePasswordRequest struct {
+	OldPassword string `json:"old_password" validate:"required"`
+	NewPassword string `json:"new_password" validate:"required,min=8"`
+}
+
+// Validate validates the ChangePasswordRequest
+func (r *ChangePasswordRequest) Validate() error {
+	if r.OldPassword == "" {
+		return fmt.Errorf("old password is required")
+	}
+	if r.NewPassword == "" {
+		return fmt.Errorf("new password is required")
+	}
+	if len(r.NewPassword) < 8 {
+		return fmt.Errorf("new password must be at least 8 characters long")
+	}
+	if r.OldPassword == r.NewPassword {
+		return fmt.Errorf("new password must be different from old password")
+	}
+	return nil
+}
+
+// GetType returns the request type
+func (r *ChangePasswordRequest) GetType() string {
+	return "change_password"
+}

@@ -417,10 +417,11 @@ type RegisterRequest struct {
 	FullName      string                 `protobuf:"bytes,3,opt,name=full_name,json=fullName,proto3" json:"full_name,omitempty"`          // Optional
 	Password      string                 `protobuf:"bytes,4,opt,name=password,proto3" json:"password,omitempty"`                          // Required
 	RoleIds       []string               `protobuf:"bytes,5,rep,name=role_ids,json=roleIds,proto3" json:"role_ids,omitempty"`             // Optional
-	PhoneNumber   string                 `protobuf:"bytes,6,opt,name=phone_number,json=phoneNumber,proto3" json:"phone_number,omitempty"` // Required - mobile number
-	CountryCode   string                 `protobuf:"bytes,7,opt,name=country_code,json=countryCode,proto3" json:"country_code,omitempty"` // Required - country code with + prefix
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	PhoneNumber        string                 `protobuf:"bytes,6,opt,name=phone_number,json=phoneNumber,proto3" json:"phone_number,omitempty"`                        // Required - mobile number
+	CountryCode        string                 `protobuf:"bytes,7,opt,name=country_code,json=countryCode,proto3" json:"country_code,omitempty"`                        // Required - country code with + prefix
+	MustChangePassword bool                   `protobuf:"varint,8,opt,name=must_change_password,json=mustChangePassword,proto3" json:"must_change_password,omitempty"` // Optional - force password change on first login
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *RegisterRequest) Reset() {
@@ -500,6 +501,13 @@ func (x *RegisterRequest) GetCountryCode() string {
 		return x.CountryCode
 	}
 	return ""
+}
+
+func (x *RegisterRequest) GetMustChangePassword() bool {
+	if x != nil {
+		return x.MustChangePassword
+	}
+	return false
 }
 
 // V2 Register Response

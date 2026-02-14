@@ -16,8 +16,9 @@ type UserInfo struct {
 	CreatedAt   time.Time        `json:"created_at" example:"2024-01-15T10:30:00Z"`
 	UpdatedAt   time.Time        `json:"updated_at" example:"2024-01-20T14:45:00Z"`
 	Tokens      int              `json:"tokens" example:"2"`
-	HasMPin     bool             `json:"has_mpin" example:"true"`
-	Roles       []UserRoleDetail `json:"roles,omitempty"`
+	HasMPin            bool             `json:"has_mpin" example:"true"`
+	MustChangePassword bool             `json:"must_change_password" example:"false"`
+	Roles              []UserRoleDetail `json:"roles,omitempty"`
 	Profile     *UserProfileInfo `json:"profile,omitempty"`
 	Contacts    []ContactInfo    `json:"contacts,omitempty"`
 }

@@ -63,6 +63,11 @@ func (s *Service) CreateUser(ctx context.Context, req *users.CreateUserRequest) 
 		user = models.NewUser(req.PhoneNumber, req.CountryCode, hashedPassword)
 	}
 
+	// Set must_change_password flag if requested
+	if req.MustChangePassword {
+		user.MustChangePassword = true
+	}
+
 	// Save user to repository
 	err = s.userRepo.Create(ctx, user)
 	if err != nil {
@@ -87,13 +92,14 @@ func (s *Service) CreateUser(ctx context.Context, req *users.CreateUserRequest) 
 
 	// Convert to response format
 	response := &userResponses.UserResponse{
-		ID:          user.ID,
-		Username:    user.Username,
-		PhoneNumber: user.PhoneNumber,
-		CountryCode: user.CountryCode,
-		IsValidated: user.IsValidated,
-		CreatedAt:   user.CreatedAt,
-		UpdatedAt:   user.UpdatedAt,
+		ID:                 user.ID,
+		Username:           user.Username,
+		PhoneNumber:        user.PhoneNumber,
+		CountryCode:        user.CountryCode,
+		IsValidated:        user.IsValidated,
+		MustChangePassword: user.MustChangePassword,
+		CreatedAt:          user.CreatedAt,
+		UpdatedAt:          user.UpdatedAt,
 	}
 
 	return response, nil

@@ -897,6 +897,79 @@ func (h *AuthHandler) UpdateMPin(c *gin.Context) {
 	h.responder.SendSuccess(c, http.StatusOK, response)
 }
 
+// ChangePassword handles POST /api/v1/auth/change-password
+//
+//	@Summary		Change user password
+//	@Description	Change the authenticated user's password by providing old and new password
+//	@Tags			auth
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		requests.ChangePasswordRequest	true	"Change password request"
+//	@Success		200		{object}	map[string]interface{}
+//	@Failure		400		{object}	responses.ErrorResponse
+//	@Failure		401		{object}	responses.ErrorResponse
+//	@Failure		500		{object}	responses.ErrorResponse
+//	@Router			/api/v1/auth/change-password [post]
+//	@Security		Bearer
+func (h *AuthHandler) ChangePassword(c *gin.Context) {
+	h.logger.Info("Processing change password request")
+
+	// Get user ID from context (set by auth middleware)
+	userID, exists := c.Get("user_id")
+	if !exists {
+		h.responder.SendError(c, http.StatusUnauthorized, "User not authenticated", nil)
+		return
+	}
+
+	var req requests.ChangePasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		h.logger.Error("Failed to bind change password request", zap.Error(err))
+		h.responder.SendValidationError(c, []string{err.Error()})
+		return
+	}
+
+	// Validate request
+	if err := req.Validate(); err != nil {
+		h.logger.Error("Change password request validation failed", zap.Error(err))
+		h.responder.SendValidationError(c, []string{err.Error()})
+		return
+	}
+
+	userIDStr, ok := userID.(string)
+	if !ok {
+		h.responder.SendInternalError(c, fmt.Errorf("invalid user ID type"))
+		return
+	}
+
+	// Change password using service method
+	err := h.userService.ChangePassword(c.Request.Context(), userIDStr, req.OldPassword, req.NewPassword)
+	if err != nil {
+		h.logger.Error("Failed to change password", zap.Error(err))
+		if unauthorizedErr, ok := err.(*errors.UnauthorizedError); ok {
+			h.responder.SendError(c, http.StatusUnauthorized, "Invalid old password", unauthorizedErr)
+			return
+		}
+		if validationErr, ok := err.(*errors.ValidationError); ok {
+			h.responder.SendValidationError(c, []string{validationErr.Error()})
+			return
+		}
+		if notFoundErr, ok := err.(*errors.NotFoundError); ok {
+			h.responder.SendError(c, http.StatusNotFound, "User not found", notFoundErr)
+			return
+		}
+		h.responder.SendInternalError(c, err)
+		return
+	}
+
+	response := map[string]any{
+		"success": true,
+		"message": "Password changed successfully",
+	}
+
+	h.logger.Info("Password changed successfully", zap.String("userID", userIDStr))
+	h.responder.SendSuccess(c, http.StatusOK, response)
+}
+
 // convertToCreateUserRequest converts a RegisterRequest to a CreateUserRequest
 func (h *AuthHandler) convertToCreateUserRequest(req *requests.RegisterRequest) *users.CreateUserRequest {
 	return &users.CreateUserRequest{
@@ -929,15 +1002,16 @@ func (h *AuthHandler) convertToAuthUserInfo(userResponse *userResponses.UserResp
 	}
 
 	return &responses.UserInfo{
-		ID:          userResponse.ID,
-		PhoneNumber: userResponse.PhoneNumber,
-		CountryCode: userResponse.CountryCode,
-		Username:    userResponse.Username,
-		IsValidated: userResponse.IsValidated,
-		CreatedAt:   userResponse.CreatedAt,
-		UpdatedAt:   userResponse.UpdatedAt,
-		Tokens:      userResponse.Tokens,
-		HasMPin:     userResponse.HasMPin,
-		Roles:       authRoles,
+		ID:                 userResponse.ID,
+		PhoneNumber:        userResponse.PhoneNumber,
+		CountryCode:        userResponse.CountryCode,
+		Username:           userResponse.Username,
+		IsValidated:        userResponse.IsValidated,
+		CreatedAt:          userResponse.CreatedAt,
+		UpdatedAt:          userResponse.UpdatedAt,
+		Tokens:             userResponse.Tokens,
+		HasMPin:            userResponse.HasMPin,
+		MustChangePassword: userResponse.MustChangePassword,
+		Roles:              authRoles,
 	}
 }

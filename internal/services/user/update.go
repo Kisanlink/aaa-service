@@ -117,8 +117,9 @@ func (s *Service) ChangePassword(ctx context.Context, userID, oldPassword, newPa
 		return errors.NewInternalError(err)
 	}
 
-	// Update password
+	// Update password and clear force-change flag
 	existingUser.Password = string(hashedPassword)
+	existingUser.MustChangePassword = false
 	existingUser.UpdatedAt = time.Now()
 
 	// Update in repository

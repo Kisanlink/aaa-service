@@ -59,6 +59,7 @@ message RegisterRequest {
     repeated string role_ids = 5; // Optional
     string phone_number = 6; // Required - mobile number
     string country_code = 7; // Required - country code with + prefix
+    bool must_change_password = 8; // Optional - force password change on first login
 }
 
 // V2 Register Response

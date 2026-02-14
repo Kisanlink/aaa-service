@@ -15,8 +15,9 @@ type CreateUserRequest struct {
 	AadhaarNumber *string `json:"aadhaar_number,omitempty"`
 	Name          *string `json:"name,omitempty"`
 	CareOf        *string `json:"care_of,omitempty"`
-	DateOfBirth   *string `json:"date_of_birth,omitempty"`
-	YearOfBirth   *string `json:"year_of_birth,omitempty"`
+	DateOfBirth        *string `json:"date_of_birth,omitempty"`
+	YearOfBirth        *string `json:"year_of_birth,omitempty"`
+	MustChangePassword bool    `json:"must_change_password,omitempty"`
 }
 
 // Validate validates the CreateUserRequest

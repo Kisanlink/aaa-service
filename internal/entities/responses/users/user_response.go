@@ -30,7 +30,8 @@ type UserResponse struct {
 	Address       *AddressResponse  `json:"address,omitempty"`
 	Contacts      []ContactResponse `json:"contacts,omitempty"`
 	Roles         []UserRoleDetail  `json:"roles"`
-	HasMPin       bool              `json:"has_mpin"`
+	HasMPin            bool              `json:"has_mpin"`
+	MustChangePassword bool              `json:"must_change_password"`
 }
 
 // GetType returns the type of response
@@ -57,6 +58,7 @@ func (r *UserResponse) FromModel(user *models.User) {
 	r.Status = user.Status
 	r.Tokens = user.Tokens
 	r.HasMPin = user.HasMPin()
+	r.MustChangePassword = user.MustChangePassword
 
 	// Map profile fields if profile exists
 	// Check if profile is populated (GORM loads an empty struct if not found)

@@ -24,7 +24,8 @@ type User struct {
 	// - "suspended": User access is temporarily suspended
 	// - "blocked": User access is permanently blocked
 	Status *string `json:"status" gorm:"type:varchar(50);default:'pending';index:idx_users_status"`
-	Tokens int     `json:"tokens" gorm:"default:1000"`
+	Tokens             int  `json:"tokens" gorm:"default:1000"`
+	MustChangePassword bool `json:"must_change_password" gorm:"default:false;column:must_change_password"`
 
 	// Relationships
 	Profile  UserProfile `json:"profile" gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`

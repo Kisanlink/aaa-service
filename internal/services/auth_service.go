@@ -95,13 +95,14 @@ type LoginResponse struct {
 
 // RegisterRequest represents a registration request
 type RegisterRequest struct {
-	PhoneNumber string   `json:"phone_number" validate:"required"`
-	CountryCode string   `json:"country_code" validate:"required"`
-	Password    string   `json:"password" validate:"required,min=8"`
-	Username    *string  `json:"username,omitempty" validate:"omitempty,min=3,max=50"`
-	Email       *string  `json:"email,omitempty" validate:"omitempty,email"`
-	FullName    *string  `json:"full_name,omitempty" validate:"omitempty,min=1,max=100"`
-	RoleIDs     []string `json:"role_ids,omitempty"`
+	PhoneNumber        string   `json:"phone_number" validate:"required"`
+	CountryCode        string   `json:"country_code" validate:"required"`
+	Password           string   `json:"password" validate:"required,min=8"`
+	Username           *string  `json:"username,omitempty" validate:"omitempty,min=3,max=50"`
+	Email              *string  `json:"email,omitempty" validate:"omitempty,email"`
+	FullName           *string  `json:"full_name,omitempty" validate:"omitempty,min=1,max=100"`
+	RoleIDs            []string `json:"role_ids,omitempty"`
+	MustChangePassword bool     `json:"must_change_password,omitempty"`
 }
 
 // TokenClaims represents JWT token claims
@@ -346,6 +347,7 @@ func (s *AuthService) Register(ctx context.Context, req *RegisterRequest) (*Logi
 		user.Username = req.Username
 	}
 	user.IsValidated = false
+	user.MustChangePassword = req.MustChangePassword
 	status := "active"
 	user.Status = &status
 

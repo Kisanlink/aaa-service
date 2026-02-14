@@ -89,6 +89,7 @@ type UserService interface {
 	InitiatePasswordReset(ctx context.Context, phoneNumber, countryCode, username, email *string) (string, error)
 	ResetPassword(ctx context.Context, tokenID, otp, newPassword string) error
 	ResetPasswordWithToken(ctx context.Context, token, newPassword string) error // Deprecated: Use ResetPassword with OTP
+	ChangePassword(ctx context.Context, userID, oldPassword, newPassword string) error
 	GetUserByEmail(ctx context.Context, email string) (*userResponses.UserResponse, error)
 }
 
